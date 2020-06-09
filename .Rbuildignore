@@ -1,0 +1,4 @@
+^data-raw$
+^renv$
+^renv\.lock$
+^README\.Rmd$
