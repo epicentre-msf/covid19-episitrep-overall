@@ -1,0 +1,1410 @@
+---
+title: 'MSF Covid-19 EpiSitrep worldwide overview'
+date: '`r Sys.Date()`'
+author:
+  - name: Francesco Grandesso
+    affiliation: Epicentre (MSF)
+output: 
+  distill::distill_article:
+    toc: TRUE
+    toc_depth: 1
+editor_options: 
+  chunk_output_type: console
+---
+
+
+<!-- Setup and uploading functions -->
+```{r setup, include = FALSE}
+
+# Set environment
+if (!exists('path.root')) {
+  source(here::here('R', 'setup.r'), encoding = 'UTF-8')
+}
+
+knitr::opts_chunk$set(cache = FALSE, 
+                      echo = FALSE, 
+                      tidy = TRUE, 
+                      collapse = TRUE, 
+                      dpi = 150, 
+                      fig.width = 8, 
+                      fig.height = 5, 
+                      fig.align = "center", 
+                      warning = FALSE, 
+                      message = FALSE, 
+                      encoding = "UTF-8")
+
+
+source(file.path(path.R, "utils_get_data.R")  , encoding = "UTF-8")
+source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
+source(file.path(path.R, "utils_modelling.R") , encoding = "UTF-8")
+source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
+source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
+
+
+# Option to get new data
+get_updated_data <- ifelse(!file.exists(file.path(path.local.worldwide.data, 'last_save_date.RDS')), TRUE, 
+                           ifelse(readRDS(file.path(path.local.worldwide.data, 'last_save_date.RDS')) != Sys.Date(),
+    TRUE, FALSE))
+
+get_data_anyways <- FALSE
+
+
+# Default parameters
+model_for_trends   <- 'linear' # for trends
+model_for_doubling <- 'linear' # for doubling time
+period_trends <- 12
+threshold_doubling_time <- 12
+
+
+# Three-colours palette (Red-Amber-Green) colour-blind safe
+RdAmGn <- c('#D95F02','#E6AB02','#1B9E77')
+
+```
+
+
+<!-- Import data -->
+```{r get_data, include = FALSE}
+
+# --- --- --- --- --- 
+# ECDC data
+# --- --- --- --- --- 
+
+if (get_updated_data | get_data_anyways) {
+  sf_world     <- get_world_sf(scale = 'small', proj = 'robinson')
+  df_ecdc      <- get_ecdc_data()
+  df_countries <- df_ecdc %>% filter(!is.na(iso_a3)) %>% distinct_at(vars(continent, region, iso_a3, country))
+  df_pop_country   <- df_ecdc %>% filter(!is.na(iso_a3)) %>% distinct_at(vars(iso_a3, country, pop = population_2018))
+  df_pop_region    <- df_ecdc %>% filter(!is.na(iso_a3)) %>% group_by(region) %>% summarise(pop = sum(population_2018, na.rm = TRUE))
+  df_pop_continent <- df_ecdc %>% filter(!is.na(iso_a3)) %>% group_by(continent) %>% summarise(pop = sum(population_2018, na.rm = TRUE))
+  saveRDS(sf_world        , file = file.path(path.local.worldwide.data, 'sf_world.RDS'))
+  saveRDS(df_ecdc         , file = file.path(path.local.worldwide.data, 'df_ecdc.RDS'))
+  saveRDS(df_countries    , file = file.path(path.local.worldwide.data, 'df_countries.RDS'))
+  saveRDS(df_pop_country  , file = file.path(path.local.worldwide.data, 'df_pop_country.RDS'))
+  saveRDS(df_pop_region   , file = file.path(path.local.worldwide.data, 'df_pop_region.RDS'))
+  saveRDS(df_pop_continent, file = file.path(path.local.worldwide.data, 'df_pop_continent.RDS'))
+  saveRDS(Sys.Date()      , file = file.path(path.local.worldwide.data, 'last_save_date.RDS'))
+} else {
+    sf_world     <- readRDS(file.path(path.local.worldwide.data, 'sf_world.RDS'))
+    df_ecdc      <- readRDS(file.path(path.local.worldwide.data, 'df_ecdc.RDS'))
+    df_countries <- readRDS(file.path(path.local.worldwide.data, 'df_countries.RDS'))
+    df_pop_country   <- readRDS(file.path(path.local.worldwide.data, 'df_pop_country.RDS'))
+    df_pop_region    <- readRDS(file.path(path.local.worldwide.data, 'df_pop_region.RDS'))
+    df_pop_continent <- readRDS(file.path(path.local.worldwide.data, 'df_pop_continent.RDS'))
+}
+
+
+# --- --- --- --- --- --- --- --- --- 
+# Upload or create daily coefficients
+# --- --- --- --- --- --- --- --- --- 
+
+
+if (file.exists(file.path(path.local.worldwide.data, 'list_coeffs_cases.RDS'))) {
+  lst_coeffs_cases <- readRDS(file = file.path(path.local.worldwide.data, 'list_coeffs_cases.RDS'))
+  } else {
+    lst_coeffs_cases <- ts_coeff(series = 'cases' , lst_dta = lst_ecdc, time_unit_extent = 5, ma_window = 3, min_sum = 30)
+    saveRDS(lst_coeffs_cases, file = file.path(path.local.worldwide.data, 'list_coeffs_cases.RDS')) 
+  }
+
+
+if (file.exists(file.path(path.local.worldwide.data, 'list_coeffs_deaths.RDS'))) {
+  lst_coeffs_deaths <- readRDS(file = file.path(path.local.worldwide.data, 'list_coeffs_deaths.RDS'))
+  } else {
+    lst_coeffs_deaths <- ts_coeff(series = 'deaths', lst_dta = lst_ecdc, time_unit_extent = 5, ma_window = 3, min_sum = 30)
+    saveRDS(lst_coeffs_deaths, file = file.path(path.local.worldwide.data, 'list_coeffs_deaths.RDS'))
+  }
+
+
+
+# --- --- --- --- --- 
+# TESTS
+# --- --- --- --- --- 
+
+df_tests <- read.csv(file.path(path.data, 'COVID-19 cases and tests tracker.csv'), stringsAsFactors = FALSE) %>% 
+  as_tibble() %>% 
+  mutate(date = as.Date(date))
+
+iso_tests <- read.csv(file.path(path.data, 'iso-a3_for_tests.csv'), stringsAsFactors = FALSE)
+
+
+
+
+
+
+# Prepare ECDC datasets
+ecdc_date_min <- min(df_ecdc$date, na.rm = TRUE)
+ecdc_date_max <- max(df_ecdc$date, na.rm = TRUE)
+
+
+# ECDC until date_max_report
+dfc_ecdc <- df_ecdc %>% 
+  tidyr::drop_na(iso_a3) %>% 
+  filter(between(date, left = ecdc_date_min, right = date_max_report))
+
+# ECDC split in a list of countries with iso_a3 as key
+lst_ecdc <- dfc_ecdc %>% 
+  multisplit("iso_a3")
+
+
+
+caption_world_map <- glue::glue('Analysis and graphic by Epicentre | Data source: ECDC as of {format(date_max_report, "%d %b %Y")}')
+
+```
+
+
+# About this report
+
+This is a weekly report that describes the evolution of the current Covid-19 epidemic worldwide and in MSF projects. It intends to support MSF in their Covid-19 intervention projects. The worldwide description of the epidemic is intentionally short as many other summaries of the epidemic can be found online. Additional graphics and tables are also available at the [Epicentre COVID-19 Epi Dashboard](https://reports.msf.net/public/covid19/).
+
+Definitions of increasing, declining and stable trends and the definition of doubling time, as well as detailed information on the analysis methods can be found [here](https://msfintl-my.sharepoint.com/:u:/g/personal/francesco_grandesso_epicentre_msf_org/EZqExKcP8axMj06voaLlveABpiicCfzkk5OWB-EaJvo9Fw?e=lwU1eM).
+
+**IMPORTANT NOTE:** Data and results presented here are possibly affected by bias related with factors such as the testing strategies used by each country and the performance of their surveillance systems. Results would be better interpreted in the light of this information, though currently not available to display in this document.
+
+
+# Number and trends of Covid-19 cases
+
+<!-- Summary table of cases -->
+```{r TblCasesCount}
+
+breaks <- c(0, 1, 50, 100, 1000, 10000, 100000, 1000000, Inf)
+labels <- label_breaks(breaks) %>% gsub("-Inf", "+", .) %>% gsub("\\<0-1\\>", "0", .)
+
+# Main table
+tbl_cases_count <- dfc_ecdc %>% 
+  group_by(iso_a3, continent, region, country) %>% 
+  summarise(cases = sum(cases, na.rm = TRUE)) %>% 
+  mutate(brks = cut(cases, breaks, labels = labels, include.lowest = TRUE, right = FALSE)) %>% 
+  ungroup()
+
+```
+
+
+Countries with more than 100k cases (in decreasing order): `r tbl_cases_count %>% call_countries_with_more(100000, 'cases') %>% combine_words()` (Figure \@ref(fig:MapWorldCasesCount)). 
+
+Countries with more than 100M cases (in decreasing order): `r tbl_cases_count %>% call_countries_with_more(1000000, 'cases') %>% combine_words()` (Figure \@ref(fig:MapWorldCasesCount)). 
+
+African countries with more than 10000 cases (in decreasing order): `r tbl_cases_count %>% filter(continent =='Africa') %>% call_countries_with_more(10000, 'cases') %>% combine_words()` (Figure \@ref(fig:MapWorldCasesCount)). 
+
+African countries with more than 1000 cases (in decreasing order): `r tbl_cases_count %>% filter(continent =='Africa') %>% call_countries_with_more(1000, 'cases') %>% combine_words()` (Figure \@ref(fig:MapWorldCasesCount)). 
+
+
+African countries with less than 50 cases (in decreasing order): `r tbl_cases_count %>% filter(continent == 'Africa') %>% call_countries_with_less(50, 'cases')`. 
+
+
+<!-- Map World cases -->
+```{r MapWorldCasesCount, fig.width = 8, fig.height = 5, fig.cap = glue('Mapping of number of Covid-19 cases as of {format(ecdc_date_max, "%d %B %Y")}')}
+
+sf_cases <- tbl_cases_count %>% 
+  inner_join(
+    select(sf_world, iso_a3),
+    by = "iso_a3"
+  ) %>% 
+  st_as_sf()
+
+map_world_cases_count <- ggplot(sf_cases) + 
+  geom_sf(aes(fill = brks), size = .1) + 
+  scale_fill_brewer(
+    name = "Covid-19 cases", palette = "Blues", 
+    drop = FALSE, 
+    guide = guide_legend(
+      keyheight = unit(3, units = "mm"),
+      keywidth = unit(70 / length(labels), units = "mm"),
+      title.hjust = 0.5,
+      nrow = 1,
+      label.position = "bottom",
+      title.position = 'top')) +
+  labs(title = 'Cases count', 
+       caption = caption_world_map) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5), 
+        legend.position = "bottom")
+
+map_world_cases_count + labs(title = NULL)
+
+ggsave(file.path(path.local.worldwide.graphs, glue("map_world_cases_count_{week_report}.png")), 
+       plot = map_world_cases_count, 
+       scale = 1, 
+       dpi = 320)
+
+```
+
+
+<!-- Modelling Cases Trends -->
+```{r modelling_cases_trends}
+model_cnt_cases_linear  <- linear_model_cnt(series = 'cases', lst_dta = lst_ecdc, last_date = date_max_report, time_unit_extent = period_trends, min_sum = 30)
+
+model_cml_cases_linear  <- linear_model_cml(series = 'cases', lst_dta = lst_ecdc, last_date = date_max_report, time_unit_extent = period_trends, min_sum = 50)
+
+model_cnt_cases_quasipoisson <- suppressMessages(quasipoisson_model_cnt(series = 'cases', lst_dta = lst_ecdc, last_date = date_max_report, time_unit_extent = period_trends, min_sum = 30))
+
+model_cml_cases_quasipoisson <- suppressMessages(quasipoisson_model_cml(series = 'cases', lst_dta = lst_ecdc, last_date = date_max_report, time_unit_extent = period_trends, min_sum = 50))
+```
+
+
+<!-- TABLE - Trends in number of cases -->
+```{r tbl_cases_trends}
+
+coeff_vars <-  c("coeff", "lwr", "upr")
+
+tbl_cases_trends <- tbl_cases_count %>% 
+  select(-brks) %>% 
+  left_join(rename(model_cnt_cases_linear[[3]] , all_of(attach_prefix(coeff_vars, 'l_cnt_')))) %>% 
+  left_join(rename(model_cml_cases_linear[[3]] , all_of(attach_prefix(coeff_vars, 'l_cml_')))) %>% 
+  left_join(rename(model_cnt_cases_quasipoisson[[3]], all_of(attach_prefix(coeff_vars, 'p_cnt_')))) %>% 
+  left_join(rename(model_cml_cases_quasipoisson[[3]], all_of(attach_prefix(coeff_vars, 'p_cml_')))) %>% 
+  mutate(
+    trend_linear = case_when(
+      l_cnt_lwr > 0 ~ "Increasing", 
+      l_cnt_upr < 0 ~ "Declining", 
+      l_cnt_upr > 0 & l_cnt_lwr < 0 ~ "Stable", 
+      TRUE ~ NA_character_) %>% 
+      factor(levels = c('Increasing', 'Stable', 'Declining')),
+    trend_quasipoisson = case_when(
+      p_cnt_lwr > 0 ~ "Increasing", 
+      p_cnt_upr < 0 ~ "Declining", 
+      p_cnt_upr > 0 & p_cnt_lwr < 0 ~ "Stable", 
+      TRUE ~ NA_character_) %>% 
+      factor(levels = c('Increasing', 'Stable', 'Declining')))
+
+write.csv(tbl_cases_trends, 
+          file.path(path.local.worldwide.tables, glue("tbl_cases_trends_{week_report}.csv")), 
+          na = "", 
+          row.names = FALSE, 
+          fileEncoding = "UTF-8")
+
+```
+
+
+<!-- csv for MSF GIS -->
+```{r}
+tbl_cases_trends %>% 
+  select(iso_a3, all_of(vars_trends(model_for_trends))) %>% 
+  select(iso = iso_a3, trend) %>% 
+  write.csv(file.path(path.local.worldwide.tables, glue("epi-case-trends-{week_report}.csv")), 
+            row.names = FALSE, 
+            fileEncoding = "UTF-8")
+
+```
+
+
+
+<!-- TABLE - Countries with increasing trend in number of cases -->
+```{r list_increasing_trends, include = FALSE}
+
+tbl_cases_increasing_trend <- tbl_cases_trends %>% 
+  select(c(iso_a3 : cases), all_of(vars_trends(model_for_trends))) %>% 
+  filter(trend == 'Increasing') %>% 
+  arrange(continent, desc(coeff))
+
+```
+
+
+**Countries with increasing trend in cases:**
+
+**Africa:**   `r glue("({length(call_countries_increasing('cases', 'Africa'))}):   {call_countries_increasing('cases', 'Africa') %>% combine_words()}")`. 
+
+**Asia:**     `r glue("({length(call_countries_increasing('cases', 'Asia'))}):     {call_countries_increasing('cases', 'Asia') %>% combine_words()}")`. 
+
+**Americas:** `r glue("({length(call_countries_increasing('cases', 'Americas'))}): {call_countries_increasing('cases', 'Americas') %>% combine_words()}")`. 
+
+**Europe:**   `r glue("({length(call_countries_increasing('cases', 'Europe'))}):   {call_countries_increasing('cases', 'Europe') %>% combine_words()}")`. 
+
+**Oceania:**  `r glue("({length(call_countries_increasing('cases', 'Oceania'))}):  {call_countries_increasing('cases', 'Oceania') %>% combine_words()}")`. 
+
+
+<!-- Map cases trends -->
+```{r MapWorldCasesTrends, fig.cap = glue('Mapping of cases trends estimated during the period from {format(date_max_report - (period_trends - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} ({period_trends} days)')}
+
+# Join the dataframe with the sf
+sf_trend_cases <- tbl_cases_trends %>% 
+  select(c(iso_a3 : cases), all_of(vars_trends(model_for_trends))) %>% 
+  inner_join(
+    select(sf_world, iso_a3),
+    by = "iso_a3"
+  ) %>% 
+  st_as_sf()
+
+# plot the map
+map_world_cases_trends <- ggplot(sf_trend_cases) + 
+  geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
+  scale_fill_manual(
+    name = "Trends of cases count", 
+    values = RdAmGn, 
+    drop = FALSE, 
+    guide = guide_legend(
+      keyheight = unit(3, units = "mm"),
+      keywidth = unit(70 / length(labels), units = "mm"),
+      title.hjust = 0.5,
+      nrow = 1,
+      label.position = "bottom",
+      title.position = 'top')) +
+  labs(title = 'Trends in cases', caption = caption_world_map) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+
+map_world_cases_trends + labs(title = NULL)
+
+ggsave(file.path(path.local.worldwide.graphs, glue("map_world_cases_trends_{week_report}.png")), 
+       plot = map_world_cases_trends, 
+       scale = 1, 
+       dpi = 320)
+
+```
+
+<!-- Table cases trends -->
+```{r TblCountriesCasesIncreasing}
+
+  tbl_cases_count_12d <- dfc_ecdc %>% 
+  filter(between(date, left = date_max_report - 11, date_max_report)) %>% 
+  group_by(iso_a3) %>% 
+  summarise(cases_12d = sum(cases, na.rm = TRUE))
+
+
+gtbl_countries_increasing_cases <- tbl_cases_increasing_trend %>% 
+  left_join(tbl_cases_count_12d, by = 'iso_a3') %>% 
+  select(-c(iso_a3, region)) %>% 
+  arrange(continent, desc(coeff)) %>% 
+  mutate(
+    coeff = round(exp(coeff), digits = 2), 
+    coeff_ci = combine_ci(exp(lwr), exp(upr), digits = 2), 
+    lwr = NULL,
+    upr = NULL, 
+    trend = NULL) %>% 
+  gt(rowname_col = 'country', groupname_col = 'continent') %>% 
+  cols_label(
+    cases     = 'Total', 
+    cases_12d = 'Last 12 days',  
+    coeff     = 'Rate', 
+    coeff_ci  = '95% CI') %>% 
+  tab_spanner(
+    label = 'Number of cases', 
+    columns = starts_with('cases')) %>% 
+  tab_spanner(
+    label = 'Trend', 
+    columns = starts_with('coeff')) %>% 
+  fmt_number(
+    columns = vars(coeff), 
+    decimals = 2) %>% 
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    row_group.padding = px(2),
+    data_row.padding = px(2), 
+    table_body.border.top.width = px(1))
+
+gtbl_countries_increasing_cases %>% 
+  tab_header(
+    title = 'Countries with a significant increasing trend in cases')
+
+```
+
+
+# Number and trends of Covid-19 associated deaths
+
+<!-- Summary table of deaths -->
+```{r TblDeathsCount}
+
+breaks <- c(0, 1, 50, 100, 1000, 10000, 100000, Inf)
+labels <- label_breaks(breaks) %>% gsub("-Inf", "+", .) %>% gsub("\\<0-1\\>", "0", .)
+
+# Main table
+tbl_deaths_count <- dfc_ecdc %>% 
+  group_by(iso_a3, continent, region, country) %>% 
+  summarise(deaths = sum(deaths, na.rm = TRUE)) %>% 
+  mutate(brks = cut(deaths, breaks, labels = labels, include.lowest = TRUE, right = FALSE)) %>% 
+  ungroup()
+
+```
+
+
+Countries with more than 100k deaths in order: `r tbl_deaths_count %>% call_countries_with_more(100000, 'deaths') %>% combine_words()`.
+
+Countries with more than 10k deaths in order: `r tbl_deaths_count %>% call_countries_with_more(10000, 'deaths') %>% combine_words()`.
+
+African countries with less than 50 deaths in order: `r tbl_deaths_count %>% filter(continent == 'Africa') %>% call_countries_with_less(50, 'deaths') %>% combine_words()`.
+
+
+<!-- Map deaths count -->
+```{r MapWorldDeathsCount, fig.cap = glue('Mapping of number of Covid-19 associated deaths as of {format(date_max_report, "%d %b %Y")}')}
+
+sf_deaths <- tbl_deaths_count %>% 
+  inner_join(
+    select(sf_world, iso_a3),
+    by = "iso_a3"
+  ) %>% 
+  st_as_sf()
+
+map_world_deaths_count <- ggplot(sf_deaths) + 
+  geom_sf(aes(fill = brks), size = .1) + 
+  scale_fill_brewer(
+    name = "Covid-19 associated deaths", palette = "Reds", 
+    drop = FALSE, 
+    guide = guide_legend(
+      keyheight = unit(3, units = "mm"),
+      keywidth = unit(70 / length(labels), units = "mm"),
+      title.hjust = 0.5,
+      nrow = 1,
+      label.position = "bottom",
+      title.position = 'top')) +
+  labs(title = 'Deaths count', caption = caption_world_map) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+
+map_world_deaths_count + labs(title = NULL)
+
+ggsave(file.path(path.local.worldwide.graphs, glue("map_world_deaths_count_{week_report}.png")), 
+       plot = map_world_deaths_count, 
+       scale = 1, 
+       dpi = 320)
+
+```
+
+
+<!-- Modelling Deaths Trends -->
+```{r modelling_deaths_trends}
+
+model_cnt_deaths_linear  <- linear_model_cnt(series = 'deaths', lst_dta = lst_ecdc, last_date = date_max_report, time_unit_extent = period_trends, min_sum = 30)
+
+model_cml_deaths_linear  <- linear_model_cml(series = 'deaths', lst_dta = lst_ecdc, last_date = date_max_report, time_unit_extent = period_trends, min_sum = 50)
+
+model_cnt_deaths_quasipoisson <- suppressMessages(quasipoisson_model_cnt(series = 'deaths', lst_dta = lst_ecdc, last_date = date_max_report, time_unit_extent = period_trends, min_sum = 30))
+
+model_cml_deaths_quasipoisson <- suppressMessages(quasipoisson_model_cml(series = 'deaths', lst_dta = lst_ecdc, last_date = date_max_report, time_unit_extent = period_trends, min_sum = 50))
+```
+
+<!-- TABLE - Trend in number of deaths -->
+```{r}
+
+tbl_deaths_trends <- tbl_deaths_count %>% 
+  select(-brks) %>% 
+  left_join(rename(model_cnt_deaths_linear[[3]] , all_of(attach_prefix(coeff_vars, 'l_cnt_')))) %>% 
+  left_join(rename(model_cml_deaths_linear[[3]] , all_of(attach_prefix(coeff_vars, 'l_cml_')))) %>% 
+  left_join(rename(model_cnt_deaths_quasipoisson[[3]], all_of(attach_prefix(coeff_vars, 'p_cnt_')))) %>% 
+  left_join(rename(model_cml_deaths_quasipoisson[[3]], all_of(attach_prefix(coeff_vars, 'p_cml_')))) %>% 
+  mutate(
+    trend_linear = case_when(
+      l_cnt_lwr > 0 ~ "Increasing", 
+      l_cnt_upr < 0 ~ "Declining", 
+      l_cnt_upr > 0 & l_cnt_lwr < 0 ~ "Stable", 
+      TRUE ~ NA_character_) %>% 
+      factor(levels = c('Increasing', 'Stable', 'Declining')),
+    trend_quasipoisson = case_when(
+      p_cnt_lwr > 0 ~ "Increasing", 
+      p_cnt_upr < 0 ~ "Declining", 
+      p_cnt_upr > 0 & p_cnt_lwr < 0 ~ "Stable", 
+      TRUE ~ NA_character_) %>% 
+      factor(levels = c('Increasing', 'Stable', 'Declining')))
+
+write.csv(tbl_deaths_trends, 
+          file.path(path.local.worldwide.tables, glue("tbl_deaths_trends_{week_report}.csv")), 
+          na = "", 
+          row.names = FALSE, 
+          fileEncoding = "UTF-8")
+
+```
+
+<!-- TABLE - Countries with increasing trend in number of deaths -->
+```{r tbl_deaths_increasing_trend}
+
+tbl_deaths_increasing_trend <- tbl_deaths_trends %>% 
+  select(c(iso_a3 : deaths), all_of(vars_trends(model_for_trends))) %>% 
+  filter(trend == 'Increasing') %>% 
+  arrange(continent, desc(coeff))
+
+```
+
+
+**Countries with increasing trend in deaths:**
+
+**Africa:**   `r glue("({length(call_countries_increasing('deaths', 'Africa'))}):   {call_countries_increasing('deaths', 'Africa') %>% combine_words()}")`. 
+
+**Asia:**     `r glue("({length(call_countries_increasing('deaths', 'Asia'))}):     {call_countries_increasing('deaths', 'Asia') %>% combine_words()}")`. 
+
+**Americas:** `r glue("({length(call_countries_increasing('deaths', 'Americas'))}): {call_countries_increasing('deaths', 'Americas') %>% combine_words()}")`. 
+
+**Europe:**   `r glue("({length(call_countries_increasing('deaths', 'Europe'))}):   {call_countries_increasing('deaths', 'Europe') %>% combine_words()}")`. 
+
+**Oceania:**  `r glue("({length(call_countries_increasing('deaths', 'Oceania'))}):  {call_countries_increasing('deaths', 'Oceania') %>% combine_words()}")`. 
+
+<!-- Map deaths trends -->
+```{r MapWorldDeathsTrends, fig.cap = glue('Mapping of deaths trends estimated during the period from {format(date_max_report - (period_trends - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} ({period_trends} days)')}
+
+# Join the dataframe with the sf
+sf_trend_deaths <- tbl_deaths_trends %>% 
+  select(c(iso_a3 : deaths), all_of(vars_trends(model_for_trends))) %>% 
+  inner_join(
+    select(sf_world, iso_a3),
+    by = "iso_a3"
+  ) %>% 
+  st_as_sf()
+
+# plot the map
+map_world_deaths_trends <- ggplot(sf_trend_deaths) + 
+  geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
+  scale_fill_manual(
+    name = "Trends of deaths count", 
+    values = RdAmGn, 
+    drop = FALSE, 
+    guide = guide_legend(
+      keyheight = unit(3, units = "mm"),
+      keywidth = unit(70 / length(labels), units = "mm"),
+      title.hjust = 0.5,
+      nrow = 1,
+      label.position = "bottom",
+      title.position = 'top')) +
+  labs(title = 'Trends in deaths', caption = caption_world_map) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+
+map_world_deaths_trends + labs(title = NULL)
+
+ggsave(file.path(path.local.worldwide.graphs, glue("map_world_deaths_trends_{week_report}.png")), 
+       plot = map_world_deaths_trends, 
+       scale = 1, 
+       dpi = 320)
+
+```
+
+<!-- Table deaths trends -->
+```{r TblCountriesDeathsIncreasing}
+
+tbl_deaths_count_12d <- dfc_ecdc %>% 
+  filter(between(date, left = date_max_report - 11, date_max_report)) %>% 
+  group_by(iso_a3) %>% 
+  summarise(deaths_12d = sum(deaths, na.rm = TRUE))
+
+
+gtbl_countries_increasing_deaths <- tbl_deaths_increasing_trend %>% 
+  left_join(tbl_deaths_count_12d, by = 'iso_a3') %>% 
+  select(-c(iso_a3, region)) %>% 
+  arrange(continent, desc(coeff)) %>% 
+  mutate(
+    coeff = round(exp(coeff), digits = 2), 
+    coeff_ci = combine_ci(exp(lwr), exp(upr), digits = 2), 
+    lwr = NULL,
+    upr = NULL, 
+    trend = NULL) %>% 
+  gt(rowname_col = 'country', groupname_col = 'continent') %>% 
+  cols_label(
+    deaths  = 'Total', 
+    deaths_12d = 'Last 12 days', 
+    coeff = 'Rate', 
+    coeff_ci = '95% CI') %>% 
+  tab_spanner(
+    label = 'Number of deaths', 
+    columns = starts_with('deaths')) %>% 
+  tab_spanner(
+    label = 'Trend', 
+    columns = starts_with('coeff')) %>% 
+  fmt_number(
+    columns = vars(coeff), 
+    decimals = 2) %>% 
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    row_group.padding = px(2),
+    data_row.padding = px(2), 
+    table_body.border.top.width = px(1))
+
+gtbl_countries_increasing_deaths %>% 
+  tab_header(
+    title = 'Countries with a significant increasing trend in deaths')
+
+```
+
+<!-- BIG SUMMARY TABLE -->
+```{r TblSummaryCasesAndDeaths, include = FALSE}
+
+tbl_summary_cases_deaths <- df_countries %>% 
+  left_join(tbl_cases_count %>% select(iso_a3, cases)) %>% 
+  left_join(tbl_deaths_count %>% select(iso_a3, deaths)) %>% 
+  left_join(tbl_cases_trends %>% 
+              select(iso_a3, all_of(vars_trends(model_for_trends)))) %>% 
+  mutate(
+    trend_cases_coeff = round(exp(coeff), digits = 2), 
+    trend_cases_ci = case_when(
+      is.na(coeff) ~ NA_character_, 
+      TRUE ~ combine_ci(exp(lwr), exp(upr), digits = 2))) %>% 
+  select(-one_of('coeff','lwr', 'upr', 'trend')) %>% 
+  left_join(tbl_deaths_trends %>% 
+              select(iso_a3, all_of(vars_trends(model_for_trends)))) %>% 
+  mutate(
+    trend_deaths_coeff = round(exp(coeff), digits = 2), 
+    trend_deaths_ci = case_when(
+      is.na(coeff) ~ NA_character_, 
+      TRUE ~ combine_ci(exp(lwr), exp(upr)))) %>% 
+  select(-one_of('coeff','lwr', 'upr', 'trend')) %>% 
+  mutate(
+    cfr = round(deaths / cases * 100, digits = 1)) %>% 
+  left_join(df_pop_country %>% select(iso_a3, pop)) %>% 
+  mutate(
+    cases_ar  = cases  / pop * 100000, 
+    deaths_ar = deaths / pop * 100000) %>% 
+  select(iso_a3, continent, region, country, 
+         cases, deaths, cfr, 
+         cases_ar, deaths_ar, 
+         starts_with('trend_cases_'), starts_with('trend_deaths_')) %>% 
+  left_join(tbl_cases_count_12d) %>% 
+  left_join(tbl_deaths_count_12d) %>%
+  group_by(continent, region) %>% 
+  arrange(country, .by_group = TRUE) %>% 
+  ungroup()
+
+
+gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>% 
+  gt(rowname_col = "country", 
+  groupname_col = c('continent', 'region')) %>% 
+  cols_hide(
+    columns = vars(iso_a3)) %>% 
+  cols_label(
+    country = 'Country', 
+    cases = 'Cases', 
+    deaths = 'Deaths', 
+    cfr = 'naïve CFR',
+    cases_ar = 'cases',
+    deaths_ar ='deaths', 
+    cases_12d = 'Cases', 
+    deaths_12d = 'Deaths', 
+    trend_cases_coeff  = 'Rate', 
+    trend_cases_ci     = "[95% CI]", 
+    trend_deaths_coeff = 'Rate', 
+    trend_deaths_ci    = "[95% CI]") %>% 
+  cols_move(
+    columns = vars(cases_12d), 
+    after = vars(deaths_ar)) %>% 
+  fmt_number(
+    columns = vars(cases, deaths, cases_12d), 
+    decimals = 0) %>% 
+  fmt_number(
+    columns = vars(cases_ar, deaths_ar), 
+    decimals = 2) %>% 
+  fmt_missing(
+    columns = vars(trend_cases_ci, trend_deaths_ci), 
+    missing_text = "---") %>% 
+  tab_spanner(
+    label = "Totals", 
+    columns = vars(cases, deaths)) %>% 
+  tab_spanner(
+    label = html("Coumulative incidence<br>per 100,000 people"), 
+    columns = ends_with('_ar')) %>% 
+  tab_spanner(
+    label = 'In the last 12 days', 
+    columns = ends_with('_12d')) %>% 
+  tab_spanner(
+    label = "Trends of cases", 
+    columns = starts_with('trend_cases_')) %>% 
+  tab_spanner(
+    label = "Trends of deaths", 
+    columns = starts_with('trend_deaths_')) %>% 
+  summary_rows(
+    groups = TRUE, 
+    columns = vars(cases, deaths, cases_12d), 
+    fns = list('Region total' = ~sum(., na.rm = TRUE)),
+    decimals = 0) %>% 
+  grand_summary_rows(
+    columns = vars(cases, deaths, cases_12d), 
+    fns = list('Grand total' = ~sum(., na.rm = TRUE)), 
+    decimals = 0) %>% 
+  tab_header(title = glue('Worldwide Covid-19 cases and associated deaths, and trends as of {format(date_max_report, "%d %b %Y")}'),
+             subtitle = html('<strong>Trends are estimate using data of the previous 12 days</strong><br>
+                             Analysis carried out by Epicentre<br>
+                             For infoarmation on the analysis methods click
+<a href="https://msfintl-my.sharepoint.com/:u:/g/personal/francesco_grandesso_epicentre_msf_org/EZqExKcP8axMj06voaLlveABpiicCfzkk5OWB-EaJvo9Fw?e=lwU1eM">here</a><br><br>
+                             <strong>NOTE to interprete the trends</strong><br>
+                             A trend with rate greater than 1 indicates an increaasing trend<br>
+                             A trend with rate of less than 1 indicates a declining trend')) %>% 
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    row_group.padding = px(1),
+    data_row.padding = px(1), 
+    table_body.border.top.width = px(1))
+
+gtbl_summary_cases_deaths
+
+gtsave(gtbl_summary_cases_deaths, 
+       file.path(path.local.worldwide.tables, glue("gtbl_summary_cases_deaths_{week_report}.html")), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtsave(gtbl_summary_cases_deaths, 
+       file.path("D:/OneDrive - MSF/covid-19/public/world_summary_tables", glue("world_summary_cases_deaths_{week_report}.html")), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+```
+
+
+# Cumulative incidence
+<!-- Map of cumulative incidences -->
+```{r tbl_attack_rates}
+
+# Specific breaks for incidence
+breaks_ar <- c(0, 10, 100, 1000, 10000, Inf)
+labels_ar <- label_breaks(breaks_ar) %>% gsub("-Inf", "+", .) %>% gsub("\\<0-1\\>", "0", .)
+
+tbl_attack_rates <- tbl_summary_cases_deaths %>% 
+  select(iso_a3 : country, cases, deaths, cases_ar, deaths_ar) %>% 
+  mutate(
+    cases_brks  = cut(cases_ar, breaks_ar, labels = labels_ar, include.lowest = TRUE, right = FALSE), 
+    deaths_brks = cut(deaths_ar, breaks_ar, labels = labels_ar, include.lowest = TRUE, right = FALSE)
+  )
+
+```
+
+<!-- Map of cumulative incidences of cases -->
+```{r map_world_cases_attack_rates}
+
+sf_attack_rates <- tbl_attack_rates %>% 
+  inner_join(
+    select(sf_world, iso_a3),
+    by = "iso_a3"
+  ) %>% 
+  st_as_sf()
+
+map_world_cases_attack_rates <- ggplot(sf_attack_rates) + 
+  geom_sf(aes(fill = cases_brks), size = .1) + 
+  scale_fill_brewer(
+    name = "Cumulative incidence / 100,000", palette = "Blues", 
+    drop = FALSE, 
+    guide = guide_legend(
+      keyheight = unit(3, units = "mm"),
+      keywidth = unit(70 / length(labels), units = "mm"),
+      title.hjust = 0.5,
+      nrow = 1,
+      label.position = "bottom",
+      title.position = 'top')) +
+  labs(title = 'Cumulative Incidence of Covid-19 reported cases per 100,000 population', 
+       caption = caption_world_map) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5), 
+        legend.position = "bottom")
+
+map_world_cases_attack_rates 
+
+ggsave(file.path(path.local.worldwide.graphs, glue("map_world_cases_attack_rates_{week_report}.png")), 
+       plot = map_world_cases_attack_rates + labs(title = NULL), 
+       width = 10 * cm_to_in, 
+       height = 6.66 * cm_to_in, 
+       scale = 1.3, 
+       dpi = 320)
+
+```
+
+
+<!-- Map of cumulative incidences of deaths -->
+```{r map_world_deaths_attack_rates}
+
+map_world_deaths_attack_rates <- ggplot(sf_attack_rates) + 
+  geom_sf(aes(fill = deaths_brks), size = .1) + 
+  scale_fill_brewer(
+    name = "Cumulative incidence / 100,000", palette = "Reds", 
+    drop = FALSE, 
+    guide = guide_legend(
+      keyheight = unit(3, units = "mm"),
+      keywidth = unit(70 / length(labels), units = "mm"),
+      title.hjust = 0.5,
+      nrow = 1,
+      label.position = "bottom",
+      title.position = 'top')) +
+  labs(title = 'Cumulative Incidence of Covid-19 associated deaths per 100,000 population', 
+       caption = caption_world_map) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5), 
+        legend.position = "bottom")
+
+map_world_deaths_attack_rates 
+
+ggsave(file.path(path.local.worldwide.graphs, glue("map_world_deaths_attack_rates_{week_report}.png")), 
+       plot = map_world_deaths_attack_rates + labs(title = NULL), 
+       width = 10 * cm_to_in, 
+       height = 6.66 * cm_to_in, 
+       scale = 1.3, 
+       dpi = 320)
+
+```
+
+
+
+# Doubling time in cases and deaths
+
+<!-- Estimating doubling in cases -->
+```{r estimate_doubling_cases}
+
+doubling_vars <-  c("est", "lwr", "upr")
+
+tbl_cases_doubling_time <- tbl_cases_count %>% 
+  select(-brks) %>% 
+  left_join(rename(model_cnt_cases_linear[['doubling_time']] , all_of(attach_prefix(doubling_vars, 'l_cnt_')))) %>% 
+  left_join(rename(model_cml_cases_linear[['doubling_time']] , all_of(attach_prefix(doubling_vars, 'l_cml_')))) %>% 
+  left_join(rename(model_cnt_cases_quasipoisson[['doubling_time']], all_of(attach_prefix(doubling_vars, 'p_cnt_')))) %>% 
+  left_join(rename(model_cml_cases_quasipoisson[['doubling_time']], all_of(attach_prefix(doubling_vars, 'p_cml_'))))
+
+write.csv(tbl_cases_doubling_time,
+          file.path(path.local.worldwide.tables, glue("tbl_cases_doubling_time_{week_report}.csv")), 
+          na = "", 
+          row.names = FALSE, 
+          fileEncoding = "UTF-8")
+
+```
+
+<!-- Countries with doubling time in cases -->
+```{r}
+
+tbl_countries_doubling_time_cases <- tbl_cases_doubling_time %>% 
+  select(iso_a3 : cases, vars_doubling_time(model_for_doubling, 'cases')) %>% 
+  right_join(tbl_cases_increasing_trend %>% 
+               select(iso_a3)) %>% 
+  filter(between(cases_est, 0, threshold_doubling_time))
+
+african_countries_doubling_time <- tbl_countries_doubling_time_cases %>% filter(continent == 'Africa') %>% pull(country)
+asian_countries_doubling_time   <- tbl_countries_doubling_time_cases %>% filter(continent == 'Asia')   %>% pull(country)
+
+```
+
+<!-- Estimating doubling in deaths -->
+```{r estimate_doubling_deaths}
+
+tbl_deaths_doubling_time <- tbl_deaths_count %>% 
+  select(iso_a3, continent, region, country, deaths) %>% 
+  left_join(rename(model_cnt_deaths_linear[['doubling_time']] , all_of(attach_prefix(doubling_vars, 'l_cnt_')))) %>% 
+  left_join(rename(model_cml_deaths_linear[['doubling_time']] , all_of(attach_prefix(doubling_vars, 'l_cml_')))) %>% 
+  left_join(rename(model_cnt_deaths_quasipoisson[['doubling_time']], all_of(attach_prefix(doubling_vars, 'p_cnt_')))) %>% 
+  left_join(rename(model_cml_deaths_quasipoisson[['doubling_time']], all_of(attach_prefix(doubling_vars, 'p_cml_'))))
+
+write.csv(tbl_deaths_doubling_time, 
+          file.path(path.local.worldwide.tables, glue("tbl_deaths_doubling_time_{week_report}.csv")), 
+          na = "", 
+          row.names = FALSE, 
+          fileEncoding = "UTF-8")
+
+```
+
+<!-- Countries with doubling time in deaths -->
+```{r}
+# Categorise the doubling time
+tbl_countries_doubling_time_deaths <- tbl_deaths_doubling_time %>% 
+  select(iso_a3 : deaths, vars_doubling_time(model_for_doubling, 'deaths')) %>% 
+  right_join(tbl_deaths_increasing_trend %>% 
+               select(iso_a3)) %>% 
+  filter(between(deaths_est, 0, threshold_doubling_time))
+
+```
+
+
+
+### Countries with doubling time in cases or deaths less than `r (threshold_doubling_time)` days
+```{r tbl_rank_doubling}
+
+tbl_doubling <- tbl_cases_doubling_time %>% 
+  filter(!is.na(country)) %>% 
+  select(c(iso_a3 : cases), vars_doubling_time(model_for_doubling, 'cases')) %>% 
+  mutate(
+    cases_ci95 = case_when(
+      !is.na(cases_est) ~ combine_ci(cases_lwr, cases_upr), 
+      TRUE ~ NA_character_),
+    cases_est = round(cases_est, digits = 1), 
+    cases_lwr = NULL, 
+    cases_upr = NULL) %>% 
+  left_join(tbl_deaths_doubling_time %>% 
+  filter(!is.na(country)) %>% 
+  select(c(iso_a3, deaths), vars_doubling_time(model_for_doubling, 'deaths')) %>% 
+  mutate(
+    deaths_ci95 = case_when(
+      !is.na(deaths_est) ~ combine_ci(deaths_lwr, deaths_upr), 
+      TRUE ~ NA_character_),
+    deaths_est = round(deaths_est, digits = 1), 
+    deaths_lwr = NULL, 
+    deaths_upr = NULL)) %>% 
+  right_join(full_join(tbl_cases_increasing_trend %>% 
+                         select(iso_a3, trend_cases = trend), 
+                       tbl_deaths_increasing_trend %>% 
+                         select(iso_a3, trend_deaths = trend)))
+
+tbl_cfr_doubling <- tbl_doubling %>%
+  mutate(
+    cfr = round(deaths / cases * 100, digits = 1)) %>% 
+  select(c(iso_a3 : country), cases, deaths, cfr, cases_est, cases_ci95, deaths_est, deaths_ci95) 
+
+
+tbl_cfr_doubling_rank <- tbl_cfr_doubling %>% 
+  filter(between(cases_est, left = 0, right = threshold_doubling_time) | 
+           between(deaths_est, left = 0, right = threshold_doubling_time)) %>% 
+  arrange(cases_est)
+
+gtbl_cfr_doubling_rank <- tbl_cfr_doubling_rank %>% 
+  arrange(cases_est) %>% 
+  gt(rowname_col = 'country', groupname_col = 'continent') %>% 
+  cols_hide(
+    columns = vars(iso_a3, region)) %>% 
+  cols_label(
+    country = 'Country', 
+    cases = 'Cases', 
+    deaths = 'Deaths', 
+    cfr = 'naïve CFR', 
+    cases_est = 'days', 
+    cases_ci95 = "[95% CI]", 
+    deaths_est = 'days', 
+    deaths_ci95 = "[95% CI]") %>% 
+  fmt_number(
+    columns = vars(cases, deaths), 
+    decimals = 0) %>% 
+  fmt_missing(
+    columns = vars(cases_est, cases_ci95, deaths_est, deaths_ci95), 
+    missing_text = "---") %>% 
+  tab_spanner(
+    label = "Totals", 
+    columns = vars(cases, deaths)) %>% 
+  tab_spanner(
+    label = "Doubling time of cases", 
+    columns = vars(cases_est, cases_ci95)) %>% 
+  tab_spanner(
+    label = "Doubling time of deaths", 
+    columns = vars(deaths_est, deaths_ci95)) %>% 
+  tab_footnote(
+    footnote = "Total number of deaths reported so far, divided by the total number of cases.",
+    locations = cells_column_labels(
+      columns = vars(cfr))) %>%  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    row_group.padding = px(2),
+    data_row.padding = px(2), 
+    table_body.border.top.width = px(2))
+
+
+gtbl_cfr_doubling_rank
+
+gtsave(gtbl_cfr_doubling_rank, 
+       file.path(path.local.worldwide.tables, glue("gtbl_cfr_doubling_rank_{week_report}.html")), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+```
+
+
+A sharp increasing of cases (doubling time of less than `r threshold_doubling_time` days) is observed in: 
+
+
+**Africa:**   `r glue("({length(call_countries_doubling('cases_est', 'Africa'))}):   {call_countries_doubling('cases_est', 'Africa') %>% combine_words()}")`. 
+
+**Asia:**     `r glue("({length(call_countries_doubling('cases_est', 'Asia'))}):   {call_countries_doubling('cases_est', 'Asia') %>% combine_words()}")`. 
+
+**Americas:** `r glue("({length(call_countries_doubling('cases_est', 'Americas'))}):   {call_countries_doubling('cases_est', 'Americas') %>% combine_words()}")`. 
+
+**Europe:**   `r glue("({length(call_countries_doubling('cases_est', 'Europe'))}):   {call_countries_doubling('cases_est', 'Europe') %>% combine_words()}")`. 
+
+**Oceania:**  `r glue("({length(call_countries_doubling('cases_est', 'Oceania'))}):   {call_countries_doubling('cases_est', 'Oceania') %>% combine_words()}")`. 
+
+
+<!-- Map doubling cases -->
+```{r MapWorldDoublingCases}
+
+breaks <- c(0, 4, 8, 12, Inf)
+labels <- label_breaks(breaks) %>% stringr::str_replace_all(c("-Inf" = "+"))
+
+# Categorise the doubling time
+df_doubling_cases <- tbl_cases_doubling_time %>% 
+  select(c(iso_a3:cases), doubling_time = 'l_cml_est') %>% 
+  left_join(tbl_cases_trends %>% 
+              select(iso_a3, trend = trend_linear), 
+            by = 'iso_a3') %>% 
+  mutate(
+    doubling_time = case_when(
+      (trend != 'Increasing' | is.na(trend)) ~ NA_real_,
+      TRUE ~ doubling_time), 
+    brks = cut(doubling_time, breaks, labels = labels, include.lowest = TRUE)) %>% 
+  select(c(iso_a3:cases), trend, doubling_time, brks)
+
+
+# Join the dataframe with the sf
+sf_doubling_cases <- df_doubling_cases %>% 
+  inner_join(
+    select(sf_world, iso_a3),
+    by = "iso_a3"
+  ) %>% 
+  st_as_sf()
+
+# plot the map
+RdYl <- c('#993404','#D95F0E','#FE9929','#FED98E','#FFFFD4')
+
+map_world_doubling_cases <- ggplot(sf_doubling_cases) + 
+  geom_sf(aes(fill = brks), size = .1) + 
+  scale_fill_manual(
+    name = "Doubling time (days)", 
+    values = RdYl, 
+    drop = FALSE, 
+    guide = guide_legend(
+      keyheight = unit(3, units = "mm"),
+      keywidth = unit(70 / length(labels), units = "mm"),
+      title.hjust = 0.5,
+      nrow = 1,
+      label.position = "bottom",
+      title.position = 'top')) +
+  labs(title = 'Cases doubling time', caption = caption_world_map) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+
+map_world_doubling_cases
+
+ggsave(file.path(path.local.worldwide.graphs, glue("map_world_doubling_cases_{week_report}.png")), 
+       plot = map_world_doubling_cases, 
+       scale = 1, 
+       dpi = 320)
+
+```
+
+<!-- Map doubling deaths -->
+```{r MapWorldDoublingDeaths}
+
+# Categorise the doubling time
+df_doubling_deaths <- tbl_deaths_doubling_time %>% 
+  select(c(iso_a3:deaths), doubling_time = 'l_cml_est') %>% 
+  left_join(tbl_deaths_trends %>% 
+              select(iso_a3, trend = trend_linear), 
+            by = 'iso_a3') %>% 
+  mutate(
+    doubling_time = case_when(
+      (trend != 'Increasing' | is.na(trend)) ~ NA_real_,
+      TRUE ~ doubling_time), 
+    brks = cut(doubling_time, breaks, labels = labels, include.lowest = TRUE)) %>% 
+  select(c(iso_a3:deaths), doubling_time, brks)
+
+
+# Join the dataframe with the sf
+sf_doubling_deaths <- df_doubling_deaths %>% 
+  inner_join(
+    select(sf_world, iso_a3),
+    by = "iso_a3"
+  ) %>% 
+  st_as_sf()
+
+# plot the map
+map_world_doubling_deaths <- ggplot(sf_doubling_deaths) + 
+  geom_sf(aes(fill = brks), size = .1) + 
+  scale_fill_manual(
+    name = "Doubling time (days)", 
+    values = RdYl, 
+    drop = FALSE, 
+    guide = guide_legend(
+      keyheight = unit(3, units = "mm"),
+      keywidth = unit(70 / length(labels), units = "mm"),
+      title.hjust = 0.5,
+      nrow = 1,
+      label.position = "bottom",
+      title.position = 'top')) +
+  labs(title = 'Deaths doubling time', caption = caption_world_map) +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+
+map_world_doubling_deaths
+
+ggsave(file.path(path.local.worldwide.graphs, glue("map_world_doubling_deaths_{week_report}.png")), 
+       plot = map_world_doubling_deaths, 
+       scale = 1, 
+       dpi = 320)
+
+```
+
+
+### Countries with critical doubling time of cases
+<!-- Dot plot doubling time over number of days with increasing trend -->
+```{r tbl_hot_countries}
+
+# Identify the date of a significant positive trend (We might need to sue cusum at one point)
+tbl_cases_date_pos_trend <- tibble(iso_a3 = as.character(), 
+                                   date_lwr_pos = as.Date(NA))
+
+for (country_iso in names(lst_coeffs_cases)) {
+  dta_lwr_pos <- lst_coeffs_cases[[country_iso]] %>% 
+    mutate(
+      lwr_pos = lwr > 0) %>% 
+    filter(lwr_pos)
+  
+  if (nrow(dta_lwr_pos) == 0) {
+    tbl_cases_date_pos_trend <- tbl_cases_date_pos_trend %>% 
+      add_row(iso_a3 = country_iso, 
+              date_lwr_pos = as.Date(NA))
+  } else {
+    tbl_cases_date_pos_trend <- tbl_cases_date_pos_trend %>% 
+      add_row(iso_a3  = country_iso, 
+              date_lwr_pos = min(as.Date(dta_lwr_pos$date)))
+  }
+}
+
+# Manual entry
+tbl_cases_date_pos_trend <- tbl_cases_date_pos_trend %>% 
+  mutate(
+    date_lwr_pos = case_when(
+      iso_a3 == 'COM' ~ as.Date('2020-05-19'),
+      iso_a3 == 'NIC' ~ as.Date('2020-05-22'), 
+      TRUE ~ date_lwr_pos
+    )
+  )
+
+
+# The table
+tbl_hot_countries <- tbl_cfr_doubling %>% 
+  left_join(tbl_cases_date_pos_trend) %>% 
+  mutate(
+    nb_days = as.numeric(date_max_report - date_lwr_pos)
+  ) %>% 
+   filter(between(cases_est, 0, threshold_doubling_time))
+
+
+
+# The dots plot
+dots_hotspot_cases <- ggplot(tbl_hot_countries) + 
+  geom_point(aes(nb_days, cases_est, col = continent)) + 
+  ggrepel::geom_text_repel(
+    data = tbl_hot_countries,
+    aes(nb_days, cases_est, label = country, colour = continent),
+    size = 3,
+    show.legend = FALSE) + 
+  ylim(0, threshold_doubling_time) + 
+  labs(
+    y = "Doubling time in number of cases",
+    x = "Number of days since a significant increasing trend was found",
+    color = NULL
+  ) + 
+  theme_light()
+
+dots_hotspot_cases
+
+ggsave(file.path(path.local.worldwide.graphs, glue("dots_hotspot_cases_{week_report}.png")), 
+       plot = dots_hotspot_cases, 
+       width = 6, 
+       height = 4, 
+       scale = 1.1, 
+       dpi = 320)
+```
+
+
+
+# Number of tests performed
+
+```{r, include = FALSE}
+
+lst_tests <- df_tests %>% 
+  select(country, date, new_tests) %>% 
+  filter(date <= date_max_report) %>% 
+  mutate(
+    country = case_when(
+      country == "N/A" ~ NA_character_,
+      TRUE ~ country)
+  ) %>% 
+  tidyr::drop_na(country) %>% 
+  full_join(iso_tests, by = 'country') %>% 
+  arrange(iso_a3, date) %>% 
+  multisplit("iso_a3")
+
+
+# Fill possible gap in time-series
+for (i in names(lst_tests)) {
+  
+  tests_dta <- lst_tests[[i]]
+  if (nrow(tests_dta) > 1) {
+    
+    tests_dta <- tests_dta %>% 
+      tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
+                                      date_max_report, by = 1), 
+                      fill = list(new_tests = NA_real_))
+  }
+  lst_tests[[i]] <- tests_dta
+}
+
+
+# Table of cumulative number of tests and assess reliability
+tbl_tests <- tibble(iso_a3    = character(), 
+                    tests_cml = numeric(), 
+                    reliable  = character())
+
+for (i in names(lst_tests)) {
+  
+  tst <- lst_tests[[i]] %>% 
+    filter(between(date, left = date_max_report - (period_trends - 1), right = date_max_report))
+  if (nrow(tst) < 6) {
+    tbl_tests <- tbl_tests %>% 
+      add_row(iso_a3 = i, 
+              tests_cml = sum(tst$new_tests, na.rm = TRUE),
+              reliable = NA_character_)
+  } else {
+    if (sum(tst$new_tests == 0, na.rm = TRUE) > 6) {
+      tbl_tests <- tbl_tests %>% 
+        add_row(iso_a3 = i, 
+                tests_cml = sum(tst$new_tests, na.rm = TRUE),
+                reliable = 'No')
+    } else {
+      tbl_tests <- tbl_tests %>% 
+        add_row(iso_a3 = i, 
+                tests_cml = sum(tst$new_tests, na.rm = TRUE), 
+                reliable = 'Yes')
+    }
+  }
+}
+
+# Final table
+tbl_ar_rt <- df_countries %>% 
+  left_join(df_pop_country %>% select(iso_a3, pop)) %>% 
+  left_join(tbl_tests) %>% 
+  left_join(tbl_cases_count_12d) %>% 
+  right_join(tbl_cases_increasing_trend %>% select(iso_a3, cases, coeff)) %>% 
+  mutate(
+    cases_inc_12d = cases_12d / pop * 100000, 
+    tests_ratio   = tests_cml / cases_12d, 
+    tests_rate    = tests_cml / pop * 100000
+  )
+
+```
+
+
+<!-- Plot test ratio -->
+```{r plot_test_ratio}
+
+dots_ratio_tests <- ggplot(tbl_ar_rt, aes(tests_ratio, cases_inc_12d)) + 
+  geom_point(aes(tests_ratio, cases_inc_12d, colour = continent)) + 
+  geom_point(data = tbl_ar_rt %>% filter(reliable == 'No'), 
+             pch = 21, fill = NA, size = 4, colour = "red", stroke = 1) + 
+  geom_point(data = tbl_ar_rt %>% filter(tests_cml == 0), 
+             pch = 21, fill = NA, size = 4, colour = "black", stroke = 1) + 
+  ggrepel::geom_text_repel(
+    aes(tests_ratio, cases_inc_12d, label = country, colour = continent),
+    size = 3,
+    show.legend = FALSE) + 
+  scale_x_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
+                     labels = scales::trans_format("log10", function(x) round(10^x, 0))) +
+  scale_y_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
+                     labels = scales::trans_format("log10", function(x) round(10^x, 0))) + 
+  labs(
+    y = "Cumulative number of cases per 100,000 people (log scale)",
+    x = "Ratio of the number of tests done over the number of cases confirmed (log scale)", 
+    colour = 'Continent', 
+    caption = 'NOTE: \nBlack circles = No data on the number of tests performed\nRed circles = Unreliable data on the number of tests performed') + 
+  theme_light() + 
+  theme(
+    plot.caption = element_text(hjust = 0))
+
+dots_ratio_tests
+
+ggsave(file.path(path.local.worldwide.graphs, glue("dots_ratio_tests_{week_report}.png")), 
+       plot = dots_ratio_tests, 
+       width = 8, 
+       height = 6, 
+       scale = 1, 
+       dpi = 320)
+```
+
+<!-- Plot test rate -->
+```{r plot_test_rate}
+
+dots_rate_tests <- ggplot(tbl_ar_rt, aes(tests_rate, cases_inc_12d)) + 
+  geom_point(aes(tests_rate, cases_inc_12d, colour = continent)) + 
+  geom_point(data = tbl_ar_rt %>% filter(reliable == 'No'), 
+             pch = 21, fill = NA, size = 4, colour = "red", stroke = 1) + 
+  geom_point(data = tbl_ar_rt %>% filter(tests_cml == 0), 
+             pch = 21, fill = NA, size = 4, colour = "black", stroke = 1) + 
+  ggrepel::geom_text_repel(
+    aes(tests_rate, cases_inc_12d, label = country, colour = continent),
+    size = 3, 
+    show.legend = FALSE) + 
+  scale_x_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
+                     labels = scales::trans_format("log10", function(x) round(10^x, 0))) +
+  scale_y_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
+                     labels = scales::trans_format("log10", function(x) round(10^x, 0))) + 
+  labs(
+    y = "Cumulative number of cases per 100,000 people (log scale)",
+    x = "Number of tests done per 100,000 people (log scale)", 
+    colour = 'Continent', 
+    caption = 'NOTE: \nBlack circles = No data on the number of tests performed\nRed circles = Unreliable data on the number of tests performed') + 
+  theme_light() + 
+  theme(
+    plot.caption = element_text(hjust = 0))
+
+dots_rate_tests
+
+ggsave(file.path(path.local.worldwide.graphs, glue("dots_rate_tests_{week_report}.png")), 
+       plot = dots_rate_tests, 
+       width = 8, 
+       height = 6, 
+       scale = 1, 
+       dpi = 320)
+
+```
+
+
+
+
+
+
+<!-- --- --- --- --- --- --- --- --- -->
+<!-- Graphs and table for EpiSitrep  -->
+<!-- --- --- --- --- --- --- --- --- -->
+
+<!-- Table Ranking doubling time -->
+```{r save_gtbl_rank_doubling, include = FALSE}
+gtsave(gtbl_cfr_rank_doubling %>% 
+         tab_options(
+           column_labels.font.size = px(10), 
+           table.font.size = px(10)),
+       file.path(path.local.worldwide.tables, glue("gtbl_cfr_rank_doubling_{week_report}.png")), 
+       vwidth = 720,
+       vheight = 720*1.414) %>% 
+  invisible()
+
+```
+
+<!-- Map world cases grid -->
+```{r map_world_cases_grid, include = FALSE}
+
+map_world_cases_grid <- grid.arrange(map_world_cases_count + labs(caption = ''), 
+                                     map_world_cases_trends, 
+                                     ncol = 2)
+ggsave(file.path(path.local.worldwide.graphs, glue("map_world_cases_grid_{week_report}.png")), 
+       plot = map_world_cases_grid, 
+       scale = 1.6, 
+       width = 7, 
+       height = 3)
+
+```
+
+<!-- Map world deaths grid -->
+```{r map_world_deaths_grid, include = FALSE}
+
+map_world_deaths_grid <- grid.arrange(map_world_deaths_count + labs(caption = ''), 
+                                      map_world_deaths_trends, ncol = 2)
+ggsave(file.path(path.local.worldwide.graphs, glue("map_world_deaths_grid_{week_report}.png")), 
+       plot = map_world_deaths_grid, 
+       scale = 1.6, 
+       width = 7, 
+       height = 3)
+
+```
+
+<!-- Map world doubling time grid -->
+```{r map_world_doubling_grid, include = FALSE}
+
+map_world_doubling_grid <- grid.arrange(map_world_doubling_cases + labs(caption = ''), 
+                                        map_world_doubling_deaths, ncol = 2)
+ggsave(file.path(path.local.worldwide.graphs, glue("map_world_doubling_grid_{week_report}.png")), 
+       plot = map_world_doubling_grid, 
+       scale = 1.6, 
+       width = 7, 
+       height = 3)
+
+```
+
+
+
+
+<!-- Save results -->
+```{r save_results, include = FALSE}
+
+rm(list = lsf.str())
+save.image(file.path(path.local.worldwide.data, glue('episitrep_worldwide_analyses_{week_report}.RData')))
+
+```
+

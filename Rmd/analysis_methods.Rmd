@@ -1,0 +1,65 @@
+---
+title: "How we estimated the trends and the doubling time in MSF EpiSitrep on Covid-19 epidemic" 
+date: "2020-04-28"
+author:
+  - name: "Francesco Grandesso"
+affiliation: Epicentre (MSF)
+output: 
+  distill::distill_article:
+    toc: TRUE
+    toc_depth: 2
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+*For any clarification, please contact Francesco.GRANDESSO@epicentre.msf.org.*
+
+
+# How we estimated the trends
+
+Trends were estimated on the number of cases (or deaths) observed over a period of the last 12 days. 
+
+On the 12-day time-series we first carried a smoothing using a 3-day moving average. As a result, we obtained a 10-day smoothed values for which we run a linear regression of the values in the natural logarithm scale using the following formula:
+
+> <center> **lm(ln(smoothed values) ~ 10 days)** </center>
+
+The standard error of the model was used to calculate the confidence intervals. 
+
+Trends presented in the report were defined using the coefficients of the linear regression as follows:
+
+- **Increasing trend:** an upward trend that was statistically significant; this means a positive coefficient and the confidence intervals do not include 0. 
+- **Declining trend:** a downward trend that was statistically significant; this means a negative coefficient and the confidence intervals do not include 0. 
+- **Stable trend:** an upward or downward trend that was not statistically significant; this means an either positive or negative coefficient, but the confidence intervals include 0. 
+
+To ensure reliable estimates we estimate the trend only if the cumulative number cases (or deaths) during the 12-day period was higher than 50.
+
+We opted to model the slope on window of 12 days because it includes 3 generation time of 4 days. 
+
+
+# How we estimated the doubling time
+
+The doubling time is defined as the time it takes for the reported number of cases (or the reported number of deaths) to double in value.
+
+It is estimated in number of days (or fraction of day); the less the number of days, the higher the increase rate of the number of cases or deaths.
+
+The doubling time was estimated as follows. 
+
+We first calculated the cumulative number of cases (or deaths) for each country. We then selected the last 12 days of the time-series of each country and modelled the slope of the natural logarithm of the cumulative cases (or cumulative deaths) using a linear regression.
+
+
+> <center> **linear model = lm(ln(cumulative cases) ~ 12 days)** </center>
+
+The standard error of linear regression model was used to calculate the confidence intervals. 
+
+The doubling time was finally calculated as the ratio of the natural logarithm of 2 over the coefficient of the slope estimated by the model. 
+
+> <center> **doubling time = ln(2) / coeff(linear model)** </center>
+
+To ensure reliable estimates we calculated the doubling time only if the cumulative cases (or deaths) was higher than 50 at the first day of the 12 days window that was used in the model.
+
