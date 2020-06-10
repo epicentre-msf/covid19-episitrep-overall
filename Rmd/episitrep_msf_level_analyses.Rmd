@@ -40,53 +40,30 @@ knitr::opts_chunk$set(cache = FALSE,
 <!-- Import and manage data -->
 ```{r get_data}
 # The list of countries
-df_countries <- readRDS(file.path(path.local.data, 'df_countries.RDS'))
+df_countries <- readRDS(file.path(path.local.worldwide.data, 'df_countries.RDS'))
 
-# The MSF dataset
-path.data.sharepoint <- 'D:/MSF/GRP-EPI-COVID-19 - NCoVEpi/data/linelist/world'
 
+# The MSF linelist dataset
+path.data.sharepoint <- file.path('D:', 'MSF/GRP-EPI-COVID-19 - NCoVEpi', 'data', 'linelist', 'world')
 dta <- readRDS(file.path(path.data.sharepoint, 'msf_covid19_linelist_global_2020-06-03.rds'))
+
+# Prepare the dataset
 dta <- prepare_msf_dta(dta)
 
 
-recode_care <- function(var1, var2){
-  case_when(
-    var1 == 'Yes' ~ 'Yes', 
-    var2 == 'Yes' ~ 'Yes', 
-    var1 == 'No' & (var2 == 'Unknown' | is.na(var2)) ~ 'No at admission then not reported', 
-      (var1 == 'No' | is.na(var1)) & var2 == 'No' ~ 'No at any time', 
-      TRUE ~ 'Not reported') %>% factor(levels = c('Yes', 'No at admission then not reported', 'No at any time', 'Not reported'))
-}
-
-
-# Prepare data
-levels_age_5breaks <- c(0, 5, 15, 45, 65, Inf)
-labels_age_5breaks <- label_breaks(levels_age_5breaks) %>% gsub("-Inf", "+", .)
-
-dta <- dta %>% 
-  mutate(
-    age_5gp = cut(age_in_years, levels_age_5breaks, labels_age_5breaks), 
-      merge_admit = case_when(
-      admit == 'Yes' ~ 'Yes', 
-      outcome_admit == 'Yes' ~ 'Yes', 
-      is.na(outcome_admit) ~ 'Unknown', 
-      TRUE ~ 'No') %>% factor(levels = c('Yes', 'No', 'Unknown')), 
-    merge_oxygen = recode_care(received_oxygen, outcome_received_oxygen), 
-    merge_icu    = recode_care(icu , outcome_icu), 
-    merge_vent   = recode_care(vent, outcome_vent), 
-    merge_ecmo   = recode_care(ecmo, outcome_ecmo)) %>% 
-  left_join(df_countries %>% select(continent, region, iso_a3, country), by = 'country') %>% 
-  mutate(
-    continent = as.factor(continent)
-  )
+# The MSF aggregated data
+dta_aggregated <- read.xlsx(file.path(path.data.sharepoint, 'msf_covid19_aggregated_data.xlsx'), sheetIndex = 1, stringsAsFactors = FALSE, encoding = 'UTF-8') %>% 
+  mutate(across(ends_with('_p'), as.numeric)) %>% 
+  filter(!is.na(country)) %>% 
+  as_tibble()
 
 
 ```
 
 # Information on the MSF sites
-```{r tbl_status}
+```{r tbl_sites_covid_status}
 
-tbl_covid_status <- dta %>% 
+tbl_sites_covid_status <- dta %>% 
   group_by(country, site_name) %>% 
   summarise(
     total = n(),
@@ -105,18 +82,14 @@ tbl_covid_status <- dta %>%
   ungroup()
 
 
-
-additional_rows <- read.csv(file.path(path.local.data, 'aggregated_data.csv')) %>% 
-  mutate(
-    date_adm_first = format(as.Date(date_adm_first), '%d-%m-%Y'), 
-    date_adm_last = format(as.Date(date_adm_last), '%d-%m-%Y'), 
-  ) %>% as_tibble()
-
-tbl_covid_status <- tbl_covid_status %>% 
-  add_row(additional_rows) %>% 
+tbl_sites_covid_status <- tbl_sites_covid_status %>% 
+  add_row(dta_aggregated %>% 
+            mutate(
+              date_adm_first = format(date_adm_first, '%d-%m-%Y'), 
+              date_adm_last  = format(date_adm_last, '%d-%m-%Y'))) %>% 
   arrange(country)
 
-gtbl_covid_status <- tbl_covid_status %>% 
+gtbl_sites_covid_status <- tbl_sites_covid_status %>% 
   gt(rowname_col = "site_name", 
      groupname_col = "country") %>% 
   cols_label(
@@ -195,22 +168,24 @@ gtbl_covid_status <- tbl_covid_status %>%
     summary_row.padding = px(1), 
     grand_summary_row.padding = px(1))
 
-gtbl_covid_status
+gtbl_sites_covid_status
 
-gtsave(gtbl_covid_status, 
-       file.path(path.local.tables, glue("gtbl_covid_status_{week_report}.html"))) %>% 
+gtsave(gtbl_sites_covid_status, 
+       file.path(path.local.msf.tables, glue("gtbl_sites_covid_status_{week_report}.html"))) %>% 
   invisible()
 
-gtsave(gtbl_covid_status, 
-       file.path(path.local.tables, glue("gtbl_covid_status_{week_report}.png"))) %>% 
+gtsave(gtbl_sites_covid_status, 
+       file.path(path.local.msf.tables, glue("gtbl_sites_covid_status_{week_report}.png"))) %>% 
   invisible()
 
-nb_msf_obs        <- dta %>% count() %>% pull(n)
-nb_msf_confirmed  <- sum(dta$covid_status == 'Confirmed', na.rm = TRUE)
-nb_msf_probable   <- sum(dta$covid_status == 'Probable', na.rm = TRUE)
-nb_msf_suspected  <- sum(dta$covid_status == 'Suspected', na.rm = TRUE)
-nb_msf_sites      <- length(tbl_covid_status %>% pull(site_name))
-lst_msf_countries <- tbl_covid_status %>% distinct(country) %>% pull()
+
+# Figures for the text
+nb_msf_obs       <- dta %>% count() %>% pull(n)
+nb_msf_confirmed <- sum(dta$covid_status == 'Confirmed', na.rm = TRUE)
+nb_msf_probable  <- sum(dta$covid_status == 'Probable', na.rm = TRUE)
+nb_msf_suspected <- sum(dta$covid_status == 'Suspected', na.rm = TRUE)
+nb_msf_sites     <- length(tbl_sites_covid_status %>% pull(site_name))
+call_msf_countries <- tbl_sites_covid_status %>% distinct(country) %>% pull()
 
 ```
 
@@ -224,25 +199,18 @@ tbl_general <- dta %>%
     age_total   = paste0(sum(!is.na(ageonset)) , '/',  n()),  
     age_min_max = paste0(min(ageonset, na.rm = TRUE), ' - ', max(ageonset, na.rm = TRUE)), 
     age_median  = format(round(median(ageonset, na.rm = TRUE), digits = 1), nsmall = 1), 
-    age_gp1     = paste0(sum(age_5gp == '0-5', na.rm = TRUE), 
-                         ' (', round(sum(age_5gp == '0-5'  , na.rm = TRUE) / sum(!is.na(ageonset)) * 100, digits = 1), ')'), 
-    age_gp2     = paste0(sum(age_5gp == '5-15', na.rm = TRUE), 
-                         ' (', round(sum(age_5gp == '5-15' , na.rm = TRUE) / sum(!is.na(ageonset)) * 100, digits = 1), ')'), 
-    age_gp3     = paste0(sum(age_5gp == '15-45', na.rm = TRUE), 
-                         ' (', round(sum(age_5gp == '15-45', na.rm = TRUE) / sum(!is.na(ageonset)) * 100, digits = 1), ')'), 
-    age_gp4     = paste0(sum(age_5gp == '45-65', na.rm = TRUE), 
-                         ' (', round(sum(age_5gp == '45-65', na.rm = TRUE) / sum(!is.na(ageonset)) * 100, digits = 1), ')'), 
-    age_gp5     = paste0(sum(age_5gp == '65+', na.rm = TRUE), 
-                         ' (', round(sum(age_5gp == '65+'  , na.rm = TRUE) / sum(!is.na(ageonset)) * 100, digits = 1), ')'), 
+    age_gp1     = freq_prct(age_5gp, '0-5'), 
+    age_gp2     = freq_prct(age_5gp, '5-15'), 
+    age_gp3     = freq_prct(age_5gp, '15-45'), 
+    age_gp4     = freq_prct(age_5gp, '45-65'), 
+    age_gp5     = freq_prct(age_5gp, '65+'), 
     sex_total   = paste0(sum(!is.na(sex)) , '/',  n()), 
     sex_males   = sum(sex == 'M', na.rm = TRUE),
     sex_females = sum(sex == 'F', na.rm = TRUE), 
     sex_ratio   = format(round(sum(sex == 'M', na.rm = TRUE)/sum(sex == 'F', na.rm = TRUE), digits = 1), nsmall = 1), 
     comorbidity_total = paste0(sum(!is.na(Comcond_present)) , '/',  n()), 
-    comorbidity_presence = paste0(sum(Comcond_present == 1, na.rm = TRUE), 
-                                  ' (', round(sum(Comcond_present == 1, na.rm = TRUE) / sum(!is.na(Comcond_present)) * 100, digits = 1), ')'))
+    comorbidity_presence = freq_prct(Comcond_present, 1))
 
-tbl_general
 
 vars_age <- tibble(levels = tbl_general %>% select(starts_with('age_')) %>% names(), 
                    labels = c('Totals with age information, n/N', 'Minimum - maximum', 'Median', '0 - 5, n (%)', '5 - 15, n (%)', '15 - 45, n (%)', '45 - 65, n (%)', '65+, n (%)'))
@@ -285,12 +253,12 @@ gtbl_general <- tbl_general %>%
 gtbl_general
 
 gtsave(gtbl_general, 
-       file.path(path.local.tables, glue("gtbl_general_{week_report}.html")), 
+       file.path(path.local.msf.tables, glue("gtbl_general_{week_report}.html")), 
        inline_css = TRUE) %>% 
   invisible()
 
 gtsave(gtbl_general, 
-       file.path(path.local.tables, glue("gtbl_general_{week_report}.png"))) %>% 
+       file.path(path.local.msf.tables, glue("gtbl_general_{week_report}.png"))) %>% 
   invisible()
 
 ```
@@ -299,17 +267,11 @@ gtsave(gtbl_general,
 # Care of confirmed Covid patients
 ```{r}
 
-freq_prct <- function(x, value){
-  paste0(sum(x == value), ' (', format(round(sum(x == value) / n() * 100, digits = 1), nsmall = 1) , ')')
-}
-  
-
-
-dta_confirmed <- dta %>% 
+dta_care <- dta %>% 
   filter(covid_status %in% c('Confirmed')) %>% 
   select(continent, country, starts_with('merge_'))
 
-tbl_care <- dta_confirmed %>% 
+tbl_care <- dta_care %>% 
   group_by(continent) %>% 
   summarise(
     admit_yes     = freq_prct(merge_admit, 'Yes'), 
@@ -333,7 +295,7 @@ tbl_care <- dta_confirmed %>%
     ecmo_ukn      = freq_prct(merge_ecmo, 'Not reported'))
 
 
-tbl_care_total <- dta_confirmed %>% 
+tbl_care_total <- dta_care %>% 
   summarise(
     admit_yes     = freq_prct(merge_admit, 'Yes'), 
     admit_no      = freq_prct(merge_admit, 'No'), 
@@ -408,12 +370,12 @@ gtbl_care <- tbl_care %>%
 gtbl_care
 
 gtsave(gtbl_care, 
-       file.path(path.local.tables, glue("gtbl_care_{week_report}.html")), 
+       file.path(path.local.msf.tables, glue("gtbl_care_{week_report}.html")), 
        inline_css = TRUE) %>% 
   invisible()
 
 gtsave(gtbl_care, 
-       file.path(path.local.tables, glue("gtbl_care_{week_report}.png"))) %>% 
+       file.path(path.local.msf.tables, glue("gtbl_care_{week_report}.png"))) %>% 
   invisible()
 
 ```
@@ -429,7 +391,13 @@ dta_sympt <- dta %>%
 
 names_sympt <- grep('^symptom_', names(dta_sympt), perl = TRUE, value = TRUE) %>% sort()
 
-names(names_sympt) <- names_sympt %>% gsub('^symptom_','',.) %>% gsub('_', ' ', .) %>% stringr::str_to_sentence()
+names(names_sympt) <- names_sympt %>% 
+  gsub('^symptom_','', .) %>% 
+  gsub('_', ' ', .) %>% 
+  gsub('anosmia', 'loss of smell', .) %>% 
+  gsub('loss taste', 'loss of taste', .) %>%
+  gsub('sorethoat', 'sorethroat', .) %>%
+  stringr::str_to_sentence()
 
 dta_sympt <- rename(dta_sympt, names_sympt) 
 
@@ -438,17 +406,19 @@ for (i in names(names_sympt)) {
 }
 
 
-tbl_sum <- dta_sympt %>% 
-  group_by(covid_status) %>%
-  summarise_all(~ sum(., na.rm = TRUE)) %>% 
-  adorn_totals()
-
 tbl_count <- dta_sympt %>% 
   group_by(covid_status) %>%
   summarise_all(~ sum(!is.na(.)), na.rm = TRUE) %>% 
   adorn_totals()
 
+tbl_sum <- dta_sympt %>% 
+  group_by(covid_status) %>%
+  summarise_all(~ sum(., na.rm = TRUE)) %>% 
+  adorn_totals()
+
+
 tbl_freq <- tibble(covid_status = tbl_sum[[1]])
+
 for(i in names(names_sympt)) {
   tbl_freq[i] <- cbind(paste(tbl_sum[[i]], tbl_count[[i]], sep = '/'))
 }
@@ -469,7 +439,10 @@ tbl_prop <- tbl_prop %>%
   pivot_longer(-covid_status, names_to = 'symtpoms') %>% 
   pivot_wider(names_from = covid_status, values_from = value)
 
-tbl_sympt <- tbl_freq %>% left_join(tbl_prop, by = 'symtpoms', suffix = c(".freq", ".prct"))
+
+tbl_sympt <- tbl_freq %>% 
+  left_join(tbl_prop, by = 'symtpoms', suffix = c(".freq", ".prct")) %>% 
+  arrange(symtpoms)
 
 
 
@@ -538,11 +511,11 @@ gtbl_sympt <- tbl_sympt %>%
 gtbl_sympt
 
 gtsave(gtbl_sympt, 
-       file.path(path.local.tables, glue("gtbl_sympt_{week_report}.png"))) %>% 
+       file.path(path.local.msf.tables, glue("gtbl_sympt_{week_report}.png"))) %>% 
   invisible()
 
 gtsave(gtbl_sympt, 
-       file.path(path.local.tables, glue("gtbl_sympt_{week_report}.html")), 
+       file.path(path.local.msf.tables, glue("gtbl_sympt_{week_report}.html")), 
        inline_css = TRUE) %>% 
   invisible()
 
@@ -631,12 +604,12 @@ gtbl_outcome <- tbl_outcome %>%
 gtbl_outcome
 
 gtsave(gtbl_outcome, 
-       file.path(path.local.tables, glue("gtbl_outcome_{week_report}.html")), 
+       file.path(path.local.msf.tables, glue("gtbl_outcome_{week_report}.html")), 
        inline_css = TRUE) %>% 
   invisible()
 
 gtsave(gtbl_outcome, 
-       file.path(path.local.tables, glue("gtbl_outcome_{week_report}.png"))) %>% 
+       file.path(path.local.msf.tables, glue("gtbl_outcome_{week_report}.png"))) %>% 
   invisible()
 
 ```
@@ -646,12 +619,12 @@ gtsave(gtbl_outcome,
 # Risk factors for outcome
 ```{r}
 
-dta_outcome <- dta %>% 
+dta_risk_outcome <- dta %>% 
   select(site_name, covid_status, outcome_status, sex = sex, age_in_years) %>% 
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) 
 
-tbl_risk_outcome <- dta_outcome %>% 
-  group_by(status) %>% 
+tbl_risk_outcome <- dta_risk_outcome %>% 
+  group_by(outcome_status) %>% 
   summarise(
     age_median = median(age_in_years, na.rm = TRUE), 
     age_range  = glue('[{min(age_in_years, na.rm = TRUE)} - {max(age_in_years, na.rm = TRUE)}]'), 
@@ -664,12 +637,12 @@ tbl_risk_outcome$sex_ratio[is.infinite(tbl_risk_outcome$sex_ratio)] <- NA
 gtbl_risk_outcome <- tbl_risk_outcome %>% 
   gt() %>% 
   cols_label(
-    status = 'Status',
+    outcome_status = 'Status',
     age_median = 'Median', 
     age_range = '[min - max]', 
     sex_males = 'Males', 
     sex_females = 'Females', 
-    sex_ratio = 'Ratio') %>% 
+    sex_ratio = 'ratio') %>% 
   fmt_number(
     columns = vars(sex_ratio), 
     decimals = 1) %>% 
@@ -684,7 +657,7 @@ gtbl_risk_outcome <- tbl_risk_outcome %>%
     columns = starts_with('sex_')) %>% 
   cols_align(
     align = 'left', 
-    columns = vars(status, age_range)) %>% 
+    columns = vars(outcome_status, age_range)) %>% 
   cols_align(
     align = 'right', 
     columns = starts_with('sex_')) %>% 
@@ -695,12 +668,12 @@ gtbl_risk_outcome <- tbl_risk_outcome %>%
 gtbl_risk_outcome
 
 gtsave(gtbl_risk_outcome, 
-       file.path(path.local.tables, glue("gtbl_risk_outcome_{week_report}.html")), 
+       file.path(path.local.msf.tables, glue("gtbl_risk_outcome_{week_report}.html")), 
        inline_css = TRUE) %>% 
   invisible()
 
 gtsave(gtbl_risk_outcome, 
-       file.path(path.local.tables, glue("gtbl_risk_outcome_{week_report}.png"))) %>% 
+       file.path(path.local.msf.tables, glue("gtbl_risk_outcome_{week_report}.png"))) %>% 
   invisible()
 
 ```
@@ -709,27 +682,12 @@ gtsave(gtbl_risk_outcome,
 # Length of staying
 
 ```{r}
-dta %>% 
-  filter(outcome_admit == 'Yes') %>% 
-  summarise(
-    min = min(length_stay, na.rm = TRUE),
-    max = max(length_stay, na.rm = TRUE),
-    median = median(length_stay, na.rm = TRUE),
-    iqr25 = quantile(dta$length_stay, probs = 0.25, na.rm = TRUE), 
-    iqr75 = quantile(dta$length_stay, probs = 0.75, na.rm = TRUE),
-    mean = mean(length_stay, na.rm = TRUE))
 
+dta_delay <- dta %>% 
+  filter(date_consultation <= date_max_report) %>% 
+  mutate(
+    epi_week_date = make_epiweek_date(date_consultation))
 
-make_epiweek_date <- function(date) {
-  lubridate::wday(date, week_start = 1) <- 7
-  return(date)
-}
-
-  dta_delay <- dta %>% 
-    filter(date_consultation <= msf_date_max) %>% 
-    mutate(
-      epi_week_date = make_epiweek_date(date_consultation)
-    )
   
 xmin <- make_epiweek_date(min(dta_delay$date_consultation, na.rm = TRUE))
 xmax <- make_epiweek_date(max(dta_delay$date_consultation, na.rm = TRUE))
@@ -746,7 +704,7 @@ boxplot_delay <- ggplot(dta_delay %>% filter(date_consultation <= xmax - 14), ae
 
 boxplot_delay
 
-ggsave(filename = file.path(path.local.graphs, "boxplot_delay.png"), 
+ggsave(filename = file.path(path.local.msf.graphs, "boxplot_delay.png"), 
        plot = boxplot_delay, 
        scale = 1.2, 
        width = 6, 
@@ -765,7 +723,7 @@ dta_delay %>%
 <!-- Save results -->
 ```{r save_results}
 rm(list = lsf.str())
-save.image(file.path(path.local.data, glue('episitrep_msf_level_analyses_{week_report}.RData')))
+save.image(file.path(path.local.msf.data, glue('episitrep_msf_level_analyses_{week_report}.RData')))
 ```
 
 

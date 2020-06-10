@@ -11,16 +11,26 @@ add_brks <- function(x, n = 5, style = "jenks") {
 
 
 
+label_breaks <- function(breaks, type = "integer") {
+  x <- breaks[1:length(breaks) - 1]
+  y <- breaks[2:length(breaks)]
+  paste(frmt_num(x), frmt_num(y), sep = "-")
+}
+
+
+
+
 frmt_num <- function(x) {
   scales::label_number_si()(x)
 }
 
 
 
-label_breaks <- function(breaks, type = "integer") {
-  x <- breaks[1:length(breaks) - 1]
-  y <- breaks[2:length(breaks)]
-  paste(frmt_num(x), frmt_num(y), sep = "-")
+freq_prct <- function(x, value){
+  paste0(sum(x == value, na.rm = TRUE), 
+         ' (', 
+         format(round(sum(x == value, na.rm = TRUE) / sum(!is.na(x)) * 100, digits = 1), nsmall = 1), 
+         ')')
 }
 
 

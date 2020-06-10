@@ -22,9 +22,16 @@ set_date_max <- function(date_max, get_updated_data = FALSE){
 
 }
 
+
+
+make_epiweek_date <- function(date) {
+  lubridate::wday(date, week_start = 1) <- 7
+  return(date)
+}
+
+
+
 # Formatting Confidence Intervals
-
-
 combine_ci <- function(lwr, upr, digits = 1) {
   sprintf(glue("[%.{digits}f - %.{digits}f]"), 
         round(lwr, digits = digits),
@@ -95,6 +102,25 @@ attach_prefix <- function(var_in, suffix_var_out) {
 
 
 
+
+
+# --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
+# Specific functions for preparing MSF linelist dataset
+# --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
+
+
+recode_care <- function(var1, var2){
+  case_when(
+    var1 == 'Yes' ~ 'Yes', 
+    var2 == 'Yes' ~ 'Yes', 
+    var1 == 'No' & (var2 == 'Unknown' | is.na(var2)) ~ 'No at admission then not reported', 
+    (var1 == 'No' | is.na(var1)) & var2 == 'No' ~ 'No at any time', 
+    TRUE ~ 'Not reported') %>% 
+    factor(levels = c('Yes', 'No at admission then not reported', 'No at any time', 'Not reported'))
+}
+
+
+
 prepare_msf_dta <- function(dta){
   
   # Rename variables
@@ -103,7 +129,6 @@ prepare_msf_dta <- function(dta){
   for (i in var_names_stub) {
     names(dta) <- gsub(i, '', names(dta))
   }
-  
   
   # Factorise variables
   levels_covid_status <- c('Confirmed', 'Probable', 'Suspected', 'Not a case', '(Unknown)')
@@ -119,7 +144,34 @@ prepare_msf_dta <- function(dta){
       age_in_years = floor(age_in_years), 
       admit = factor(admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
       outcome_admit = factor(outcome_admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
-      outcome_status = factor(outcome_status, levels = levels_outcome_status) %>% forcats::fct_explicit_na(na_level = 'Pending/Unknown')
+      outcome_status = factor(outcome_status, levels = levels_outcome_status) %>% forcats::fct_explicit_na(na_level = 'Pending/Unknown'))
+  
+  # Create age-groups
+  levels_age_5breaks <- c(0, 5, 15, 45, 65, Inf)
+  labels_age_5breaks <- label_breaks(levels_age_5breaks) %>% gsub("-Inf", "+", .)
+  
+  dta <- dta %>% 
+    mutate(
+      age_5gp = cut(age_in_years, levels_age_5breaks, labels_age_5breaks))
+  
+  # Merging patients' care variables
+  dta <- dta %>% 
+    mutate( 
+      merge_admit = case_when(
+        admit == 'Yes' ~ 'Yes', 
+        outcome_admit == 'Yes' ~ 'Yes', 
+        is.na(outcome_admit) ~ 'Unknown', 
+        TRUE ~ 'No') %>% factor(levels = c('Yes', 'No', 'Unknown')), 
+      merge_oxygen = recode_care(received_oxygen, outcome_received_oxygen), 
+      merge_icu    = recode_care(icu , outcome_icu), 
+      merge_vent   = recode_care(vent, outcome_vent), 
+      merge_ecmo   = recode_care(ecmo, outcome_ecmo)) 
+  
+  # Add geographical variables
+  dta <- dta %>% 
+    left_join(df_countries %>% select(continent, region, iso_a3, country), by = 'country') %>% 
+    mutate(
+      continent = as.factor(continent)
     )
   
   return(dta)

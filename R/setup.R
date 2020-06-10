@@ -27,6 +27,7 @@ library(knitr)
 library(flextable)
 library(distill)
 library(english)
+library(xlsx)
 
 # Create project paths -----
 path.root  <- here::here()
