@@ -707,7 +707,7 @@ gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>%
   tab_header(title = glue('Worldwide Covid-19 cases and associated deaths, and trends as of {format(date_max_report, "%d %b %Y")}'),
              subtitle = html('<strong>Trends are estimate using data of the previous 12 days</strong><br>
                              Analysis carried out by Epicentre<br>
-                             For infoarmation on the analysis methods click
+                             For information on the analysis methods click
 <a href="https://msfintl-my.sharepoint.com/:u:/g/personal/francesco_grandesso_epicentre_msf_org/EZqExKcP8axMj06voaLlveABpiicCfzkk5OWB-EaJvo9Fw?e=lwU1eM">here</a><br><br>
                              <strong>NOTE to interprete the trends</strong><br>
                              A trend with rate greater than 1 indicates an increaasing trend<br>
@@ -1346,11 +1346,11 @@ ggsave(file.path(path.local.worldwide.graphs, glue("dots_rate_tests_{week_report
 
 <!-- Table Ranking doubling time -->
 ```{r save_gtbl_rank_doubling, include = FALSE}
-gtsave(gtbl_cfr_rank_doubling %>% 
+gtsave(gtbl_cfr_doubling_rank %>% 
          tab_options(
            column_labels.font.size = px(10), 
            table.font.size = px(10)),
-       file.path(path.local.worldwide.tables, glue("gtbl_cfr_rank_doubling_{week_report}.png")), 
+       file.path(path.local.worldwide.tables, glue("gtbl_cfr_doubling_rank_{week_report}.png")), 
        vwidth = 720,
        vheight = 720*1.414) %>% 
   invisible()

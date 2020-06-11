@@ -21,19 +21,19 @@ if (run_analyes_worldwide) {
                     output_file = paste0('episitrep_worldwide_analyses_', week_report, '.html'), 
                     output_dir  = path.local.week) 
   } else {
-    load(file.path(path.local.data, glue('episitrep_worldwide_analyses_{week_report}.RData')))
+    load(file.path(path.local.worldwide.data, glue('episitrep_worldwide_analyses_{week_report}.RData')))
 }
 
 
 
-run_analyes_msf_level <- FALSE
+run_analyes_msf_level <- TRUE
 
 if (run_analyes_msf_level) {
   rmarkdown::render(input = file.path(path.Rmd, 'episitrep_msf_level_analyses.Rmd'), 
                     output_file = paste0('episitrep_msf_level_analysis_', week_report, '.html'),
                     output_dir  = path.local.week)
   } else {
-    load(file.path(path.local.data, glue('episitrep_msf_level_analyses_{week_report}.RData'))) 
+    load(file.path(path.local.msf.data, glue('episitrep_msf_level_analyses_{week_report}.RData'))) 
 }
 
 

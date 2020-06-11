@@ -133,13 +133,13 @@ prepare_msf_dta <- function(dta){
   # Factorise variables
   levels_covid_status <- c('Confirmed', 'Probable', 'Suspected', 'Not a case', '(Unknown)')
   
-  levels_outcome_status <- c('Died', 'Cured', 'Left against medical advice' ,'Transferred', 'Sent back home', 'Other')
+  levels_outcome_status <- c('Cured', 'Died', 'Left against medical advice', 'Transferred', 'Sent back home', 'Other')
   
   levels_ynu <- c('Yes', 'No', 'Unknown')
   
   dta <- dta %>% 
     mutate(
-      covid_status = factor(covid_status, levels = levels_covid_status) %>% forcats::fct_explicit_na(na_level = '(Unknown)'), 
+      covid_status = factor(covid_status, levels = levels_covid_status) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
       country = factor(country, levels = df_countries$iso_a3, labels = df_countries$country), 
       age_in_years = floor(age_in_years), 
       admit = factor(admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
@@ -152,7 +152,7 @@ prepare_msf_dta <- function(dta){
   
   dta <- dta %>% 
     mutate(
-      age_5gp = cut(age_in_years, levels_age_5breaks, labels_age_5breaks))
+      age_5gp = cut(age_in_years, breaks = levels_age_5breaks, labels = labels_age_5breaks, include.lowest = TRUE, right = FALSE))
   
   # Merging patients' care variables
   dta <- dta %>% 

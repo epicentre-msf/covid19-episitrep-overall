@@ -16,17 +16,16 @@ my_doc <- add_par_normal(txt_world_cases$par1)
 my_doc <- add_par_normal(txt_world_cases$par2)
 my_doc <- add_par_normal(txt_world_cases$par3)
 my_doc <- add_par_normal(txt_world_cases$par4)
-my_doc <- add_par_normal(txt_world_cases$par5)
 my_doc <- add_end_section_2columns()
 
 ## - Map
 my_doc <- add_figure_map_world_grid(object_name  = glue("map_world_cases_grid_{week_report}.png"),
-                                    figure_title = glue('Mapping of number of Covid-19 cases and cases trends estimated during the period from {format(msf_date_max - 11, "%d %B %Y")} to {format(msf_date_max, "%d %B %Y")} (12 days)'))
+                                    figure_title = glue('Mapping of number of Covid-19 cases and cases trends estimated during the period from {format(date_max_report - 11, "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} (12 days)'))
 my_doc <- add_end_section_continuous()
 
 
+my_doc <- add_par_normal(txt_world_cases$par5)
 my_doc <- add_par_normal(txt_world_cases$par6)
-my_doc <- add_par_normal(txt_world_cases$par7)
 
 my_doc <- add_figure_map_world(object_name  = glue("map_world_cases_attack_rates_{week_report}.png"), 
                                figure_title = glue('Cumulative incidence of Covid-19 reported cases since beginning of epidemic, per 100,000 population'))
@@ -58,7 +57,7 @@ my_doc <- add_end_section_2columns()
 
 ## - Map
 my_doc <- add_figure_map_world_grid(object_name  = glue('map_world_deaths_grid_{week_report}.png'),
-                                    figure_title = glue('Mapping of number of Covid-19 associated deaths and deaths trends estimated during the period from {format(msf_date_max - 11, "%d %B %Y")} to {format(msf_date_max, "%d %B %Y")} (12 days)'))
+                                    figure_title = glue('Mapping of number of Covid-19 associated deaths and deaths trends estimated during the period from {format(date_max_report - 11, "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} (12 days)'))
 
 
 
@@ -72,7 +71,6 @@ my_doc <- add_end_section_continuous()
 ## - Text
 my_doc <- add_par_normal(txt_world_doubling$par1)
 my_doc <- add_par_normal(txt_world_doubling$par2)
-my_doc <- add_par_normal(txt_world_doubling$par3)
 my_doc <- add_end_section_2columns()
 
 ## - Map
@@ -81,20 +79,20 @@ my_doc <- add_figure_map_world_grid(object_name  = glue('map_world_doubling_grid
 
 my_doc <- add_par_normal('')
 ## - Table
-my_doc <- add_table(table_title = glue('Countries with estimated cases or deaths doubling time of less than {threshold_doubling_time} days'), 
-                    object_name = glue("gtbl_cfr_rank_doubling_{week_report}.png"), 
+my_doc <- add_table_worldwide(table_title = glue('Countries with estimated cases or deaths doubling time of less than {threshold_doubling_time} days'), 
+                    object_name = glue("gtbl_cfr_doubling_rank_{week_report}.png"), 
                     width = 12.7 * cm_to_in, 
                     height = 9.93 * cm_to_in)
 
 my_doc <- add_end_section_continuous()
 
+my_doc <- add_par_normal(txt_world_doubling$par3)
 my_doc <- add_par_normal(txt_world_doubling$par4)
-my_doc <- add_par_normal(txt_world_doubling$par5)
 my_doc <- add_end_section_2columns()
 
 
 my_doc <- add_figure_dot_plot(object_name  = glue('dots_hotspot_cases_{week_report}.png'),
-                                    figure_title = glue('Distribution of doubling time of Covid-19 cases according to length in days since the first significant increasing trend reported (only countries with doubling time of less than {threshold_doubling_time} days as of {format(msf_date_max, "%d %B %Y")} are displayed)'))
+                                    figure_title = glue('Distribution of doubling time of Covid-19 cases according to length in days since the first significant increasing trend reported (only countries with doubling time of less than {threshold_doubling_time} days as of {format(date_max_report, "%d %B %Y")} are displayed)'))
 
 my_doc <- add_end_section_continuous()
 

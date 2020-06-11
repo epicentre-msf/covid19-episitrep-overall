@@ -36,25 +36,25 @@ my_doc <- add_par_normal(txt_msf_general$par4)
 my_doc <- add_end_section_2columns()
 
 my_doc <- add_par_normal('')
-my_doc <- add_table(table_title = 'Summary of Covid-19 infection-related status of patients consulted/admitted', 
-                    object_name = glue('gtbl_status_{week_report}.png'), 
+my_doc <- add_table_msf(table_title = 'Summary of Covid-19 infection-related status of patients consulted/admitted', 
+                    object_name = glue('gtbl_countries_covid_status_{week_report}.png'), 
                     width = 16.44 * cm_to_in, 
                     height = 11.29 * cm_to_in)
 
 my_doc <- add_par_normal('')
-my_doc <- add_table(table_title = 'Characteristics of patients admitted to the MSF supported facilities', 
+my_doc <- add_table_msf(table_title = 'Characteristics of patients admitted to the MSF supported facilities', 
                     object_name = glue('gtbl_general_{week_report}.png'), 
                     width = 11.72 * cm_to_in, 
                     height = 6.49 * cm_to_in)
 
 my_doc <- add_par_normal('')
-my_doc <- add_table(table_title = 'Distribution of patient outcomes in MSF facilities, among confirmed, probable and suspected cases ', 
+my_doc <- add_table_msf(table_title = 'Distribution of patient outcomes in MSF facilities, among confirmed, probable and suspected cases ', 
                     object_name = glue('gtbl_outcome_{week_report}.png'), 
                     width = 14.99 * cm_to_in, 
                     height = 6.51 * cm_to_in)
 
 my_doc <- add_par_normal('')
-my_doc <- add_table(table_title = 'Frequency and percentage of signs and symptoms of patients admitted', 
+my_doc <- add_table_msf(table_title = 'Frequency and percentage of signs and symptoms of patients admitted', 
                     object_name = glue('gtbl_sympt_{week_report}.png'), 
                     width = 9.47 * cm_to_in, 
                     height = 24.73 * cm_to_in)

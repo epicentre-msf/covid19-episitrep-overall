@@ -56,7 +56,7 @@ add_figure_map_world <- function(object_name, figure_title, width = 10 * cm_to_i
   body_add_img(
     x = my_doc, 
     style = 'Figure body', 
-    src = file.path(path.local.graphs, object_name), 
+    src = file.path(path.local.worldwide.graphs, object_name), 
     width = width, 
     height = height) %>% 
     body_add_par(
@@ -69,7 +69,7 @@ add_figure_map_world_grid <- function(object_name, figure_title){
   body_add_img(
     x = my_doc, 
     style = 'Figure body', 
-    src = file.path(path.local.graphs, object_name), 
+    src = file.path(path.local.worldwide.graphs, object_name), 
     width = 7, 
     height = 3) %>% 
     body_add_par(
@@ -82,7 +82,7 @@ add_figure_dot_plot <- function(object_name, figure_title, width = 6, height = 4
   body_add_img(
     x = my_doc, 
     style = 'Figure body', 
-    src = file.path(path.local.graphs, object_name), 
+    src = file.path(path.local.worldwide.graphs, object_name), 
     width = width, 
     height = height) %>% 
     body_add_par(
@@ -91,17 +91,32 @@ add_figure_dot_plot <- function(object_name, figure_title, width = 6, height = 4
 }
 
 
-add_table <- function(table_title, object_name, width = 5, height = 5 * 1.414){
+add_table_worldwide <- function(table_title, object_name, width = 5, height = 5 * 1.414){
   body_add_par(
     x = my_doc, 
     style = 'Table title', 
     value = table_title) %>% 
     body_add_img(
       style = 'Table as Figure', 
-      src = file.path(path.local.tables, object_name), 
+      src = file.path(path.local.worldwide.tables, object_name), 
       width = width, 
       height = height)
 }
+
+
+
+add_table_msf <- function(table_title, object_name, width = 5, height = 5 * 1.414){
+  body_add_par(
+    x = my_doc, 
+    style = 'Table title', 
+    value = table_title) %>% 
+    body_add_img(
+      style = 'Table as Figure', 
+      src = file.path(path.local.msf.tables, object_name), 
+      width = width, 
+      height = height)
+}
+
 
 
 add_par_normal <- function(par_text = 'More text here...'){

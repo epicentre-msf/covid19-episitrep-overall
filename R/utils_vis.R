@@ -256,7 +256,7 @@ country_multi_plots <- function(country_iso, lst_dta = lst_ecdc, model = 'linear
                plot_mod, 
                ncol = 2, 
                top = textGrob(paste(glue('Covid-19 cases and deaths and trend estimations in {name_country}'), 
-                                    glue('Data until {format(msf_date_max, "%d %B %Y")} (fitting with {model} regression model)'), 
+                                    glue('Data until {format(date_max_report, "%d %B %Y")} (fitting with {model} regression model)'), 
                                     sep = "\n"), 
                               gp = gpar(fontface = 'bold')))
 }

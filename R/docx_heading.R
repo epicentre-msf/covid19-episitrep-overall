@@ -7,7 +7,7 @@ my_doc %<>%
                value = 'MSF EpiSitrep on Covid-19 epidemic',
                pos = "before") %>% 
   body_add_par(style = 'Subtitle', 
-               value = glue('Week {lubridate::week(msf_date_max)}-{lubridate::year(msf_date_max)}')) 
+               value = glue('Week {lubridate::week(date_max_report)}-{lubridate::year(date_max_report)}')) 
 
 my_doc %<>% 
   body_add_par(style = 'Description bold', 
@@ -46,12 +46,20 @@ my_doc %<>%
                value = 'MSF linelists compiled by Epicentre') %>% 
   
   body_add_par(style = 'Description bullet', 
-               value = 'MSF') %>% 
+               value = 'MSF ') %>% 
   slip_in_text(style = 'Hyperlink', 
                str = 'GIS Unit', 
                hyperlink = 'https://mapcentre.msf.org') %>% 
   slip_in_text(style = 'Description char', 
-               str = glue(' (baseline country maps)'))
+               str = glue(' (baseline country maps)')) %>% 
+
+  body_add_par(style = 'Description bullet', 
+             value = 'FIND ') %>% 
+  slip_in_text(style = 'Hyperlink', 
+               str = 'Diagnostics resource centre Unit', 
+               hyperlink = 'https://www.finddx.org/covid-19/') %>% 
+  slip_in_text(style = 'Description char', 
+               str = glue(' for data on Covid-19 tests'))
 
 
 my_doc %<>%   

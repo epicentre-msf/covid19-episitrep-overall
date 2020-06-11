@@ -26,7 +26,7 @@ When a new package is required, after installation run
 synced to bitbucket.
 
 If you use Rstudio double-click on the file
-`episitrep_world_covid-19.Rprij` to start.
+`episitrep_world_covid-19.Rproj` to start.
 
 If you use `R` directly, make sure you launch `R` at the root folder of
 the project to allow `renv` to be activated properly.
