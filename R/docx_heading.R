@@ -40,7 +40,7 @@ my_doc %<>%
                str = 'ECDC data', 
                hyperlink = 'https://opendata.ecdc.europa.eu/covid19/casedistribution/csv') %>% 
   slip_in_text(style = 'Description char', 
-               str = glue(' last updated {format(ecdc_date_max, "%d %b %Y")}')) %>% 
+               str = glue(' last updated {format(max(df_ecdc$date, na.rm = TRUE), "%d %b %Y")}')) %>% 
   
   body_add_par(style = 'Description bullet', 
                value = 'MSF linelists compiled by Epicentre') %>% 

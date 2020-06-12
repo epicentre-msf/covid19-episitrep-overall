@@ -4,6 +4,9 @@
 
 date_max_report <- as.Date("2020-06-07")
 
+period_trends <- 12
+
+
 week_report <- ISOweek(date_max_report) %>% gsub("W","w", .)
 
 # Create folders specific to date_max_report

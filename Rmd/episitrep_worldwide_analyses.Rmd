@@ -34,30 +34,19 @@ knitr::opts_chunk$set(cache = FALSE,
                       encoding = "UTF-8")
 
 
-source(file.path(path.R, "utils_get_data.R")  , encoding = "UTF-8")
-source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
-source(file.path(path.R, "utils_modelling.R") , encoding = "UTF-8")
-source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
+
+# Default parameters for analysis
 source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
 
-
-# Option to get new data
-get_updated_data <- ifelse(!file.exists(file.path(path.local.worldwide.data, 'last_save_date.RDS')), TRUE, 
-                           ifelse(readRDS(file.path(path.local.worldwide.data, 'last_save_date.RDS')) != Sys.Date(),
-    TRUE, FALSE))
-
-get_data_anyways <- FALSE
-
-
-# Default parameters
 model_for_trends   <- 'linear' # for trends
 model_for_doubling <- 'linear' # for doubling time
-period_trends <- 12
 threshold_doubling_time <- 12
 
 
-# Three-colours palette (Red-Amber-Green) colour-blind safe
+# Default parameters for graphics
+# --- Three-colours palette (Red-Amber-Green) colour-blind safe
 RdAmGn <- c('#D95F02','#E6AB02','#1B9E77')
+caption_world_map <- glue::glue('Analysis and graphic by Epicentre | Data source: ECDC as of {format(date_max_report, "%d %b %Y")}')
 
 ```
 
@@ -65,88 +54,11 @@ RdAmGn <- c('#D95F02','#E6AB02','#1B9E77')
 <!-- Import data -->
 ```{r get_data, include = FALSE}
 
-# --- --- --- --- --- 
-# ECDC data
-# --- --- --- --- --- 
+source(file.path(path.R, "run_get_data.R"), encoding = "UTF-8")
+source(file.path(path.R, "run_model_trends.R"), encoding = "UTF-8")
 
-if (get_updated_data | get_data_anyways) {
-  sf_world     <- get_world_sf(scale = 'small', proj = 'robinson')
-  df_ecdc      <- get_ecdc_data()
-  df_countries <- df_ecdc %>% filter(!is.na(iso_a3)) %>% distinct_at(vars(continent, region, iso_a3, country))
-  df_pop_country   <- df_ecdc %>% filter(!is.na(iso_a3)) %>% distinct_at(vars(iso_a3, country, pop = population_2018))
-  df_pop_region    <- df_ecdc %>% filter(!is.na(iso_a3)) %>% group_by(region) %>% summarise(pop = sum(population_2018, na.rm = TRUE))
-  df_pop_continent <- df_ecdc %>% filter(!is.na(iso_a3)) %>% group_by(continent) %>% summarise(pop = sum(population_2018, na.rm = TRUE))
-  saveRDS(sf_world        , file = file.path(path.local.worldwide.data, 'sf_world.RDS'))
-  saveRDS(df_ecdc         , file = file.path(path.local.worldwide.data, 'df_ecdc.RDS'))
-  saveRDS(df_countries    , file = file.path(path.local.worldwide.data, 'df_countries.RDS'))
-  saveRDS(df_pop_country  , file = file.path(path.local.worldwide.data, 'df_pop_country.RDS'))
-  saveRDS(df_pop_region   , file = file.path(path.local.worldwide.data, 'df_pop_region.RDS'))
-  saveRDS(df_pop_continent, file = file.path(path.local.worldwide.data, 'df_pop_continent.RDS'))
-  saveRDS(Sys.Date()      , file = file.path(path.local.worldwide.data, 'last_save_date.RDS'))
-} else {
-    sf_world     <- readRDS(file.path(path.local.worldwide.data, 'sf_world.RDS'))
-    df_ecdc      <- readRDS(file.path(path.local.worldwide.data, 'df_ecdc.RDS'))
-    df_countries <- readRDS(file.path(path.local.worldwide.data, 'df_countries.RDS'))
-    df_pop_country   <- readRDS(file.path(path.local.worldwide.data, 'df_pop_country.RDS'))
-    df_pop_region    <- readRDS(file.path(path.local.worldwide.data, 'df_pop_region.RDS'))
-    df_pop_continent <- readRDS(file.path(path.local.worldwide.data, 'df_pop_continent.RDS'))
-}
-
-
-# --- --- --- --- --- --- --- --- --- 
-# Upload or create daily coefficients
-# --- --- --- --- --- --- --- --- --- 
-
-
-if (file.exists(file.path(path.local.worldwide.data, 'list_coeffs_cases.RDS'))) {
-  lst_coeffs_cases <- readRDS(file = file.path(path.local.worldwide.data, 'list_coeffs_cases.RDS'))
-  } else {
-    lst_coeffs_cases <- ts_coeff(series = 'cases' , lst_dta = lst_ecdc, time_unit_extent = 5, ma_window = 3, min_sum = 30)
-    saveRDS(lst_coeffs_cases, file = file.path(path.local.worldwide.data, 'list_coeffs_cases.RDS')) 
-  }
-
-
-if (file.exists(file.path(path.local.worldwide.data, 'list_coeffs_deaths.RDS'))) {
-  lst_coeffs_deaths <- readRDS(file = file.path(path.local.worldwide.data, 'list_coeffs_deaths.RDS'))
-  } else {
-    lst_coeffs_deaths <- ts_coeff(series = 'deaths', lst_dta = lst_ecdc, time_unit_extent = 5, ma_window = 3, min_sum = 30)
-    saveRDS(lst_coeffs_deaths, file = file.path(path.local.worldwide.data, 'list_coeffs_deaths.RDS'))
-  }
-
-
-
-# --- --- --- --- --- 
-# TESTS
-# --- --- --- --- --- 
-
-df_tests <- read.csv(file.path(path.data, 'COVID-19 cases and tests tracker.csv'), stringsAsFactors = FALSE) %>% 
-  as_tibble() %>% 
-  mutate(date = as.Date(date))
-
-iso_tests <- read.csv(file.path(path.data, 'iso-a3_for_tests.csv'), stringsAsFactors = FALSE)
-
-
-
-
-
-
-# Prepare ECDC datasets
-ecdc_date_min <- min(df_ecdc$date, na.rm = TRUE)
-ecdc_date_max <- max(df_ecdc$date, na.rm = TRUE)
-
-
-# ECDC until date_max_report
-dfc_ecdc <- df_ecdc %>% 
-  tidyr::drop_na(iso_a3) %>% 
-  filter(between(date, left = ecdc_date_min, right = date_max_report))
-
-# ECDC split in a list of countries with iso_a3 as key
-lst_ecdc <- dfc_ecdc %>% 
-  multisplit("iso_a3")
-
-
-
-caption_world_map <- glue::glue('Analysis and graphic by Epicentre | Data source: ECDC as of {format(date_max_report, "%d %b %Y")}')
+source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
+source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
 
 ```
 
@@ -191,7 +103,7 @@ African countries with less than 50 cases (in decreasing order): `r tbl_cases_co
 
 
 <!-- Map World cases -->
-```{r MapWorldCasesCount, fig.width = 8, fig.height = 5, fig.cap = glue('Mapping of number of Covid-19 cases as of {format(ecdc_date_max, "%d %B %Y")}')}
+```{r MapWorldCasesCount, fig.width = 8, fig.height = 5, fig.cap = glue('Mapping of number of Covid-19 cases as of {format(max(df_ecdc$date, na.rm = TRUE), "%d %B %Y")}')}
 
 sf_cases <- tbl_cases_count %>% 
   inner_join(
@@ -225,18 +137,6 @@ ggsave(file.path(path.local.worldwide.graphs, glue("map_world_cases_count_{week_
        scale = 1, 
        dpi = 320)
 
-```
-
-
-<!-- Modelling Cases Trends -->
-```{r modelling_cases_trends}
-model_cnt_cases_linear  <- linear_model_cnt(series = 'cases', lst_dta = lst_ecdc, last_date = date_max_report, time_unit_extent = period_trends, min_sum = 30)
-
-model_cml_cases_linear  <- linear_model_cml(series = 'cases', lst_dta = lst_ecdc, last_date = date_max_report, time_unit_extent = period_trends, min_sum = 50)
-
-model_cnt_cases_quasipoisson <- suppressMessages(quasipoisson_model_cnt(series = 'cases', lst_dta = lst_ecdc, last_date = date_max_report, time_unit_extent = period_trends, min_sum = 30))
-
-model_cml_cases_quasipoisson <- suppressMessages(quasipoisson_model_cml(series = 'cases', lst_dta = lst_ecdc, last_date = date_max_report, time_unit_extent = period_trends, min_sum = 50))
 ```
 
 
@@ -458,18 +358,6 @@ ggsave(file.path(path.local.worldwide.graphs, glue("map_world_deaths_count_{week
 
 ```
 
-
-<!-- Modelling Deaths Trends -->
-```{r modelling_deaths_trends}
-
-model_cnt_deaths_linear  <- linear_model_cnt(series = 'deaths', lst_dta = lst_ecdc, last_date = date_max_report, time_unit_extent = period_trends, min_sum = 30)
-
-model_cml_deaths_linear  <- linear_model_cml(series = 'deaths', lst_dta = lst_ecdc, last_date = date_max_report, time_unit_extent = period_trends, min_sum = 50)
-
-model_cnt_deaths_quasipoisson <- suppressMessages(quasipoisson_model_cnt(series = 'deaths', lst_dta = lst_ecdc, last_date = date_max_report, time_unit_extent = period_trends, min_sum = 30))
-
-model_cml_deaths_quasipoisson <- suppressMessages(quasipoisson_model_cml(series = 'deaths', lst_dta = lst_ecdc, last_date = date_max_report, time_unit_extent = period_trends, min_sum = 50))
-```
 
 <!-- TABLE - Trend in number of deaths -->
 ```{r}
@@ -1185,35 +1073,6 @@ ggsave(file.path(path.local.worldwide.graphs, glue("dots_hotspot_cases_{week_rep
 
 ```{r, include = FALSE}
 
-lst_tests <- df_tests %>% 
-  select(country, date, new_tests) %>% 
-  filter(date <= date_max_report) %>% 
-  mutate(
-    country = case_when(
-      country == "N/A" ~ NA_character_,
-      TRUE ~ country)
-  ) %>% 
-  tidyr::drop_na(country) %>% 
-  full_join(iso_tests, by = 'country') %>% 
-  arrange(iso_a3, date) %>% 
-  multisplit("iso_a3")
-
-
-# Fill possible gap in time-series
-for (i in names(lst_tests)) {
-  
-  tests_dta <- lst_tests[[i]]
-  if (nrow(tests_dta) > 1) {
-    
-    tests_dta <- tests_dta %>% 
-      tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
-                                      date_max_report, by = 1), 
-                      fill = list(new_tests = NA_real_))
-  }
-  lst_tests[[i]] <- tests_dta
-}
-
-
 # Table of cumulative number of tests and assess reliability
 tbl_tests <- tibble(iso_a3    = character(), 
                     tests_cml = numeric(), 
@@ -1396,8 +1255,6 @@ ggsave(file.path(path.local.worldwide.graphs, glue("map_world_doubling_grid_{wee
        height = 3)
 
 ```
-
-
 
 
 <!-- Save results -->

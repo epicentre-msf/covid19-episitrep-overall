@@ -3,9 +3,7 @@
 rm(list = ls())
 
 source(here::here('R', 'setup.R'), encoding = 'UTF-8')
-source(file.path(path.R, "utils_get_data.R")  , encoding = "UTF-8")
 source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
-source(file.path(path.R, "utils_modelling.R") , encoding = "UTF-8")
 source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
 source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
 
@@ -21,7 +19,7 @@ if (run_analyes_worldwide) {
                     output_file = paste0('episitrep_worldwide_analyses_', week_report, '.html'), 
                     output_dir  = path.local.week) 
   } else {
-    load(file.path(path.local.worldwide.data, glue('episitrep_worldwide_analyses_{week_report}.RData')))
+    load(file.path(path.local.worldwide.data, paste0('episitrep_worldwide_analyses_', week_report, '.RData')))
 }
 
 
@@ -33,7 +31,7 @@ if (run_analyes_msf_level) {
                     output_file = paste0('episitrep_msf_level_analysis_', week_report, '.html'),
                     output_dir  = path.local.week)
   } else {
-    load(file.path(path.local.msf.data, glue('episitrep_msf_level_analyses_{week_report}.RData'))) 
+    load(file.path(path.local.msf.data, paste0('episitrep_msf_level_analyses_', week_report, '.RData'))) 
 }
 
 
