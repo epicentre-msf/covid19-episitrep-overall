@@ -1,12 +1,10 @@
 
 
-source(file.path(path.R, "run_get_data.R") , encoding = "UTF-8")
 source(file.path(path.R, "utils_modelling.R") , encoding = "UTF-8")
 
 
 
-
-if (!file.exists(file.path(path.local.worldwide.data, 'models_trends.RData')) | run_models) {
+if (update_models) {
   
   # <!-- Modelling Cases Trends -->
   

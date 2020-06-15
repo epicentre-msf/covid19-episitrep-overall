@@ -38,9 +38,28 @@ knitr::opts_chunk$set(cache = FALSE,
 # Default parameters for analysis
 source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
 
-update_data_anyways <- FALSE
-run_models <- FALSE
+update_world_data_anyways <- FALSE
+update_models_anyways <- FALSE
 
+
+# Option to update ECDC data
+get_updated_world_data <- ifelse(isTRUE(update_world_data_anyways) | 
+                                   !file.exists(file.path(path.local.worldwide.data, 'last_save_date.RDS')), 
+                                 TRUE, 
+                                 ifelse(
+                                   readRDS(file.path(path.local.worldwide.data, 'last_save_date.RDS')) != Sys.Date(), 
+                                   TRUE, 
+                                   FALSE))
+
+# Option to update the trend models
+update_models <- ifelse(isTRUE(get_updated_world_data) | 
+                          isTRUE(update_models_anyways) | 
+                          !file.exists(file.path(path.local.worldwide.data, 'models_trends.RData')), 
+                        TRUE, 
+                        FALSE)
+
+
+# Choice for models to be used
 model_for_trends   <- 'linear' # for trends
 model_for_doubling <- 'linear' # for doubling time
 
@@ -58,11 +77,11 @@ caption_world_map <- glue::glue('Analysis and graphic by Epicentre | Data source
 <!-- Import data -->
 ```{r get_data, include = FALSE}
 
-source(file.path(path.R, "run_get_data.R"), encoding = "UTF-8")
-source(file.path(path.R, "run_model_trends.R"), encoding = "UTF-8")
+source(file.path(path.R, 'run_get_world_data.R'), encoding = 'UTF-8')
+source(file.path(path.R, 'run_model_trends.R'), encoding = 'UTF-8')
 
-source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
-source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
+source(file.path(path.R, 'utils_management.R'), encoding = 'UTF-8')
+source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
 
 ```
 
@@ -593,7 +612,7 @@ gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>%
     fns = list('Region total' = ~sum(., na.rm = TRUE)),
     decimals = 0) %>% 
   grand_summary_rows(
-    columns = vars(cases, deaths, cases_12d), 
+    columns = vars(cases, deaths, cases_12d, deaths_12d), 
     fns = list('Grand total' = ~sum(., na.rm = TRUE)), 
     decimals = 0) %>% 
   tab_header(title = glue('Worldwide Covid-19 cases and associated deaths, and trends as of {format(date_max_report, "%d %b %Y")}'),

@@ -9,13 +9,8 @@ source(file.path(path.R, "utils_get_data.R")  , encoding = "UTF-8")
 # ECDC data
 # === === === === === === === 
 
-# Option to update ECDC data
-get_updated_data <- ifelse(!file.exists(file.path(path.local.worldwide.data, 'last_save_date.RDS')), TRUE, 
-                           ifelse(readRDS(file.path(path.local.worldwide.data, 'last_save_date.RDS')) != Sys.Date(),
-                                  TRUE, FALSE))
-
 # Get the ECDC data
-if (get_updated_data | update_data_anyways) {
+if (get_updated_world_data) {
   
   sf_world     <- get_world_sf(scale = 'small', proj = 'robinson')
   df_ecdc      <- get_ecdc_data()
