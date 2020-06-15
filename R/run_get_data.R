@@ -14,8 +14,6 @@ get_updated_data <- ifelse(!file.exists(file.path(path.local.worldwide.data, 'la
                            ifelse(readRDS(file.path(path.local.worldwide.data, 'last_save_date.RDS')) != Sys.Date(),
                                   TRUE, FALSE))
 
-update_data_anyways <- TRUE
-
 # Get the ECDC data
 if (get_updated_data | update_data_anyways) {
   

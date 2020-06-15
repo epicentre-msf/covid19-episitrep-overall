@@ -38,10 +38,14 @@ knitr::opts_chunk$set(cache = FALSE,
 # Default parameters for analysis
 source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
 
+update_data_anyways <- FALSE
+run_models <- FALSE
+
 model_for_trends   <- 'linear' # for trends
 model_for_doubling <- 'linear' # for doubling time
-threshold_doubling_time <- 12
 
+period_trends <- 12
+threshold_doubling_time <- 12
 
 # Default parameters for graphics
 # --- Three-colours palette (Red-Amber-Green) colour-blind safe
@@ -90,16 +94,16 @@ tbl_cases_count <- dfc_ecdc %>%
 ```
 
 
-Countries with more than 100k cases (in decreasing order): `r tbl_cases_count %>% call_countries_with_more(100000, 'cases') %>% combine_words()` (Figure \@ref(fig:MapWorldCasesCount)). 
+**Countries with more than 100k cases** (in decreasing order): `r tbl_cases_count %>% call_countries_with_more(100000, 'cases') %>% combine_words()` (Figure \@ref(fig:MapWorldCasesCount)). 
 
-Countries with more than 100M cases (in decreasing order): `r tbl_cases_count %>% call_countries_with_more(1000000, 'cases') %>% combine_words()` (Figure \@ref(fig:MapWorldCasesCount)). 
+**Countries with more than 1M cases** (in decreasing order): `r tbl_cases_count %>% call_countries_with_more(1000000, 'cases') %>% combine_words()`. 
 
-African countries with more than 10000 cases (in decreasing order): `r tbl_cases_count %>% filter(continent =='Africa') %>% call_countries_with_more(10000, 'cases') %>% combine_words()` (Figure \@ref(fig:MapWorldCasesCount)). 
+**African countries with more than 10,000 cases** (in decreasing order): `r tbl_cases_count %>% filter(continent =='Africa') %>% call_countries_with_more(10000, 'cases') %>% combine_words()`. 
 
-African countries with more than 1000 cases (in decreasing order): `r tbl_cases_count %>% filter(continent =='Africa') %>% call_countries_with_more(1000, 'cases') %>% combine_words()` (Figure \@ref(fig:MapWorldCasesCount)). 
+**African countries with more than 1000 cases** (in decreasing order): `r tbl_cases_count %>% filter(continent =='Africa') %>% call_countries_with_more(1000, 'cases') %>% combine_words()`. 
 
 
-African countries with less than 50 cases (in decreasing order): `r tbl_cases_count %>% filter(continent == 'Africa') %>% call_countries_with_less(50, 'cases')`. 
+**African countries with less than 50 cases** (in decreasing order): `r tbl_cases_count %>% filter(continent == 'Africa') %>% call_countries_with_less(50, 'cases')`. 
 
 
 <!-- Map World cases -->
@@ -198,17 +202,17 @@ tbl_cases_increasing_trend <- tbl_cases_trends %>%
 ```
 
 
-**Countries with increasing trend in cases:**
+**Countries with increasing trend in cases** (Figure \@ref(fig:MapWorldCasesTrends)):
 
-**Africa:**   `r glue("({length(call_countries_increasing('cases', 'Africa'))}):   {call_countries_increasing('cases', 'Africa') %>% combine_words()}")`. 
+**Africa:**   `r glue("({length(call_countries_increasing('cases', 'Africa'))}) {call_countries_increasing('cases', 'Africa') %>% combine_words()}")`. 
 
-**Asia:**     `r glue("({length(call_countries_increasing('cases', 'Asia'))}):     {call_countries_increasing('cases', 'Asia') %>% combine_words()}")`. 
+**Asia:**     `r glue("({length(call_countries_increasing('cases', 'Asia'))}) {call_countries_increasing('cases', 'Asia') %>% combine_words()}")`. 
 
-**Americas:** `r glue("({length(call_countries_increasing('cases', 'Americas'))}): {call_countries_increasing('cases', 'Americas') %>% combine_words()}")`. 
+**Americas:** `r glue("({length(call_countries_increasing('cases', 'Americas'))}) {call_countries_increasing('cases', 'Americas') %>% combine_words()}")`. 
 
-**Europe:**   `r glue("({length(call_countries_increasing('cases', 'Europe'))}):   {call_countries_increasing('cases', 'Europe') %>% combine_words()}")`. 
+**Europe:**   `r glue("({length(call_countries_increasing('cases', 'Europe'))}) {call_countries_increasing('cases', 'Europe') %>% combine_words()}")`. 
 
-**Oceania:**  `r glue("({length(call_countries_increasing('cases', 'Oceania'))}):  {call_countries_increasing('cases', 'Oceania') %>% combine_words()}")`. 
+**Oceania:**  `r glue("({length(call_countries_increasing('cases', 'Oceania'))}) {call_countries_increasing('cases', 'Oceania') %>% combine_words()}")`. 
 
 
 <!-- Map cases trends -->
@@ -316,11 +320,11 @@ tbl_deaths_count <- dfc_ecdc %>%
 ```
 
 
-Countries with more than 100k deaths in order: `r tbl_deaths_count %>% call_countries_with_more(100000, 'deaths') %>% combine_words()`.
+**Countries with more than 100k deaths** (in decreasing order): `r tbl_deaths_count %>% call_countries_with_more(100000, 'deaths') %>% combine_words()` (Figure \@ref(fig:MapWorldDeathsCount)).
 
-Countries with more than 10k deaths in order: `r tbl_deaths_count %>% call_countries_with_more(10000, 'deaths') %>% combine_words()`.
+**Countries with more than 10k deaths** (in decreasing order): `r tbl_deaths_count %>% call_countries_with_more(10000, 'deaths') %>% combine_words()`.
 
-African countries with less than 50 deaths in order: `r tbl_deaths_count %>% filter(continent == 'Africa') %>% call_countries_with_less(50, 'deaths') %>% combine_words()`.
+**African countries with less than 50 deaths** (in decreasing order): `r tbl_deaths_count %>% filter(continent == 'Africa') %>% call_countries_with_less(50, 'deaths') %>% combine_words()`.
 
 
 <!-- Map deaths count -->
@@ -401,7 +405,7 @@ tbl_deaths_increasing_trend <- tbl_deaths_trends %>%
 ```
 
 
-**Countries with increasing trend in deaths:**
+**Countries with increasing trend in deaths** (Figure \@ref(fig:MapWorldDeathsTrends)):
 
 **Africa:**   `r glue("({length(call_countries_increasing('deaths', 'Africa'))}):   {call_countries_increasing('deaths', 'Africa') %>% combine_words()}")`. 
 
@@ -623,7 +627,7 @@ gtsave(gtbl_summary_cases_deaths,
 ```
 
 
-# Cumulative incidence
+# Cumulative incidences
 <!-- Map of cumulative incidences -->
 ```{r tbl_attack_rates}
 
@@ -640,8 +644,14 @@ tbl_attack_rates <- tbl_summary_cases_deaths %>%
 
 ```
 
+
+The cumulative number of cases are mapped in Figure \@ref(fig:MapWorldCasesAttackRates). 
+
+The cumulative number of deaths are mapped in Figure \@ref(fig:MapWorldDeathsAttackRates). 
+
+
 <!-- Map of cumulative incidences of cases -->
-```{r map_world_cases_attack_rates}
+```{r MapWorldCasesAttackRates, fig.cap = glue('Cumulative incidence of Covid-19 reported cases since beginning of epidemic, per 100,000 population, data until {format(date_max_report, "%d %B %Y")}')}
 
 sf_attack_rates <- tbl_attack_rates %>% 
   inner_join(
@@ -662,8 +672,7 @@ map_world_cases_attack_rates <- ggplot(sf_attack_rates) +
       nrow = 1,
       label.position = "bottom",
       title.position = 'top')) +
-  labs(title = 'Cumulative Incidence of Covid-19 reported cases per 100,000 population', 
-       caption = caption_world_map) +
+  labs(caption = caption_world_map) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5), 
         legend.position = "bottom")
@@ -681,7 +690,7 @@ ggsave(file.path(path.local.worldwide.graphs, glue("map_world_cases_attack_rates
 
 
 <!-- Map of cumulative incidences of deaths -->
-```{r map_world_deaths_attack_rates}
+```{r MapWorldDeathsAttackRates, fig.cap = glue('Cumulative incidence of Covid-19 associated since beginning of epidemic, per 100,000 population, data until {format(date_max_report, "%d %B %Y")}')}
 
 map_world_deaths_attack_rates <- ggplot(sf_attack_rates) + 
   geom_sf(aes(fill = deaths_brks), size = .1) + 
@@ -695,8 +704,7 @@ map_world_deaths_attack_rates <- ggplot(sf_attack_rates) +
       nrow = 1,
       label.position = "bottom",
       title.position = 'top')) +
-  labs(title = 'Cumulative Incidence of Covid-19 associated deaths per 100,000 population', 
-       caption = caption_world_map) +
+  labs(caption = caption_world_map) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5), 
         legend.position = "bottom")
@@ -744,9 +752,6 @@ tbl_countries_doubling_time_cases <- tbl_cases_doubling_time %>%
   right_join(tbl_cases_increasing_trend %>% 
                select(iso_a3)) %>% 
   filter(between(cases_est, 0, threshold_doubling_time))
-
-african_countries_doubling_time <- tbl_countries_doubling_time_cases %>% filter(continent == 'Africa') %>% pull(country)
-asian_countries_doubling_time   <- tbl_countries_doubling_time_cases %>% filter(continent == 'Asia')   %>% pull(country)
 
 ```
 
@@ -871,22 +876,37 @@ gtsave(gtbl_cfr_doubling_rank,
 ```
 
 
-A sharp increasing of cases (doubling time of less than `r threshold_doubling_time` days) is observed in: 
+A sharp increasing of cases (doubling time of less than `r threshold_doubling_time` days) (Figure \@ref(fig:MapWorldCasesDoubling)) is observed in: 
 
 
-**Africa:**   `r glue("({length(call_countries_doubling('cases_est', 'Africa'))}):   {call_countries_doubling('cases_est', 'Africa') %>% combine_words()}")`. 
+**Africa:** `r glue("({length(call_countries_doubling('cases_est', 'Africa'))}) {call_countries_doubling('cases_est', 'Africa') %>% combine_words()}")`. 
 
-**Asia:**     `r glue("({length(call_countries_doubling('cases_est', 'Asia'))}):   {call_countries_doubling('cases_est', 'Asia') %>% combine_words()}")`. 
+**Asia:** `r glue("({length(call_countries_doubling('cases_est', 'Asia'))}) {call_countries_doubling('cases_est', 'Asia') %>% combine_words()}")`. 
 
-**Americas:** `r glue("({length(call_countries_doubling('cases_est', 'Americas'))}):   {call_countries_doubling('cases_est', 'Americas') %>% combine_words()}")`. 
+**Americas:** `r glue("({length(call_countries_doubling('cases_est', 'Americas'))}) {call_countries_doubling('cases_est', 'Americas') %>% combine_words()}")`. 
 
-**Europe:**   `r glue("({length(call_countries_doubling('cases_est', 'Europe'))}):   {call_countries_doubling('cases_est', 'Europe') %>% combine_words()}")`. 
+**Europe:** `r glue("({length(call_countries_doubling('cases_est', 'Europe'))}) {call_countries_doubling('cases_est', 'Europe') %>% combine_words()}")`. 
 
-**Oceania:**  `r glue("({length(call_countries_doubling('cases_est', 'Oceania'))}):   {call_countries_doubling('cases_est', 'Oceania') %>% combine_words()}")`. 
+**Oceania:** `r glue("({length(call_countries_doubling('cases_est', 'Oceania'))}) {call_countries_doubling('cases_est', 'Oceania') %>% combine_words()}")`. 
+
+
+
+A sharp increasing of deaths (doubling time of less than `r threshold_doubling_time` days) (Figure \@ref(fig:MapWorldDeathsDoubling)) is observed in: 
+
+
+**Africa:** `r glue("({length(call_countries_doubling('deaths_est', 'Africa'))}) {call_countries_doubling('deaths_est', 'Africa') %>% combine_words()}")`. 
+
+**Asia:** `r glue("({length(call_countries_doubling('deaths_est', 'Asia'))}) {call_countries_doubling('deaths_est', 'Asia') %>% combine_words()}")`. 
+
+**Americas:** `r glue("({length(call_countries_doubling('deaths_est', 'Americas'))}) {call_countries_doubling('deaths_est', 'Americas') %>% combine_words()}")`. 
+
+**Europe:** `r glue("({length(call_countries_doubling('deaths_est', 'Europe'))}) {call_countries_doubling('deaths_est', 'Europe') %>% combine_words()}")`. 
+
+**Oceania:** `r glue("({length(call_countries_doubling('deaths_est', 'Oceania'))}) {call_countries_doubling('deaths_est', 'Oceania') %>% combine_words()}")`. 
 
 
 <!-- Map doubling cases -->
-```{r MapWorldDoublingCases}
+```{r MapWorldCasesDoubling, fig.cap = glue('Doubling time of the number of Covid-19 cases estimated in the last 12 days (only countries with increasing trends are displayed)')}
 
 breaks <- c(0, 4, 8, 12, Inf)
 labels <- label_breaks(breaks) %>% stringr::str_replace_all(c("-Inf" = "+"))
@@ -933,7 +953,7 @@ map_world_doubling_cases <- ggplot(sf_doubling_cases) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
 
-map_world_doubling_cases
+map_world_doubling_cases + labs(title = NULL) 
 
 ggsave(file.path(path.local.worldwide.graphs, glue("map_world_doubling_cases_{week_report}.png")), 
        plot = map_world_doubling_cases, 
@@ -943,7 +963,7 @@ ggsave(file.path(path.local.worldwide.graphs, glue("map_world_doubling_cases_{we
 ```
 
 <!-- Map doubling deaths -->
-```{r MapWorldDoublingDeaths}
+```{r MapWorldDeathsDoubling, fig.cap = glue('Doubling time of the number of Covid-19 associated deaths estimated in the last 12 days (only countries with increasing trends are displayed)')}
 
 # Categorise the doubling time
 df_doubling_deaths <- tbl_deaths_doubling_time %>% 
@@ -997,7 +1017,7 @@ ggsave(file.path(path.local.worldwide.graphs, glue("map_world_doubling_deaths_{w
 
 ### Countries with critical doubling time of cases
 <!-- Dot plot doubling time over number of days with increasing trend -->
-```{r tbl_hot_countries}
+```{r DotsHotspotCases, fig.cap = glue('Distribution of doubling time of Covid-19 cases according to length in days since the first significant increasing trend reported (only countries with doubling time of less than {threshold_doubling_time} days as of {format(date_max_report, "%d %B %Y")} are displayed)')}
 
 # Identify the date of a significant positive trend (We might need to sue cusum at one point)
 tbl_cases_date_pos_trend <- tibble(iso_a3 = as.character(), 
@@ -1118,7 +1138,7 @@ tbl_ar_rt <- df_countries %>%
 
 
 <!-- Plot test ratio -->
-```{r plot_test_ratio}
+```{r DotsTestsRatio, fig.cap = glue('Relation between the number of tests carried out in the last 12 days (as ratio of the number of confirmed cases) and the cumulative number of cases reported')}
 
 dots_ratio_tests <- ggplot(tbl_ar_rt, aes(tests_ratio, cases_inc_12d)) + 
   geom_point(aes(tests_ratio, cases_inc_12d, colour = continent)) + 
@@ -1156,7 +1176,7 @@ ggsave(file.path(path.local.worldwide.graphs, glue("dots_ratio_tests_{week_repor
 ```
 
 <!-- Plot test rate -->
-```{r plot_test_rate}
+```{r DotsTestsRate, fig.cap = glue('Relation between the number of tests carried out in the last 12 days (as rate of the country population) and the cumulative number of cases reported')}
 
 dots_rate_tests <- ggplot(tbl_ar_rt, aes(tests_rate, cases_inc_12d)) + 
   geom_point(aes(tests_rate, cases_inc_12d, colour = continent)) + 
@@ -1217,7 +1237,7 @@ gtsave(gtbl_cfr_doubling_rank %>%
 ```
 
 <!-- Map world cases grid -->
-```{r map_world_cases_grid, include = FALSE}
+```{r MapWorldCasesGrid, include = FALSE}
 
 map_world_cases_grid <- grid.arrange(map_world_cases_count + labs(caption = ''), 
                                      map_world_cases_trends, 
@@ -1231,7 +1251,7 @@ ggsave(file.path(path.local.worldwide.graphs, glue("map_world_cases_grid_{week_r
 ```
 
 <!-- Map world deaths grid -->
-```{r map_world_deaths_grid, include = FALSE}
+```{r MapWorldDeathsGrid, include = FALSE}
 
 map_world_deaths_grid <- grid.arrange(map_world_deaths_count + labs(caption = ''), 
                                       map_world_deaths_trends, ncol = 2)
@@ -1244,7 +1264,7 @@ ggsave(file.path(path.local.worldwide.graphs, glue("map_world_deaths_grid_{week_
 ```
 
 <!-- Map world doubling time grid -->
-```{r map_world_doubling_grid, include = FALSE}
+```{r MapWorldDoublingGrid, include = FALSE}
 
 map_world_doubling_grid <- grid.arrange(map_world_doubling_cases + labs(caption = ''), 
                                         map_world_doubling_deaths, ncol = 2)

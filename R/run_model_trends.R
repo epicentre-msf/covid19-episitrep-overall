@@ -1,13 +1,8 @@
 
 
-
-
 source(file.path(path.R, "run_get_data.R") , encoding = "UTF-8")
 source(file.path(path.R, "utils_modelling.R") , encoding = "UTF-8")
 
-
-
-run_models <- FALSE
 
 
 
