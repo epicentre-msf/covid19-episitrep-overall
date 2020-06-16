@@ -1,4 +1,8 @@
 
+# set ggplot theme
+ggplot2::theme_set(ggplot2::theme_bw())
+
+
 cm_to_in <- 0.39370079
 
 

@@ -23,9 +23,9 @@ set_date_max <- function(date_max, get_updated_data = FALSE){
 }
 
 
-
+# set date to the monday of the ISO week
 make_epiweek_date <- function(date) {
-  lubridate::wday(date, week_start = 1) <- 7
+  lubridate::wday(date, week_start = 1) <- 1
   return(date)
 }
 
@@ -144,7 +144,11 @@ prepare_msf_dta <- function(dta){
       age_in_years = floor(age_in_years), 
       admit = factor(admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
       outcome_admit = factor(outcome_admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
-      outcome_status = factor(outcome_status, levels = levels_outcome_status) %>% forcats::fct_explicit_na(na_level = 'Pending/Unknown'))
+      outcome_status = factor(outcome_status, levels = levels_outcome_status) %>% forcats::fct_explicit_na(na_level = 'Pending/Unknown'),
+      epi_week_consultation = make_epiweek_date(date_consultation),
+      epi_week_admission = make_epiweek_date(presHCF),
+      epi_week_onset = make_epiweek_date(dateonset)
+    )
   
   # Create age-groups
   levels_age_5breaks <- c(0, 5, 15, 45, 65, Inf)

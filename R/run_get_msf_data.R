@@ -3,17 +3,19 @@
 
 
 # The path for msf data
-path.data.sharepoint <- file.path('D:', 'MSF/GRP-EPI-COVID-19 - NCoVEpi', 'data', 'linelist', 'world')
+OS <- Sys.info()[['sysname']]
+sharepoint.parent.dir <- dplyr::case_when(OS == "Windows" ~ "D:", OS == "Darwin" ~ "~")
+path.data.sharepoint <- file.path(sharepoint.parent.dir, 'MSF/GRP-EPI-COVID-19 - NCoVEpi', 'data', 'linelist', 'world')
 
 
 # Get the MSF linelist dataset
 if (get_updated_msf_data) {
-  dta <- readRDS(file.path(path.data.sharepoint, 'msf_covid19_linelist_global_2020-06-10.rds'))
+  
+  dta_path <- max(fs::dir_ls(path.data.sharepoint, regexp = "[.]rds$"))
+  dta <- readRDS(dta_path)
   
   # Get the MSF aggregated data
-  dta_aggregated <- read.xlsx(file.path(path.data.sharepoint, 'msf_covid19_aggregated_data.xlsx'), sheetIndex = 1, stringsAsFactors = FALSE, encoding = 'UTF-8') %>% 
-    filter(!is.na(country)) %>% 
-    as_tibble()
+  dta_aggregated <- readxl::read_excel(file.path(path.data.sharepoint, 'msf_covid19_aggregated_data.xlsx'), sheet = 1) %>% filter(!is.na(country)) 
   
   
   # Prepare the linelist dataset
@@ -22,7 +24,7 @@ if (get_updated_msf_data) {
   # Prepare the aggregated dataset
   dta_expanded <- dta_aggregated %>% 
     select(-c(date_adm_first, date_adm_last)) %>% 
-    pivot_longer(cols = c("Confirmed", "Probable", "Suspected", "Not.a.case", "Unknown"),
+    pivot_longer(cols = c("Confirmed", "Probable", "Suspected", "Not a case", "Unknown"),
                  names_to = "covid_status") %>% 
     mutate(obs = purrr::map(value, ~rep_len(1, .x))) %>%
     unnest(cols = c(obs)) %>%

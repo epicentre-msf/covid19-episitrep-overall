@@ -50,7 +50,7 @@ knitr::opts_chunk$set(cache = FALSE,
 df_countries <- readRDS(file.path(path.local.worldwide.data, 'df_countries.RDS'))
 
 # The MSF linelist
-update_msf_data_anyways <- FALSE
+update_msf_data_anyways <- TRUE
 
 get_updated_msf_data <- ifelse(isTRUE(update_msf_data_anyways) | 
                                  !file.exists(file.path(path.local.msf.data, 'dta_MSF.RData')), 
@@ -104,7 +104,72 @@ source(file.path(path.R, 'run_get_msf_data.R'), encoding = 'UTF-8')
 
 # TO BE DONE ASAP (PAUL)
 
+df_epicurve <- dta %>% 
+  select(epi_week_consultation, epi_week_admission) %>% 
+  pivot_longer(everything(), names_to = "type", values_to = "date") %>% 
+  count(type, date) %>% 
+  drop_na() %>% 
+  mutate(type = factor(type, levels = c("epi_week_consultation", "epi_week_admission"), labels = c("Consultations", "Admissions")))
+
+missing_consultation <- sum(is.na(dta$epi_week_consultation))
+missing_admission <- dta %>% filter(admit == "Yes") %>% summarise(missing = sum(is.na(epi_week_admission))) %>% pull(missing)
+
+p_epicurve_consult_admit <- ggplot(df_epicurve, aes(date, n)) +
+  facet_wrap(~type, ncol = 1) +
+  geom_col(fill = "steelblue") + #position = "dodge"
+  scale_x_date(name = "Epi Week", date_breaks = "1 week", date_labels = "%V",
+               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
+  labs(y = NULL, caption = glue::glue("Missing dates: Consultation {missing_consultation}, Admission {missing_admission}"))
+
+ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_consult_admit_{week_report}.png")), 
+       plot = p_epicurve_consult_admit, 
+       scale = 1, 
+       dpi = 320)
+
+p_epicurve_consult_admit
+
 ```
+
+## Consultations by Continent
+
+```{r}
+p_epicurve_consult_continent <- dta %>% 
+  count(continent, epi_week_consultation) %>% 
+  ggplot(aes(epi_week_consultation, n)) +
+  facet_wrap(~continent) +
+  geom_col(fill = "steelblue") +
+  scale_x_date(name = "Epi Week", date_breaks = "1 week", date_labels = "%V",
+               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
+  labs(y = "Consultations")
+
+ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_consult_continent_{week_report}.png")), 
+       plot = p_epicurve_consult_continent, 
+       scale = 1, 
+       dpi = 320)
+
+p_epicurve_consult_continent
+```
+
+## Admissions by Continent
+
+```{r}
+p_epicurve_admit_continent <- dta %>% 
+  count(continent, epi_week_admission) %>% 
+  ggplot(aes(epi_week_admission, n)) +
+  facet_wrap(~continent) +
+  geom_col(fill = "steelblue") +
+  scale_x_date(name = "Epi Week", date_breaks = "1 week", date_labels = "%V",
+               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
+  labs(y = "Admissions")
+
+ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_admit_continent_{week_report}.png")), 
+       plot = p_epicurve_admit_continent, 
+       scale = 1, 
+       dpi = 320)
+
+p_epicurve_admit_continent
+```
+
 
 
 ## - TO BE DONE ASAP (PAUL)
@@ -113,6 +178,22 @@ source(file.path(path.R, 'run_get_msf_data.R'), encoding = 'UTF-8')
 ```{r}
 
 # TO BE DONE ASAP (PAUL)
+
+p_epicurve_status <- dta %>% 
+  count(covid_status, epi_week_consultation) %>% 
+  ggplot(aes(epi_week_consultation, n, fill = covid_status)) +
+  geom_col() +
+  ggthemes::scale_fill_tableau(name = "Status") +
+  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V",
+               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
+  labs(y = "Patients")
+
+ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_status_{week_report}.png")), 
+       plot = p_epicurve_status, 
+       scale = 1, 
+       dpi = 320)
+
+p_epicurve_status
 
 ```
 
@@ -268,6 +349,15 @@ Time-series plot:
 ```{r}
 
 # TO BE DONE ASAP (PAUL)
+
+dta %>% 
+  filter(covid_status == "Confirmed") %>% 
+  group_by(epi_week_consultation) %>% 
+  summarise(
+    n = n(),
+    admit = sum(admit == "Yes", na.rm = TRUE),
+    admit_prop = admit / n
+  )
 
 ```
 
