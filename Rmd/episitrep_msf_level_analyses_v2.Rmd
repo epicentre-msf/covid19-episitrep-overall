@@ -1074,28 +1074,164 @@ Frequency and proportion of symptoms, by case severity
 
 Time-series plot: 
 
-  -	Proportion of admitted over the confirmed
-  -	Proportion of patients with severe symptoms
-  -	Delay from symptoms onset to consultation/admission
-  -	Length of staying for patients hospitalised
-  -	Case fatality risk for patients hospitalised
+  -	Proportion of admitted over the confirmed - line
+  -	Proportion of patients with severe symptoms - line
+  -	Delay from symptoms onset to consultation/admission - boxplot
+  -	Length of staying for patients hospitalised - boxplot
+  -	Case fatality risk for patients hospitalised - line
 
-## - TO BE DONE ASAP (PAUL)
+## Proportion of confirmed, probable and suspected cases admitted to hospital
 
 ```{r}
 
-# TO BE DONE ASAP (PAUL)
-
-dta %>% 
-  filter(covid_status == "Confirmed") %>% 
+df_admit_prop <- dta %>% 
+  filter(covid_status %in% c("Confirmed", "Suspected", "Probable")) %>% 
+  mutate(epi_week_lab = lubridate::isoweek(epi_week_consultation)) %>% 
   group_by(epi_week_consultation) %>% 
   summarise(
     n = n(),
     admit = sum(admit == "Yes", na.rm = TRUE),
-    admit_prop = admit / n
-  )
+    admit_prop = admit / n,
+    icu = sum(icu == "Yes", na.rm = TRUE),
+    icu_prop = icu / n
+  ) %>% 
+  drop_na(epi_week_consultation) #%>% 
+  #slice(1:(n()-2))
+
+p_admit_prop <- ggplot(df_admit_prop, aes(epi_week_consultation, admit_prop)) +
+  geom_line(colour = "steelblue", size = 1) +
+  scale_x_date(name = "Epi Week", date_breaks = "1 week", date_labels = "%V") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(y = "Proportion Admitted")
+
+ggsave(file.path(path.local.msf.graphs, glue("msf_admit_prop_{week_report}.png")), 
+       plot = p_admit_prop, 
+       scale = 1, 
+       dpi = 320)
+
+p_admit_prop
+
+# p2 <- ggplot(df_admit_prop, aes(epi_week_consultation, icu_prop)) +
+#   geom_line(colour = "steelblue", size = 1) +
+#   scale_x_date(name = NULL, date_breaks = "1 week") +
+#   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+#   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) + 
+#   labs(x = NULL)
+# 
+# p3 <- ggplot(df_admit_prop, aes(epi_week_consultation, died_prop)) +
+#   geom_line(colour = "steelblue", size = 1) +
+#   #scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V",
+#   #             sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
+#   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+#   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) + 
+#   labs(x = NULL)
+# 
+# # onset admission delay
+# p4 <- dta %>% 
+#   filter(covid_status == "Confirmed") %>%
+#   ggplot(aes(epi_week_consultation, delay_before_admission, group = epi_week_consultation)) +
+#   geom_jitter(colour = "red", alpha = 0.5) +
+#   geom_boxplot(fill = NA, outlier.alpha = 0) +
+#   #scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V",
+#   #             sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
+#   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) + 
+#   labs(x = NULL)
+# 
+# # length stay
+# p5 <- dta %>% 
+#   filter(covid_status == "Confirmed") %>%
+#   ggplot(aes(epi_week_consultation, length_stay, group = epi_week_consultation)) +
+#   geom_jitter(colour = "red", alpha = 0.3) +
+#   geom_boxplot(fill = NA, outlier.alpha = 0) +
+#   scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V")
 
 ```
+
+## Outcome by epiweek with CFR
+
+```{r}
+# Only including outcomes of cured or died as CFR denominator - is this ok?
+
+df_deaths_epiweek_prop <- dta %>% 
+  filter(outcome_status %in% c("Cured", "Died")) %>% 
+  group_by(epi_week_consultation) %>% 
+  summarise(
+    total = sum(!is.na(outcome_status)), 
+    dead = sum(outcome_status == "Died", na.rm = T), 
+    prop_dead = (dead / total) * 100
+  ) %>% 
+  ungroup()
+
+df_deaths_epiweek <- dta %>% 
+  filter(outcome_status %in% c("Cured", "Died")) %>% 
+  count(epi_week_consultation, outcome_status) %>% 
+  drop_na()
+
+n_max <- max(df_deaths_epiweek_prop$total, na.rm = TRUE)
+scaling_factor <- 100 / n_max
+
+p_outcome_cfr <- ggplot(df_deaths_epiweek, aes(epi_week_consultation, n)) +
+  geom_col(aes(fill = outcome_status)) +
+  geom_line(data = df_deaths_epiweek_prop, 
+            aes(y = prop_dead / scaling_factor, colour = "Fatality"), 
+            key_glyph = "timeseries", size = 1) +
+  scale_x_date(name = "Epi Week", date_breaks = "1 week", date_labels = "%V") +
+  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Fatality (%)")) +
+  ggthemes::scale_fill_tableau() +
+  labs(y = "Patients", colour = NULL, fill = "Outcome") +
+  theme(legend.position = "right")
+
+ggsave(file.path(path.local.msf.graphs, glue("msf_outcome_cfr_{week_report}.png")), 
+       plot = p_outcome_cfr, 
+       scale = 1, 
+       dpi = 320)
+
+p_outcome_cfr
+```
+
+
+## Onset to admission delay
+
+```{r}
+# onset admission delay
+p_onset_admit_delay <- dta %>% 
+  #filter(covid_status == "Confirmed") %>%
+  ggplot(aes(epi_week_consultation, delay_before_admission, group = epi_week_consultation)) +
+  geom_jitter(colour = "red", alpha = 0.5) +
+  geom_boxplot(fill = NA, outlier.alpha = 0) +
+  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V",
+               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
+  labs(y = "Onset to admission delay (days)")
+
+ggsave(file.path(path.local.msf.graphs, glue("msf_onset_admit_delay_{week_report}.png")), 
+       plot = p_onset_admit_delay, 
+       scale = 1, 
+       dpi = 320)
+
+p_onset_admit_delay
+```
+
+## Length of stay in hospital
+
+```{r}
+# length stay
+p_length_stay <- dta %>% 
+  #filter(covid_status == "Confirmed") %>% 
+  ggplot(aes(epi_week_consultation, length_stay, group = epi_week_consultation)) +
+  geom_jitter(colour = "red", alpha = 0.3) +
+  geom_boxplot(fill = NA, outlier.alpha = 0) +
+  scale_x_date(name = "Epi Week", date_breaks = "1 week", date_labels = "%V",
+               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
+  labs(y = "Length of stay in hospital (days)")
+
+ggsave(file.path(path.local.msf.graphs, glue("msf_length_stay_{week_report}.png")), 
+       plot = p_length_stay, 
+       scale = 1, 
+       dpi = 320)
+
+p_length_stay
+```
+
 
 
 **With all confirmed cases with severe or critical symptoms as denominator: time-series and trends plot** with week as time unit of the following indicator: 

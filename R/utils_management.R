@@ -145,6 +145,7 @@ prepare_msf_dta <- function(dta){
       admit = factor(admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
       outcome_admit = factor(outcome_admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
       outcome_status = factor(outcome_status, levels = levels_outcome_status) %>% forcats::fct_explicit_na(na_level = 'Pending/Unknown'),
+      epi_week_report = make_epiweek_date(report_date),
       epi_week_consultation = make_epiweek_date(date_consultation),
       epi_week_admission = make_epiweek_date(presHCF),
       epi_week_onset = make_epiweek_date(dateonset)
