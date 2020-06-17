@@ -87,6 +87,7 @@ source(file.path(path.R, 'run_get_msf_data.R'), encoding = 'UTF-8')
   - dates of first and last consultation/hospitalisation
 
 ```{r, TblCovidStatusCountry, layout = "l-body-outset"}
+# DONE by Francesco
 
 tbl_countries_covid_status <-  dta %>% 
   select(continent, country, site_name, covid_status) %>% 
@@ -217,6 +218,7 @@ gtsave(gtbl_countries_covid_status,
   - dates of first and last consultation/hospitalisation
 
 ```{r TblCovidStatusSite, layout = "l-body-outset"}
+# DONE by Francesco
 
 tbl_sites_covid_status <- dta %>% 
   select(continent, country, site_name, covid_status) %>% 
@@ -339,16 +341,10 @@ gtsave(gtbl_sites_covid_status,
 ```
 
 
-
-
-
-  
-## - TO BE DONE ASAP (PAUL)
-**Histogram** of number of consultation and admissions aggregated by week: overall and by region (or continent)
+**Histogram of number of consultation and admissions aggregated by week**
 
 ```{r}
-
-# TO BE DONE ASAP (PAUL)
+# DONE by Paul
 
 df_epicurve <- dta %>% 
   select(epi_week_consultation, epi_week_admission) %>% 
@@ -376,9 +372,12 @@ p_epicurve_consult_admit
 
 ```
 
-## Consultations by Continent
+
+**Histogram of weekly number of consultations by continent**
 
 ```{r}
+# DONE by Paul
+
 p_epicurve_consult_continent <- dta %>% 
   count(continent, epi_week_consultation) %>% 
   ggplot(aes(epi_week_consultation, n)) +
@@ -394,11 +393,15 @@ ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_consult_continent_{we
        dpi = 320)
 
 p_epicurve_consult_continent
+
 ```
 
-## Admissions by Continent
+
+**Histogram of weekly number of admissions by continent**
 
 ```{r}
+# DONE by Paul
+
 p_epicurve_admit_continent <- dta %>% 
   count(continent, epi_week_admission) %>% 
   ggplot(aes(epi_week_admission, n)) +
@@ -414,16 +417,14 @@ ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_admit_continent_{week
        dpi = 320)
 
 p_epicurve_admit_continent
+
 ```
 
 
-
-## - TO BE DONE ASAP (PAUL)
-**Histogram** of number of confirmed, probable, suspected, not a case and unknown aggregated by week: overall and by region (or continent)
+**Histogram of weekly number of confirmed, probable, suspected, not a case and unknown overall and by region (or continent)**
 
 ```{r}
-
-# TO BE DONE ASAP (PAUL)
+# DONE by Paul
 
 p_epicurve_status <- dta %>% 
   count(covid_status, epi_week_consultation) %>% 
@@ -432,7 +433,9 @@ p_epicurve_status <- dta %>%
   ggthemes::scale_fill_tableau(name = "Status") +
   scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V",
                sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
-  labs(y = "Patients")
+  labs(y = "Patients") + 
+  theme_light() + 
+  theme(legend.position = 'top')
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_status_{week_report}.png")), 
        plot = p_epicurve_status, 
@@ -443,8 +446,32 @@ p_epicurve_status
 
 ```
 
+**Histogram of weekly number of confirmed, probable, suspected, not a case and unknown overall and by region (or continent)**
 
-## - To be done (FRANCESCO)
+```{r}
+# DONE by Francesco (copied from the Paul graph just above
+
+p_epicurve_status_continent <- dta %>% 
+  count(continent, covid_status, epi_week_consultation) %>% 
+  ggplot(aes(epi_week_consultation, n, fill = covid_status)) + 
+  facet_wrap(vars(continent)) + 
+  geom_col() +
+  ggthemes::scale_fill_tableau(name = "Status") +
+  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V",
+               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
+  labs(y = "Patients") + 
+  theme_light() + 
+  theme(legend.position = 'top')
+
+ggsave(file.path(path.local.msf.graphs, paste0('msf_','p_epicurve_status_continent', '_', week_report, '.png')), 
+       plot = p_epicurve_status_continent, 
+       scale = 1, 
+       dpi = 320)
+
+p_epicurve_status_continent
+
+```
+
 
 **Table** by continent (or region):
   
@@ -452,14 +479,17 @@ p_epicurve_status
 - Proportion of suspect cases sent home after screening
 - Proportion of asymptomatic among the tested positive
 
-```{r}
+Not yet done
 
+```{r}
+## - To be done (FRANCESCO) Priority +
 ```
 
 
-**Table** Age (median, IQR, min-max), sex and presence of at least one morbidity, by Covid status
+**Table Age (median, IQR, min-max), sex and presence of at least one morbidity, by Covid status**
 
 ```{r TblAllGeneralCharacteristics}
+# DONE by Francesco
 
 tbl_general <- dta %>% 
   select(covid_status, age_in_years, age_5gp, sex, Comcond_present) %>% 
@@ -532,14 +562,11 @@ gtsave(gtbl_general,
 ```
 
 
-**Table** by continent (or region):
-
-- Frequency and proportion of symptoms by Covid status 
-- Frequency and proportion of patients with at least 1 comorbidity
+**Table - Frequency and proportion of symptoms by Covid status**
 
 ```{r}
+# DONE by Francesco
 
-# Manage
 dta_sympt <- dta %>% 
   select(covid_status, tidyselect::vars_select(names(dta), starts_with('symptom_') & !ends_with('_date_onset')))
 
@@ -677,12 +704,29 @@ gtsave(gtbl_sympt,
 ```
 
 
-**Table Case-fatality risk** by Covid status
-- Case-fatality risk among suspect, probable and confirmed, and by consultation/admission
+**Table - Frequency and proportion of patients with at least 1 comorbidity**
 
 ```{r}
+# TO BE DONE by Francesco
+```
+
+
+**Table Case-fatality risk by Covid status and by continent**
+
+
+```{r}
+# DONE by Francesco
+tbl_cfr_status <- dta %>% 
+  select(covid_status, outcome_status) %>% 
+  filter(outcome_status %in% c('Cured', 'Died')) %>% 
+  group_by(covid_status) %>% 
+  summarise(
+    totals_Total = paste0(sum(outcome_status == 'Died'), '/', n()), 
+    died_p_Total = mean(outcome_status == 'Died'))
+
+
 tbl_cfr_status_continent <- dta %>% 
-  select(continent, region, country, covid_status, outcome_status) %>% 
+  select(continent, covid_status, outcome_status) %>% 
   filter(outcome_status %in% c('Cured', 'Died')) %>% 
   group_by(continent, covid_status) %>% 
   summarise(
@@ -691,15 +735,18 @@ tbl_cfr_status_continent <- dta %>%
   pivot_wider(names_from = continent, values_from = c(totals, died_p))
 
 gtbl_cfr_status_continent <- tbl_cfr_status_continent %>% 
+  full_join(tbl_cfr_status) %>% 
   gt() %>% 
   cols_label(
     covid_status     = 'Covid status', 
     totals_Africa    = 'n/N', 
     totals_Americas  = 'n/N', 
     totals_Asia      = 'n/N', 
+    totals_Total     = 'n/N', 
     died_p_Africa    = '(%)', 
     died_p_Americas  = '(%)', 
-    died_p_Asia      = '(%)') %>% 
+    died_p_Asia      = '(%)',
+    died_p_Total     = '(%)') %>% 
   tab_spanner(
     label = 'Africa', 
     columns = ends_with('_Africa')) %>% 
@@ -709,6 +756,9 @@ gtbl_cfr_status_continent <- tbl_cfr_status_continent %>%
   tab_spanner(
     label = 'Asia', 
     columns = ends_with('_Asia')) %>% 
+  tab_spanner(
+    label = 'Total', 
+    columns = ends_with('_Total')) %>% 
   fmt_number(
     columns = starts_with('died_p_'), 
     decimals = 1, 
@@ -745,12 +795,15 @@ gtsave(gtbl_cfr_status_continent,
 
 ```
 
+- , and by consultation/admission
+
 
 # Description of Covid19 confirmed patients
 
 **Age/sex pyramid** by continent
 
 ```{r}
+# DONE by Francesco
 
 seq_agegp <- seq(0,100,5)
 
@@ -792,7 +845,7 @@ ggsave(file.path(path.local.msf.graphs, "p_pyramid_age_sex.png"),
        width = 6, 
        height = 6)
 
-
+# The Pyramid seems not displaying correctly
 #p_pyramid_age_sex + facet_wrap(~ region)
 
 ```
@@ -804,7 +857,7 @@ ggsave(file.path(path.local.msf.graphs, "p_pyramid_age_sex.png"),
   -	Characteristics: Number and proportion of cases with chronic diseases (comorbidities)
 
 ```{r}
-
+# To think about
 ```
   
   
@@ -817,6 +870,7 @@ ggsave(file.path(path.local.msf.graphs, "p_pyramid_age_sex.png"),
   - supported with ECMO
   
 ```{r TblCare1}
+# DONE by Francesco
 
 dta_care <- dta %>% 
   filter(covid_status %in% c('Confirmed')) %>% 
@@ -949,24 +1003,18 @@ gtsave(gtbl_care,
 
 ```
 
-# - TO BE DONE ASAP (Francesco)
 
-**Table Outcome 1 - Count outcome** by country
-
-count of cured, deaths, transferred… 
+**Table Outcome 1 - Count outcome count of cured, deaths, transferred… by country?? (Probably by continent)** 
 
 ```{r}
-
+# TO BE DONE by Francesco. Priority +++
 ```
 
 
-# - TO BE DONE ASAP (Francesco)
+**Table Outcome 2 - Count outcome count of cured, deaths, transferred… by Admitted/Not Admitted**
 
-**Table Outcome 2 - Count outcome** by Admitted/Not Admitted
-
-count of cured, deaths, transferred… 
-  
 ```{r}
+# DONE by Francesco
 
 dta_outcome <- dta %>% 
   select(covid_status, merge_admit, tidyselect::vars_select(names(dta), starts_with('outcome_')))
@@ -1061,6 +1109,7 @@ gtsave(gtbl_outcome,
 Frequency of co-morbidities, among cured and deaths
 <!-- To be stratified by continent -->
 ```{r}
+# DONE by Francesco
 
 dta_comcond <- dta %>% 
   select(covid_status, outcome_status, starts_with('Comcond_')) %>% 
@@ -1175,6 +1224,7 @@ Time-series plot:
 ## Proportion of confirmed, probable and suspected cases admitted to hospital
 
 ```{r}
+# DONE by Paul
 
 df_admit_prop <- dta %>% 
   filter(covid_status %in% c("Confirmed", "Suspected", "Probable")) %>% 
@@ -1242,7 +1292,9 @@ p_admit_prop
 ## Outcome by epiweek with CFR
 
 ```{r}
-# Only including outcomes of cured or died as CFR denominator - is this ok?
+
+# DONE by Paul
+# Only including outcomes of cured or died as CFR denominator - is this ok? FG: Yes
 
 df_deaths_epiweek_prop <- dta %>% 
   filter(outcome_status %in% c("Cured", "Died")) %>% 
@@ -1285,6 +1337,8 @@ p_outcome_cfr
 ## Onset to admission delay
 
 ```{r}
+# DONE by Paul
+
 # onset admission delay
 p_onset_admit_delay <- dta %>% 
   #filter(covid_status == "Confirmed") %>%
@@ -1306,6 +1360,8 @@ p_onset_admit_delay
 ## Length of stay in hospital
 
 ```{r}
+# DONE by Paul
+
 # length stay
 p_length_stay <- dta %>% 
   #filter(covid_status == "Confirmed") %>% 
@@ -1343,6 +1399,8 @@ p_length_stay
 
 <!-- Save results -->
 ```{r save_results}
+
 rm(list = lsf.str())
 save.image(file.path(path.local.msf.data, paste0('episitrep_msf_level_analyses', '_', week_report, '.RData')))
+
 ```

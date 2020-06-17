@@ -5,7 +5,7 @@
 # The path for msf data
 OS <- Sys.info()[['sysname']]
 sharepoint.parent.dir <- dplyr::case_when(OS == "Windows" ~ "D:", OS == "Darwin" ~ "~")
-path.data.sharepoint <- file.path(sharepoint.parent.dir, 'MSF/GRP-EPI-COVID-19 - NCoVEpi', 'data', 'linelist', 'world')
+path.data.sharepoint <- file.path(sharepoint.parent.dir, 'MSF', 'GRP-EPI-COVID-19 - NCoVEpi', 'data', 'linelist', 'world')
 
 
 # Get the MSF linelist dataset
@@ -15,7 +15,8 @@ if (get_updated_msf_data) {
   dta <- readRDS(dta_path)
   
   # Get the MSF aggregated data
-  dta_aggregated <- readxl::read_excel(file.path(path.data.sharepoint, 'msf_covid19_aggregated_data.xlsx'), sheet = 1) %>% filter(!is.na(country)) 
+  dta_aggregated <- readxl::read_excel(file.path(path.data.sharepoint, 'msf_covid19_aggregated_data.xlsx'), sheet = 1) %>% 
+    filter(!is.na(country)) 
   
   
   # Prepare the linelist dataset
