@@ -1,0 +1,156 @@
+---
+title: "Analysis plan of the Covid-19 MSF linelist"
+description: |
+  This document presents the agreed standardized processes to manage, distribute and analyse the MSF/Epicentre Covid-19 linelists. It is indicative and is subject to change according to needs and requests.
+author:
+  - name: Anaïs Broban 
+    url: mailto:anais.BROBAN@epicentre.msf.org
+    affiliation: Epicentre
+    affiliation_url: https://epicentre.msf.org/
+  - name: Francesco Grandesso
+    url: mailto:francesco.GRANDESSO@epicentre.msf.org
+    affiliation: Epicentre
+    affiliation_url: https://epicentre.msf.org/
+date: '`r as.Date("2020-06-15")`'
+output: 
+  distill::distill_article:
+    toc: TRUE
+    toc_depth: 1
+---
+
+
+
+# Data management
+## Data centralization process
+Data collected by the fields for the MSF/Epicentre linelist are to be centralized at Epicentre for subsequent cleaning and analysis. 
+Data exports (MSF-anonymized export on “Help” sheet) should be sent to the email address EPI-COVID19-DATA@epicentre.msf.org, following OC guidance. Data are expected once a week by Tuesday nights and should compile data up to the last Sunday. 
+
+It is important to respect the timing so that the whole MSF community can benefit of the most updated information available (Figure). 
+
+ 
+Figure – The data flow of MSF Covid data
+
+
+## Data handling
+No modification should be made to the export before sending to the address. 
+
+The export contains a **password that should not be removed** for sending by email due to sensitivity of the data. The abovementioned email address is equipped with an automated process that allows automatic checking (name, extension) and classification into an Epicentre secured Sharepoint (access restricted to people involved into Covid19 activities and data processes within Epicentre team). 
+
+Validation or error emails will be sent to the field in return in order for them to be aware if their file have been taken into account or if it needs further adjustments (for example if the data entry file was sent instead of export file, name was changed or country/project are not well identified from the “Options” sheet). 
+
+Data sharing of these data are legally covered by Data Sharing Agreement signed by Epicentre and each of the OC over the course of 2019.
+
+
+## Data cleaning
+Data cleaning is made by Epicentre on Wednesdays. Data are extracted from the centralized raw exports and compiled into a single file. Then data goes through basic cleaning and standardization which includes:
+
+  - Language (data are all re-translated into English)
+  -	Checking of the format of the variables (coded list, number,…) and identifying missing or inappropriate values with standard coding (<NA>)
+  -	Checking data consistency, especially dates (under implementation)
+  -	Cleaning geographical variables when possible (when geobase not implemented or free-text entered)
+  -	Flag duplicates (patients that consulted twice for instance) (under implementation)
+
+Details of the cleaning process, and R-code associated, are publicly available on a github repository at the following address: https://github.com/epicentre-msf/covid-linelist.
+
+
+## Access to compilation data
+Once data is compiled, total data compilation is stored on the secured Epicentre sharepoint for subsequent analysis. Data compiled at each OC’s level are made available weekly on Wednesdays to Surveillance focal points and HIS teams of each OC, through the same secured sharepoint with restricted access. 
+
+
+
+# Data analysis
+This part presents the analysis planned on linelist data. Part on worldwide analysis to be added to describe what we already do in Episitrep (no further change foreseen, unless specific request).
+
+The R scripts for both worldwide and linelist MSF analysis are provided on the following Github repository https://github.com/epicentre-msf/covid19-episitrep-overall for epidemiologists in MSF to use (R skills required).
+
+The scripts will be updated from week to week as analysis progresses as requested.
+
+
+## Overview
+
+  - **Information** of completeness of data (number of MSF projects that are active on Covid19 care, reporting individual data (linelist), reporting aggregated data and not reporting data). Number of projects will be listed by continent and region. 
+  - **Table** of total number of patients screened, by sex and age group
+  - **Table** with list of projects by country with:
+  
+    - counts by Covid status: confirmed, probable, suspected, not a case and unknown 
+    - dates of first and last consultation/hospitalisation
+
+  -	**Histogram** of number of consultation and admissions aggregated by week: overall and by region (or continent)
+  -	**Histogram** of number of confirmed, probable, suspected, not a case and unknown aggregated by week: overall and by region (or continent)
+  -	**Tables** by continent (or region):
+  
+    - Proportion of positive tests among tested
+    - Proportion of suspect cases sent home after screening
+    - Proportion of asymptomatic among the tested positive
+    - Age (median, IQR, min-max) and sex distribution by Covid status 
+    - Frequency and proportion of symptoms by Covid status 
+    - Frequency and proportion of patients with at least 1 comorbidity
+    - Case-fatality risk among suspect, probable and confirmed, and by consultation/admission
+    
+    
+## Description of Covid19 confirmed patients
+
+**Tables** by continent (by region, if possible):
+
+  -	Age/sex pyramid 
+  -	Characteristics: Number and proportion of cases exposed through healthcare facility (healthcare worker + visited) 
+  -	Characteristics: Number and proportion of cases with chronic diseases (comorbidities)
+  -	Patient’s care: Admitted to a hospital/inpatient department, received oxygen, admitted to ICU, supported with ventilator, supported with ECMO
+  -	Patient care: medication received (under discussion)
+  -	Outcome: count of cured, deaths, transferred… by country
+  -	Hospital case fatality risk: overall, by country, by age group and by sex
+  -	List and frequency of comorbidities, among cases and deaths, by age group and by sex.
+  -	Frequency and proportion of symptoms, by case severity
+
+
+## Evolution overtime of the following indicators among the Covid19 confirmed cases
+
+**With all confirmed cases as denominator: time-series and trends plot** with week as time unit of the following indicator: 
+
+  -	Proportion of admitted over the confirmed
+  -	Proportion of patients with severe symptoms
+  -	Delay from symptoms onset to consultation/admission
+  -	Length of staying for patients hospitalised
+  -	Case fatality risk for patients hospitalised
+
+
+**With all confirmed cases with severe or critical symptoms as denominator: time-series and trends plot** with week as time unit of the following indicator: 
+
+  -	Proportion of patients who received oxygen
+  -	Proportion of patients admitted to ICU
+  -	Proportion of patients supported by ventilator
+  -	Proportion of patients supported by ECMO
+
+Results of this analysis will be part of the MSF EpiSitrep on Covid-19 epidemic which is edited and distributed once a week. 
+
+
+
+# Dashboard
+The MSF COVID-19 Dashboard is accessible on the following link: https://reports.msf.net/secure/app/covid19-linelist-dashboard 
+It is made available to both HQ and fields for further analysis on linelist data. 
+
+The analysis displayed in the dashboard will align with analysis listed above and provided in the Episitrep at global level. Data of the dashboard can be filtered by OC, region, country or project in order to visualize more specifically the data of interest, and analysis will automatically update according to filters selected. This will allow visualizing all analysis at any level wanted. 
+
+In addition to analysis listed above, the following ones would be integrated to the dashboard as would make sense on an operational/country perspective, rather than at global level:
+
+  -	Weekly evolution of cases by date of onset, by covid status
+  -	Bed occupancy analysis (under discussion)
+
+To note that is it not possible to download the dataset directly from the dashboard. 
+
+
+
+# Region/Country EpiSitrep
+The same tables and graphics presented in the MSF EpiSitrep can be produced on a subset of linelist data filtered by region or country. 
+Generic country sitrep template to be defined by including any of the analysis listed above. 
+
+All tables and graphics will be inserted in a Word format template, so that it will be possible to manually edit and finalise the report according to the local needs. The word document will in the end be possible to be downloaded from the dashboard after placing adequate filters on the data as needed.
+
+
+
+# Ad-hoc analyses
+Ad-hoc analyses can be requested upon a rationale and analyses objectives. 
+
+
+
+

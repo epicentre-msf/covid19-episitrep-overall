@@ -1,5 +1,5 @@
 ---
-title: "MSF Covid-19 EpiSitrep MSF data analysis"
+title: "Covid-19 EpiSitrep MSF data analysis"
 description: |
   This document presents the analyses on the MSF Covid-19 linelists. It is subject to change according to needs and requests. The R scripts for both worldwide and linelist MSF analysis are provided on the following Github repository https://github.com/epicentre-msf/covid19-episitrep-overall for epidemiologists in MSF to use (R skills required). The scripts will be updated from week to week as analysis progresses as requested.
 author:
@@ -45,7 +45,6 @@ knitr::opts_chunk$set(cache = FALSE,
 
 ```
 
-
 <!-- Import and manage data -->
 ```{r get_data, include = FALSE}
 # The list of countries
@@ -70,19 +69,15 @@ source(file.path(path.R, 'run_get_msf_data.R'), encoding = 'UTF-8')
 **Information** of completeness of data (number of MSF projects that are active on Covid19 care, reporting individual data (linelist), reporting aggregated data and not reporting data). Number of projects will be listed by continent and region. 
  
 ```{r, eval = FALSE}
-
 # This will be a summary table
 # We still not have the necessary information to produce this table
-
 ```
 
 
 **Table** of total number of patients screened, by sex and age group
 
 ```{r, eval = FALSE}
-
 # Also fo this table we do not have the necessary data yet
-
 ```
 
 
@@ -201,6 +196,7 @@ gtbl_countries_covid_status <- tbl_countries_covid_status %>%
     row_group.padding = px(1), 
     summary_row.padding = px(1), 
     grand_summary_row.padding = px(1))
+
 
 gtbl_countries_covid_status
 
@@ -461,10 +457,7 @@ p_epicurve_status
 ```
 
 
-**Table** by Covid status
-
-  - Age (median, IQR, min-max)
-  - Sex
+**Table** Age (median, IQR, min-max), sex and presence of at least one morbidity, by Covid status
 
 ```{r TblAllGeneralCharacteristics}
 
@@ -528,12 +521,12 @@ gtbl_general <- tbl_general %>%
 gtbl_general
 
 gtsave(gtbl_general, 
-       file.path(path.local.msf.tables, glue("gtbl_general_{week_report}.html")), 
-       inline_css = TRUE) %>% 
+       file.path(path.local.msf.tables, paste0('gtbl_general','_', week_report, '.png'))) %>% 
   invisible()
 
 gtsave(gtbl_general, 
-       file.path(path.local.msf.tables, glue("gtbl_general_{week_report}.png"))) %>% 
+       file.path(path.local.msf.tables, paste0('gtbl_general', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
   invisible()
 
 ```
@@ -673,28 +666,85 @@ gtbl_sympt <- tbl_sympt %>%
 gtbl_sympt
 
 gtsave(gtbl_sympt, 
-       file.path(path.local.msf.tables, glue("gtbl_sympt_{week_report}.png"))) %>% 
+       file.path(path.local.msf.tables, paste0('gtbl_sympt','_', week_report, '.png'))) %>% 
   invisible()
 
 gtsave(gtbl_sympt, 
-       file.path(path.local.msf.tables, glue("gtbl_sympt_{week_report}.html")), 
+       file.path(path.local.msf.tables, paste0('gtbl_sympt', '_', week_report, '.html')), 
        inline_css = TRUE) %>% 
   invisible()
 
 ```
 
 
-## - TO BE DONE ASAP (FRANCESCO)
-
 **Table Case-fatality risk** by Covid status
 - Case-fatality risk among suspect, probable and confirmed, and by consultation/admission
 
 ```{r}
+tbl_cfr_status_continent <- dta %>% 
+  select(continent, region, country, covid_status, outcome_status) %>% 
+  filter(outcome_status %in% c('Cured', 'Died')) %>% 
+  group_by(continent, covid_status) %>% 
+  summarise(
+    totals = paste0(sum(outcome_status == 'Died'), '/', n()), 
+    died_p = mean(outcome_status == 'Died')) %>% 
+  pivot_wider(names_from = continent, values_from = c(totals, died_p))
+
+gtbl_cfr_status_continent <- tbl_cfr_status_continent %>% 
+  gt() %>% 
+  cols_label(
+    covid_status     = 'Covid status', 
+    totals_Africa    = 'n/N', 
+    totals_Americas  = 'n/N', 
+    totals_Asia      = 'n/N', 
+    died_p_Africa    = '(%)', 
+    died_p_Americas  = '(%)', 
+    died_p_Asia      = '(%)') %>% 
+  tab_spanner(
+    label = 'Africa', 
+    columns = ends_with('_Africa')) %>% 
+  tab_spanner(
+    label = 'Americas', 
+    columns = ends_with('_Americas')) %>% 
+  tab_spanner(
+    label = 'Asia', 
+    columns = ends_with('_Asia')) %>% 
+  fmt_number(
+    columns = starts_with('died_p_'), 
+    decimals = 1, 
+    scale_by = 100, 
+    pattern = '({x})') %>% 
+  fmt_missing(
+    columns = starts_with('totals_'), 
+    missing_text = "0/0") %>% 
+  fmt_missing(
+    columns = starts_with('died_p_'), 
+    missing_text = "---") %>% 
+  cols_align(
+    align = 'left', 
+    columns = vars(covid_status)) %>% 
+  cols_align(
+    align = 'right', 
+    columns = starts_with('totals')) %>% 
+  tab_options(
+    column_labels.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2))
+
+
+gtbl_cfr_status_continent
+
+gtsave(gtbl_cfr_status_continent, 
+       file.path(path.local.msf.tables, paste0('gtbl_cfr_status_continent','_', week_report, '.png'))) %>% 
+  invisible()
+
+gtsave(gtbl_cfr_status_continent, 
+       file.path(path.local.msf.tables, paste0('gtbl_cfr_status_continent','_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
 
 ```
 
-
-## - TO BE DONE ASAP (FRANCESCO)
 
 # Description of Covid19 confirmed patients
 
@@ -702,6 +752,48 @@ gtsave(gtbl_sympt,
 
 ```{r}
 
+seq_agegp <- seq(0,100,5)
+
+age_labels <- sprintf("%s-%s", seq_agegp[-length(seq_agegp)], seq_agegp[-1] - 1)
+
+dta_age_sex <- dta %>% 
+  select(continent, region, country, age_in_years, sex) %>% 
+  mutate(
+    age_group = cut(age_in_years, seq_agegp, age_labels, include.lowest = TRUE, right = FALSE), 
+    sex = factor(sex, levels = c('M','F'), labels = c('Males', 'Females'))) %>%
+  filter(!is.na(age_group), !is.na(sex))
+
+
+caption_graph <- glue::glue('Analysis and graphic by Epicentre | Data source: MSF linelists as of {format(date_max_report, "%d %b %Y")}')
+
+### Pyramid overall
+tbl_age_sex <- dta_age_sex %>%
+  count(sex, age_group) %>% 
+  mutate(n = if_else(sex == "Males", -n, n))
+
+n_max <- max(abs(tbl_age_sex$n))
+y_breaks <- pretty(0:n_max, n = 6)
+y_breaks <- c(-y_breaks, y_breaks)
+
+p_pyramid_age_sex <- ggplot(tbl_age_sex, aes(x = age_group, y = n, fill = sex)) + 
+  geom_col() + 
+  coord_flip() + 
+  scale_fill_brewer("", palette = "Set1", breaks = c("Males", "Females"), labels = c("Males", "Females")) + 
+  scale_x_discrete("Age groups") + 
+  scale_y_continuous(name = 'Count', limits = c(-n_max, n_max), label = abs, breaks = y_breaks) + 
+  theme_light() + 
+  theme(legend.position = "top") + 
+  labs(caption = caption_graph)
+
+p_pyramid_age_sex
+
+ggsave(file.path(path.local.msf.graphs, "p_pyramid_age_sex.png"), 
+       plot = p_pyramid_age_sex, 
+       width = 6, 
+       height = 6)
+
+
+#p_pyramid_age_sex + facet_wrap(~ region)
 
 ```
 
