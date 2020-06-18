@@ -342,6 +342,20 @@ gtsave(gtbl_sites_covid_status,
 ```
 
 
+```{r, include = FALSE}
+
+# Outputs for the text
+nb_msf_obs       <- dta %>% count() %>% pull(n)
+nb_msf_confirmed <- sum(dta$covid_status == 'Confirmed', na.rm = TRUE)
+nb_msf_probable  <- sum(dta$covid_status == 'Probable', na.rm = TRUE)
+nb_msf_suspected <- sum(dta$covid_status == 'Suspected', na.rm = TRUE)
+nb_msf_sites     <- length(tbl_sites_covid_status %>% pull(site_name))
+call_msf_countries <- tbl_sites_covid_status %>% distinct(country) %>% pull()
+
+```
+
+
+
 **Histogram of number of consultation and admissions aggregated by week**
 
 ```{r}
@@ -987,12 +1001,12 @@ gtbl_care <- tbl_care %>%
     row_group.padding = px(5))
   
 gtsave(gtbl_care, 
-       file.path(path.local.msf.tables, glue("gtbl_care_{week_report}.html")), 
+       file.path(path.local.msf.tables, paste0('gtbl_care', '_', week_report, '.html')), 
        inline_css = TRUE) %>% 
   invisible()
 
 gtsave(gtbl_care, 
-       file.path(path.local.msf.tables, glue("gtbl_care_{week_report}.png"))) %>% 
+       file.path(path.local.msf.tables, paste0('gtbl_care', '_', week_report, '.png'))) %>% 
   invisible()
 
 
@@ -1010,13 +1024,94 @@ gtbl_care
 ```
 
 
-**Table Outcome 1 - Count outcome count of cured, deaths, transferred… by country?? (Probably by continent)** 
+**Table Outcome 1 - Case Fatality Risk by continent**
 
-```{r}
-# TO BE DONE by Francesco. Priority +++
+<!-- Probably by region or country of not too long -->
 
-dta_cfr_continent <- dta %>% 
-  select(continent, covid_status)
+```{r, eval=FALSE}
+# DONE by Francesco
+
+dta_cfr_continent
+
+dta_cfr <- dta %>% 
+  select(continent, region, country, covid_status, outcome_status) %>% 
+  filter(outcome_status %in% c('Cured', 'Died')) %>% 
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected'))
+
+tbl_cfr_continent <- dta_cfr %>% 
+  group_by(covid_status) %>% 
+  summarise(total_Total = n(),
+            cured_n_Total = sum(outcome_status == 'Cured', na.rm = TRUE), 
+            died_n_Total  = sum(outcome_status == 'Died', na.rm = TRUE), 
+            died_p_Total  = mean(outcome_status == 'Died', na.rm = TRUE)) %>% 
+  ungroup()
+
+
+
+tbl_cfr_continent_covid_status <- dta_cfr %>% 
+  group_by(continent, covid_status) %>% 
+  summarise(total = n(),
+            cured_n = sum(outcome_status == 'Cured', na.rm = TRUE), 
+            died_n  = sum(outcome_status == 'Died', na.rm = TRUE), 
+            died_p  = mean(outcome_status == 'Died', na.rm = TRUE)) %>% 
+  pivot_wider(names_from = continent, values_from = c(total, cured_n, died_n, died_p)) %>% 
+  ungroup()
+
+gtbl_cfr_continent <- tbl_cfr_continent_covid_status %>% 
+  full_join(tbl_cfr_continent) %>% 
+  gt() %>% 
+  cols_label(
+    covid_status   = 'Covid status', 
+    total_Africa   = 'Total', 
+    total_Americas = 'Total',
+    total_Asia     = 'Total', 
+    total_Total    = 'Total',
+    cured_n_Africa   = 'Cured', 
+    cured_n_Americas = 'Cured',
+    cured_n_Asia     = 'Cured', 
+    cured_n_Total    = 'Cured', 
+    died_n_Africa   = 'Died',
+    died_n_Americas = 'Died', 
+    died_n_Asia     = 'Died', 
+    died_n_Total    = 'Died', 
+    died_p_Africa   = 'CFR', 
+    died_p_Americas = 'CFR',
+    died_p_Asia     = 'CFR',
+    died_p_Total    = 'CFR') %>% 
+  cols_align(
+    align = 'left', 
+    columns = vars(covid_status)) %>% 
+  fmt_number(
+    columns = starts_with('died_p_'), 
+    decimals = 1, 
+    scale_by = 100) %>% 
+  tab_spanner(
+    label = 'Africa', 
+    columns = ends_with('_Africa')) %>% 
+  tab_spanner(
+    label = 'Americas', 
+    columns = ends_with('_Americas')) %>% 
+  tab_spanner(
+    label = 'Asia', 
+    columns = ends_with('_Asia')) %>% 
+  tab_spanner(
+    label = 'Total', 
+    columns = ends_with('_Total')) %>% 
+  tab_options(
+    column_labels.font.weight = "bold", 
+    data_row.padding = px(5))
+
+gtsave(gtbl_cfr_continent, 
+       file.path(path.local.msf.tables, paste0('gtbl_cfr_continent', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+gtsave(gtbl_cfr_continent, 
+       file.path(path.local.msf.tables, paste0('gtbl_cfr_continent', '_', week_report, '.png'))) %>% 
+  invisible()
+
+gtbl_cfr_continent
+
 ```
 
 
