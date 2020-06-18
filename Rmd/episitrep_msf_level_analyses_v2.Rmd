@@ -342,27 +342,43 @@ gtsave(gtbl_sites_covid_status,
 ```
 
 
-**Histogram of number of consultation and admissions aggregated by week**
+## Histogram of number of consultation and admissions aggregated by week
 
 ```{r}
 # DONE by Paul
 
 df_epicurve <- dta %>% 
-  select(epi_week_consultation, epi_week_admission) %>% 
-  pivot_longer(everything(), names_to = "type", values_to = "date") %>% 
-  count(type, date) %>% 
+  count(epi_week_consultation, admit) %>% 
   drop_na() %>% 
-  mutate(type = factor(type, levels = c("epi_week_consultation", "epi_week_admission"), labels = c("Consultations", "Admissions")))
+  mutate(admit = recode(admit, "Yes" = "Admitted", "No" = "Not Admitted"))
+
+df_admit_prop <- dta %>% 
+  drop_na(epi_week_consultation) %>% 
+  group_by(epi_week_consultation) %>% 
+  summarise(
+    total = sum(admit %in% c("Yes", "No")),
+    admitted = sum(admit == "Yes"),
+    admit_prop = admitted / total
+  ) %>% 
+  ungroup()
+
+n_max <- max(df_admit_prop$total, na.rm = TRUE)
+cfr_max <- rounder(max(df_admit_prop$admit_prop, na.rm = TRUE), .1)
+cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
+scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
 
 missing_consultation <- sum(is.na(dta$epi_week_consultation))
-missing_admission <- dta %>% filter(admit == "Yes") %>% summarise(missing = sum(is.na(epi_week_admission))) %>% pull(missing)
 
-p_epicurve_consult_admit <- ggplot(df_epicurve, aes(date, n)) +
-  facet_wrap(~type, ncol = 1) +
-  geom_col(fill = "steelblue") + #position = "dodge"
-  scale_x_date(name = "Epi Week", date_breaks = "1 week", date_labels = "%V",
-               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
-  labs(y = NULL, caption = glue::glue("Missing dates: Consultation {missing_consultation}, Admission {missing_admission}"))
+p_epicurve_consult_admit <- ggplot(df_epicurve, aes(epi_week_consultation, n)) +
+  geom_col(aes(fill = admit)) + 
+  geom_line(data = df_admit_prop, 
+            aes(y = admit_prop / scaling_factor, colour = "Admitted %"), 
+            key_glyph = "timeseries", size = 1) +
+  ggthemes::scale_fill_tableau(name = "Consultation") +
+  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .)) +
+  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1))) +
+  labs(y = "Patients", colour = NULL, caption = glue::glue("Missing Consultation Dates: {missing_consultation}")) +
+  theme(legend.position = "top")
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_consult_admit_{week_report}.png")), 
        plot = p_epicurve_consult_admit, 
@@ -373,56 +389,55 @@ p_epicurve_consult_admit
 
 ```
 
-
-**Histogram of weekly number of consultations by continent**
+## Histogram of number of consultation and admissions aggregated by week and continent
 
 ```{r}
-# DONE by Paul
+df_epicurve_continent <- dta %>% 
+  count(continent, epi_week_consultation, admit) %>% 
+  drop_na() %>% 
+  mutate(admit = recode(admit, "Yes" = "Admitted", "No" = "Not Admitted"))
 
-p_epicurve_consult_continent <- dta %>% 
-  count(continent, epi_week_consultation) %>% 
-  ggplot(aes(epi_week_consultation, n)) +
+df_admit_prop_continent <- dta %>% 
+  drop_na(epi_week_consultation) %>% 
+  group_by(continent, epi_week_consultation) %>% 
+  summarise(
+    total = sum(admit %in% c("Yes", "No")),
+    admitted = sum(admit == "Yes"),
+    admit_prop = admitted / total
+  ) %>% 
+  ungroup()
+
+n_max <- max(df_admit_prop_continent$total, na.rm = TRUE)
+cfr_max <- rounder(max(df_admit_prop_continent$admit_prop, na.rm = TRUE), .1)
+cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
+scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
+
+missing_consultation <- sum(is.na(dta$epi_week_consultation))
+
+p_epicurve_consult_admit_continent <- ggplot(df_epicurve_continent, aes(epi_week_consultation, n)) +
   facet_wrap(~continent) +
-  geom_col(fill = "steelblue") +
-  scale_x_date(name = "Epi Week", date_breaks = "1 week", date_labels = "%V",
-               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
-  labs(y = "Consultations")
+  geom_col(aes(fill = admit)) + 
+  geom_line(data = df_admit_prop_continent, 
+            aes(y = admit_prop / scaling_factor, colour = "Admitted %"), 
+            key_glyph = "timeseries", size = 1) +
+  ggthemes::scale_fill_tableau(name = "Consultation") +
+  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .), guide = ggplot2::guide_axis(n.dodge = 2)) +
+  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1))) +
+  labs(y = "Patients", colour = NULL, caption = glue::glue("Missing Consultation Dates: {missing_consultation}")) +
+  theme(legend.position = "top")
 
-ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_consult_continent_{week_report}.png")), 
-       plot = p_epicurve_consult_continent, 
+ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_consult_admit_continent_{week_report}.png")), 
+       plot = p_epicurve_consult_admit_continent, 
        scale = 1, 
        dpi = 320)
 
-p_epicurve_consult_continent
-
+p_epicurve_consult_admit_continent
 ```
 
 
-**Histogram of weekly number of admissions by continent**
-
-```{r}
-# DONE by Paul
-
-p_epicurve_admit_continent <- dta %>% 
-  count(continent, epi_week_admission) %>% 
-  ggplot(aes(epi_week_admission, n)) +
-  facet_wrap(~continent) +
-  geom_col(fill = "steelblue") +
-  scale_x_date(name = "Epi Week", date_breaks = "1 week", date_labels = "%V",
-               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
-  labs(y = "Admissions")
-
-ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_admit_continent_{week_report}.png")), 
-       plot = p_epicurve_admit_continent, 
-       scale = 1, 
-       dpi = 320)
-
-p_epicurve_admit_continent
-
-```
 
 
-**Histogram of weekly number of confirmed, probable, suspected, not a case and unknown overall and by region (or continent)**
+## Histogram of weekly number of confirmed, probable, suspected, not a case and unknown overall
 
 ```{r}
 # DONE by Paul
@@ -435,7 +450,6 @@ p_epicurve_status <- dta %>%
   scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V",
                sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
   labs(y = "Patients") + 
-  theme_light() + 
   theme(legend.position = 'top')
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_status_{week_report}.png")), 
@@ -447,7 +461,7 @@ p_epicurve_status
 
 ```
 
-**Histogram of weekly number of confirmed, probable, suspected, not a case and unknown overall and by region (or continent)**
+## Histogram of weekly number of confirmed, probable, suspected, not a case and unknown by continent
 
 ```{r}
 # DONE by Francesco (copied from the Paul graph just above)
@@ -458,7 +472,7 @@ p_epicurve_status_continent <- dta %>%
   facet_wrap(vars(continent)) + 
   geom_col() +
   ggthemes::scale_fill_tableau(name = "Status") +
-  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V",
+  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V", guide = ggplot2::guide_axis(n.dodge = 2),
                sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
   labs(y = "Patients") + 
   theme_light() + 
@@ -1231,73 +1245,6 @@ Time-series plot:
   -	Length of staying for patients hospitalised - boxplot
   -	Case fatality risk for patients hospitalised - line
 
-## Proportion of confirmed, probable and suspected cases admitted to hospital
-
-```{r}
-# DONE by Paul
-
-df_admit_prop <- dta %>% 
-  filter(covid_status %in% c("Confirmed", "Suspected", "Probable")) %>% 
-  mutate(epi_week_lab = lubridate::isoweek(epi_week_consultation)) %>% 
-  group_by(epi_week_consultation) %>% 
-  summarise(
-    n = n(),
-    admit = sum(admit == "Yes", na.rm = TRUE),
-    admit_prop = admit / n,
-    icu = sum(icu == "Yes", na.rm = TRUE),
-    icu_prop = icu / n
-  ) %>% 
-  drop_na(epi_week_consultation) #%>% 
-  #slice(1:(n()-2))
-
-p_admit_prop <- ggplot(df_admit_prop, aes(epi_week_consultation, admit_prop)) +
-  geom_line(colour = "steelblue", size = 1) +
-  scale_x_date(name = "Epi Week", date_breaks = "1 week", date_labels = "%V") +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-  labs(y = "Proportion Admitted")
-
-ggsave(file.path(path.local.msf.graphs, glue("msf_admit_prop_{week_report}.png")), 
-       plot = p_admit_prop, 
-       scale = 1, 
-       dpi = 320)
-
-p_admit_prop
-
-# p2 <- ggplot(df_admit_prop, aes(epi_week_consultation, icu_prop)) +
-#   geom_line(colour = "steelblue", size = 1) +
-#   scale_x_date(name = NULL, date_breaks = "1 week") +
-#   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-#   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) + 
-#   labs(x = NULL)
-# 
-# p3 <- ggplot(df_admit_prop, aes(epi_week_consultation, died_prop)) +
-#   geom_line(colour = "steelblue", size = 1) +
-#   #scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V",
-#   #             sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
-#   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
-#   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) + 
-#   labs(x = NULL)
-# 
-# # onset admission delay
-# p4 <- dta %>% 
-#   filter(covid_status == "Confirmed") %>%
-#   ggplot(aes(epi_week_consultation, delay_before_admission, group = epi_week_consultation)) +
-#   geom_jitter(colour = "red", alpha = 0.5) +
-#   geom_boxplot(fill = NA, outlier.alpha = 0) +
-#   #scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V",
-#   #             sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
-#   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) + 
-#   labs(x = NULL)
-# 
-# # length stay
-# p5 <- dta %>% 
-#   filter(covid_status == "Confirmed") %>%
-#   ggplot(aes(epi_week_consultation, length_stay, group = epi_week_consultation)) +
-#   geom_jitter(colour = "red", alpha = 0.3) +
-#   geom_boxplot(fill = NA, outlier.alpha = 0) +
-#   scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V")
-
-```
 
 ## Outcome by epiweek with CFR
 
@@ -1306,34 +1253,48 @@ p_admit_prop
 # DONE by Paul
 # Only including outcomes of cured or died as CFR denominator - is this ok? FG: Yes
 
+# 2 most recent epi weeks to remove from chart
+latest_2_epi_weeks <- max_2(dta$epi_week_consultation)
+
 df_deaths_epiweek_prop <- dta %>% 
-  filter(outcome_status %in% c("Cured", "Died")) %>% 
+  filter(
+    covid_status %in% c("Confirmed", "Suspected", "Probable"), 
+    outcome_status %in% c("Cured", "Died"), 
+    !epi_week_consultation %in% latest_2_epi_weeks
+  ) %>% 
+  drop_na(epi_week_consultation) %>% 
   group_by(epi_week_consultation) %>% 
   summarise(
     total = sum(!is.na(outcome_status)), 
     dead = sum(outcome_status == "Died", na.rm = T), 
-    prop_dead = (dead / total) * 100
+    prop_dead = (dead / total) #* 100
   ) %>% 
   ungroup()
 
 df_deaths_epiweek <- dta %>% 
-  filter(outcome_status %in% c("Cured", "Died")) %>% 
+  filter(
+    covid_status %in% c("Confirmed", "Suspected", "Probable"), 
+    outcome_status %in% c("Cured", "Died"), 
+    !epi_week_consultation %in% latest_2_epi_weeks
+  ) %>% 
   count(epi_week_consultation, outcome_status) %>% 
-  drop_na()
+  drop_na() %>% 
+  ungroup()
 
 n_max <- max(df_deaths_epiweek_prop$total, na.rm = TRUE)
-scaling_factor <- 100 / n_max
+cfr_max <- rounder(max(df_deaths_epiweek_prop$prop_dead, na.rm = TRUE), .1)
+scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
 
 p_outcome_cfr <- ggplot(df_deaths_epiweek, aes(epi_week_consultation, n)) +
   geom_col(aes(fill = outcome_status)) +
   geom_line(data = df_deaths_epiweek_prop, 
-            aes(y = prop_dead / scaling_factor, colour = "Fatality"), 
+            aes(y = prop_dead / scaling_factor, colour = "CFR"), 
             key_glyph = "timeseries", size = 1) +
-  scale_x_date(name = "Epi Week", date_breaks = "1 week", date_labels = "%V") +
-  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Fatality (%)")) +
+  scale_x_date(name = "Week of Admission", date_breaks = "1 week", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .)) + #, labels = function(x) format(x, "%b-%Y")
+  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Case Fatality Rate", labels = scales::percent_format(accuracy = 1))) +
   ggthemes::scale_fill_tableau() +
-  labs(y = "Patients", colour = NULL, fill = "Outcome") +
-  theme(legend.position = "right")
+  labs(y = "Patients", colour = NULL, fill = "Outcome", caption = "Latest 2 weeks omitted for data completeness purposes") +
+  theme(legend.position = "top")
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_outcome_cfr_{week_report}.png")), 
        plot = p_outcome_cfr, 
@@ -1344,19 +1305,99 @@ p_outcome_cfr
 ```
 
 
+## Outcome by epiweek with CFR by Continent
+
+```{r}
+
+# DONE by Paul
+# Only including outcomes of cured or died as CFR denominator - is this ok? FG: Yes
+
+# 2 most recent epi weeks to remove from chart
+latest_2_epi_weeks <- max_2(dta$epi_week_consultation)
+
+df_deaths_epiweek_continent_prop <- dta %>% 
+  filter(
+    covid_status %in% c("Confirmed", "Suspected", "Probable"), 
+    outcome_status %in% c("Cured", "Died"), 
+    !epi_week_consultation %in% latest_2_epi_weeks
+  ) %>% 
+  group_by(continent, epi_week_consultation) %>% 
+  summarise(
+    total = sum(!is.na(outcome_status)), 
+    dead = sum(outcome_status == "Died", na.rm = T), 
+    prop_dead = (dead / total) #* 100
+  ) %>% 
+  ungroup()
+
+df_deaths_epiweek_continent <- dta %>% 
+  filter(
+    covid_status %in% c("Confirmed", "Suspected", "Probable"), 
+    outcome_status %in% c("Cured", "Died"), 
+    !epi_week_consultation %in% latest_2_epi_weeks
+  ) %>% 
+  count(continent, epi_week_consultation, outcome_status) %>% 
+  drop_na() 
+
+n_max <- max(df_deaths_epiweek_continent_prop$total, na.rm = TRUE)
+cfr_max <- rounder(max(df_deaths_epiweek_continent_prop$prop_dead, na.rm = TRUE), .1)
+cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
+scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
+
+p_outcome_cfr_continent <- ggplot(df_deaths_epiweek_continent, aes(epi_week_consultation, n)) +
+  facet_wrap(~continent, ncol = 1) +
+  geom_col(aes(fill = outcome_status)) +
+  geom_line(data = df_deaths_epiweek_continent_prop, 
+            aes(y = prop_dead / scaling_factor, colour = "CFR"), 
+            key_glyph = "timeseries", size = 1) +
+  scale_x_date(name = "Week of Admission", date_breaks = "1 week", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .)) + #, labels = function(x) format(x, "%b-%Y")
+  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Case Fatality Rate", labels = scales::percent_format(accuracy = 1))) +
+  ggthemes::scale_fill_tableau() +
+  labs(y = "Patients", colour = NULL, fill = "Outcome", caption = "Latest 2 weeks omitted for data completeness purposes") +
+  theme(legend.position = "top")
+
+ggsave(file.path(path.local.msf.graphs, glue("msf_outcome_cfr_continent_{week_report}.png")), 
+       plot = p_outcome_cfr_continent, 
+       scale = 1, 
+       dpi = 320)
+
+p_outcome_cfr_continent
+```
+
+
 ## Onset to admission delay
 
 ```{r}
 # DONE by Paul
 
 # onset admission delay
+# p_onset_admit_delay <- dta %>% 
+#   filter(covid_status %in% c("Confirmed", "Suspected", "Probable")) %>%
+#   drop_na(epi_week_consultation, delay_before_admission) %>% 
+#   group_by(epi_week_consultation) %>% 
+#   summarise(
+#     lower_2_5 = quantile(delay_before_admission, 0.025),
+#     lower_25 = quantile(delay_before_admission, 0.25),
+#     median = median(delay_before_admission),
+#     upper_75 = quantile(delay_before_admission, 0.55),
+#     upper_97_5 = quantile(delay_before_admission, 0.975)
+#   ) %>% 
+#   ungroup() %>% 
+#   slice(1:(n()-1)) %>% 
+#   ggplot(aes(epi_week_consultation, median)) +
+#   geom_linerange(aes(ymin = lower_2_5, ymax = upper_97_5)) +
+#   geom_point(colour = "red", size = 3) +
+#   scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V",
+#                sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y")))
+
 p_onset_admit_delay <- dta %>% 
-  #filter(covid_status == "Confirmed") %>%
+  filter(covid_status %in% c("Confirmed", "Suspected", "Probable")) %>%
+  drop_na(epi_week_consultation, delay_before_admission) %>% 
+  filter(delay_before_admission <= 50) %>% # filter any delays over 50 days
+  filter(epi_week_consultation != max(epi_week_consultation)) %>%  # there's an incorrect this week in week 25 so remove (delete this line next week)
   ggplot(aes(epi_week_consultation, delay_before_admission, group = epi_week_consultation)) +
-  geom_jitter(colour = "red", alpha = 0.5) +
-  geom_boxplot(fill = NA, outlier.alpha = 0) +
-  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V",
-               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
+  #geom_jitter(colour = "red", alpha = 0.5) +
+  geom_boxplot() +
+  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .)) +
   labs(y = "Onset to admission delay (days)")
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_onset_admit_delay_{week_report}.png")), 
@@ -1372,15 +1413,19 @@ p_onset_admit_delay
 ```{r}
 # DONE by Paul
 
+# 2 most recent epi weeks to remove from chart
+latest_2_epi_weeks <- max_2(dta$epi_week_consultation)
+
 # length stay
 p_length_stay <- dta %>% 
-  #filter(covid_status == "Confirmed") %>% 
+  filter(covid_status %in% c("Confirmed", "Suspected", "Probable")) %>% 
+  drop_na(epi_week_consultation, length_stay) %>% 
+  filter(length_stay <= 50, !epi_week_consultation %in% latest_2_epi_weeks) %>% # filter any stays over 50 days
   ggplot(aes(epi_week_consultation, length_stay, group = epi_week_consultation)) +
-  geom_jitter(colour = "red", alpha = 0.3) +
-  geom_boxplot(fill = NA, outlier.alpha = 0) +
-  scale_x_date(name = "Epi Week", date_breaks = "1 week", date_labels = "%V",
-               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
-  labs(y = "Length of stay in hospital (days)")
+  #geom_jitter(colour = "red", alpha = 0.3) +
+  geom_boxplot() +
+  scale_x_date(name = "Week of Admission", date_breaks = "1 week", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .)) +
+  labs(y = "Length of stay in hospital (days)", caption = "Latest 2 weeks omitted for data completeness purposes")
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_length_stay_{week_report}.png")), 
        plot = p_length_stay, 

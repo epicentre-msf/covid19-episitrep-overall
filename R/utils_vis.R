@@ -1,10 +1,14 @@
 
 # set ggplot theme
-ggplot2::theme_set(ggplot2::theme_bw())
+ggplot2::theme_set(ggplot2::theme_light(base_size = 14))
 
 
 cm_to_in <- 0.39370079
 
+rounder <- function(x,y) {
+  if(y >= 0) { x + (y - x %% y)}
+  else { x - (x %% abs(y))}
+}
 
 
 add_brks <- function(x, n = 5, style = "jenks") {
