@@ -151,6 +151,7 @@ prepare_msf_dta <- function(dta){
       age_in_years = floor(age_in_years), 
       admit = factor(admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
       outcome_admit = factor(outcome_admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
+      date_consultation = as.Date(date_consultation), 
       outcome_status = factor(outcome_status, levels = levels_outcome_status) %>% forcats::fct_explicit_na(na_level = 'Pending/Unknown'),
       epi_week_report = make_epiweek_date(report_date),
       epi_week_consultation = make_epiweek_date(date_consultation),
@@ -185,6 +186,11 @@ prepare_msf_dta <- function(dta){
     mutate(
       continent = as.factor(continent)
     )
+  
+  # Filter date of consultation until the Sunday the EpiSitrep (see set_time_frame.R)
+  date_min_consultation <- min(pull(dta, date_consultation), na.rm =TRUE) 
+  dta <- dta %>% 
+    filter(between(date_consultation, left = date_min_consultation, right = date_max_report))
   
   return(dta)
 }
