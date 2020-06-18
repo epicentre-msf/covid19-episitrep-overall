@@ -30,6 +30,13 @@ make_epiweek_date <- function(date) {
 }
 
 
+max_2 <- function(x) {
+  # 2 most recent epi weeks to remove from charts
+  x <- unique(x) %>% purrr::discard(is.na) %>% sort()
+  n <- length(x)
+  c(nth(x, n-1), nth(x, n))
+}
+
 
 # Formatting Confidence Intervals
 combine_ci <- function(lwr, upr, digits = 1) {
