@@ -6,24 +6,25 @@ source(file.path(path.R, "utils_get_data.R")  , encoding = "UTF-8")
 
 
 # === === === === === === === 
+# Geo and population data
+# === === === === === === === 
+
+sf_world         <- readRDS(file.path(path.data, paste0('sf_world','.RDS')))
+df_countries     <- readRDS(file.path(path.data, paste0('df_countries','.RDS')))
+df_pop_country   <- readRDS(file.path(path.data, paste0('df_pop_country','.RDS')))
+df_pop_region    <- readRDS(file.path(path.data, paste0('df_pop_region','.RDS')))
+df_pop_continent <- readRDS(file.path(path.data, paste0('df_pop_continent','.RDS')))
+
+
+
+# === === === === === === === 
 # ECDC data
 # === === === === === === === 
 
 # Get the ECDC data
 if (get_updated_world_data) {
   
-  sf_world     <- get_world_sf(scale = 'small', proj = 'robinson')
-  df_ecdc      <- get_ecdc_data()
-  df_countries     <- df_ecdc %>% filter(!is.na(iso_a3)) %>% distinct_at(vars(continent, region, iso_a3, country))
-  df_pop_country   <- df_ecdc %>% filter(!is.na(iso_a3)) %>% distinct_at(vars(iso_a3, country, pop = population_2018))
-  df_pop_region    <- df_ecdc %>% filter(!is.na(iso_a3)) %>% group_by(region)    %>% summarise(pop = sum(population_2018, na.rm = TRUE))
-  df_pop_continent <- df_ecdc %>% filter(!is.na(iso_a3)) %>% group_by(continent) %>% summarise(pop = sum(population_2018, na.rm = TRUE))
-  
-  saveRDS(sf_world        , file = file.path(path.local.worldwide.data, paste0('sf_world','.RDS')))
-  saveRDS(df_countries    , file = file.path(path.local.worldwide.data, paste0('df_countries','.RDS')))
-  saveRDS(df_pop_country  , file = file.path(path.local.worldwide.data, paste0('df_pop_country','.RDS')))
-  saveRDS(df_pop_region   , file = file.path(path.local.worldwide.data, paste0('df_pop_region','.RDS')))
-  saveRDS(df_pop_continent, file = file.path(path.local.worldwide.data, paste0('df_pop_continent','.RDS')))
+  df_ecdc <- get_ecdc_data()
   
   # ECDC data until date_max_report
   dfc_ecdc <- df_ecdc %>% 
@@ -42,12 +43,6 @@ if (get_updated_world_data) {
   saveRDS(Sys.Date(), file = file.path(path.local.worldwide.data, 'last_save_date.RDS'))
   
 } else {
-  
-  sf_world         <- readRDS(file.path(path.local.worldwide.data, paste0('sf_world','.RDS')))
-  df_countries     <- readRDS(file.path(path.local.worldwide.data, paste0('df_countries','.RDS')))
-  df_pop_country   <- readRDS(file.path(path.local.worldwide.data, paste0('df_pop_country','.RDS')))
-  df_pop_region    <- readRDS(file.path(path.local.worldwide.data, paste0('df_pop_region','.RDS')))
-  df_pop_continent <- readRDS(file.path(path.local.worldwide.data, paste0('df_pop_continent','.RDS')))
   
   load(file.path(path.local.worldwide.data, 'dta_ECDC.RData'))
   

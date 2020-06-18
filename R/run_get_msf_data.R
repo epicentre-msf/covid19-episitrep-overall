@@ -25,8 +25,8 @@ if (get_updated_msf_data) {
   # Prepare the aggregated dataset
   dta_expanded <- dta_aggregated %>% 
     select(-c(date_adm_first, date_adm_last)) %>% 
-    pivot_longer(cols = c("Confirmed", "Probable", "Suspected", "Not a case", "Unknown"),
-                 names_to = "covid_status") %>% 
+    pivot_longer(cols = c('Confirmed', 'Probable', 'Suspected', 'Not a case', 'Unknown'),
+                 names_to = 'covid_status') %>% 
     mutate(obs = purrr::map(value, ~rep_len(1, .x))) %>%
     unnest(cols = c(obs)) %>%
     select(-c(value, obs)) %>% 

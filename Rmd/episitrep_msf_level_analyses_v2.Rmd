@@ -47,8 +47,9 @@ knitr::opts_chunk$set(cache = FALSE,
 
 <!-- Import and manage data -->
 ```{r get_data, include = FALSE}
+
 # The list of countries
-df_countries <- readRDS(file.path(path.local.worldwide.data, 'df_countries.RDS'))
+df_countries <- readRDS(file.path(path.data, 'df_countries.RDS'))
 
 # The MSF linelist
 update_msf_data_anyways <- TRUE
@@ -449,7 +450,7 @@ p_epicurve_status
 **Histogram of weekly number of confirmed, probable, suspected, not a case and unknown overall and by region (or continent)**
 
 ```{r}
-# DONE by Francesco (copied from the Paul graph just above
+# DONE by Francesco (copied from the Paul graph just above)
 
 p_epicurve_status_continent <- dta %>% 
   count(continent, covid_status, epi_week_consultation) %>% 
@@ -482,7 +483,8 @@ p_epicurve_status_continent
 Not yet done
 
 ```{r}
-## - To be done (FRANCESCO) Priority +
+# - To be done (FRANCESCO) 
+# - Priority +
 ```
 
 
@@ -713,7 +715,6 @@ gtsave(gtbl_sympt,
 
 **Table Case-fatality risk by Covid status and by continent**
 
-
 ```{r}
 # DONE by Francesco
 tbl_cfr_status <- dta %>% 
@@ -781,9 +782,6 @@ gtbl_cfr_status_continent <- tbl_cfr_status_continent %>%
     data_row.padding = px(2), 
     row_group.padding = px(2))
 
-
-gtbl_cfr_status_continent
-
 gtsave(gtbl_cfr_status_continent, 
        file.path(path.local.msf.tables, paste0('gtbl_cfr_status_continent','_', week_report, '.png'))) %>% 
   invisible()
@@ -793,14 +791,17 @@ gtsave(gtbl_cfr_status_continent,
        inline_css = TRUE) %>% 
   invisible()
 
+
+gtbl_cfr_status_continent
+
 ```
 
 - , and by consultation/admission
 
 
-# Description of Covid19 confirmed patients
+# Description of confirmed patients
 
-**Age/sex pyramid** by continent
+**Age/sex pyramid**
 
 ```{r}
 # DONE by Francesco
@@ -838,17 +839,25 @@ p_pyramid_age_sex <- ggplot(tbl_age_sex, aes(x = age_group, y = n, fill = sex)) 
   theme(legend.position = "top") + 
   labs(caption = caption_graph)
 
-p_pyramid_age_sex
-
-ggsave(file.path(path.local.msf.graphs, "p_pyramid_age_sex.png"), 
+ggsave(file.path(path.local.msf.graphs, paste0('msf', 'p_pyramid_age_sex', '.png')), 
        plot = p_pyramid_age_sex, 
        width = 6, 
        height = 6)
 
+
+p_pyramid_age_sex
+
+```
+
+
+**Age/sex pyramid by continent**
+
+```{r}
 # The Pyramid seems not displaying correctly
 #p_pyramid_age_sex + facet_wrap(~ region)
 
 ```
+
 
 
 **Table** by continent (by region, if possible):
@@ -977,9 +986,6 @@ gtbl_care <- tbl_care %>%
     data_row.padding = px(5), 
     row_group.padding = px(5))
   
-
-gtbl_care
-
 gtsave(gtbl_care, 
        file.path(path.local.msf.tables, glue("gtbl_care_{week_report}.html")), 
        inline_css = TRUE) %>% 
@@ -990,6 +996,8 @@ gtsave(gtbl_care,
   invisible()
 
 
+gtbl_care
+
 ```
 
 
@@ -998,9 +1006,7 @@ gtsave(gtbl_care,
 - medication received (under discussion)
 
 ```{r}
-
 # List of medications to be finalised
-
 ```
 
 
@@ -1008,6 +1014,9 @@ gtsave(gtbl_care,
 
 ```{r}
 # TO BE DONE by Francesco. Priority +++
+
+dta_cfr_continent <- dta %>% 
+  select(continent, covid_status)
 ```
 
 
@@ -1091,16 +1100,17 @@ gtbl_outcome <- tbl_outcome %>%
     column_labels.font.weight = "bold", 
     data_row.padding = px(2))
 
-gtbl_outcome
-
 gtsave(gtbl_outcome, 
-       file.path(path.local.msf.tables, glue("gtbl_outcome_{week_report}.html")), 
+       file.path(path.local.msf.tables, paste0('gtbl_outcome', '_', week_report, '.html')), 
        inline_css = TRUE) %>% 
   invisible()
 
 gtsave(gtbl_outcome, 
-       file.path(path.local.msf.tables, glue("gtbl_outcome_{week_report}.png"))) %>% 
+       file.path(path.local.msf.tables, paste0('gtbl_outcome', '_', week_report, '.png'))) %>% 
   invisible()
+
+
+gtbl_outcome
 
 ```
 
@@ -1167,17 +1177,17 @@ gtbl_risk_comcond <- tbl_risk_comcond %>%
     row_group.font.weight = 'bold', 
     data_row.padding = px(2))
 
-
-gtbl_risk_comcond
-
 gtsave(gtbl_risk_comcond, 
-       file.path(path.local.msf.tables, glue("gtbl_risk_comcond_{week_report}.html")), 
+       file.path(path.local.msf.tables, paste0('gtbl_risk_comcond', '_', week_report, '.html')), 
        inline_css = TRUE) %>% 
   invisible()
 
 gtsave(gtbl_risk_comcond, 
-       file.path(path.local.msf.tables, glue("gtbl_risk_comcond_{week_report}.png"))) %>% 
+       file.path(path.local.msf.tables, paste0('gtbl_risk_comcond', '_', week_report, '.png'))) %>% 
   invisible()
+
+
+gtbl_risk_comcond
 
 ```
 
