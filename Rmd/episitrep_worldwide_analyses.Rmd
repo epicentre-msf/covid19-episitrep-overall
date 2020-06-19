@@ -1121,13 +1121,13 @@ for (i in names(lst_tests)) {
   
   tst <- lst_tests[[i]] %>% 
     filter(between(date, left = date_max_report - (period_trends - 1), right = date_max_report))
-  if (nrow(tst) < 6) {
+  if (sum(is.na(tst$new_tests)) == period_trends | nrow(tst) == 0) {
     tbl_tests <- tbl_tests %>% 
       add_row(iso_a3 = i, 
               tests_cml = sum(tst$new_tests, na.rm = TRUE),
               reliable = NA_character_)
   } else {
-    if (sum(tst$new_tests == 0, na.rm = TRUE) > 6) {
+    if (sum(tst$new_tests == 0, na.rm = TRUE) > 6 | sum(is.na(tst$new_tests)) > period_trends/2) {
       tbl_tests <- tbl_tests %>% 
         add_row(iso_a3 = i, 
                 tests_cml = sum(tst$new_tests, na.rm = TRUE),
@@ -1142,16 +1142,78 @@ for (i in names(lst_tests)) {
 }
 
 # Final table
-tbl_ar_rt <- df_countries %>% 
+tbl_tests_inc <- df_countries %>% 
   left_join(df_pop_country %>% select(iso_a3, pop)) %>% 
   left_join(tbl_tests) %>% 
   left_join(tbl_cases_count_12d) %>% 
   right_join(tbl_cases_increasing_trend %>% select(iso_a3, cases, coeff)) %>% 
   mutate(
     cases_inc_12d = cases_12d / pop * 100000, 
+    tests_prop    = cases_12d / tests_cml, 
     tests_ratio   = tests_cml / cases_12d, 
     tests_rate    = tests_cml / pop * 100000
   )
+
+```
+
+<!-- Plot test proportion -->
+```{r DotsTestsProportion, fig.cap = glue('Relation between the proportion of positive tests in the last 12 days and the cumulative number of cases reported')}
+
+tbl_tests_inc_reliable <- tbl_tests_inc %>% 
+  filter(reliable == 'Yes')
+
+dots_prop_tests <- ggplot(tbl_tests_inc_reliable, aes(tests_prop, cases_inc_12d)) + 
+  geom_point(aes(colour = continent)) + 
+  ggrepel::geom_text_repel(
+    aes(tests_prop, cases_inc_12d, label = country, colour = continent),
+    size = 3,
+    show.legend = FALSE) + 
+  scale_x_continuous(labels = scales::percent) + 
+  scale_y_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
+                     labels = scales::trans_format("log10", function(x) round(10^x, 0))) + 
+  labs(
+    y = "Cumulative number of cases per 100,000 people in the last 12 days (log scale)",
+    x = glue('Proportion of Covid positive tests in the last 12 days'), 
+    colour = 'Continent', 
+    caption = glue('Analysis and graphic by Epicentre | Data source: FIND as of {format(date_max_report, "%d %b %Y")}')) + 
+  theme_light()
+  
+ggsave(file.path(path.local.worldwide.graphs, paste0('dots_prop_tests', '_', week_report, '.png')), 
+       plot = dots_prop_tests, 
+       width = 8, 
+       height = 6, 
+       scale = 1, 
+       dpi = 320)
+
+
+dots_prop_tests
+
+
+tbl_tests_country_non_reliable <- tbl_tests_inc %>% 
+  filter(reliable == 'No') %>% 
+  arrange(country) %>% 
+  select(`Not reliable data` = country)
+
+tbl_tests_country_no_data <- tbl_tests_inc %>% 
+  filter(is.na(reliable)) %>% 
+  arrange(country) %>% 
+  select(`Not data` = country)
+
+#tbl_country_missing_tests <- grid.arrange(dots_prop_tests,
+#                                          tableGrob(tbl_tests_country_non_reliable, rows = NULL), 
+#                                          tableGrob(tbl_tests_country_no_data, rows = NULL), 
+#                                          nrow = 1)
+
+
+#ggplot(file.path(path.local.worldwide.graphs, paste0('dots_prop_tests', 'tbl_country_missing_tests', '_', week_report, '.png')), 
+#       plot = tbl_country_missing_tests, 
+#       width = 8, 
+#       height = 6, 
+#       scale = 1, 
+#       dpi = 320)
+
+# To fix the size of the table
 
 ```
 
@@ -1159,11 +1221,11 @@ tbl_ar_rt <- df_countries %>%
 <!-- Plot test ratio -->
 ```{r DotsTestsRatio, fig.cap = glue('Relation between the number of tests carried out in the last 12 days (as ratio of the number of confirmed cases) and the cumulative number of cases reported')}
 
-dots_ratio_tests <- ggplot(tbl_ar_rt, aes(tests_ratio, cases_inc_12d)) + 
+dots_ratio_tests <- ggplot(tbl_tests_inc, aes(tests_ratio, cases_inc_12d)) + 
   geom_point(aes(tests_ratio, cases_inc_12d, colour = continent)) + 
-  geom_point(data = tbl_ar_rt %>% filter(reliable == 'No'), 
+  geom_point(data = tbl_tests_inc %>% filter(reliable == 'No'), 
              pch = 21, fill = NA, size = 4, colour = "red", stroke = 1) + 
-  geom_point(data = tbl_ar_rt %>% filter(tests_cml == 0), 
+  geom_point(data = tbl_tests_inc %>% filter(tests_cml == 0), 
              pch = 21, fill = NA, size = 4, colour = "black", stroke = 1) + 
   ggrepel::geom_text_repel(
     aes(tests_ratio, cases_inc_12d, label = country, colour = continent),
@@ -1197,11 +1259,11 @@ ggsave(file.path(path.local.worldwide.graphs, glue("dots_ratio_tests_{week_repor
 <!-- Plot test rate -->
 ```{r DotsTestsRate, fig.cap = glue('Relation between the number of tests carried out in the last 12 days (as rate of the country population) and the cumulative number of cases reported')}
 
-dots_rate_tests <- ggplot(tbl_ar_rt, aes(tests_rate, cases_inc_12d)) + 
+dots_rate_tests <- ggplot(tbl_tests_inc, aes(tests_rate, cases_inc_12d)) + 
   geom_point(aes(tests_rate, cases_inc_12d, colour = continent)) + 
-  geom_point(data = tbl_ar_rt %>% filter(reliable == 'No'), 
+  geom_point(data = tbl_tests_inc %>% filter(reliable == 'No'), 
              pch = 21, fill = NA, size = 4, colour = "red", stroke = 1) + 
-  geom_point(data = tbl_ar_rt %>% filter(tests_cml == 0), 
+  geom_point(data = tbl_tests_inc %>% filter(tests_cml == 0), 
              pch = 21, fill = NA, size = 4, colour = "black", stroke = 1) + 
   ggrepel::geom_text_repel(
     aes(tests_rate, cases_inc_12d, label = country, colour = continent),

@@ -218,7 +218,7 @@ gtsave(gtbl_countries_covid_status,
   - counts by Covid status: confirmed, probable, suspected, not a case and unknown
   - dates of first and last consultation/hospitalisation
 
-```{r TblCovidStatusSite, layout = "l-body-outset"}
+```{r TblCovidStatusSite, layout = "l-body-outset", include = FALSE}
 # DONE by Francesco
 
 tbl_sites_covid_status <- dta %>%
@@ -319,7 +319,9 @@ gtbl_sites_covid_status <- tbl_sites_covid_status %>%
     fns = list('Grand Total' = ~ sum(.)),
     missing_text = "",
     formatter = fmt_number,
-    decimals = 0) %>%
+    decimals = 0) %>% 
+  tab_header(title = glue('Summary of Covid-19 infection-related status of patients consulted/admitted to an MSF supported health service as of {format(date_max_report, "%d %b %Y")}'), 
+             subtitle = 'Sites with (*) reported aggregated data') %>% 
   tab_options(
     column_labels.font.weight = "bold",
     row_group.font.weight = 'bold',
@@ -332,7 +334,7 @@ gtbl_sites_covid_status <- tbl_sites_covid_status %>%
 gtbl_sites_covid_status
 
 gtsave(gtbl_sites_covid_status,
-       file.path(path.local.msf.tables, glue("gtbl_sites_covid_status_{week_report}.html"))) %>%
+       file.path(path.local.msf.tables, paste0('SUMMARY-TABLE_MSF-sites_by_patients_Covid-status_', week_report, '.html'))) %>%
   invisible()
 
 gtsave(gtbl_sites_covid_status,
@@ -995,7 +997,7 @@ gtbl_care <- tbl_care %>%
     type_characteristic = case_when(
       characteristics %in% vars_admit$levels  ~ 'Admitted',
       characteristics %in% vars_oxigen$levels ~ 'Received oxygen',
-      characteristics %in% vars_icu$levels    ~ 'Admitted to the Intense Care Unit',
+      characteristics %in% vars_icu$levels    ~ 'Admitted to the Intensive Care Unit',
       characteristics %in% vars_vent$levels   ~ 'Supported by a ventilator',
       characteristics %in% vars_ecmo$levels   ~ 'Supported by extracorporeal membrane oxygenation (ECMO)')) %>%
   mutate(
@@ -1042,15 +1044,14 @@ gtbl_care
 
 <!-- Probably by region or country of not too long -->
 
-```{r, eval=FALSE}
+```{r, eval = FALSE}
 # DONE by Francesco
-
-dta_cfr_continent
 
 dta_cfr <- dta %>%
   select(continent, region, country, covid_status, outcome_status) %>%
   filter(outcome_status %in% c('Cured', 'Died')) %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected'))
+
 
 tbl_cfr_continent <- dta_cfr %>%
   group_by(covid_status) %>%
@@ -1059,8 +1060,6 @@ tbl_cfr_continent <- dta_cfr %>%
             died_n_Total  = sum(outcome_status == 'Died', na.rm = TRUE),
             died_p_Total  = mean(outcome_status == 'Died', na.rm = TRUE)) %>%
   ungroup()
-
-
 
 tbl_cfr_continent_covid_status <- dta_cfr %>%
   group_by(continent, covid_status) %>%
@@ -1231,14 +1230,32 @@ Frequency of co-morbidities, among cured and deaths
 # DONE by Francesco
 
 dta_comcond <- dta %>%
-  select(covid_status, outcome_status, starts_with('Comcond_')) %>%
-  filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died')) %>%
-  select(-c(Comcond_present, Comcond_pregt)) %>%
+  select(covid_status, outcome_status, starts_with('Comcond_'), hiv_status, hypertension , tb_active, malaria, malnutrition, smoking) %>%
+  filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died')) %>% 
+  mutate(
+    malaria = case_when(
+      malaria %in% c('Inconclusive', 'Not done') ~ 'Unknown', 
+      malaria == 'Positive' ~ 'Yes', 
+      malaria == 'Negative' ~ 'No',
+      TRUE ~ malaria), 
+    hiv_status = case_when(
+      hiv_status %in% c('Positive (on ARV)', 'Positive (unknown)') ~ 'Yes', 
+      hiv_status == 'Negative' ~ 'No',
+      TRUE ~ hiv_status), 
+    tb_active = case_when(
+      tb_active %in% c('Yes (currently no treatment)', 'Yes (currently on treatment)', 'Yes (unknown)') ~ 'Yes', 
+      TRUE ~ tb_active), 
+    smoking = case_when(
+      smoking %in% c('Yes (current)', 'Yes (former)') ~ 'Yes', 
+      TRUE ~ smoking)) %>% 
+  select(-c(Comcond_present, Comcond_pregt)) %>% 
   pivot_longer(-c(covid_status,outcome_status), names_to = "type_comorbidity") %>%
   filter(!is.na(value), value == 'Yes')
 
-levels_comcond <- unique(dta_comcond$type_comorbidity)
-labels_comcond <- c('Cardiological', 'Immunological', 'Renal', 'Hepatic', 'Neurological', 'Diabetes', 'Respiratory', 'Pregnancy', 'Cancer')
+                          
+
+levels_comcond <- c('Comcond_cardi', 'Comcond_immuno', 'Comcond_renal', 'Comcond_liver', 'Comcond_neuro', 'Comcond_diabetes', 'Comcond_lung', 'Comcond_preg', 'Comcond_malig', 'hypertension', 'hiv_status', 'tb_active', 'malaria', 'smoking')
+labels_comcond <- c('Cardiovascular (including hypertention)', 'Immunological (including HIV)', 'Renal', 'Hepatic', 'Neurological', 'Diabetes', 'Respiratory (including chronic lung diseases)', 'Pregnancy', 'Cancer', 'Hypertension', 'HIV', 'TB', 'Malaria', 'Smoking')
 
 dta_comcond <- dta_comcond %>%
   mutate(
@@ -1256,7 +1273,7 @@ tbl_risk_comcond <- dta_comcond %>%
 gtbl_risk_comcond <- tbl_risk_comcond %>%
   gt() %>%
   cols_label(
-    type_comorbidity = "Class of comorbidities",
+    type_comorbidity = "Comorbidities/Underlying conditions",
     total = html('Total'),
     cured_n = 'n',
     cured_p = '%',

@@ -40,7 +40,7 @@ get_ecdc_data <- function() {
   
   d <- readr::read_csv(base_url) %>%
     dplyr::mutate(date = as.Date(dateRep, format = "%d/%m/%Y") -1) %>%
-    dplyr::rename(geoid = geoId, country_ecdc = countriesAndTerritories, iso_a3 = countryterritoryCode, population_2018 = popData2018) %>%
+    dplyr::rename(geoid = geoId, country_ecdc = countriesAndTerritories, iso_a3 = countryterritoryCode, population_2019 = popData2019) %>%
     dplyr::select(-dateRep) %>%
     dplyr::arrange(date) %>%
     dplyr::mutate_at(dplyr::vars(cases, deaths), ~ifelse(. < 0, 0L, .)) %>% 
@@ -75,7 +75,7 @@ get_ecdc_data <- function() {
         TRUE ~ region), 
       source = "ECDC"
     ) %>% 
-    dplyr::select(date, country_ecdc:geoid, country:region, iso_a3, cases, deaths, population_2018, source)
+    dplyr::select(date, country_ecdc:geoid, country:region, iso_a3, cases, deaths, population_2019, source)
   
 }
 
