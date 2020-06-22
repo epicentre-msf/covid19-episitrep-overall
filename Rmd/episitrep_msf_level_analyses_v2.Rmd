@@ -1,7 +1,7 @@
 ---
 title: "Covid-19 EpiSitrep MSF data analysis"
 description: |
-  This document presents tables, graphs and maps of the MSF Covid-19 linelists analyses (not much text). It is subject to change according to needs and requests. Most, but not all, analyses presented here are presented and commented in the MSF Intersection Covid-19 EpiSitrep edited by Epicentre (for information on the EpiSitrep, please contact Anais.BROBAN@epicentre.msf.org).
+  This document presents tables, graphs and maps of the MSF Covid-19 linelists analyses (not much text). Most, but not all, of these analyses are presented and commented in the MSF Intersection Covid-19 EpiSitrep edited by Epicentre (for information on the EpiSitrep, please contact Anais.BROBAN@epicentre.msf.org).    
   
   The R scripts for both worldwide and MSF linelist analyses are provided on the following Github repository https://github.com/epicentre-msf/covid19-episitrep-overall for epidemiologists in MSF to use (R skills required). The scripts will be updated from week to week as analysis progresses as requested. 
 author:
@@ -68,7 +68,8 @@ source(file.path(path.R, 'run_get_msf_data.R'), encoding = 'UTF-8')
 
 
 # Overview
-This section ....
+This section will present **Information of completeness of data** (number of MSF projects that are active on Covid19 care, reporting individual data (linelist), reporting aggregated data and not reporting data). Number of projects will be listed by continent and region. 
+The required data are not available yet. And this section will be updated as soon as they are available.
 
 <!-- **Information** of completeness of data (number of MSF projects that are active on Covid19 care, reporting individual data (linelist), reporting aggregated data and not reporting data). Number of projects will be listed by continent and region.-->
 ```{r, eval = FALSE}
@@ -83,19 +84,210 @@ This section ....
 ```
 
 
-# All patients consulted/admitted
-This section provides an overview of all patients that attended an MSF supported COvid-19 health service ...
 
-### Summary tables of patients consulted/admitted to an MSF supported COvid-19 health service 
+<!-- Some text outputs for the EpiSitrep --> 
+```{r, include = FALSE}
+
+nb_msf_sites_linelist <- length(unique(dta$site_name))
+nb_msf_sites_aggregated <- length(unique(dta_aggregated$site_name))
+nb_msf_sites <- nb_msf_sites_linelist + nb_msf_sites_aggregated
+
+call_msf_countries <- unique(c(unique(dta$country), unique(dta_aggregated$country)))
+
+nb_msf_obs       <- dta %>% count() %>% pull(n)
+nb_msf_confirmed <- sum(dta$covid_status == 'Confirmed', na.rm = TRUE)
+nb_msf_probable  <- sum(dta$covid_status == 'Probable' , na.rm = TRUE)
+nb_msf_suspected <- sum(dta$covid_status == 'Suspected', na.rm = TRUE)
+
+```
+
+**Number of MSF sites**: `r nb_msf_sites` (`r nb_msf_sites_linelist` sites with linelist data and `r nb_msf_sites_aggregated` with aggreagated data). 
+
+**Total patients consulted/admitted**: `r nb_msf_obs` in `r length(call_msf_countries)` countries (`r combine_words(call_msf_countries)`). 
+
+Of all consultations/admissions patients were: 
+
+  - `r nb_msf_confirmed` confirmed
+  - `r nb_msf_probable` probable
+  - `r nb_msf_suspected` suspected
+
+
+
+# Analysis on all patients consulted/admitted
+
+This section provides an overview of **all patients that attended an MSF supported Covid-19 health facility**: number of patients consulted, but not admitted and number of consulted and admitted to the health facility.
+
+Other results are presented by Covid status (confirmed, probable, suspected, not a case and unknown) and listed by country country or site. 
+
+
+### Weekly number of consultation and admissions
+
+<!-- Histogram OVERALL of number of consultation/admissions -->
+```{r HistConsultationsAdmissions, fig.cap = paste('Weekly number of consultations and admissions in an MSF supported COvid-19 health service as of', format(date_max_report, "%d %B %Y"))}
+# DONE by Paul
+
+df_epicurve <- dta %>%
+  count(epi_week_consultation, admit) %>%
+  drop_na() %>%
+  mutate(admit = recode(admit, "Yes" = "Admitted", "No" = "Not Admitted"))
+
+df_admit_prop <- dta %>%
+  drop_na(epi_week_consultation) %>%
+  group_by(epi_week_consultation) %>%
+  summarise(
+    total = sum(admit %in% c("Yes", "No")),
+    admitted = sum(admit == "Yes"),
+    admit_prop = admitted / total
+  ) %>%
+  ungroup()
+
+n_max <- max(df_admit_prop$total, na.rm = TRUE)
+cfr_max <- rounder(max(df_admit_prop$admit_prop, na.rm = TRUE), .1)
+cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
+scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
+
+missing_consultation <- sum(is.na(dta$epi_week_consultation))
+
+p_epicurve_consult_admit <- ggplot(df_epicurve, aes(epi_week_consultation, n)) +
+  geom_col(aes(fill = admit)) +
+  geom_line(data = df_admit_prop,
+            aes(y = admit_prop / scaling_factor, colour = "Admitted %"),
+            key_glyph = "timeseries", size = 1) +
+  ggthemes::scale_fill_tableau(name = "Consultation") +
+  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .)) +
+  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1))) +
+  labs(y = "Patients", colour = NULL, caption = glue::glue("Missing Consultation Dates: {missing_consultation}")) + 
+  theme_light() + 
+  theme(legend.position = "top")
+
+ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_consult_admit_{week_report}.png")),
+       plot = p_epicurve_consult_admit,
+       scale = 1.1,
+       dpi = 320)
+
+
+p_epicurve_consult_admit
+
+```
+
+
+<!-- Histogram BY CONTINENT of number of consultation/admissions -->
+```{r HistConsultationsAdmissionsContinent, fig.cap = paste('Weekly number of consultations and admissions in an MSF supported COvid-19 health service by continent as of', format(date_max_report, "%d %B %Y"))}
+# DONE by Paul
+
+df_epicurve_continent <- dta %>%
+  count(continent, epi_week_consultation, admit) %>%
+  drop_na() %>%
+  mutate(admit = recode(admit, "Yes" = "Admitted", "No" = "Not Admitted"))
+
+df_admit_prop_continent <- dta %>%
+  drop_na(epi_week_consultation) %>%
+  group_by(continent, epi_week_consultation) %>%
+  summarise(
+    total = sum(admit %in% c("Yes", "No")),
+    admitted = sum(admit == "Yes"),
+    admit_prop = admitted / total
+  ) %>%
+  ungroup()
+
+n_max <- max(df_admit_prop_continent$total, na.rm = TRUE)
+cfr_max <- rounder(max(df_admit_prop_continent$admit_prop, na.rm = TRUE), .1)
+cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
+scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
+
+missing_consultation <- sum(is.na(dta$epi_week_consultation))
+
+p_epicurve_consult_admit_continent <- ggplot(df_epicurve_continent, aes(epi_week_consultation, n)) +
+  facet_wrap(~continent) +
+  geom_col(aes(fill = admit)) +
+  geom_line(data = df_admit_prop_continent,
+            aes(y = admit_prop / scaling_factor, colour = "Admitted %"),
+            key_glyph = "timeseries", size = 1) +
+  ggthemes::scale_fill_tableau(name = "Consultation") +
+  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .), guide = ggplot2::guide_axis(n.dodge = 2)) +
+  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1))) +
+  labs(y = "Patients", colour = NULL, caption = glue::glue("Missing Consultation Dates: {missing_consultation}")) + 
+    theme_light() + 
+  theme(legend.position = "top")
+
+ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_consult_admit_continent_{week_report}.png")),
+       plot = p_epicurve_consult_admit_continent,
+       scale = 1.1,
+       dpi = 320)
+
+
+p_epicurve_consult_admit_continent
+
+```
+
+
+
+### Weekly number of Consultations (including admission) by Covid status
+
+<!-- Histogram OVERALL of number of consultation/admissions -->
+```{r HistConsultationByCovidStatus, fig.cap = 'Weekly number of consultations (including admission) by Covid status'}
+# DONE by Paul
+
+p_epicurve_status <- dta %>%
+  count(covid_status, epi_week_consultation) %>%
+  ggplot(aes(epi_week_consultation, n, fill = covid_status)) +
+  geom_col() +
+  ggthemes::scale_fill_tableau(name = "Status") +
+  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V",
+               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
+  labs(y = "Patients") + 
+    theme_light() + 
+  theme(legend.position = 'top')
+
+ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_status_{week_report}.png")),
+       plot = p_epicurve_status,
+       scale = 1,
+       dpi = 320)
+
+
+p_epicurve_status
+
+```
+
+
+<!-- Histogram BY CONTINENT of number of consultation/admissions -->
+```{r HistConsultationByCovidStatusContinent, fig.cap = 'Weekly number of consultations (including admission) by Covid status, in each continent where MSF is operating'}
+# DONE by Francesco (copied from the Paul graph just above)
+
+p_epicurve_status_continent <- dta %>%
+  count(continent, covid_status, epi_week_consultation) %>%
+  ggplot(aes(epi_week_consultation, n, fill = covid_status)) +
+  facet_wrap(vars(continent)) +
+  geom_col() +
+  ggthemes::scale_fill_tableau(name = "Status") +
+  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V", guide = ggplot2::guide_axis(n.dodge = 2),
+               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
+  labs(y = "Patients") +
+  theme_light() +
+  theme(legend.position = 'top')
+
+ggsave(file.path(path.local.msf.graphs, glue('msf_epicurve_status_continent_{week_report}.png')),
+       plot = p_epicurve_status_continent,
+       scale = 1,
+       dpi = 320)
+
+
+p_epicurve_status_continent
+
+```
+
+
+
+### Summary tables of patients consulted/admitted to an MSF supported COvid-19 health facility 
 
 <!-- 
  === SUMMARY TABLE BY COUNTRY === 
-Counts of patients consulted/admitted to an MSF supported health service by Covid status (confirmed, probable, suspected, not a case and unknown) listed by country
+Counts of patients consulted/admitted to an MSF supported health facility by Covid status (confirmed, probable, suspected, not a case and unknown) listed by country
 -->
 ```{r, TblCovidStatusCountry, layout = "l-body-outset"}
 # DONE by Francesco
 
-tbl_countries_covid_status <-  dta %>%
+tbl_countries_covid_status <- dta %>%
   select(continent, country, site_name, covid_status) %>%
   add_row(dta_expanded) %>%
   group_by(continent, country) %>%
@@ -222,7 +414,7 @@ gtbl_countries_covid_status %>%
 
 <!-- 
  === SUMMARY TABLE BY SITE === 
-Counts of patients consulted/admitted to an MSF supported health service by Covid status (confirmed, probable, suspected, not a case and unknown) 
+Counts of patients consulted/admitted to an MSF supported health facility by Covid status (confirmed, probable, suspected, not a case and unknown) 
 -->
 ```{r TblCovidStatusSite, layout = "l-body-outset"}
 # DONE by Francesco
@@ -351,178 +543,6 @@ gtbl_sites_covid_status %>%
     title = html(paste('SUMMARY TABLE<br>
     Counts of patients consulted/admitted to an MSF supported COvid-19 health service by Covid status as of', format(date_max_report, "%d %b %Y"))),
     subtitle = 'Sites with (*) reported aggregated data') 
-
-```
-
-
-
-<!-- Some text outputs for the EpiSitrep --> 
-```{r, include = FALSE}
-
-nb_msf_obs       <- dta %>% count() %>% pull(n)
-nb_msf_confirmed <- sum(dta$covid_status == 'Confirmed', na.rm = TRUE)
-nb_msf_probable  <- sum(dta$covid_status == 'Probable', na.rm = TRUE)
-nb_msf_suspected <- sum(dta$covid_status == 'Suspected', na.rm = TRUE)
-nb_msf_sites     <- length(tbl_sites_covid_status %>% pull(site_name))
-call_msf_countries <- tbl_sites_covid_status %>% distinct(country) %>% pull()
-
-```
-
-
-
-### Histograms of number of consultation and admissions aggregated by week
-
-<!-- Histogram OVERALL of number of consultation/admissions -->
-```{r HistConsultationsAdmissions, fig.cap = paste('Weekly number of consultations and admissions in an MSF supported COvid-19 health service as of', format(date_max_report, "%d %B %Y"))}
-# DONE by Paul
-
-df_epicurve <- dta %>%
-  count(epi_week_consultation, admit) %>%
-  drop_na() %>%
-  mutate(admit = recode(admit, "Yes" = "Admitted", "No" = "Not Admitted"))
-
-df_admit_prop <- dta %>%
-  drop_na(epi_week_consultation) %>%
-  group_by(epi_week_consultation) %>%
-  summarise(
-    total = sum(admit %in% c("Yes", "No")),
-    admitted = sum(admit == "Yes"),
-    admit_prop = admitted / total
-  ) %>%
-  ungroup()
-
-n_max <- max(df_admit_prop$total, na.rm = TRUE)
-cfr_max <- rounder(max(df_admit_prop$admit_prop, na.rm = TRUE), .1)
-cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
-scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
-
-missing_consultation <- sum(is.na(dta$epi_week_consultation))
-
-p_epicurve_consult_admit <- ggplot(df_epicurve, aes(epi_week_consultation, n)) +
-  geom_col(aes(fill = admit)) +
-  geom_line(data = df_admit_prop,
-            aes(y = admit_prop / scaling_factor, colour = "Admitted %"),
-            key_glyph = "timeseries", size = 1) +
-  ggthemes::scale_fill_tableau(name = "Consultation") +
-  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .)) +
-  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1))) +
-  labs(y = "Patients", colour = NULL, caption = glue::glue("Missing Consultation Dates: {missing_consultation}")) + 
-  theme_light() + 
-  theme(legend.position = "top")
-
-ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_consult_admit_{week_report}.png")),
-       plot = p_epicurve_consult_admit,
-       scale = 1.1,
-       dpi = 320)
-
-
-p_epicurve_consult_admit
-
-```
-
-
-<!-- Histogram BY CONTINENT of number of consultation/admissions -->
-```{r HistConsultationsAdmissionsContinent, fig.cap = paste('Weekly number of consultations and admissions in an MSF supported COvid-19 health service by continent as of', format(date_max_report, "%d %B %Y"))}
-# DONE by Paul
-
-df_epicurve_continent <- dta %>%
-  count(continent, epi_week_consultation, admit) %>%
-  drop_na() %>%
-  mutate(admit = recode(admit, "Yes" = "Admitted", "No" = "Not Admitted"))
-
-df_admit_prop_continent <- dta %>%
-  drop_na(epi_week_consultation) %>%
-  group_by(continent, epi_week_consultation) %>%
-  summarise(
-    total = sum(admit %in% c("Yes", "No")),
-    admitted = sum(admit == "Yes"),
-    admit_prop = admitted / total
-  ) %>%
-  ungroup()
-
-n_max <- max(df_admit_prop_continent$total, na.rm = TRUE)
-cfr_max <- rounder(max(df_admit_prop_continent$admit_prop, na.rm = TRUE), .1)
-cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
-scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
-
-missing_consultation <- sum(is.na(dta$epi_week_consultation))
-
-p_epicurve_consult_admit_continent <- ggplot(df_epicurve_continent, aes(epi_week_consultation, n)) +
-  facet_wrap(~continent) +
-  geom_col(aes(fill = admit)) +
-  geom_line(data = df_admit_prop_continent,
-            aes(y = admit_prop / scaling_factor, colour = "Admitted %"),
-            key_glyph = "timeseries", size = 1) +
-  ggthemes::scale_fill_tableau(name = "Consultation") +
-  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .), guide = ggplot2::guide_axis(n.dodge = 2)) +
-  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1))) +
-  labs(y = "Patients", colour = NULL, caption = glue::glue("Missing Consultation Dates: {missing_consultation}")) + 
-    theme_light() + 
-  theme(legend.position = "top")
-
-ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_consult_admit_continent_{week_report}.png")),
-       plot = p_epicurve_consult_admit_continent,
-       scale = 1.1,
-       dpi = 320)
-
-
-p_epicurve_consult_admit_continent
-
-```
-
-
-
-### Histograms of weekly number of Consultations/Admission by Covid status
-
-<!-- Histogram OVERALL of number of consultation/admissions -->
-```{r}
-# DONE by Paul
-
-p_epicurve_status <- dta %>%
-  count(covid_status, epi_week_consultation) %>%
-  ggplot(aes(epi_week_consultation, n, fill = covid_status)) +
-  geom_col() +
-  ggthemes::scale_fill_tableau(name = "Status") +
-  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V",
-               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
-  labs(y = "Patients") + 
-    theme_light() + 
-  theme(legend.position = 'top')
-
-ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_status_{week_report}.png")),
-       plot = p_epicurve_status,
-       scale = 1,
-       dpi = 320)
-
-
-p_epicurve_status
-
-```
-
-
-<!-- Histogram BY CONTINENT of number of consultation/admissions -->
-```{r}
-# DONE by Francesco (copied from the Paul graph just above)
-
-p_epicurve_status_continent <- dta %>%
-  count(continent, covid_status, epi_week_consultation) %>%
-  ggplot(aes(epi_week_consultation, n, fill = covid_status)) +
-  facet_wrap(vars(continent)) +
-  geom_col() +
-  ggthemes::scale_fill_tableau(name = "Status") +
-  scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V", guide = ggplot2::guide_axis(n.dodge = 2),
-               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
-  labs(y = "Patients") +
-  theme_light() +
-  theme(legend.position = 'top')
-
-ggsave(file.path(path.local.msf.graphs, glue('msf_epicurve_status_continent_{week_report}.png')),
-       plot = p_epicurve_status_continent,
-       scale = 1,
-       dpi = 320)
-
-
-p_epicurve_status_continent
 
 ```
 
@@ -775,6 +795,7 @@ gtbl_sympt %>%
 <!-- Table Case-fatality risk by Covid status and by continent -->
 ```{r}
 # DONE by Francesco
+
 tbl_cfr_status <- dta %>%
   select(covid_status, outcome_status) %>%
   filter(outcome_status %in% c('Cured', 'Died')) %>%
@@ -853,16 +874,16 @@ gtsave(gtbl_cfr_status_continent,
 gtbl_cfr_status_continent %>% 
   tab_header(
     title = 'Case-fatality risk by Covid status and continent among patients an MSF supported Covid-19 health service', 
-    subtitle = 'In the denominator only patients with outcome as cured or deaths'
+    subtitle = 'In the denominator only patients with outcome as cured or died'
   )
 
 ```
 
 
 
-# Confirmed patients
+# Analysis on confirmed patients
 
-### Characteristics of Covid confirmed patients
+### Age and sex distribution of Covid confirmed patients
 
 <!-- Age/sex pyramid -->
 ```{r, fig.cap = 'Age pyramid of patients consulted/admitted to an MSF supported Covid-19 health service', fig.width = 8, fig.height = 8}
@@ -1071,97 +1092,188 @@ gtbl_care %>%
 
 
 
-### Case fatality risk among confirmed patients by continent
 
-<!-- Table Outcome 1 - Case Fatality Risk by continent -->
-<!-- CFR by region or country of not too long -->
-```{r, eval = FALSE}
+### Age and sex of patients by outcome
+
+```{r}
 # DONE by Francesco
 
-dta_cfr <- dta %>%
-  select(continent, region, country, covid_status, outcome_status) %>%
-  filter(outcome_status %in% c('Cured', 'Died')) %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected'))
+dta_age_sex_outcome <- dta %>% 
+  select(site_name, covid_status, outcome_status, sex = sex, age_in_years) %>% 
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) 
 
+tbl_age_sex_outcome <- dta_age_sex_outcome %>% 
+  group_by(outcome_status) %>% 
+  summarise(
+    age_median = median(age_in_years, na.rm = TRUE), 
+    age_range  = glue('[{min(age_in_years, na.rm = TRUE)} - {max(age_in_years, na.rm = TRUE)}]'), 
+    sex_males   = sum(sex == 'M', na.rm = TRUE),
+    sex_females = sum(sex == 'F', na.rm = TRUE), 
+    sex_ratio   = sex_males/sex_females)
 
-tbl_cfr_continent <- dta_cfr %>%
-  group_by(covid_status) %>%
-  summarise(total_Total = n(),
-            cured_n_Total = sum(outcome_status == 'Cured', na.rm = TRUE),
-            died_n_Total  = sum(outcome_status == 'Died', na.rm = TRUE),
-            died_p_Total  = mean(outcome_status == 'Died', na.rm = TRUE)) %>%
-  ungroup()
+tbl_age_sex_outcome$sex_ratio[is.infinite(tbl_age_sex_outcome$sex_ratio)] <- NA
 
-tbl_cfr_continent_covid_status <- dta_cfr %>%
-  group_by(continent, covid_status) %>%
-  summarise(total = n(),
-            cured_n = sum(outcome_status == 'Cured', na.rm = TRUE),
-            died_n  = sum(outcome_status == 'Died', na.rm = TRUE),
-            died_p  = mean(outcome_status == 'Died', na.rm = TRUE)) %>%
-  pivot_wider(names_from = continent, values_from = c(total, cured_n, died_n, died_p)) %>%
-  ungroup()
-
-gtbl_cfr_continent <- tbl_cfr_continent_covid_status %>%
-  full_join(tbl_cfr_continent) %>%
-  gt() %>%
+gtbl_age_sex_outcome <- tbl_age_sex_outcome %>% 
+  gt() %>% 
   cols_label(
-    covid_status   = 'Covid status',
-    total_Africa   = 'Total',
-    total_Americas = 'Total',
-    total_Asia     = 'Total',
-    total_Total    = 'Total',
-    cured_n_Africa   = 'Cured',
-    cured_n_Americas = 'Cured',
-    cured_n_Asia     = 'Cured',
-    cured_n_Total    = 'Cured',
-    died_n_Africa   = 'Died',
-    died_n_Americas = 'Died',
-    died_n_Asia     = 'Died',
-    died_n_Total    = 'Died',
-    died_p_Africa   = 'CFR',
-    died_p_Americas = 'CFR',
-    died_p_Asia     = 'CFR',
-    died_p_Total    = 'CFR') %>%
-  cols_align(
-    align = 'left',
-    columns = vars(covid_status)) %>%
+    outcome_status = 'Status',
+    age_median = 'Median', 
+    age_range = '[min - max]', 
+    sex_males = 'Males', 
+    sex_females = 'Females', 
+    sex_ratio = 'ratio') %>% 
   fmt_number(
-    columns = starts_with('died_p_'),
-    decimals = 1,
-    scale_by = 100) %>%
+    columns = vars(sex_ratio), 
+    decimals = 1) %>% 
+  fmt_missing(
+    columns = vars(sex_ratio), 
+    missing_text = '---') %>% 
   tab_spanner(
-    label = 'Africa',
-    columns = ends_with('_Africa')) %>%
+    label = 'Age (years)', 
+    columns = starts_with('age_')) %>% 
   tab_spanner(
-    label = 'Americas',
-    columns = ends_with('_Americas')) %>%
-  tab_spanner(
-    label = 'Asia',
-    columns = ends_with('_Asia')) %>%
-  tab_spanner(
-    label = 'Total',
-    columns = ends_with('_Total')) %>%
+    label = 'Sex', 
+    columns = starts_with('sex_')) %>% 
+  cols_align(
+    align = 'left', 
+    columns = vars(outcome_status, age_range)) %>% 
+  cols_align(
+    align = 'right', 
+    columns = starts_with('sex_')) %>% 
   tab_options(
-    column_labels.font.weight = "bold",
-    data_row.padding = px(5))
+    column_labels.font.weight = "bold", 
+    data_row.padding = px(2))
 
-gtsave(gtbl_cfr_continent,
-       file.path(path.local.msf.tables, paste0('gtbl_cfr_continent', '_', week_report, '.png'))) %>%
+gtsave(gtbl_age_sex_outcome, 
+       file.path(path.local.msf.tables, paste0('gtbl_age_sex_outcome', '_', week_report, '.png'))) %>% 
   invisible()
 
-gtsave(gtbl_cfr_continent,
-       file.path(path.local.msf.tables, paste0('gtbl_cfr_continent', '_', week_report, '.html')),
-       inline_css = TRUE) %>%
+gtsave(gtbl_age_sex_outcome, 
+       file.path(path.local.msf.tables, paste0('gtbl_age_sex_outcome', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
   invisible()
 
 
-gtbl_cfr_continent
+gtbl_age_sex_outcome %>% 
+  tab_header(
+    title = 'Age and sex ditribution by type of patient outcome among confirmed, probable and suspected Covid cases')
 
 ```
 
 
+
+
+
+### Case fatality risk among confirmed patients
+
+<!-- Table Outcome 1 - Case Fatality Risk by continent -->
+<!-- CFR by region or country of not too long -->
+```{r}
+# DONE by Francesco
+
+tbl_cfr_age <- dta %>% 
+  filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died'), !is.na(age_5gp)) %>% 
+  select(age_5gp, outcome_status) %>% 
+  group_by(age_5gp) %>% 
+  summarise(
+    total  = n(), 
+    cured_n = sum(outcome_status == 'Cured'), 
+    cured_p = mean(outcome_status == 'Cured'), 
+    died_n = sum(outcome_status == 'Died'), 
+    died_p = mean(outcome_status == 'Died')
+  ) %>% 
+  mutate(
+    type_var = 'Age'
+  )
+
+tbl_cfr_sex <- dta %>% 
+  filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died'), !is.na(sex)) %>% 
+  mutate(sex = factor(sex, levels = c('F', 'M'), labels = c('Females', 'Males'))) %>% 
+  select(sex, outcome_status) %>% 
+  group_by(sex) %>% 
+  summarise(
+    total  = n(), 
+    cured_n = sum(outcome_status == 'Cured'), 
+    cured_p = mean(outcome_status == 'Cured'), 
+    died_n = sum(outcome_status == 'Died'), 
+    died_p = mean(outcome_status == 'Died')
+  ) %>% 
+  mutate(
+    type_var = 'Sex'
+  )
+
+tbl_cfr_comorb <- dta %>% 
+  filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died'), !is.na(Comcond_present)) %>% 
+  select(Comcond_present, outcome_status) %>% 
+  mutate(Comcond_present = as.character(Comcond_present)) %>% 
+  group_by(Comcond_present) %>% 
+  summarise(
+    total  = n(), 
+    cured_n = sum(outcome_status == 'Cured'), 
+    cured_p = mean(outcome_status == 'Cured'), 
+    died_n = sum(outcome_status == 'Died'), 
+    died_p = mean(outcome_status == 'Died')
+  ) %>% 
+  mutate(
+    type_var = 'Number of comorbidities'
+  )
+
+tbl_cfr_factors_1 <- tbl_cfr_age %>% rename(var = age_5gp) %>% 
+  add_row(tbl_cfr_sex %>% rename(var = sex)) %>% 
+  add_row(tbl_cfr_comorb %>% rename(var = Comcond_present))
+
+gtbl_cfr_factors_1 <- tbl_cfr_factors_1 %>% 
+  gt(rowname_col = "var", 
+     groupname_col = "type_var") %>% 
+  cols_label(
+    total = html('Total'), 
+    cured_n = 'n', 
+    cured_p = '%', 
+    died_n = 'n', 
+    died_p = '%') %>% 
+  tab_spanner(
+    label = 'Cured', 
+    columns = starts_with('cured_')) %>% 
+  tab_spanner(
+    label = 'Died', 
+    columns = starts_with('died_')) %>% 
+  fmt_number(
+    columns = vars(cured_p, died_p), 
+    decimals = 1, 
+    scale_by = 100) %>% 
+  fmt_missing(
+    columns = vars(cured_p, died_p), 
+    missing_text = '---') %>% 
+  cols_align(
+    align = 'right', 
+    columns = vars(total, cured_n, died_n, cured_p, died_p)) %>% 
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = 'bold', 
+    data_row.padding = px(2))
+
+gtsave(gtbl_cfr_factors_1, 
+       file.path(path.local.msf.tables, glue('gtbl_cfr_factors_1', '_', week_report, '.png'))) %>% 
+  invisible()
+
+
+gtsave(gtbl_cfr_factors_1, 
+       file.path(path.local.msf.tables, paste0('gtbl_cfr_factors_1', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtbl_cfr_factors_1 %>% 
+  tab_header(
+    title = 'Case fatality risk by age, sex and number of comorbidities'
+  )
+
+```
+
+
+
 <!-- 
-Table Outcome 2 - Count outcome count of cured, deaths, transferred… by Admitted/Not Admitted
+Table Outcome 2 - Count of cured, deaths, transferred… by Admitted/Not Admitted
 This table is NOT used any more 
 -->
 ```{r, eval = FALSE}
@@ -1252,7 +1364,10 @@ gtsave(gtbl_outcome,
   invisible()
 
 
-gtbl_outcome
+gtbl_outcome %>% 
+  tab_header(
+    title = 'Count of pateints outcome by Admitted/Not Admitted'
+  )
 
 ```
 
@@ -1262,7 +1377,7 @@ gtbl_outcome
 <!-- 
 Table not present in the original analysis plan
   - Frequency of co-morbidities, among cured and deaths
-Consider to To be stratified by continent 
+Consider to stratify by continent 
 -->
 ```{r}
 # DONE by Francesco
@@ -1349,7 +1464,10 @@ gtsave(gtbl_risk_comcond,
   invisible()
 
 
-gtbl_risk_comcond
+gtbl_risk_comcond %>% 
+  tab_header(
+    title = 'Frequency and percentage of comorbidities among cured and dead confirmed patients'
+  )
 
 ```
 
@@ -1358,7 +1476,7 @@ gtbl_risk_comcond
   - overall
   - by age group
   - by sex
-  - by comorbidity
+  - by co-morbidity
 -->
 ```{r}
 # DONE????
@@ -1388,7 +1506,7 @@ Time-series plot:
   -	Length of staying for patients hospitalised - boxplot
   -	Case fatality risk for patients hospitalised - line
 -->
-```{r}
+```{r BoxPlotCFR, fig.cap = 'Evolution overtime of the case fatality risk among Covid confirmed patients consulted/admitted to an MSF supported health facility'}
 # DONE by Paul
 # Only including outcomes of cured or died as CFR denominator - is this ok? FG: Yes
 
@@ -1437,7 +1555,7 @@ p_outcome_cfr <- ggplot(df_deaths_epiweek, aes(epi_week_consultation, n)) +
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_outcome_cfr_{week_report}.png")),
        plot = p_outcome_cfr,
-       scale = 1,
+       scale = 1.1,
        dpi = 320)
 
 p_outcome_cfr
@@ -1445,9 +1563,9 @@ p_outcome_cfr
 ```
 
 
-### Outcome by epiweek with CFR by Continent
+### Outcome by epiweek with CFR by continent
 
-```{r}
+```{r BoxPlotCFRContinent, fig.cap = 'Evolution overtime of the case fatality risk among Covid confirmed patients consulted/admitted to an MSF supported health facility, separated by continent'}
 # DONE by Paul
 # Only including outcomes of cured or died as CFR denominator - is this ok? FG: Yes
 
@@ -1506,7 +1624,7 @@ p_outcome_cfr_continent
 
 ### Onset to admission delay
 
-```{r}
+```{r BoxPlotDelayAdmission, fig.cap = 'Evolution overtime of the delay to admission among Covid confirmed patients consulted/admitted to an MSF supported health facility'}
 # DONE by Paul
 
 # onset admission delay
@@ -1552,7 +1670,7 @@ p_onset_admit_delay
 
 ### Length of stay in hospital
 
-```{r}
+```{r BoxPlotLengthStay, fig.cap = 'Evolution overtime of of length of stay among Covid confirmed hospitalized patients in an MSF supported health facility'}
 # DONE by Paul
 
 # 2 most recent epi weeks to remove from chart
