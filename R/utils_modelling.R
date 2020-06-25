@@ -25,7 +25,7 @@ linear_model_cnt <- function(series, lst_dta, last_date, time_unit_extent = 12, 
                                       max(date, na.rm = TRUE), by = 1), 
                       fill = list(cases = NA_real_, deaths = NA_real_))
     
-    if (dim(dta)[1] > ma_window & sum(dta[series]) > min_sum) {
+    if (dim(dta)[1] > ma_window & sum(dta[series], na.rm = TRUE) > min_sum) {
       
       dta$ma <- forecast::ma(dta[series], order = ma_window)
       dta$ma <- na_if(dta$ma, 0) # Replace 0 values as NA
@@ -180,7 +180,7 @@ quasipoisson_model_cnt <- function(series, lst_dta, last_date, time_unit_extent 
 
     dta <- lst_dta[[i]]
     
-    if (sum(dta[series]) > min_sum) {
+    if (sum(dta[series], na.rm = TRUE) > min_sum) {
       
       dta$obs <- dta[[series]]
       

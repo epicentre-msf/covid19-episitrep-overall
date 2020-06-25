@@ -1,5 +1,9 @@
 ---
 title: 'MSF Covid-19 EpiSitrep worldwide overview'
+description: |
+  This document presents maps, tables and graphs to describe the current Covid-19 pandemic from the MSF perspective (not much text). Most, but not all, of these analyses are presented and commented in the MSF Intersection Covid-19 EpiSitrep edited by Epicentre (for information on the EpiSitrep, please contact Anais.BROBAN@epicentre.msf.org). 
+  
+  The R scripts for both worldwide and MSF linelist analyses are provided on the following Github repository https://github.com/epicentre-msf/covid19-episitrep-overall for epidemiologists in MSF to use (R skills required). The scripts will be updated from week to week as analysis progresses as requested. 
 date: '`r Sys.Date()`'
 author:
   - name: Francesco Grandesso
@@ -38,8 +42,8 @@ knitr::opts_chunk$set(cache = FALSE,
 # Default parameters for analysis
 source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
 
-update_world_data_anyways <- FALSE
-update_models_anyways <- FALSE
+update_world_data_anyways <- TRUE
+update_models_anyways <- TRUE
 
 
 # Option to update ECDC data
@@ -88,11 +92,19 @@ source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
 
 # About this report
 
-This is a weekly report that describes the evolution of the current Covid-19 epidemic worldwide and in MSF projects. It intends to support MSF in their Covid-19 intervention projects. The worldwide description of the epidemic is intentionally short as many other summaries of the epidemic can be found online. Additional graphics and tables are also available at the [Epicentre COVID-19 Epi Dashboard](https://reports.msf.net/public/covid19/).
+This report uses the following data sources: 
+
+  - [ECDC data](https://opendata.ecdc.europa.eu/covid19/casedistribution/csv) last updated `r format(max(df_ecdc$date, na.rm = TRUE), "%d %b %Y")`.
+  -	MSF linelists compiled by Epicentre
+  -	MSF [GIS Unit](https://mapcentre.msf.org/) (baseline country maps)
+  -	FIND [Diagnostics Resource Centre Unit](https://www.finddx.org/covid-19/) for data on Covid-19 tests
 
 Definitions of increasing, declining and stable trends and the definition of doubling time, as well as detailed information on the analysis methods can be found [here](https://msfintl-my.sharepoint.com/:u:/g/personal/francesco_grandesso_epicentre_msf_org/EZqExKcP8axMj06voaLlveABpiicCfzkk5OWB-EaJvo9Fw?e=lwU1eM).
 
-**IMPORTANT NOTE:** Data and results presented here are possibly affected by bias related with factors such as the testing strategies used by each country and the performance of their surveillance systems. Results would be better interpreted in the light of this information, though currently not available to display in this document.
+Additional graphics and tables are also available at the [Epicentre COVID-19 Epi Dashboard](https://reports.msf.net/public/covid19/).
+
+
+**IMPORTANT NOTE:** Data and results presented here are possibly affected by bias related with factors such as the testing strategies used by each country and the performance of their surveillance systems. Results are to be interpreted in the light of this information.
 
 
 # Number and trends of Covid-19 cases
