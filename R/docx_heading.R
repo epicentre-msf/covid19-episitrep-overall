@@ -11,13 +11,22 @@ my_doc %<>%
 
 my_doc %<>% 
   body_add_par(style = 'Description bold', 
-               value = 'This is a weekly report that describes the evolution of the current Covid-19 epidemic worldwide and in MSF projects. It intends to support MSF in their Covid-19 intervention projects. The worldwide description of the epidemic is intentionally short as many other summaries of the epidemic can be found online. Additional graphics and tables are also available at the Epicentre ') %>% 
+               value = 'This is a weekly report that describes the evolution of the current Covid-19 epidemic worldwide and in MSF projects. It intends to support MSF in their Covid-19 intervention projects. Additional graphics and tables are also available at the Epicentre ') %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "COVID-19 Epi Dashboard", 
                hyperlink = "https://reports.msf.net/public/covid19/") %>% 
   slip_in_text(style = 'Description char', 
-               str = '.') %>% 
-  
+               str = '. Additional information on data collected through MSF linelists is now also available on the ') %>% 
+  slip_in_text(style = 'Hyperlink', 
+               str = "MSF COVID-19 Dashboard", 
+               hyperlink = "https://reports.msf.net/secure/app/covid19-linelist-dashboard/") %>% 
+  slip_in_text(style = 'Description char', 
+               str = ' (sign-up ') %>% 
+  slip_in_text(style = 'Hyperlink', 
+               str = "here", 
+               hyperlink = "https://reports.msf.net/signup/") %>% 
+  slip_in_text(style = 'Description char', 
+               str = ').') %>% 
   body_add_par(style = 'Description bold', 
                value = 'This report was edited by Epicentre. For any request or query, please contact Anaïs Broban (') %>% 
   slip_in_text(style = 'Hyperlink', 

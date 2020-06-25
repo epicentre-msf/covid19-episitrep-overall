@@ -113,7 +113,7 @@ my_doc <- add_par_normal('')
 
 
 my_doc <- add_table(
-  object_name = glue('gtbl_countries_covid_status_{week_report}.png'), 
+  object_name = paste0('gtbl_general','_', week_report, '.png'), 
   table_title = "Characteristics of patients admitted to the MSF supported facilities", 
   folder = 'msf', 
   width = 14.14 * cm_to_in, 

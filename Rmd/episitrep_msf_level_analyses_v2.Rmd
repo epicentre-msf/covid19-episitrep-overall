@@ -88,9 +88,9 @@ The required data are not available yet. And this section will be updated as soo
 <!-- Some text outputs for the EpiSitrep --> 
 ```{r, include = FALSE}
 
-nb_msf_sites_linelist <- length(unique(dta$site_name))
+nb_msf_sites_linelist   <- length(unique(dta$site_name))
 nb_msf_sites_aggregated <- length(unique(dta_aggregated$site_name))
-nb_msf_sites <- nb_msf_sites_linelist + nb_msf_sites_aggregated
+nb_msf_sites            <- nb_msf_sites_linelist + nb_msf_sites_aggregated
 
 call_msf_countries <- unique(c(unique(dta$country), unique(dta_aggregated$country)))
 
@@ -161,7 +161,9 @@ p_epicurve_consult_admit <- ggplot(df_epicurve, aes(epi_week_consultation, n)) +
   theme(legend.position = "top")
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_consult_admit_{week_report}.png")),
-       plot = p_epicurve_consult_admit,
+       plot = p_epicurve_consult_admit, 
+       width = 6, 
+       height = 4, 
        scale = 1.1,
        dpi = 320)
 
@@ -212,6 +214,8 @@ p_epicurve_consult_admit_continent <- ggplot(df_epicurve_continent, aes(epi_week
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_consult_admit_continent_{week_report}.png")),
        plot = p_epicurve_consult_admit_continent,
+       width = 6, 
+       height = 4, 
        scale = 1.1,
        dpi = 320)
 
@@ -240,8 +244,10 @@ p_epicurve_status <- dta %>%
   theme(legend.position = 'top')
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_status_{week_report}.png")),
-       plot = p_epicurve_status,
-       scale = 1,
+       plot = p_epicurve_status, 
+       width = 6, 
+       height = 4, 
+       scale = 1.1,
        dpi = 320)
 
 
@@ -267,8 +273,10 @@ p_epicurve_status_continent <- dta %>%
   theme(legend.position = 'top')
 
 ggsave(file.path(path.local.msf.graphs, glue('msf_epicurve_status_continent_{week_report}.png')),
-       plot = p_epicurve_status_continent,
-       scale = 1,
+       plot = p_epicurve_status_continent, 
+       width = 6, 
+       height = 4, 
+       scale = 1.1,
        dpi = 320)
 
 
@@ -901,7 +909,7 @@ dta_age_sex <- dta %>%
   filter(!is.na(age_group), !is.na(sex))
 
 
-caption_graph <- glue::glue('Analysis and graphic by Epicentre | Data source: MSF linelists as of {format(date_max_report, "%d %b %Y")}')
+caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF linelists as of {format(date_max_report, "%d %b %Y")}')
 
 ### Pyramid overall
 tbl_age_sex <- dta_age_sex %>%
@@ -1171,52 +1179,47 @@ gtbl_age_sex_outcome %>%
 ```{r}
 # DONE by Francesco
 
-tbl_cfr_age <- dta %>% 
-  filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died'), !is.na(age_5gp)) %>% 
-  select(age_5gp, outcome_status) %>% 
-  group_by(age_5gp) %>% 
-  summarise(
-    total  = n(), 
-    cured_n = sum(outcome_status == 'Cured'), 
-    cured_p = mean(outcome_status == 'Cured'), 
-    died_n = sum(outcome_status == 'Died'), 
-    died_p = mean(outcome_status == 'Died')
-  ) %>% 
-  mutate(
-    type_var = 'Age'
-  )
+make_cfr_tbl <- function(dta, x_var, label_var){
+  
+  x_var <- sym(x_var)
+  
+  dta <- dta %>% 
+    filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died'), !is.na(!!x_var))
 
-tbl_cfr_sex <- dta %>% 
-  filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died'), !is.na(sex)) %>% 
-  mutate(sex = factor(sex, levels = c('F', 'M'), labels = c('Females', 'Males'))) %>% 
-  select(sex, outcome_status) %>% 
-  group_by(sex) %>% 
+    
+  tbl_cfr_total <- dta %>% 
+  select(!!x_var, outcome_status) %>% 
+  group_by(!!x_var) %>% 
   summarise(
-    total  = n(), 
-    cured_n = sum(outcome_status == 'Cured'), 
-    cured_p = mean(outcome_status == 'Cured'), 
-    died_n = sum(outcome_status == 'Died'), 
-    died_p = mean(outcome_status == 'Died')
-  ) %>% 
+    totals_Total  = paste0(sum(outcome_status == 'Died'), '/', n()), 
+    died_p_Total = mean(outcome_status == 'Died')) %>% 
   mutate(
-    type_var = 'Sex'
-  )
+    label_var = label_var)
+  
+  tbl_cfr_continent <- dta %>%
+  select(continent, !!x_var, outcome_status) %>%
+  group_by(continent, !!x_var) %>%
+  summarise(
+    totals = paste0(sum(outcome_status == 'Died'), '/', n()),
+    died_p = mean(outcome_status == 'Died')) %>%
+  pivot_wider(names_from = continent, values_from = c(totals, died_p))
+  
+  tbl_cfr <- right_join(tbl_cfr_continent, tbl_cfr_total)
+  
+  return(tbl_cfr)
+  }
 
-tbl_cfr_comorb <- dta %>% 
-  filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died'), !is.na(Comcond_present)) %>% 
-  select(Comcond_present, outcome_status) %>% 
-  mutate(Comcond_present = as.character(Comcond_present)) %>% 
-  group_by(Comcond_present) %>% 
-  summarise(
-    total  = n(), 
-    cured_n = sum(outcome_status == 'Cured'), 
-    cured_p = mean(outcome_status == 'Cured'), 
-    died_n = sum(outcome_status == 'Died'), 
-    died_p = mean(outcome_status == 'Died')
-  ) %>% 
-  mutate(
-    type_var = 'Number of comorbidities'
-  )
+tbl_cfr_age <- make_cfr_tbl(dta, 'age_5gp', 'Age')
+
+tbl_cfr_sex <- make_cfr_tbl(dta %>% 
+                              mutate(sex = factor(sex, levels = c('F', 'M'), labels = c('Females', 'Males'))), 
+                            'sex', 
+                            'Sex')
+
+tbl_cfr_comorb <- make_cfr_tbl(dta %>% 
+                                 mutate(Comcond_present = as.factor(Comcond_present)), 
+                               'Comcond_present', 
+                               'Number of comorbidities')
 
 tbl_cfr_factors_1 <- tbl_cfr_age %>% rename(var = age_5gp) %>% 
   add_row(tbl_cfr_sex %>% rename(var = sex)) %>% 
@@ -1224,38 +1227,53 @@ tbl_cfr_factors_1 <- tbl_cfr_age %>% rename(var = age_5gp) %>%
 
 gtbl_cfr_factors_1 <- tbl_cfr_factors_1 %>% 
   gt(rowname_col = "var", 
-     groupname_col = "type_var") %>% 
-  cols_label(
-    total = html('Total'), 
-    cured_n = 'n', 
-    cured_p = '%', 
-    died_n = 'n', 
-    died_p = '%') %>% 
+     groupname_col = "label_var") %>% 
+    cols_label(
+    totals_Africa    = 'n/N',
+    totals_Americas  = 'n/N',
+    totals_Asia      = 'n/N',
+    totals_Total     = 'n/N',
+    died_p_Africa    = '(%)',
+    died_p_Americas  = '(%)',
+    died_p_Asia      = '(%)',
+    died_p_Total     = '(%)') %>%
   tab_spanner(
-    label = 'Cured', 
-    columns = starts_with('cured_')) %>% 
+    label = 'Africa',
+    columns = ends_with('_Africa')) %>%
   tab_spanner(
-    label = 'Died', 
-    columns = starts_with('died_')) %>% 
+    label = 'Americas',
+    columns = ends_with('_Americas')) %>%
+  tab_spanner(
+    label = 'Asia',
+    columns = ends_with('_Asia')) %>%
+  tab_spanner(
+    label = 'Total',
+    columns = ends_with('_Total')) %>%
   fmt_number(
-    columns = vars(cured_p, died_p), 
-    decimals = 1, 
-    scale_by = 100) %>% 
+    columns = starts_with('died_p_'),
+    decimals = 1,
+    scale_by = 100,
+    pattern = '({x})') %>%
   fmt_missing(
-    columns = vars(cured_p, died_p), 
-    missing_text = '---') %>% 
+    columns = starts_with('totals_'),
+    missing_text = "0/0") %>%
+  fmt_missing(
+    columns = starts_with('died_p_'),
+    missing_text = "---") %>%
   cols_align(
-    align = 'right', 
-    columns = vars(total, cured_n, died_n, cured_p, died_p)) %>% 
+    align = 'left',
+    columns = vars(var)) %>%
+  cols_align(
+    align = 'right',
+    columns = starts_with('totals')) %>%
   tab_options(
-    column_labels.font.weight = "bold", 
-    row_group.font.weight = 'bold', 
-    data_row.padding = px(2))
+    column_labels.font.weight = "bold",
+    data_row.padding = px(2),
+    row_group.padding = px(2))
 
-gtsave(gtbl_cfr_factors_1, 
+  gtsave(gtbl_cfr_factors_1, 
        file.path(path.local.msf.tables, glue('gtbl_cfr_factors_1', '_', week_report, '.png'))) %>% 
   invisible()
-
 
 gtsave(gtbl_cfr_factors_1, 
        file.path(path.local.msf.tables, paste0('gtbl_cfr_factors_1', '_', week_report, '.html')), 
@@ -1366,7 +1384,7 @@ gtsave(gtbl_outcome,
 
 gtbl_outcome %>% 
   tab_header(
-    title = 'Count of pateints outcome by Admitted/Not Admitted'
+    title = 'Count of patients outcome by Admitted/Not Admitted'
   )
 
 ```
@@ -1383,7 +1401,7 @@ Consider to stratify by continent
 # DONE by Francesco
 
 dta_comcond <- dta %>%
-  select(covid_status, outcome_status, starts_with('Comcond_'), hiv_status, hypertension , tb_active, malaria, malnutrition, smoking) %>%
+  select(continent, covid_status, outcome_status, starts_with('Comcond_'), hiv_status, hypertension , tb_active, malaria, malnutrition, smoking) %>%
   filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died')) %>% 
   mutate(
     malaria = case_when(
@@ -1402,7 +1420,7 @@ dta_comcond <- dta %>%
       smoking %in% c('Yes (current)', 'Yes (former)') ~ 'Yes', 
       TRUE ~ smoking)) %>% 
   select(-c(Comcond_present, Comcond_pregt)) %>% 
-  pivot_longer(-c(covid_status,outcome_status), names_to = "type_comorbidity") %>%
+  pivot_longer(-c(covid_status, outcome_status, continent), names_to = "type_comorbidity") %>%
   filter(!is.na(value), value == 'Yes')
 
 levels_comcond <- c('Comcond_cardi', 'Comcond_immuno', 'Comcond_renal', 'Comcond_liver', 'Comcond_neuro', 'Comcond_diabetes', 'Comcond_lung', 'Comcond_preg', 'Comcond_malig', 'hypertension', 'hiv_status', 'tb_active', 'malaria', 'smoking')
@@ -1413,46 +1431,54 @@ dta_comcond <- dta_comcond %>%
     type_comorbidity = factor(type_comorbidity, levels = levels_comcond, labels = labels_comcond)
 )
 
-tbl_risk_comcond <- dta_comcond %>%
-  group_by(type_comorbidity) %>%
-  summarise(total = n(),
-            cured_n = sum(outcome_status == 'Cured', na.rm = TRUE),
-            died_n  = sum(outcome_status == 'Died', na.rm = TRUE),
-            cured_p = mean(outcome_status == 'Cured', na.rm = TRUE),
-            died_p  = mean(outcome_status == 'Died', na.rm = TRUE))
+tbl_risk_comcond <- make_cfr_tbl(dta_comcond, 'type_comorbidity' ,'Comorbidities')
 
 gtbl_risk_comcond <- tbl_risk_comcond %>%
   gt() %>%
   cols_label(
-    type_comorbidity = "Comorbidities/Underlying conditions",
-    total = html('Total'),
-    cured_n = 'n',
-    cured_p = '%',
-    died_n = 'n',
-    died_p = '%') %>%
+    type_comorbidity = "Comorbidities/Underlying conditions", 
+    totals_Africa    = 'n/N',
+    totals_Americas  = 'n/N',
+    totals_Asia      = 'n/N',
+    totals_Total     = 'n/N',
+    died_p_Africa    = '(%)',
+    died_p_Americas  = '(%)',
+    died_p_Asia      = '(%)',
+    died_p_Total     = '(%)') %>%
   tab_spanner(
-    label = 'Cured',
-    columns = starts_with('cured_')) %>%
+    label = 'Africa',
+    columns = ends_with('_Africa')) %>%
   tab_spanner(
-    label = 'Died',
-    columns = starts_with('died_')) %>%
+    label = 'Americas',
+    columns = ends_with('_Americas')) %>%
+  tab_spanner(
+    label = 'Asia',
+    columns = ends_with('_Asia')) %>%
+  tab_spanner(
+    label = 'Total',
+    columns = ends_with('_Total')) %>%
   fmt_number(
-    columns = vars(cured_p, died_p),
+    columns = starts_with('died_p_'),
     decimals = 1,
-    scale_by = 100) %>%
+    scale_by = 100,
+    pattern = '({x})') %>%
   fmt_missing(
-    columns = vars(cured_p, died_p),
-    missing_text = '---') %>%
+    columns = starts_with('totals_'),
+    missing_text = "0/0") %>%
+  fmt_missing(
+    columns = starts_with('died_p_'),
+    missing_text = "---") %>%
   cols_align(
-    align = 'right',
-    columns = vars(total, cured_n, died_n, cured_p, died_p)) %>%
-    cols_align(
     align = 'left',
     columns = vars(type_comorbidity)) %>%
+  cols_align(
+    align = 'right',
+    columns = starts_with('totals')) %>%
   tab_options(
-    column_labels.font.weight = "bold",
-    row_group.font.weight = 'bold',
-    data_row.padding = px(2))
+    column_labels.font.weight = "bold", 
+    data_row.padding = px(2),
+    row_group.padding = px(2))
+
 
 gtsave(gtbl_risk_comcond,
        file.path(path.local.msf.tables, paste0('gtbl_risk_comcond', '_', week_report, '.png'))) %>%
@@ -1540,6 +1566,7 @@ ggsave(file.path(path.local.msf.graphs, glue("msf_age_cfr_{week_report}.png")),
        dpi = 320)
 
 p_age_cfr
+
 ```
 
 
@@ -1606,7 +1633,9 @@ p_outcome_cfr <- ggplot(df_deaths_epiweek, aes(epi_week_consultation, n)) +
   theme(legend.position = "top")
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_outcome_cfr_{week_report}.png")),
-       plot = p_outcome_cfr,
+       plot = p_outcome_cfr, 
+       width = 6, 
+       height = 4, 
        scale = 1.1,
        dpi = 320)
 
@@ -1665,8 +1694,8 @@ p_outcome_cfr_continent <- ggplot(df_deaths_epiweek_continent, aes(epi_week_cons
   theme(legend.position = "top")
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_outcome_cfr_continent_{week_report}.png")),
-       plot = p_outcome_cfr_continent,
-       scale = 1,
+       plot = p_outcome_cfr_continent, 
+       scale = 1.1,
        dpi = 320)
 
 p_outcome_cfr_continent
@@ -1711,8 +1740,10 @@ p_onset_admit_delay <- dta %>%
   labs(y = "Onset to admission delay (days)")
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_onset_admit_delay_{week_report}.png")),
-       plot = p_onset_admit_delay,
-       scale = 1,
+       plot = p_onset_admit_delay, 
+       width = 6, 
+       height = 4, 
+       scale = 1.1,
        dpi = 320)
 
 p_onset_admit_delay
@@ -1740,8 +1771,10 @@ p_length_stay <- dta %>%
   labs(y = "Length of stay in hospital (days)", caption = "Latest 2 weeks omitted for data completeness purposes")
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_length_stay_{week_report}.png")),
-       plot = p_length_stay,
-       scale = 1,
+       plot = p_length_stay, 
+       width = 6, 
+       height = 4, 
+       scale = 1.1,
        dpi = 320)
 
 p_length_stay
