@@ -188,9 +188,10 @@ prepare_msf_dta <- function(dta){
     )
   
   # Filter date of consultation until the Sunday the EpiSitrep (see set_time_frame.R)
+  # but keep NAs as there is a considerable number of rows with missing date of consultation data
   date_min_consultation <- min(pull(dta, date_consultation), na.rm =TRUE) 
   dta <- dta %>% 
-    filter(between(date_consultation, left = date_min_consultation, right = date_max_report))
+    filter(between(date_consultation, left = date_min_consultation, right = date_max_report) | is.na(date_consultation))
   
   return(dta)
 }

@@ -1491,6 +1491,58 @@ Frequency and proportion of symptoms, by case severity
 ```
 
 
+### CFR by Age Group
+
+```{r}
+age_cut <- c(seq(0, 80, 10), Inf)
+age_labs <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80+")
+
+df_severity <- dta %>% 
+  mutate(age_group = cut(age_in_years, breaks = age_cut, labels = age_labs, right = FALSE, include.lowest = TRUE)) %>% 
+  filter(!is.na(age_group), covid_status == "Confirmed") %>% 
+  group_by(age_group) %>% 
+  summarize(
+    n = n(),
+    n_hosp = sum(admit == "Yes", na.rm = TRUE),
+    n_hosp_known = sum(admit %in% c("Yes", "No"), na.rm = TRUE),
+    p_hosp = n_hosp / n_hosp_known,
+    p_hosp_low95 = as.numeric(binom.test(n_hosp, n_hosp_known)$conf.int)[1],
+    p_hosp_upp95 = as.numeric(binom.test(n_hosp, n_hosp_known)$conf.int)[2],
+    n_died = sum(outcome_status == "Died", na.rm = TRUE),
+    n_died_known = sum(outcome_status %in% c("Died", "Cured"), na.rm = TRUE),
+    p_died_low95 = as.numeric(binom.test(n_died, n_died_known)$conf.int)[1],
+    p_died_upp95 = as.numeric(binom.test(n_died, n_died_known)$conf.int)[2],
+    p_died = n_died / n_died_known,
+    # hosp_lab = paste0("(", n_hosp_known, ")"),
+    # died_lab = paste0("(", n_died_known, ")"),
+    hosp_lab = paste0("(", n_hosp, "/", n_hosp_known, ")"),
+    died_lab = paste0("(", n_died, "/", n_died_known, ")")
+  ) %>% 
+  ungroup()
+
+# p1 <- ggplot(severity, aes(x = age_group)) +
+#   geom_point(aes(y = p_hosp)) +
+#   geom_linerange(aes(ymin = p_hosp_low95, ymax = p_hosp_upp95)) +
+#   geom_text(aes(label = hosp_lab, y = p_hosp_upp95 + 0.06), size = 4.2) +
+#   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2), labels = scales::percent_format(accuracy = 1)) +
+#   labs(x = NULL, y = "Hospitalisés")
+
+p_age_cfr <- ggplot(df_severity, aes(x = age_group)) +
+  geom_point(aes(y = p_died), size = 2) +
+  geom_linerange(aes(ymin = p_died_low95, ymax = p_died_upp95)) +
+  geom_text(aes(label = died_lab, y = p_died_upp95 + 0.02), size = 4.2) +
+  scale_y_continuous(breaks = seq(0, 1, 0.2), labels = scales::percent_format(accuracy = 1), sec.axis = dup_axis(name = NULL)) + # limits = c(0, 1),  
+  labs(x = "Age Group", y = "CFR", caption = "CFR = deaths / known outcomes (recovered + died)\nlinerange shows binomial 95% confidence intervals") 
+
+ggsave(file.path(path.local.msf.graphs, glue("msf_age_cfr_{week_report}.png")),
+       plot = p_age_cfr,
+       scale = 1.1,
+       dpi = 320)
+
+p_age_cfr
+```
+
+
 
 # Evolution overtime of the following indicators among the Covid19 confirmed cases
 
