@@ -981,7 +981,7 @@ m_age_sex <- dta %>% filter(covid_status == "Confirmed") %>% summarise(age = sum
 
 pyramid_df <- dta %>% 
   drop_na(sex, age_in_years) %>% 
-  filter(covid_status == c("Confirmed")) %>% 
+  filter(covid_status %in% c("Confirmed")) %>% 
   count(sex, age_10gp) %>% 
   mutate(n = if_else(sex == "M", -n, n))
 

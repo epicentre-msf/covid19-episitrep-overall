@@ -38,10 +38,21 @@ label_breaks <- function(breaks, type = "integer") {
 }
 
 
-
-
 frmt_num <- function(x) {
   scales::label_number_si()(x)
+}
+
+guide_axis_label_trans <- function(label_trans = identity, ...) {
+  axis_guide <- guide_axis(...)
+  axis_guide$label_trans <- rlang::as_function(label_trans)
+  class(axis_guide) <- c("guide_axis_trans", class(axis_guide))
+  axis_guide
+}
+
+guide_train.guide_axis_trans <- function(x, ...) {
+  trained <- NextMethod()
+  trained$key$.label <- x$label_trans(trained$key$.label)
+  trained
 }
 
 
@@ -208,9 +219,6 @@ country_multi_plots <- function(country_iso, lst_dta = lst_ecdc, model = 'linear
   
   # Table observations
   dta_obs <- lst_dta[[country_iso]] %>% 
-    tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
-                                    max(date, na.rm = TRUE), by = 1), 
-                    fill = list(cases = NA_real_, deaths = NA_real_)) %>% 
     select(date, cases, deaths) %>% 
     pivot_longer(-date, names_to = 'obs', values_to = 'count')
   
@@ -229,9 +237,6 @@ country_multi_plots <- function(country_iso, lst_dta = lst_ecdc, model = 'linear
   dates_extent <- c(mld_par[[1]][1], mld_par[[1]][2])
   
   dta_cases_mod <- lst_dta[[country_iso]] %>% 
-    tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
-                                    max(date, na.rm = TRUE), by = 1), 
-                    fill = list(cases = NA_real_, deaths = NA_real_)) %>% 
     select(date, count = cases) %>% 
     mutate(
       obs = 'cases') %>% 
@@ -239,9 +244,6 @@ country_multi_plots <- function(country_iso, lst_dta = lst_ecdc, model = 'linear
     tibble::add_column(lst_cases_mdl[['preds']][[country_iso]])
   
   dta_deaths_mod <- lst_dta[[country_iso]] %>% 
-    tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
-                                    max(date, na.rm = TRUE), by = 1), 
-                    fill = list(cases = NA_real_, deaths = NA_real_)) %>% 
     select(date, count = deaths) %>% 
     mutate(
       obs = 'deaths') %>% 
