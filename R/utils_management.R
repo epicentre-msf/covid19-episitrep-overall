@@ -163,9 +163,14 @@ prepare_msf_dta <- function(dta){
   levels_age_5breaks <- c(0, 5, 15, 45, 65, Inf)
   labels_age_5breaks <- label_breaks(levels_age_5breaks) %>% gsub("-Inf", "+", .)
   
+  age_breaks_10 <- c(seq(0, 80, 10), Inf)
+  age_labels_10 <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80+")
+  
   dta <- dta %>% 
     mutate(
-      age_5gp = cut(age_in_years, breaks = levels_age_5breaks, labels = labels_age_5breaks, include.lowest = TRUE, right = FALSE))
+      age_5gp = cut(age_in_years, breaks = levels_age_5breaks, labels = labels_age_5breaks, include.lowest = TRUE, right = FALSE),
+      age_10gp = cut(age_in_years, breaks = age_breaks_10, labels = age_labels_10, include.lowest = TRUE, right = FALSE)
+    )
   
   # Merging patients' care variables
   dta <- dta %>% 

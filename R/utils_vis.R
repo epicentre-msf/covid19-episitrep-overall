@@ -11,6 +11,16 @@ rounder <- function(x,y) {
 }
 
 
+pyramid_brks <- function(x, n = 5) {
+  brks <- pretty(0:max(abs(x)), n = n)
+  c(-brks, brks)
+}
+
+pyramid_limits <- function(x) {
+  c(-max(abs(x)), max(abs(x)))
+}
+
+
 add_brks <- function(x, n = 5, style = "jenks") {
   breaks <- classInt::classIntervals(x, n = n, style = style)
   br <- breaks$brks
@@ -22,7 +32,9 @@ add_brks <- function(x, n = 5, style = "jenks") {
 label_breaks <- function(breaks, type = "integer") {
   x <- breaks[1:length(breaks) - 1]
   y <- breaks[2:length(breaks)]
-  paste(frmt_num(x), frmt_num(y), sep = "-")
+  labs <- paste(frmt_num(x), frmt_num(y), sep = "-")
+  labs <- gsub("-Inf", "+", labs)
+  return(labs)
 }
 
 

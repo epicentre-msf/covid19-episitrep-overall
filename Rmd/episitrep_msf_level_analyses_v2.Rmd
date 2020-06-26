@@ -891,10 +891,8 @@ gtbl_cfr_status_continent %>%
 
 # Analysis on confirmed patients
 
-### Age and sex distribution of Covid confirmed patients
-
 <!-- Age/sex pyramid -->
-```{r, fig.cap = 'Age pyramid of patients consulted/admitted to an MSF supported Covid-19 health service', fig.width = 8, fig.height = 8}
+```{r, fig.cap = 'Age pyramid of patients consulted/admitted to an MSF supported Covid-19 health service', fig.width = 8, fig.height = 8, eval=FALSE}
 # DONE by Francesco
 
 seq_agegp <- seq(0, 100, 5)
@@ -940,11 +938,67 @@ p_pyramid_age_sex
 
 ```
 
+### Age and sex distribution of Covid confirmed patients
+
+```{r, fig.cap = 'Age pyramid of patients consulted/admitted to an MSF supported Covid-19 health service', fig.width = 8, fig.height = 6}
+m_age_sex <- dta %>% filter(covid_status == "Confirmed") %>% summarise(age = sum(is.na(age_in_years)), sex = sum(is.na(sex)))
+
+pyramid_df <- dta %>% 
+  drop_na(sex, age_in_years) %>% 
+  filter(covid_status == c("Confirmed")) %>% 
+  count(sex, age_10gp) %>% 
+  mutate(n = if_else(sex == "M", -n, n))
+
+p_pyramid_age_sex <- ggplot(pyramid_df, aes(x = age_10gp, y = n, fill = sex)) +
+  geom_col() +
+  geom_hline(yintercept = 0, colour = "black") +
+  geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 4) +
+  coord_flip() +
+  scale_fill_manual(name = NULL, values = c("#4E79A7FF", "#A0CBE8FF"), breaks = c("M", "F"), labels = c("Males", "Females")) +
+  scale_y_continuous(limits = pyramid_limits, breaks = pyramid_brks, label = abs) + 
+  theme(legend.position = "top") +
+  labs(x = "Age Group", y = "Confirmed Patients", caption = glue::glue("Missing Data: Age {m_age_sex$age}, Sex {m_age_sex$sex}"))  +
+  guides(y.sec = guide_axis_label_trans(~paste(.x))) # show age group labels on both axis
+
+ggsave(file.path(path.local.msf.graphs, paste0('msf', 'p_pyramid_age_sex', '.png')),
+       plot = p_pyramid_age_sex,
+       width = 8,
+       height = 6)
+
+
+p_pyramid_age_sex
+```
+
+### Age and sex distribution of Covid confirmed patients by continent
 
 <!-- Age/sex pyramid by continent -->
-```{r, eval = FALSE}
-# The Pyramid seems not displaying correctly
-#p_pyramid_age_sex + facet_wrap(~ region)
+```{r, fig.cap = 'Age pyramid of patients consulted/admitted to an MSF supported Covid-19 health service by continent', fig.width = 8, fig.height = 8}
+
+m_age_sex <- dta %>% filter(covid_status == "Confirmed") %>% summarise(age = sum(is.na(age_in_years)), sex = sum(is.na(sex)))
+
+pyramid_df_continent <- dta %>% 
+  drop_na(sex, age_in_years) %>% 
+  filter(covid_status %in% c("Confirmed")) %>% 
+  count(continent, sex, age_10gp) %>% 
+  mutate(n = if_else(sex == "M", -n, n))
+
+p_pyramid_age_sex_continent <- ggplot(pyramid_df_continent, aes(x = age_10gp, y = n, fill = sex)) +
+  facet_wrap(~continent, ncol = 2, scales = "free_x") +
+  geom_col() +
+  geom_hline(yintercept = 0, colour = "black") +
+  geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 4) +
+  coord_flip() +
+  scale_fill_manual(name = NULL, values = c("#4E79A7FF", "#A0CBE8FF"), breaks = c("M", "F"), labels = c("Males", "Females")) +
+  scale_y_continuous(label = abs, limits = pyramid_limits) + 
+  theme(legend.position = "top") +
+  labs(x = "Age Group", y = "Confirmed Patients", caption = glue::glue("Missing Data: Age {m_age_sex$age}, Sex {m_age_sex$sex}")) 
+
+ggsave(file.path(path.local.msf.graphs, paste0('msf', 'p_pyramid_age_sex_continent', '.png')),
+       plot = p_pyramid_age_sex_continent,
+       width = 8,
+       height = 8)
+
+p_pyramid_age_sex_continent
 
 ```
 
