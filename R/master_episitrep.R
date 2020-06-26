@@ -39,10 +39,11 @@ if (run_analyes_msf_level) {
 # === === === === === === === ===  
 # Edit EpiSitrep docx
 # === === === === === === === === 
+source(file.path(path.R, "utils_vis.R"), encoding = "UTF-8")
+
 
 my_doc <- read_docx(file.path(path.templates, 'template_EpiSitrep_world_Covid-19.docx'))
 source(file.path(path.R, 'utils_officer.R'), encoding = 'UTF-8')
-#source(file.path(path.R, 'utils_text_edit.R'), encoding = 'UTF-8')
 
 
 styles_info(my_doc)

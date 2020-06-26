@@ -62,6 +62,35 @@ get_updated_msf_data <- ifelse(isTRUE(update_msf_data_anyways) |
                                FALSE)
 
 source(file.path(path.R, 'run_get_msf_data.R'), encoding = 'UTF-8')
+source(file.path(path.R, 'run_get_aggregated_data.R'), encoding = 'UTF-8')
+
+# Expand the aggregated
+dta_weekly_expanded <- df_weekly_aggregated %>% 
+  filter(!project %in% c('Lesvos-Moria', 'Lesvos-Moria Ped')) %>% 
+  select(-week) %>% 
+  mutate(
+    epi_week_consultation = make_epiweek_date(date) %>% as.Date(), 
+    country = case_when(
+      country == 'DRC' ~ 'Democratic Republic of the Congo', 
+      country == "Côte d'Ivoire" ~ 'Côte d’Ivoire', 
+      TRUE ~ country)) %>% 
+  left_join(df_countries, by = 'country') %>% 
+  pivot_longer(cols = c('confirmed', 'probable', 'suspected', 'non_cases', 'unknown'), names_to = 'covid_status') %>% 
+  filter(!is.na(value)) %>% 
+    mutate(obs = purrr::map(value, ~rep_len(1, .x))) %>%
+    unnest(cols = c(obs)) %>%
+    select(-c(value, obs)) %>% 
+    mutate(
+      covid_status = factor(covid_status, levels = c('confirmed', 'probable', 'suspected', 'non_cases', 'unknown'), labels = c('Confirmed', 'Probable', 'Suspected', 'Not a case', 'Unknown')), 
+      country = paste(country, '(*)'),
+      site_name = paste(project, '(*)'))
+
+
+
+dta_with_aggregated <- dta %>% 
+  select(continent, region, country, site_name, iso_a3, OC, epi_week_consultation, covid_status) %>% 
+  add_row(dta_weekly_expanded %>% 
+            select(continent, region, country, site_name, iso_a3, 'OC' = oc, epi_week_consultation, covid_status))
 
 ```
 
@@ -89,21 +118,28 @@ The required data are not available yet. And this section will be updated as soo
 ```{r, include = FALSE}
 
 nb_msf_sites_linelist   <- length(unique(dta$site_name))
-nb_msf_sites_aggregated <- length(unique(dta_aggregated$site_name))
+nb_msf_sites_aggregated <- length(unique(dta_weekly_expanded$site_name))
 nb_msf_sites            <- nb_msf_sites_linelist + nb_msf_sites_aggregated
 
 call_msf_countries <- unique(c(unique(dta$country), unique(dta_aggregated$country)))
 
-nb_msf_obs       <- dta %>% count() %>% pull(n)
-nb_msf_confirmed <- sum(dta$covid_status == 'Confirmed', na.rm = TRUE)
-nb_msf_probable  <- sum(dta$covid_status == 'Probable' , na.rm = TRUE)
-nb_msf_suspected <- sum(dta$covid_status == 'Suspected', na.rm = TRUE)
+nb_msf_obs_linelist   <- dta %>% count() %>% pull(n)
+nb_msf_obs_aggregated <- dta_weekly_expanded %>% count() %>% pull(n)
+nb_msf_obs            <- nb_msf_obs_linelist + nb_msf_obs_aggregated
+
+nb_msf_confirmed <- sum(dta_with_aggregated$covid_status == 'Confirmed', na.rm = TRUE)
+nb_msf_probable  <- sum(dta_with_aggregated$covid_status == 'Probable' , na.rm = TRUE)
+nb_msf_suspected <- sum(dta_with_aggregated$covid_status == 'Suspected', na.rm = TRUE)
 
 ```
 
 **Number of MSF sites**: `r nb_msf_sites` (`r nb_msf_sites_linelist` sites with linelist data and `r nb_msf_sites_aggregated` with aggreagated data). 
 
 **Total patients consulted/admitted**: `r nb_msf_obs` in `r length(call_msf_countries)` countries (`r combine_words(call_msf_countries)`). 
+
+**Number of consultation reported through the linelist**: `r nb_msf_obs_linelist`. 
+**Number of consultation reported through the aggregated data reporting**: `r nb_msf_obs_aggregated`. 
+
 
 Of all consultations/admissions patients were: 
 
@@ -121,6 +157,7 @@ Other results are presented by Covid status (confirmed, probable, suspected, not
 
 
 ### Weekly number of consultation and admissions
+Aggregated data excluded
 
 <!-- Histogram OVERALL of number of consultation/admissions -->
 ```{r HistConsultationsAdmissions, fig.cap = paste('Weekly number of consultations and admissions in an MSF supported COvid-19 health service as of', format(date_max_report, "%d %B %Y"))}
@@ -227,12 +264,13 @@ p_epicurve_consult_admit_continent
 
 
 ### Weekly number of Consultations (including admission) by Covid status
+Aggregated data included
 
 <!-- Histogram OVERALL of number of consultation/admissions -->
 ```{r HistConsultationByCovidStatus, fig.cap = 'Weekly number of consultations (including admission) by Covid status'}
 # DONE by Paul
 
-p_epicurve_status <- dta %>%
+p_epicurve_status <- dta_with_aggregated %>%
   count(covid_status, epi_week_consultation) %>%
   ggplot(aes(epi_week_consultation, n, fill = covid_status)) +
   geom_col() +
@@ -260,7 +298,7 @@ p_epicurve_status
 ```{r HistConsultationByCovidStatusContinent, fig.cap = 'Weekly number of consultations (including admission) by Covid status, in each continent where MSF is operating'}
 # DONE by Francesco (copied from the Paul graph just above)
 
-p_epicurve_status_continent <- dta %>%
+p_epicurve_status_continent <- dta_with_aggregated %>%
   count(continent, covid_status, epi_week_consultation) %>%
   ggplot(aes(epi_week_consultation, n, fill = covid_status)) +
   facet_wrap(vars(continent)) +
@@ -295,9 +333,8 @@ Counts of patients consulted/admitted to an MSF supported health facility by Cov
 ```{r, TblCovidStatusCountry, layout = "l-body-outset"}
 # DONE by Francesco
 
-tbl_countries_covid_status <- dta %>%
+tbl_countries_covid_status <- dta_with_aggregated %>%
   select(continent, country, site_name, covid_status) %>%
-  add_row(dta_expanded) %>%
   group_by(continent, country) %>%
   summarise(
     total = n(),
@@ -427,9 +464,8 @@ Counts of patients consulted/admitted to an MSF supported health facility by Cov
 ```{r TblCovidStatusSite, layout = "l-body-outset"}
 # DONE by Francesco
 
-tbl_sites_covid_status <- dta %>%
-  select(continent, country, site_name, covid_status) %>%
-  add_row(dta_expanded %>% mutate(country = gsub(" \\(\\*\\)", "", country))) %>%
+tbl_sites_covid_status <- dta_with_aggregated %>%
+  mutate(country = gsub(" \\(\\*\\)", "", country)) %>%
   group_by(country, site_name) %>%
   summarise(
     total = n(),
@@ -1434,7 +1470,9 @@ dta_comcond <- dta_comcond %>%
 tbl_risk_comcond <- make_cfr_tbl(dta_comcond, 'type_comorbidity' ,'Comorbidities')
 
 gtbl_risk_comcond <- tbl_risk_comcond %>%
-  gt() %>%
+  gt() %>% 
+  cols_hide(
+    columns = vars(label_var)) %>% 
   cols_label(
     type_comorbidity = "Comorbidities/Underlying conditions", 
     totals_Africa    = 'n/N',
@@ -1585,7 +1623,7 @@ Time-series plot:
   -	Length of staying for patients hospitalised - boxplot
   -	Case fatality risk for patients hospitalised - line
 -->
-```{r BoxPlotCFR, fig.cap = 'Evolution overtime of the case fatality risk among Covid confirmed patients consulted/admitted to an MSF supported health facility'}
+```{r LineCFRWeeks, fig.cap = 'Evolution overtime of the case fatality risk among Covid confirmed patients consulted/admitted to an MSF supported health facility'}
 # DONE by Paul
 # Only including outcomes of cured or died as CFR denominator - is this ok? FG: Yes
 
@@ -1728,12 +1766,12 @@ p_outcome_cfr_continent
 #   scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V",
 #                sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y")))
 
-p_onset_admit_delay <- dta %>%
+dta_delay <- dta %>%
   filter(covid_status %in% c("Confirmed", "Suspected", "Probable")) %>%
   drop_na(epi_week_consultation, delay_before_admission) %>%
-  filter(delay_before_admission <= 50) %>% # filter any delays over 50 days
-  filter(epi_week_consultation != max(epi_week_consultation)) %>%  # there's an incorrect this week in week 25 so remove (delete this line next week)
-  ggplot(aes(epi_week_consultation, delay_before_admission, group = epi_week_consultation)) +
+  filter(delay_before_admission <= 50) # filter any delays over 50 days
+  
+p_onset_admit_delay <- ggplot(dta_delay, aes(epi_week_consultation, delay_before_admission, group = epi_week_consultation)) +
   #geom_jitter(colour = "red", alpha = 0.5) +
   geom_boxplot() +
   scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .)) +
