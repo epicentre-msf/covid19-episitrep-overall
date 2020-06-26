@@ -58,6 +58,8 @@ get_ecdc_data <- function() {
         country == 'Anguilla' ~ 'AIA', 
         country == 'Bonaire, Saint Eustatius and Saba' ~ 'BES', 
         country == 'Falkland Islands (Malvinas)' ~ 'FLK', 
+        country == 'Montserrat' ~ 'MSR',  
+        country == 'Taiwan' ~ 'TWN', 
         country == 'Western Sahara' ~ 'ESH', 
         country == 'Cruise Ship' ~ NA_character_, 
         TRUE ~ iso_a3), 

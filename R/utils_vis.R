@@ -208,6 +208,9 @@ country_multi_plots <- function(country_iso, lst_dta = lst_ecdc, model = 'linear
   
   # Table observations
   dta_obs <- lst_dta[[country_iso]] %>% 
+    tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
+                                    max(date, na.rm = TRUE), by = 1), 
+                    fill = list(cases = NA_real_, deaths = NA_real_)) %>% 
     select(date, cases, deaths) %>% 
     pivot_longer(-date, names_to = 'obs', values_to = 'count')
   
@@ -226,6 +229,9 @@ country_multi_plots <- function(country_iso, lst_dta = lst_ecdc, model = 'linear
   dates_extent <- c(mld_par[[1]][1], mld_par[[1]][2])
   
   dta_cases_mod <- lst_dta[[country_iso]] %>% 
+    tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
+                                    max(date, na.rm = TRUE), by = 1), 
+                    fill = list(cases = NA_real_, deaths = NA_real_)) %>% 
     select(date, count = cases) %>% 
     mutate(
       obs = 'cases') %>% 
@@ -233,6 +239,9 @@ country_multi_plots <- function(country_iso, lst_dta = lst_ecdc, model = 'linear
     tibble::add_column(lst_cases_mdl[['preds']][[country_iso]])
   
   dta_deaths_mod <- lst_dta[[country_iso]] %>% 
+    tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
+                                    max(date, na.rm = TRUE), by = 1), 
+                    fill = list(cases = NA_real_, deaths = NA_real_)) %>% 
     select(date, count = deaths) %>% 
     mutate(
       obs = 'deaths') %>% 

@@ -88,9 +88,8 @@ if (update_models) {
 # Upload or create daily coefficients
 # === === === === === === === === === 
 
-make_coefficients_anyways <- FALSE
 
-if (!file.exists(file.path(path.local.worldwide.data, 'lst_coeffs_cases.RDS')) | make_coefficients_anyways) {
+if (!file.exists(file.path(path.local.worldwide.data, 'lst_coeffs_cases.RDS')) | update_models) {
   lst_coeffs_cases <- ts_coeff(series = 'cases' , lst_dta = lst_ecdc, time_unit_extent = 5, ma_window = 3, min_sum = 30)
   saveRDS(lst_coeffs_cases, file = file.path(path.local.worldwide.data, paste0('lst_coeffs_cases','.RDS'))) 
 } else {
@@ -98,7 +97,7 @@ if (!file.exists(file.path(path.local.worldwide.data, 'lst_coeffs_cases.RDS')) |
 }
 
 
-if (!file.exists(file.path(path.local.worldwide.data, 'lst_coeffs_deaths.RDS')) | make_coefficients_anyways) {
+if (!file.exists(file.path(path.local.worldwide.data, 'lst_coeffs_deaths.RDS')) | update_models) {
   lst_coeffs_deaths <- ts_coeff(series = 'deaths', lst_dta = lst_ecdc, time_unit_extent = 5, ma_window = 3, min_sum = 30)
   saveRDS(lst_coeffs_deaths, file = file.path(path.local.worldwide.data, paste0('lst_coeffs_deaths','.RDS')))
 } else {

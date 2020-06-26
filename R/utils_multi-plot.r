@@ -22,7 +22,7 @@ dir.create(path.local.worldwide.graphs.country_trends, showWarnings = FALSE, rec
 country_list <- df_countries
 
 # Loop of plots
-for (i in country_list$iso_a3[!is.na(country_list$iso_a3)]){
+for (i in country_list$iso_a3){
   name_country <- country_list %>% filter(iso_a3 == i) %>% pull(country) %>% gsub(" ", "_", .)
   plots <- country_multi_plots(i)
   ggsave(file.path(path.local.worldwide.graphs.country_trends, glue("trends_{name_country}_{week_report}.png")), 

@@ -1,4 +1,4 @@
-library(tidyverse)
+library(purrr)
 library(readxl)
 
 OS <- Sys.info()[['sysname']]
@@ -7,7 +7,7 @@ agg_data_path <- file.path(sharepoint_root_dir, 'MSF', 'GRP-EPI-COVID-19 - NCoVE
 
 agg_data_names <- c("sheet", "oc", "country", "project", "date", "week", "suspected", "probable", "confirmed", "non_cases", "unknown")
 
-df_aggregated <- excel_sheets(agg_data_path) %>% 
+df_weekly_aggregated <- excel_sheets(agg_data_path) %>% 
   map_df(~{
     oc <- read_excel(path = agg_data_path, sheet = .x, range = "B1", col_names = FALSE) %>% pull()
     country <- read_excel(path = agg_data_path, sheet = .x, range = "D1", col_names = FALSE) %>% pull()
