@@ -45,6 +45,8 @@ knitr::opts_chunk$set(cache = FALSE,
                       message = FALSE,
                       encoding = "UTF-8")
 
+
+caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF linelists as of {format(date_max_report, "%d %b %Y")}')
 ```
 
 <!-- Import and manage data -->
@@ -927,65 +929,19 @@ gtbl_cfr_status_continent %>%
 
 # Analysis on confirmed patients
 
-<!-- Age/sex pyramid -->
-```{r, fig.cap = 'Age pyramid of patients consulted/admitted to an MSF supported Covid-19 health service', fig.width = 8, fig.height = 8, eval=FALSE}
-# DONE by Francesco
-
-seq_agegp <- seq(0, 100, 5)
-
-age_labels <- sprintf("%s-%s", seq_agegp[-length(seq_agegp)], seq_agegp[-1] - 1)
-
-dta_age_sex <- dta %>%
-  select(continent, region, country, age_in_years, sex) %>%
-  mutate(
-    age_group = cut(age_in_years, seq_agegp, age_labels, include.lowest = TRUE, right = FALSE),
-    sex = factor(sex, levels = c('M','F'), labels = c('Males', 'Females'))) %>%
-  filter(!is.na(age_group), !is.na(sex))
-
-
-caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF linelists as of {format(date_max_report, "%d %b %Y")}')
-
-### Pyramid overall
-tbl_age_sex <- dta_age_sex %>%
-  count(sex, age_group) %>%
-  mutate(n = if_else(sex == "Males", -n, n))
-
-n_max <- max(abs(tbl_age_sex$n))
-y_breaks <- pretty(0:n_max, n = 6)
-y_breaks <- c(-y_breaks, y_breaks)
-
-p_pyramid_age_sex <- ggplot(tbl_age_sex, aes(x = age_group, y = n, fill = sex)) +
-  geom_col() +
-  coord_flip() +
-  scale_fill_brewer("", palette = "Set1", breaks = c("Males", "Females"), labels = c("Males", "Females")) +
-  scale_x_discrete("Age groups") +
-  scale_y_continuous(name = 'Count', limits = c(-n_max, n_max), label = abs, breaks = y_breaks) +
-  theme_light() +
-  theme(legend.position = "top") +
-  labs(caption = caption_graph)
-
-ggsave(file.path(path.local.msf.graphs, paste0('msf', 'p_pyramid_age_sex', '.png')),
-       plot = p_pyramid_age_sex,
-       width = 6,
-       height = 6)
-
-
-p_pyramid_age_sex
-
-```
-
 ### Age and sex distribution of Covid confirmed patients
 
-```{r, fig.cap = 'Age pyramid of patients consulted/admitted to an MSF supported Covid-19 health service', fig.width = 8, fig.height = 6}
+<!-- Age/sex pyramid -->
+```{r PyramidAgeConfirmed, fig.cap = 'Age pyramid of patients consulted/admitted to an MSF supported Covid-19 health service', fig.width = 8, fig.height = 6}
 m_age_sex <- dta %>% filter(covid_status == "Confirmed") %>% summarise(age = sum(is.na(age_in_years)), sex = sum(is.na(sex)))
 
-pyramid_df <- dta %>% 
+tbl_pyramid <- dta %>% 
   drop_na(sex, age_in_years) %>% 
   filter(covid_status %in% c("Confirmed")) %>% 
   count(sex, age_10gp) %>% 
   mutate(n = if_else(sex == "M", -n, n))
 
-p_pyramid_age_sex <- ggplot(pyramid_df, aes(x = age_10gp, y = n, fill = sex)) +
+p_pyramid_age_sex <- ggplot(tbl_pyramid, aes(x = age_10gp, y = n, fill = sex)) +
   geom_col() +
   geom_hline(yintercept = 0, colour = "black") +
   geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 4) +
@@ -1005,20 +961,21 @@ ggsave(file.path(path.local.msf.graphs, paste0('msf', 'p_pyramid_age_sex', '.png
 p_pyramid_age_sex
 ```
 
+
 ### Age and sex distribution of Covid confirmed patients by continent
 
 <!-- Age/sex pyramid by continent -->
-```{r, fig.cap = 'Age pyramid of patients consulted/admitted to an MSF supported Covid-19 health service by continent', fig.width = 8, fig.height = 8}
+```{r PyramidAgeConfirmedContinent, fig.cap = 'Age pyramid of patients consulted/admitted to an MSF supported Covid-19 health service by continent', fig.width = 8, fig.height = 8}
 
 m_age_sex <- dta %>% filter(covid_status == "Confirmed") %>% summarise(age = sum(is.na(age_in_years)), sex = sum(is.na(sex)))
 
-pyramid_df_continent <- dta %>% 
+tbl_pyramid_continent <- dta %>% 
   drop_na(sex, age_in_years) %>% 
   filter(covid_status %in% c("Confirmed")) %>% 
   count(continent, sex, age_10gp) %>% 
   mutate(n = if_else(sex == "M", -n, n))
 
-p_pyramid_age_sex_continent <- ggplot(pyramid_df_continent, aes(x = age_10gp, y = n, fill = sex)) +
+p_pyramid_age_sex_continent <- ggplot(tbl_pyramid_continent, aes(x = age_10gp, y = n, fill = sex)) +
   facet_wrap(~continent, ncol = 2, scales = "free_x") +
   geom_col() +
   geom_hline(yintercept = 0, colour = "black") +
@@ -1034,6 +991,7 @@ ggsave(file.path(path.local.msf.graphs, paste0('msf', 'p_pyramid_age_sex_contine
        width = 8,
        height = 8)
 
+
 p_pyramid_age_sex_continent
 
 ```
@@ -1042,7 +1000,7 @@ p_pyramid_age_sex_continent
 <!-- 
 Table by continent (by region, if possible):
   -	Characteristics: Number and proportion of cases exposed through healthcare facility (healthcare worker + visited)
-  -	Characteristics: Number and proportion of cases with chronic diseases (comorbidities)
+  -	Characteristics: Number and proportion of cases with chronic diseases (co-morbidities)
 -->
 ```{r}
 # To think about
@@ -1738,7 +1696,7 @@ p_outcome_cfr
 
 ### Outcome by epiweek with CFR by continent
 
-```{r BoxPlotCFRContinent, fig.cap = 'Evolution overtime of the case fatality risk among Covid confirmed patients consulted/admitted to an MSF supported health facility, separated by continent'}
+```{r BoxPlotCFRContinent, fig.cap = 'Evolution overtime of the case fatality risk among Covid confirmed patients consulted/admitted to an MSF supported health facility, separated by continent', fig.width = 8, fig.height = 8}
 # DONE by Paul
 # Only including outcomes of cured or died as CFR denominator - is this ok? FG: Yes
 
@@ -1787,6 +1745,8 @@ p_outcome_cfr_continent <- ggplot(df_deaths_epiweek_continent, aes(epi_week_cons
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_outcome_cfr_continent_{week_report}.png")),
        plot = p_outcome_cfr_continent, 
+       width = 8, 
+       height = 8, 
        scale = 1.1,
        dpi = 320)
 

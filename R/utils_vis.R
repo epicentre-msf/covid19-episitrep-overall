@@ -29,11 +29,11 @@ add_brks <- function(x, n = 5, style = "jenks") {
 
 
 
-label_breaks <- function(breaks, type = "integer") {
-  x <- breaks[1:length(breaks) - 1]
-  y <- breaks[2:length(breaks)]
-  labs <- paste(frmt_num(x), frmt_num(y), sep = "-")
-  labs <- gsub("-Inf", "+", labs)
+label_breaks <- function(breaks, replace_Inf = TRUE) {
+  labs <- sprintf("%s-%s", breaks[-length(breaks)], breaks[-1] - 1)
+  if(replace_Inf){
+    labs <- gsub("-Inf", "+", labs)
+  }
   return(labs)
 }
 

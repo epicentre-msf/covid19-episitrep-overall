@@ -2,7 +2,7 @@
 
 # Set the term of dates this is also used to separate output files
 
-date_max_report <- as.Date("2020-06-21")
+date_max_report <- as.Date("2020-06-28")
 
 week_report <- ISOweek(date_max_report) %>% gsub("W","w", .)
 
