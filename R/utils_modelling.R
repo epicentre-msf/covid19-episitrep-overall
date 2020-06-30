@@ -1,5 +1,4 @@
 
-#' Split dataset into a list of time-series, one for each country (splitting uses the iso_a3 variable)
 #' Filter the time-series to a time-frame defined by time_unit_extent
 #' Fill the gaps in the time-series, assuming that at missing date, cases and deaths = 0 
 #' Smoothing using moving average with a parameterable time-window (in days)
@@ -85,7 +84,6 @@ linear_model_cnt <- function(series, lst_dta, last_date, time_unit_extent = 12, 
 
 
 
-#' Split dataset in a list of data frames
 #' Create a cumulative sum
 #' Filter to a time frame defined by time_unit_extent
 #' Model data for each country using a linear regression of the cumulative count
@@ -153,7 +151,7 @@ linear_model_cml <- function(series, lst_dta, last_date, time_unit_extent = 12, 
 
 
 
-# Split dataset in a list of data frames and filter to a time frame defined by time_unit_extent
+# Filter to a time frame defined by time_unit_extent
 # Model data for each country based on a quasipoisson regression
 # (quasipoisson distribution is used mostly because of the zero values)
 
