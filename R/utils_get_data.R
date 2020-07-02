@@ -23,7 +23,7 @@ get_world_sf <- function(scale = c('small', 'medium', 'large'), proj = c('robins
     dplyr::select(country = name_long, iso_a3, iso_a2, pop_est) %>% 
     dplyr::mutate(
       continent = suppressWarnings(countrycode::countrycode(iso_a3, origin = "iso3c", destination = "continent")),
-      region = suppressWarnings(countrycode::countrycode(iso_a3, origin = "iso3c", destination = "region"))
+      region = suppressWarnings(countrycode::countrycode(iso_a3, origin = "iso3c", destination = "region23"))
     ) %>% 
     dplyr::filter(stringr::str_detect(country, "Antarctic", negate = TRUE)) %>% 
     cbind(sf::st_coordinates(suppressWarnings(sf::st_centroid(., of_largest_polygon = TRUE)))) %>% 
