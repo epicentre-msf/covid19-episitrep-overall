@@ -166,11 +166,13 @@ Aggregated data excluded
 # DONE by Paul
 
 df_epicurve <- dta %>%
+  filter(admit != "Unknown") %>% 
   count(epi_week_consultation, admit) %>%
   drop_na() %>%
   mutate(admit = recode(admit, "Yes" = "Admitted", "No" = "Not Admitted"))
 
 df_admit_prop <- dta %>%
+  filter(admit != "Unknown") %>% 
   drop_na(epi_week_consultation) %>%
   group_by(epi_week_consultation) %>%
   summarise(
@@ -187,6 +189,7 @@ cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
 scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
 
 missing_consultation <- sum(is.na(dta$epi_week_consultation))
+missing_admission <- sum(dta$admit == "Unknown")
 
 p_epicurve_consult_admit <- ggplot(df_epicurve, aes(epi_week_consultation, n)) +
   geom_col(aes(fill = admit)) +
@@ -196,7 +199,7 @@ p_epicurve_consult_admit <- ggplot(df_epicurve, aes(epi_week_consultation, n)) +
   ggthemes::scale_fill_tableau(name = "Consultation") +
   scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .)) +
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1))) +
-  labs(y = "Patients", colour = NULL, caption = glue::glue("Missing Consultation Dates: {missing_consultation}")) + 
+  labs(y = "Patients", colour = NULL, caption = glue::glue("Missing data: Consultation Date {missing_consultation}, Admission: {missing_admission}")) + 
   theme_light() + 
   theme(legend.position = "top")
 
@@ -218,11 +221,13 @@ p_epicurve_consult_admit
 # DONE by Paul
 
 df_epicurve_continent <- dta %>%
+  filter(admit != "Unknown") %>% 
   count(continent, epi_week_consultation, admit) %>%
   drop_na() %>%
   mutate(admit = recode(admit, "Yes" = "Admitted", "No" = "Not Admitted"))
 
 df_admit_prop_continent <- dta %>%
+  filter(admit != "Unknown") %>% 
   drop_na(epi_week_consultation) %>%
   group_by(continent, epi_week_consultation) %>%
   summarise(
@@ -239,6 +244,7 @@ cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
 scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
 
 missing_consultation <- sum(is.na(dta$epi_week_consultation))
+missing_admission <- sum(dta$admit == "Unknown")
 
 p_epicurve_consult_admit_continent <- ggplot(df_epicurve_continent, aes(epi_week_consultation, n)) +
   facet_wrap(~continent) +
@@ -249,7 +255,7 @@ p_epicurve_consult_admit_continent <- ggplot(df_epicurve_continent, aes(epi_week
   ggthemes::scale_fill_tableau(name = "Consultation") +
   scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .), guide = ggplot2::guide_axis(n.dodge = 2)) +
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1))) +
-  labs(y = "Patients", colour = NULL, caption = glue::glue("Missing Consultation Dates: {missing_consultation}")) + 
+  labs(y = "Patients", colour = NULL, caption = glue::glue("Missing data: Consultation Date {missing_consultation}, Admission: {missing_admission}")) + 
     theme_light() + 
   theme(legend.position = "top")
 
