@@ -1834,6 +1834,47 @@ p_length_stay
 ```
 
 
+# Non cases analysis
+```{r}
+
+tbl_non_cases_diagt <- dta %>% 
+  filter(covid_status == 'Not a case') %>% 
+  select(main_diagnosis, outcome_status) %>% 
+  mutate(
+    main_diagnosis = fct_explicit_na(main_diagnosis, na_level = "Not reported")) %>% 
+  count(main_diagnosis, outcome_status) %>% 
+  pivot_wider(names_from = outcome_status, names_sort = TRUE, values_from = n, values_fill = 0) %>% 
+  adorn_totals(c("row", "col"))
+
+gtbl_non_cases_diagt <- tbl_non_cases_diagt %>% 
+  gt() %>% 
+  cols_label(
+    main_diagnosis = '') %>% 
+  tab_options(
+    column_labels.font.weight = "bold", 
+    data_row.padding = px(5))
+
+
+gtsave(gtbl_non_cases_diagt,
+       file.path(path.local.msf.tables, paste0('gtbl_non_cases_diagt', '_', week_report, '.png'))) %>%
+  invisible()
+
+gtsave(gtbl_non_cases_diagt,
+       file.path(path.local.msf.tables, paste0('gtbl_non_cases_diagt', '_', week_report, '.html')),
+       inline_css = TRUE) %>%
+  invisible()
+
+
+gtbl_non_cases_diagt %>% 
+  tab_header(
+    title = 'Frequency of diagnostics among non confirmed patients who attended a Covid facility'
+  )
+
+```
+
+
+
+
 <!-- 
 **With all confirmed cases with severe or critical symptoms as denominator: time-series and trends plot** with week as time unit of the following indicator:
 

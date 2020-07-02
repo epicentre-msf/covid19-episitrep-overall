@@ -42,8 +42,8 @@ knitr::opts_chunk$set(cache = FALSE,
 # Default parameters for analysis
 source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
 
-update_world_data_anyways <- TRUE
-update_models_anyways <- TRUE
+update_world_data_anyways <- FALSE
+update_models_anyways <- FALSE
 
 
 # Option to update ECDC data
