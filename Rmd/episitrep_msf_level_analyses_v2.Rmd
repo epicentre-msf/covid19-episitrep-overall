@@ -174,13 +174,14 @@ df_admit_prop <- dta %>%
   drop_na(epi_week_consultation) %>%
   group_by(epi_week_consultation) %>%
   summarise(
+    n = n(),
     total = sum(admit %in% c("Yes", "No")),
     admitted = sum(admit == "Yes"),
     admit_prop = admitted / total
   ) %>%
   ungroup()
 
-n_max <- max(df_admit_prop$total, na.rm = TRUE)
+n_max <- max(df_admit_prop$n, na.rm = TRUE)
 cfr_max <- rounder(max(df_admit_prop$admit_prop, na.rm = TRUE), .1)
 cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
 scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
@@ -225,13 +226,14 @@ df_admit_prop_continent <- dta %>%
   drop_na(epi_week_consultation) %>%
   group_by(continent, epi_week_consultation) %>%
   summarise(
+    n = n(),
     total = sum(admit %in% c("Yes", "No")),
     admitted = sum(admit == "Yes"),
     admit_prop = admitted / total
   ) %>%
   ungroup()
 
-n_max <- max(df_admit_prop_continent$total, na.rm = TRUE)
+n_max <- max(df_admit_prop_continent$n, na.rm = TRUE)
 cfr_max <- rounder(max(df_admit_prop_continent$admit_prop, na.rm = TRUE), .1)
 cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
 scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
@@ -1783,7 +1785,7 @@ p_outcome_cfr_continent
 dta_delay <- dta %>%
   filter(covid_status %in% c("Confirmed", "Suspected", "Probable")) %>%
   drop_na(epi_week_consultation, delay_before_admission) %>%
-  filter(delay_before_admission <= 50) # filter any delays over 50 days
+  filter(delay_before_admission >= 0, delay_before_admission <= 50) # filter any delays over 50 days
   
 p_onset_admit_delay <- ggplot(dta_delay, aes(epi_week_consultation, delay_before_admission, group = epi_week_consultation)) +
   #geom_jitter(colour = "red", alpha = 0.5) +

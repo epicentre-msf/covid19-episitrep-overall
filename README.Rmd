@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Epi Sitrep World COVID-19
+# Epi Sitrep COVID-19
 
 <!-- badges: start -->
 <!-- badges: end -->
