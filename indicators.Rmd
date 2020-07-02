@@ -2,7 +2,7 @@
 title: "Analysis Indicators"
 author: "Epicentre"
 date: "`r Sys.Date()`"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -17,8 +17,6 @@ This document outlines how covid-19 indicators are calculated from the intersect
 
 ## Additional Variables
 
----
-
 Some additional variables are added to the original dataset compilation prior to analysis:
 
 - `continent`: continent the country is in.
@@ -28,8 +26,6 @@ Some additional variables are added to the original dataset compilation prior to
 - `age_10gp`: groups the `age_in_years` variable into the following bins: 0-9, 10-19, 20-29, 30-39, 40-49, 50-59, 60-69, 70-79, 80-89, 90+
 
 ## Important Variables
-
----
 
 #### Sex
 
@@ -63,8 +59,6 @@ values: `numeric`
 
 ## Indicators
 
----
-
 #### Proportion Admitted
 
 linelist variable: `patcourse_admit`  
@@ -91,9 +85,7 @@ denominator: sum of `Comcond_* == "Yes" or "No"`
 
 ## Common Filters
 
----
-
-Prior to computing indicators, it is common to filter the data to either confirmed, or confirmed, probable or suspect patients only. Please refer to the analysis plan for details on what filters are used in each table or graphic.
+Prior to computing indicators, it is common to filter the data to either confirmed, or confirmed, probable and suspect patients only. Please refer to the analysis plan for details on what filters are used in each table or graphic.
 
 - `MSF_covid_status == "Confirmed"`
 - `MSF_covid_status %in% c("Confirmed", "Probable", "Suspect")`
