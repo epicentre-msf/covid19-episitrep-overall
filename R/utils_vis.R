@@ -28,19 +28,27 @@ add_brks <- function(x, n = 5, style = "jenks") {
 }
 
 
-
-label_breaks <- function(breaks, replace_Inf = TRUE) {
-  labs <- sprintf("%s-%s", breaks[-length(breaks)], breaks[-1] - 1)
+label_breaks <- function(breaks, big_numbers = FALSE, replace_Inf = TRUE) {
+  
+  if (big_numbers){
+    labs <- sprintf("%s-%s", frmt_num(breaks[1:length(breaks) - 1]), frmt_num(breaks[2:length(breaks)]))
+  } else {
+    labs <- sprintf("%s-%s", breaks[-length(breaks)], breaks[-1] - 1)
+  }
+  
   if(replace_Inf){
     labs <- gsub("-Inf", "+", labs)
   }
+  
   return(labs)
 }
+
 
 
 frmt_num <- function(x) {
   scales::label_number_si()(x)
 }
+
 
 guide_axis_label_trans <- function(label_trans = identity, ...) {
   axis_guide <- guide_axis(...)
