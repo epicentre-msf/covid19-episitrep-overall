@@ -113,7 +113,7 @@ Additional graphics and tables are also available at the [Epicentre COVID-19 Epi
 ```{r TblCasesCount}
 
 breaks <- c(0, 1, 50, 100, 1000, 10000, 100000, 1000000, Inf)
-labels <- label_breaks(breaks) %>% gsub("-Inf", "+", .) %>% gsub("\\<0-1\\>", "0", .)
+labels <- label_breaks(breaks, big_numbers = TRUE) %>% gsub("\\<0-1\\>", "0", .)
 
 # Main table
 tbl_cases_count <- dfc_ecdc %>% 
@@ -339,7 +339,7 @@ gtbl_countries_increasing_cases %>%
 ```{r TblDeathsCount}
 
 breaks <- c(0, 1, 50, 100, 1000, 10000, 100000, Inf)
-labels <- label_breaks(breaks) %>% gsub("-Inf", "+", .) %>% gsub("\\<0-1\\>", "0", .)
+labels <- label_breaks(breaks, big_numbers = TRUE) %>% gsub("\\<0-1\\>", "0", .)
 
 # Main table
 tbl_deaths_count <- dfc_ecdc %>% 
@@ -664,7 +664,7 @@ gtsave(gtbl_summary_cases_deaths,
 
 # Specific breaks for incidence
 breaks_ar <- c(0, 10, 100, 1000, 10000, Inf)
-labels_ar <- label_breaks(breaks_ar) %>% gsub("-Inf", "+", .) %>% gsub("\\<0-1\\>", "0", .)
+labels_ar <- label_breaks(breaks_ar, big_numbers = TRUE) %>% gsub("\\<0-1\\>", "0", .)
 
 tbl_attack_rates <- tbl_summary_cases_deaths %>% 
   select(iso_a3 : country, cases, deaths, cases_ar, deaths_ar) %>% 
@@ -940,7 +940,7 @@ A sharp increasing of deaths (doubling time of less than `r threshold_doubling_t
 ```{r MapWorldCasesDoubling, fig.cap = glue('Doubling time of the number of Covid-19 cases estimated in the last 12 days (only countries with increasing trends are displayed)')}
 
 breaks <- c(0, 4, 8, 12, Inf)
-labels <- label_breaks(breaks) %>% stringr::str_replace_all(c("-Inf" = "+"))
+labels <- label_breaks(breaks)
 
 # Categorise the doubling time
 df_doubling_cases <- tbl_cases_doubling_time %>% 
