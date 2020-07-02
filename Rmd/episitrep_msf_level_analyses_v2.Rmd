@@ -305,12 +305,12 @@ p_epicurve_status
 p_epicurve_status_continent <- dta_with_aggregated %>%
   count(continent, covid_status, epi_week_consultation) %>%
   ggplot(aes(epi_week_consultation, n, fill = covid_status)) +
-  facet_wrap(vars(continent)) +
+  facet_wrap(vars(continent), scales = 'free_y') +
   geom_col() +
   ggthemes::scale_fill_tableau(name = "Status") +
   scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V", guide = ggplot2::guide_axis(n.dodge = 2),
                sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
-  labs(y = "Patients") +
+  labs(y = "Patients", caption = 'NOTE: free y axis scale among graphics') +
   theme_light() +
   theme(legend.position = 'top')
 
