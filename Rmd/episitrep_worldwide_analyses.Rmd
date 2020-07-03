@@ -141,7 +141,7 @@ tbl_cases_count <- dfc_ecdc %>%
 ```{r MapWorldCasesCount, fig.width = 8, fig.height = 5, fig.cap = glue('Mapping of number of Covid-19 cases as of {format(max(df_ecdc$date, na.rm = TRUE), "%d %B %Y")}')}
 
 sf_cases <- tbl_cases_count %>% 
-  inner_join(
+  full_join(
     select(sf_world, iso_a3),
     by = "iso_a3"
   ) %>% 
