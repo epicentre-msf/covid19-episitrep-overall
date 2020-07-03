@@ -3,7 +3,7 @@ title: "Analysis Indicators"
 author: "Epicentre"
 date: "`r format(Sys.Date(), '%d %B %Y')`"
 output: github_document
-editor_options: 
+editor_options:
   chunk_output_type: console
 ---
 
@@ -26,7 +26,7 @@ Some additional variables are added to the original dataset compilation prior to
 
 - `continent`: continent the country is in.
 - `region`: region the country is in. Regions defined in the World Bank Development Indicators.
-- `epi_week_consultation`: calculated by taking `MSF_date_consulation` and re-setting the date to the Monday of the week the date falls in. This allows for data to be aggregated by week. 
+- `epi_week_consultation`: calculated by taking `MSF_date_consulation` and re-setting the date to the Monday of the week the date falls in. This allows for data to be aggregated by week.
 - Similarly to the `epi_week_consultation`, also `epi_week_onset` (from `patcourse_dateonset`), `epi_week_admission` (from `patcourse_presHCF`), `epi_week_report` (from `report_date`) are calculated.
 - `age_5gp`: groups the `age_in_years` variable into the following bins: 0-4, 5-14, 15-44, 45-64, 65+
 - `age_9gp`: groups the `age_in_years` variable into the following bins: 0-9, 10-19, 20-29, 30-39, 40-49, 50-59, 60-69, 70-79, 80+.

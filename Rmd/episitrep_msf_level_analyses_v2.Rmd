@@ -201,7 +201,7 @@ p_epicurve_consult_admit <- ggplot(df_epicurve, aes(epi_week_consultation, n)) +
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1))) +
   labs(y = "Patients", colour = NULL, caption = glue::glue("Missing data: Consultation Date {missing_consultation}, Admission: {missing_admission}")) + 
   theme_light() + 
-  theme(legend.position = "top")
+  theme(legend.position = "top", panel.grid.minor = element_blank())
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_consult_admit_{week_report}.png")),
        plot = p_epicurve_consult_admit, 
@@ -257,7 +257,7 @@ p_epicurve_consult_admit_continent <- ggplot(df_epicurve_continent, aes(epi_week
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1))) +
   labs(y = "Patients", colour = NULL, caption = glue::glue("Missing data: Consultation Date {missing_consultation}, Admission: {missing_admission}")) + 
     theme_light() + 
-  theme(legend.position = "top")
+  theme(legend.position = "top", panel.grid.minor = element_blank())
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_epicurve_consult_admit_continent_{week_report}.png")),
        plot = p_epicurve_consult_admit_continent,
@@ -1688,7 +1688,7 @@ p_outcome_cfr <- ggplot(df_deaths_epiweek, aes(epi_week_consultation, n)) +
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Case Fatality Rate", labels = scales::percent_format(accuracy = 1))) +
   ggthemes::scale_fill_tableau() +
   labs(y = "Patients", colour = NULL, fill = "Outcome", caption = "Latest 2 weeks omitted for data completeness purposes") +
-  theme(legend.position = "top")
+  theme(legend.position = "top", panel.grid.minor = element_blank())
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_outcome_cfr_{week_report}.png")),
        plot = p_outcome_cfr, 
@@ -1749,7 +1749,7 @@ p_outcome_cfr_continent <- ggplot(df_deaths_epiweek_continent, aes(epi_week_cons
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Case Fatality Rate", labels = scales::percent_format(accuracy = 1))) +
   ggthemes::scale_fill_tableau() +
   labs(y = "Patients", colour = NULL, fill = "Outcome", caption = "Latest 2 weeks omitted for data completeness purposes") +
-  theme(legend.position = "top")
+  theme(legend.position = "top", panel.grid.minor = element_blank())
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_outcome_cfr_continent_{week_report}.png")),
        plot = p_outcome_cfr_continent, 
