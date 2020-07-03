@@ -1,6 +1,6 @@
 
 # set ggplot theme
-ggplot2::theme_set(ggplot2::theme_light(base_size = 14))
+ggplot2::theme_set(ggplot2::theme_light(base_size = 14) + theme(panel.grid.minor = element_blank()))
 
 
 cm_to_in <- 0.39370079

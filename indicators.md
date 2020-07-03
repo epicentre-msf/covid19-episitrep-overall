@@ -1,7 +1,7 @@
 Analysis Indicators
 ================
 Epicentre
-2020-07-02
+2020-07-03
 
 This document outlines how covid-19 indicators are calculated from the
 intersectional MSF linelist compilation dataset.
@@ -20,8 +20,7 @@ prior to analysis:
   - `age_5gp`: groups the `age_in_years` variable into the following
     bins: 0-4, 5-14, 15-44, 45-64, 65+
   - `age_10gp`: groups the `age_in_years` variable into the following
-    bins: 0-9, 10-19, 20-29, 30-39, 40-49, 50-59, 60-69, 70-79, 80-89,
-    90+
+    bins: 0-9, 10-19, 20-29, 30-39, 40-49, 50-59, 60-69, 70-79, 80+
 
 ## Important Variables
 
