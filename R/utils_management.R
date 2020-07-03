@@ -163,13 +163,13 @@ prepare_msf_dta <- function(dta){
   age_breaks_5 <- c(0, 5, 15, 45, 65, Inf)
   age_labels_5 <- label_breaks(age_breaks_5)
   
-  age_breaks_10 <- c(seq(0, 90, 10), Inf)
-  age_labels_10 <- label_breaks(age_breaks_10)
+  age_breaks_9 <- c(seq(0, 80, 10), Inf)
+  age_labels_9 <- label_breaks(age_breaks_9)
   
   dta <- dta %>% 
     mutate(
       age_5gp = cut(age_in_years, breaks = age_breaks_5, labels = age_labels_5, include.lowest = TRUE, right = FALSE),
-      age_10gp = cut(age_in_years, breaks = age_breaks_10, labels = age_labels_10, include.lowest = TRUE, right = FALSE)
+      age_9gp = cut(age_in_years, breaks = age_breaks_9, labels = age_labels_9, include.lowest = TRUE, right = FALSE)
     )
   
   # Merging patients' care variables
@@ -194,7 +194,7 @@ prepare_msf_dta <- function(dta){
   
   # Filter date of consultation until the Sunday the EpiSitrep (see set_time_frame.R)
   # but keep NAs as there is a considerable number of rows with missing date of consultation data
-  date_min_consultation <- min(pull(dta, date_consultation), na.rm =TRUE) 
+  date_min_consultation <- min(pull(dta, date_consultation), na.rm = TRUE) 
   dta <- dta %>% 
     filter(between(date_consultation, left = date_min_consultation, right = date_max_report) | is.na(date_consultation))
   

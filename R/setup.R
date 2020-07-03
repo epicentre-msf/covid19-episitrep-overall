@@ -42,3 +42,11 @@ path.local     <- file.path(path.root,'local')
 dir.create(path.local, showWarnings = FALSE, recursive = TRUE)
 
 
+# Create the path to NCovEpi Sharepoint
+OS <- Sys.info()[['sysname']]
+
+sharepoint.parent.dir <- dplyr::case_when(
+  OS == "Windows" ~ "D:", 
+  OS == "Darwin" ~ "~")
+
+path.sharepoint <- file.path(sharepoint.parent.dir, 'MSF', 'GRP-EPI-COVID-19 - NCoVEpi')

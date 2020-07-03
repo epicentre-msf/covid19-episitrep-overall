@@ -1,19 +1,24 @@
 ---
 title: "Analysis Indicators"
 author: "Epicentre"
-date: "`r Sys.Date()`"
+date: "`r format(Sys.Date(), '%d %B %Y')`"
 output: github_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
+
+source(here::here('R', 'setup.R'), encoding = 'UTF-8')
+
 knitr::opts_chunk$set(echo = TRUE)
 
-path <- max(fs::dir_ls("~/MSF/GRP-EPI-COVID-19 - NCoVEpi/data/linelist/world", regexp = "[.]rds$"))
+dta <- readr::read_rds(max(fs::dir_ls(file.path(path.sharepoint, 'data', 'linelist', 'world'), regexp = "[.]rds$")))
 
-dat <- readr::read_rds(path) 
 ```
 
 This document outlines how covid-19 indicators are calculated from the intersectional MSF linelist compilation dataset.
+
 
 ## Additional Variables
 
@@ -21,31 +26,44 @@ Some additional variables are added to the original dataset compilation prior to
 
 - `continent`: continent the country is in.
 - `region`: region the country is in. Regions defined in the World Bank Development Indicators.
-- `epi_week_consultation`: calculated by taking `MSF_date_consulation` and re-setting the date to the Monday of the week the date falls in. This allows for data to be aggregated by week.
+- `epi_week_consultation`: calculated by taking `MSF_date_consulation` and re-setting the date to the Monday of the week the date falls in. This allows for data to be aggregated by week. 
+- Similarly to the `epi_week_consultation`, also `epi_week_onset` (from `patcourse_dateonset`), `epi_week_admission` (from `patcourse_presHCF`), `epi_week_report` (from `report_date`) are calculated.
 - `age_5gp`: groups the `age_in_years` variable into the following bins: 0-4, 5-14, 15-44, 45-64, 65+
-- `age_10gp`: groups the `age_in_years` variable into the following bins: 0-9, 10-19, 20-29, 30-39, 40-49, 50-59, 60-69, 70-79, 80-89, 90+
+- `age_9gp`: groups the `age_in_years` variable into the following bins: 0-9, 10-19, 20-29, 30-39, 40-49, 50-59, 60-69, 70-79, 80+.
+
 
 ## Important Variables
 
 #### Sex
 
 linelist variable: `patinfo_sex`  
-values: `r paste(sort(unique(dat$patinfo_sex)), collapse = ", ")`
+values: `r paste(sort(unique(dta$patinfo_sex)), collapse = ", ")`  
+missing values: not recoded
 
 #### Covid Status
 
 linelist variable: `MSF_covid_status`  
-values: `r paste(sort(unique(dat$MSF_covid_status)), collapse = ", ")`
+values: `r paste(sort(unique(dta$MSF_covid_status)), collapse = ", ")`  
+missing values: recoded as 'Unknown'
+
+#### Admission
+
+linelist variables: `patcourse_admit` and `outcome_patcourse_admit`  
+values: `r paste(sort(unique(dta$patcourse_admit)), collapse = ", ")`  
+missing values: recoded as 'Unknown'
+
 
 #### Visit Type
 
 linelist variable: `MSF_visit_type`  
-values: `r paste(sort(unique(dat$MSF_visit_type)), collapse = ", ")`
+values: `r paste(sort(unique(dta$MSF_visit_type)), collapse = ", ")`  
+missing values: not recoded
 
 #### Final Outcome
 
 linelist variable: `outcome_patcourse_status`  
-values: `r paste(sort(unique(dat$outcome_patcourse_status)), collapse = ", ")`
+values: `r paste(sort(unique(dta$outcome_patcourse_status)), collapse = ", ")`  
+missing values: recoded as 'Pending/Unknown'
 
 #### Onset to admission delay (days)
 
@@ -57,6 +75,11 @@ values: `numeric`
 linelist variable: `MSF_length_stay`  
 values: `numeric`
 
+
+## Recoding "double variables"
+There is a series of variables that record the same information reported at patient's admission (``r combine_words(c('MSF_received_oxigen', names(dta)[grep('^patcourse_' , names(dta))][3:7]))``) and at patient's discharge (``r combine_words(c('MSF_outcome_received_oxigen', names(dta)[grep('^outcome_patcourse_' , names(dta))][1:5]))``). These variable may be analysed separately or as combined variables named ``r combine_words(c('received_oxigen', gsub('^outcome_patcourse_' , '', names(dta)[grep('^outcome_patcourse_' , names(dta))][1:5])))``. The variables respond to the question of whether the patient received the specific care (i.e. admitted to the hospital, or to an ICU, or received oxygen, etc.) at any time during the period of his/her illness.
+
+
 ## Indicators
 
 #### Proportion Admitted
@@ -65,11 +88,11 @@ linelist variable: `patcourse_admit`
 numerator: sum of `patcourse_admit == "Yes"`  
 denominator: sum of `patcourse_admit == "Yes" or "No"`
 
-#### CFR (case fatality risk/ratio)
+#### CFR (case fatality risk)
 
 linelist variable: `outcome_patcourse_status`  
 numerator: sum of `outcome_patcourse_status == "Died"`  
-denominator: sum of `outcome_patcourse_status == "Died" or "Cured"`
+denominator: sum of `outcome_patcourse_status == "Cured" or "Died"`
 
 #### Symptom Prevelance
 

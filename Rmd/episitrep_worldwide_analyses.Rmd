@@ -71,18 +71,17 @@ period_trends <- 12
 threshold_doubling_time <- 12
 
 # Default parameters for graphics
-# --- Three-colours palette (Red-Amber-Green) colour-blind safe
-RdAmGn <- c('#D95F02','#E6AB02','#1B9E77')
-caption_world_map <- glue::glue('Analysis and graphic by Epicentre | Data source: ECDC as of {format(date_max_report, "%d %b %Y")}')
+RdAmGn <- c('#D95F02', '#E6AB02', '#1B9E77') # Three-colours palette (Red-Amber-Green) colour-blind safe
+caption_world_map <- paste0('Analysis and graphic by Epicentre | Data source: ECDC as of ', format(date_max_report, '%d %b %Y'))
 
 ```
 
 
 <!-- Import data -->
-```{r get_data, include = FALSE}
+```{r GetData, include = FALSE}
 
 source(file.path(path.R, 'run_get_world_data.R'), encoding = 'UTF-8')
-source(file.path(path.R, 'run_model_trends.R'), encoding = 'UTF-8')
+source(file.path(path.R, 'run_model_trends.R')  , encoding = 'UTF-8')
 
 source(file.path(path.R, 'utils_management.R'), encoding = 'UTF-8')
 source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
@@ -176,7 +175,11 @@ ggsave(file.path(path.local.worldwide.graphs, glue("map_world_cases_count_{week_
 
 
 <!-- TABLE - Trends in number of cases -->
-```{r tbl_cases_trends}
+```{r TblCasesTrends, include = FALSE}
+
+# This table display trends estimated with 4 different models
+# It is not meant to appreciated differences among models
+# It is not meant to be distributed
 
 coeff_vars <-  c("coeff", "lwr", "upr")
 
@@ -396,6 +399,10 @@ ggsave(file.path(path.local.worldwide.graphs, glue("map_world_deaths_count_{week
 
 <!-- TABLE - Trend in number of deaths -->
 ```{r}
+
+# This table display trends estimated with 4 different models
+# It is not meant to appreciated differences among models
+# It is not meant to be distributed
 
 tbl_deaths_trends <- tbl_deaths_count %>% 
   select(-brks) %>% 

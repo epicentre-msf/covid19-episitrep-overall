@@ -16,10 +16,10 @@ run_analyes_worldwide <- TRUE
 
 if (run_analyes_worldwide) {
   rmarkdown::render(input = file.path(path.Rmd, 'episitrep_worldwide_analyses.Rmd'), 
-                    output_file = paste0('episitrep_worldwide_analyses_', week_report, '.html'), 
+                    output_file = paste0(week_report, '_', 'episitrep_worldwide_analyses', '.html'), 
                     output_dir  = path.local.week) 
   } else {
-    load(file.path(path.local.worldwide.data, paste0('episitrep_worldwide_analyses_', week_report, '.RData')))
+    load(file.path(path.local.worldwide.data, paste0('episitrep_worldwide_analyses', '_', week_report, '.RData')))
 }
 
 
@@ -28,10 +28,10 @@ run_analyes_msf_level <- TRUE
 
 if (run_analyes_msf_level) {
   rmarkdown::render(input = file.path(path.Rmd, 'episitrep_msf_level_analyses_v2.Rmd'), 
-                    output_file = paste0('episitrep_msf_level_analysis_v2_', week_report, '.html'),
+                    output_file = paste0(week_report, '_', 'episitrep_msf_level_analysis', '.html'),
                     output_dir  = path.local.week)
   } else {
-    load(file.path(path.local.msf.data, paste0('episitrep_msf_level_analyses_', week_report, '.RData'))) 
+    load(file.path(path.local.msf.data, paste0('episitrep_msf_level_analyses', '_', week_report, '.RData'))) 
 }
 
 
