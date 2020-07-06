@@ -56,18 +56,15 @@ caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF line
 df_countries <- readRDS(file.path(path.data, 'df_countries.RDS'))
 
 # The MSF linelist
-update_msf_data_anyways <- TRUE
+update_msf_data <- TRUE
 
-get_updated_msf_data <- ifelse(isTRUE(update_msf_data_anyways) |
-                                 !file.exists(file.path(path.local.msf.data, 'dta_MSF.RData')),
-                               TRUE,
-                               FALSE)
 
 source(file.path(path.R, 'run_get_msf_data.R'), encoding = 'UTF-8')
 source(file.path(path.R, 'run_get_aggregated_data.R'), encoding = 'UTF-8')
 
+
 # Expand the aggregated
-dta_weekly_expanded <- df_weekly_aggregated %>% 
+dta_weekly_expanded <- dta_weekly_aggregated %>% 
   filter(!project %in% c('Lesvos-Moria', 'Lesvos-Moria Ped')) %>% 
   select(-week) %>% 
   mutate(
@@ -87,6 +84,23 @@ dta_weekly_expanded <- df_weekly_aggregated %>%
       country = paste(country, '(*)'),
       site_name = paste(project, '(*)'))
 
+
+dta_expanded_dates <- dta_weekly_aggregated %>% 
+  distinct(sheet, oc, country, project) %>% 
+  full_join(dta_project_aggregated_dates, by = 'sheet') %>% 
+    mutate(
+    country = case_when(
+      country == 'DRC' ~ 'Democratic Republic of the Congo', 
+      country == "Côte d'Ivoire" ~ 'Côte d’Ivoire', 
+      TRUE ~ country)) %>% 
+  pivot_longer(
+    cols = date_first:date_last, 
+    names_to = "type_date", 
+    values_to = "date_consultation") %>% 
+  left_join(df_countries, by = 'country') %>% 
+    mutate(
+      country = paste(country, '(*)'),
+      site_name = paste(project, '(*)'))
 
 
 dta_with_aggregated <- dta %>% 
@@ -123,7 +137,7 @@ nb_msf_sites_linelist   <- length(unique(dta$site_name))
 nb_msf_sites_aggregated <- length(unique(dta_weekly_expanded$site_name))
 nb_msf_sites            <- nb_msf_sites_linelist + nb_msf_sites_aggregated
 
-call_msf_countries <- unique(c(unique(dta$country), unique(dta_aggregated$country)))
+call_msf_countries <- unique(c(dta$country, dta_weekly_aggregated$country))
 
 nb_msf_obs_linelist   <- dta %>% count() %>% pull(n)
 nb_msf_obs_aggregated <- dta_weekly_expanded %>% count() %>% pull(n)
@@ -363,7 +377,7 @@ tbl_countries_covid_status <- dta_with_aggregated %>%
 
 tbl_countries_dates <- dta %>%
   select(continent, country, site_name, date_consultation) %>%
-  add_row(dta_expanded_dates %>% select(-type_date)) %>%
+  add_row(dta_expanded_dates %>% select(continent, country, site_name, date_consultation)) %>%  
   group_by(country) %>%
   summarise(
     date_adm_first = format(min(date_consultation, na.rm = TRUE), '%d-%m-%Y'),
@@ -493,14 +507,14 @@ tbl_sites_covid_status <- dta_with_aggregated %>%
 
 tbl_site_dates <- dta %>%
   select(continent, country, site_name, date_consultation) %>%
-  add_row(dta_expanded_dates %>% select(-type_date)) %>%
+  add_row(dta_expanded_dates %>% select(continent, country, site_name, date_consultation)) %>%
   group_by(site_name) %>%
   summarise(
     date_adm_first = format(min(date_consultation, na.rm = TRUE), '%d-%m-%Y'),
     date_adm_last  = format(max(date_consultation, na.rm = TRUE), '%d-%m-%Y'))
 
 gtbl_sites_covid_status <- tbl_sites_covid_status %>%
-  left_join(tbl_site_dates, by = 'site_name') %>%
+  left_join(tbl_site_dates) %>%
   gt(rowname_col = "site_name",
      groupname_col = "country") %>%
   cols_label(
