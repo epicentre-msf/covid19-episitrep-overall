@@ -4,6 +4,12 @@
 path.sharepoint.data <- file.path(path.sharepoint, 'data', 'linelist', 'world')
 
 
+get_updated_msf_data <- ifelse(isTRUE(update_msf_data) | 
+                                 !file.exists(file.path(path.local.msf.data, 'dta_MSF.RData')), 
+                               TRUE, 
+                               FALSE)
+
+
 # Get the MSF linelist dataset
 if (get_updated_msf_data) {
   

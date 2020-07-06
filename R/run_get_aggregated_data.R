@@ -5,6 +5,7 @@ library(readxl)
 # Note: 'path.sharepoint' is set in setup.R
 path.sharepoint.agg.data <- file.path(path.sharepoint, "coordination", "Surveillance focal points coordination", "Aggregated reporting", "Report_covid_aggregate_all.xlsx")
 
+# Get weekly aggregated data
 agg_data_names <- c("sheet", "oc", "country", "project", "date", "week", "suspected", "probable", "confirmed", "non_cases", "unknown")
 
 dta_weekly_aggregated <- excel_sheets(path.sharepoint.agg.data) %>% 
@@ -20,8 +21,8 @@ dta_weekly_aggregated <- excel_sheets(path.sharepoint.agg.data) %>%
   set_names(agg_data_names)
 
 
-# NOT WORKING YET
-dta_weekly_aggregated_dates <- excel_sheets(path.sharepoint.agg.data) %>%
+# Get first and last activity dates by project
+dta_project_aggregated_dates <- excel_sheets(path.sharepoint.agg.data) %>%
  map_df(~{
    
    if (is_empty(read_excel(path = path.sharepoint.agg.data, sheet = .x, range = "I1", col_names = FALSE))) {
@@ -34,7 +35,7 @@ dta_weekly_aggregated_dates <- excel_sheets(path.sharepoint.agg.data) %>%
    if (is_empty(read_excel(path = path.sharepoint.agg.data, sheet = .x, range = "K4", col_names = FALSE))) {
      date_last  <- NA
    } else {
-     date_last  <- read_excel(path = path.sharepoint.agg.data, sheet = .x, range = "K4", col_names = FALSE) %>% pull()
+     date_last <- read_excel(path = path.sharepoint.agg.data, sheet = .x, range = "K4", col_names = FALSE) %>% pull()
      date_last <- lubridate::as_date(date_last)
    }
    
