@@ -21,18 +21,22 @@ dta_weekly_aggregated <- excel_sheets(path.sharepoint.agg.data) %>%
 
 
 # NOT WORKING YET
-#dta_weekly_aggregated_dates <- excel_sheets(path.sharepoint.agg.data) %>% 
-#  map_df(~{
-#    date_first <- if (is_empty(read_excel(path = path.sharepoint.agg.data, sheet = .x, range = "I1", col_names = FALSE))) {
-#      NA
-#      } else {
-#        read_excel(path = path.sharepoint.agg.data, sheet = .x, range = "I1", col_names = FALSE) %>% pull()
-#      }
-#    
-#    date_last  <- if (is_empty(read_excel(path = path.sharepoint.agg.data, sheet = .x, range = "K4", col_names = FALSE))) {
-#      NA
-#      } else {
-#        read_excel(path = path.sharepoint.agg.data, sheet = .x, range = "K4", col_names = FALSE) %>% pull()
-#      }
-#    sheet <- excel_sheets(path.sharepoint.agg.data)
-#  })
+dta_weekly_aggregated_dates <- excel_sheets(path.sharepoint.agg.data) %>%
+ map_df(~{
+   
+   if (is_empty(read_excel(path = path.sharepoint.agg.data, sheet = .x, range = "I1", col_names = FALSE))) {
+     date_first <- NA
+   } else {
+     date_first <- read_excel(path = path.sharepoint.agg.data, sheet = .x, range = "I1", col_names = FALSE) %>% pull()
+     date_first <- lubridate::as_date(date_first)
+   }
+   
+   if (is_empty(read_excel(path = path.sharepoint.agg.data, sheet = .x, range = "K4", col_names = FALSE))) {
+     date_last  <- NA
+   } else {
+     date_last  <- read_excel(path = path.sharepoint.agg.data, sheet = .x, range = "K4", col_names = FALSE) %>% pull()
+     date_last <- lubridate::as_date(date_last)
+   }
+   
+   tibble::tibble(sheet = .x, date_first = date_first, date_last = date_last)
+ })
