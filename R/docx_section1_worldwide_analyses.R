@@ -30,10 +30,7 @@ my_doc <- add_par_normal(
 
 
 my_doc <- add_par_normal(
-  sprintf('%s countries (%s) reported more than 100 thousand cases.
-  The United States reported more than 2 million cases and Brazil has crossed the one million mark this week.
-  %s African countries reported less than 50 cases (%s).
-  %s reported more than 1,000 cases (%s) (Figure 1 - Cases count).', 
+  sprintf('%s countries (%s) reported more than 100 thousand cases. The United States is approaching the 3 million cases threshold, and Brazil has crossed the 1.5 million mark. India is now third in number of cases reported with almost 700 thousand cases. %s African countries reported less than 50 cases (%s). %s reported more than 1,000 cases (%s) (Figure 1 - Cases count).', 
           tbl_cases_count %>% call_countries_with_more(100000, "cases") %>% length() %>% Words(), 
           tbl_cases_count %>% call_countries_with_more(100000, "cases") %>% combine_words(), 
           tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with_less(50, "cases") %>% length() %>% Words(), 
@@ -43,7 +40,7 @@ my_doc <- add_par_normal(
 
 
 my_doc <- add_par_normal(
-  sprintf('Most of countries worldwide have been reporting new cases with an increasing or stable trend. %s countries reported an increasing trend this week (compared to 41 last week).', 
+  sprintf('Most of countries worldwide have been reporting new cases with an increasing or stable trend. %s countries reported an increasing trend this week (compared to XX last week).', 
   call_countries_increasing('cases') %>% length() %>% Words()))
 
 
@@ -69,7 +66,7 @@ my_doc <- add_end_section_continuous()
 
 
 my_doc <- add_par_normal(
-  sprintf('Since the beginning of the epidemic, countries presenting the highest cumulative incidences remain mostly developed countries (North America, Europe, Middle East, and some countries in central and South America). Most countries in Asia and Africa remain below the threshold of 10 confirmed cases per 100,000 population (Figure 2).'))
+  sprintf('Since the beginning of the epidemic, countries presenting the highest cumulative incidences remain mostly developed countries (North America, Europe, Middle East, and some countries in central and South America). In Africa roughly half of the countries remain below the threshold of 10 reported cases per 100,000 population, while the other half is below the threshold of 100 reported cases per 100,000 population, with the exception of Mauritania, Gabon and South Africa (Figure 2).'))
 
 
 my_doc <- add_par_normal(
@@ -106,11 +103,11 @@ my_doc <- add_par_normal(
 
 # 2
 my_doc <- add_par_normal(
-  sprintf('An increasing number of African countries are now reporting more than 50 deaths. NAME OF THE COUNTRIES are now reporting over 10,000 deaths.'))
+  sprintf('About half of African countries are now reporting more than 100 deaths.'))
 
 # 3
 my_doc <- add_par_normal(
-  sprintf('More/Less (?) countries reported an increasing trend in death this week. This includes more countries of .... (Figure 3 – Trends in deaths).'))
+  sprintf('More countries reported an increasing trend in death this week. This includes more countries of .... (Figure 3 – Trends in deaths).'))
 
 # 4
 my_doc <- my_doc %<>% 
@@ -147,22 +144,23 @@ my_doc <- add_end_section_continuous()
 
 # 1
 my_doc <- add_par_normal(
-  sprintf("A sharp increasing of cases (doubling time of less than %s days) is observed in: Africa : (%s), %s; Asia: (%s), %s; Americas: (%s), %s (Figure 4 and Table 1). Countries with a particularly worrying doubling time (about or less than 4 days) are ....", 
-  threshold_doubling_time, 
-  length(call_countries_doubling('cases_est', 'Africa')), 
-  ifelse(length(combine_words(call_countries_doubling('cases_est', 'Africa')))!=0, combine_words(call_countries_doubling('cases_est', 'Africa')), 'None'), 
-  length(call_countries_doubling('cases_est', 'Asia')), 
-  ifelse(length(combine_words(call_countries_doubling('cases_est', 'Asia')))!=0, combine_words(call_countries_doubling('cases_est', 'Asia')), 'None'), 
-  length(call_countries_doubling('cases_est', 'Americas')), 
-  ifelse(length(combine_words(call_countries_doubling('cases_est', 'Americas')))!=0, combine_words(call_countries_doubling('cases_est', 'Americas')), 'None')))
+  sprintf("A sharp increasing of cases (doubling time of less than 12 days) is observed in %s countries this week, compared to XX last week (Figure 4 and Table 1).", 
+          length(call_countries_doubling('cases_est'))))
 
 # 2
 my_doc <- add_par_normal(
-  sprintf("No country this week reported a doubling time in cases of less than 8 days. However Ethiopia reported a worrying sharp increase in deaths and should remain closely monitored."))
+  sprintf("This week %s reported a doubling time in cases of less than 8 days. The other countries with a doubling time in cases of less than 12 days are %s.",
+          combine_words(call_countries_doubling('cases_est', threshold = 8)), 
+          combine_words(setdiff(call_countries_doubling('cases_est', threshold = 12), call_countries_doubling('cases_est', threshold = 8)))))
 
 # 3
 my_doc <- add_par_normal(
-  sprintf("Similarly as last week, Guatemala presents a naïve CFR of 3.9%% which appears higher than expected, which may be an indicator that the number of cases are underestimated. Iraq also displays a naïve CFR of 3.0%% (Table 1)."))
+  sprintf("Also %s reported a worrying increase in deaths.", 
+          combine_words(call_countries_doubling('deaths_est', threshold = 12))))
+
+# 4
+my_doc <- add_par_normal(
+  sprintf("MORE TEXT HERE REGARDING THE DOUBLING TIME AND THE NAIVE CFR (Table 1)."))
 
 
 my_doc <- add_end_section_2columns()
@@ -224,19 +222,15 @@ my_doc <- add_end_section_continuous()
 
 # 1
 my_doc <- add_par_normal(
-  sprintf("Having a better insight into countries’ testing capacity would allow for a better interpretation of reported cases relative to actual ones. Figure 6 displays the relationship between the proportion of positive tests, and the cumulative number of cases per 100,000 population in the country (both in the last 12 days). The countries displayed in the right side of the graphic therefore have a higher proportion of positive tests, which may point to a possibly insufficient sensitivity of the testing strategy. Of these, countries with a recent high number of cases are facing an even more complicated situation. Only countries with a current increasing trend are displayed, thus being on a comparable stage of the epidemic."))
+  sprintf("A better insight into countries’ testing capacity would allow for a better interpretation of reported cases relative to actual ones. Figure 5 displays the relationship between the proportion of positive tests, and the cumulative number of cases per 100,000 population in the country (both in the last 12 days). The countries displayed in the right side of the graphic therefore have a higher proportion of positive tests, which may point to a possibly insufficient sensitivity of the testing strategy. Of these, countries with a recent high number of cases are facing an even more complicated situation. Only countries with a current increasing trend are displayed, thus being on a comparable stage of the epidemic."))
 
 # 2
 my_doc <- add_par_normal(
-  sprintf("It is interesting to note that about half of the countries are reporting a proportion of positive tests higher than 10%%. This could indicate that most countries may not detect all cases due to an insufficiently sensitive testing strategy. However, it is of interest that a non-negligible number of countries did not regularly report the number of tests performed, thus leading to potentially overestimated proportions."))
+  sprintf("WHO has set the recommended goal of 5%% of positive samples to ensure acceptable sensitivity. This week ....TO BE COMPLETED. This could indicate that these countries may not detect all cases due to an insufficiently sensitive testing strategy. However, it is of interest that a non-negligible number of countries did not regularly report the number of tests performed, thus leading to potentially overestimated proportions."))
 
 # 3
 my_doc <- add_par_normal(
-  sprintf("This week no country displayed a proportion of positive test higher than about 30%%."))
-
-# 4
-my_doc <- add_par_normal(
-  sprintf("Countries with a high recent cumulative incidence and high proportion of positive (NAME OF THE COUNTRIES) are to be closely monitored as they are facing an important rise in cases while having possible gaps in testing strategy sensitivity. Chile appears to be in this situation for the fourth consecutive week."))
+  sprintf("To note that XXXXX displayed a very high proportion of positive tests. These countries, as well as some others which reported high cumulative number of cases in the last 12 days (such as LIST OF COUNTRIES) are to be closely monitored as they are facing an important rise in cases while having possible gaps in testing strategy sensitivity."))
 
 
 my_doc <- add_end_section_2columns()

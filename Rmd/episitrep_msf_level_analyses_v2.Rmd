@@ -960,10 +960,10 @@ m_age_sex <- dta %>% filter(covid_status == "Confirmed") %>% summarise(age = sum
 tbl_pyramid <- dta %>% 
   drop_na(sex, age_in_years) %>% 
   filter(covid_status %in% c("Confirmed")) %>% 
-  count(sex, age_10gp) %>% 
+  count(sex, age_9gp) %>% 
   mutate(n = if_else(sex == "M", -n, n))
 
-p_pyramid_age_sex <- ggplot(tbl_pyramid, aes(x = age_10gp, y = n, fill = sex)) +
+p_pyramid_age_sex <- ggplot(tbl_pyramid, aes(x = age_9gp, y = n, fill = sex)) +
   geom_col() +
   geom_hline(yintercept = 0, colour = "black") +
   geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 4) +
@@ -994,10 +994,10 @@ m_age_sex <- dta %>% filter(covid_status == "Confirmed") %>% summarise(age = sum
 tbl_pyramid_continent <- dta %>% 
   drop_na(sex, age_in_years) %>% 
   filter(covid_status %in% c("Confirmed")) %>% 
-  count(continent, sex, age_10gp) %>% 
+  count(continent, sex, age_9gp) %>% 
   mutate(n = if_else(sex == "M", -n, n))
 
-p_pyramid_age_sex_continent <- ggplot(tbl_pyramid_continent, aes(x = age_10gp, y = n, fill = sex)) +
+p_pyramid_age_sex_continent <- ggplot(tbl_pyramid_continent, aes(x = age_9gp, y = n, fill = sex)) +
   facet_wrap(~continent, ncol = 2, scales = "free_x") +
   geom_col() +
   geom_hline(yintercept = 0, colour = "black") +

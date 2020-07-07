@@ -1182,6 +1182,7 @@ tbl_tests_inc_reliable <- tbl_tests_inc %>%
   filter(reliable == 'Yes')
 
 dots_prop_tests <- ggplot(tbl_tests_inc_reliable, aes(tests_prop, cases_inc_12d)) + 
+  geom_vline(xintercept = 0.05, linetype = "dashed", color = "red", size = 0.8) + 
   geom_point(aes(colour = continent)) + 
   ggrepel::geom_text_repel(
     aes(tests_prop, cases_inc_12d, label = country, colour = continent),

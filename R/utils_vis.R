@@ -118,7 +118,7 @@ call_countries_increasing <- function(obs, continent_name = NULL){
 
 
 
-call_countries_doubling <- function(est, continent_name = NULL){
+call_countries_doubling <- function(est, continent_name = NULL, threshold = threshold_doubling_time){
   
   est <- sym(est)
   
@@ -128,7 +128,7 @@ call_countries_doubling <- function(est, continent_name = NULL){
     selected_tbl <- tbl_cfr_doubling_rank
   }
   
-  selected_tbl <- filter(selected_tbl, !!est < threshold_doubling_time)
+  selected_tbl <- filter(selected_tbl, !!est < threshold)
   selected_tbl <- arrange(selected_tbl, desc(!!est))
   
   called_countries <- pull(selected_tbl, 'country')
