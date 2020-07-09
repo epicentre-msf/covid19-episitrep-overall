@@ -345,3 +345,73 @@ country_plot_coeff <- function(series, country_iso) {
   return(grid_plot)
   
 }
+
+
+
+make_tbl_prop <- function(dta, var1, var2 = NULL) {
+  
+  var1 <- sym(var1)
+  
+  tbl1 <- dta %>%
+    group_by(!!var1, .drop = FALSE) %>%
+    summarise(
+      n = n()) %>% 
+    mutate(
+      pct = n/sum(n)) %>% 
+    ungroup()
+  
+  if (!is.null(var2)){
+    
+    var2 <- sym(var2)
+    
+    tbl2 <- dta %>%
+      group_by(!!var1, !!var2, .drop = FALSE) %>%
+      summarise(
+        n = n()) %>% 
+      mutate(
+        pct = n/sum(n)) %>% 
+      pivot_wider(names_from = !!var2, values_from = c('n', 'pct')) %>% 
+      full_join(tbl1) %>% 
+      rename(n_Total = n, pct_Total = pct) %>% 
+      ungroup()
+  }
+  
+  if (is.null(var2)) {
+    return(tbl1)
+  } else {
+    return(tbl2)
+  }
+  
+}
+
+
+
+make_tbl_cfr <- function(dta, x_var, label_var){
+  
+  x_var <- sym(x_var)
+  
+  dta <- dta %>% 
+    filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died'), !is.na(!!x_var))
+  
+  tbl_cfr_total <- dta %>% 
+    select(!!x_var, outcome_status) %>% 
+    group_by(!!x_var) %>% 
+    summarise(
+      totals_Total  = paste0(sum(outcome_status == 'Died'), '/', n()), 
+      died_p_Total = mean(outcome_status == 'Died')) %>% 
+    mutate(
+      label_var = label_var)
+  
+  tbl_cfr_continent <- dta %>%
+    select(continent, !!x_var, outcome_status) %>%
+    group_by(continent, !!x_var) %>%
+    summarise(
+      totals = paste0(sum(outcome_status == 'Died'), '/', n()),
+      died_p = mean(outcome_status == 'Died')) %>%
+    pivot_wider(names_from = continent, values_from = c(totals, died_p))
+  
+  tbl_cfr <- right_join(tbl_cfr_continent, tbl_cfr_total)
+  
+  return(tbl_cfr)
+}
+

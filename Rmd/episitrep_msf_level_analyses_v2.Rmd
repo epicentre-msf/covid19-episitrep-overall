@@ -131,7 +131,7 @@ The required data are not available yet. And this section will be updated as soo
 
 
 <!-- Some text outputs for the EpiSitrep --> 
-```{r, include = FALSE}
+```{r numbers, include = FALSE}
 
 nb_msf_sites_linelist   <- length(unique(dta$site_name))
 nb_msf_sites_aggregated <- length(unique(dta_weekly_expanded$site_name))
@@ -147,9 +147,23 @@ nb_msf_confirmed <- sum(dta_with_aggregated$covid_status == 'Confirmed', na.rm =
 nb_msf_probable  <- sum(dta_with_aggregated$covid_status == 'Probable' , na.rm = TRUE)
 nb_msf_suspected <- sum(dta_with_aggregated$covid_status == 'Suspected', na.rm = TRUE)
 
+nb_msf_confirmed_with_comorbidity <- with(dta, sum(covid_status == 'Confirmed' & Comcond_present > 0, na.rm = TRUE))
+nb_msf_confirmed_linelist <- sum(dta$covid_status == 'Confirmed', na.rm = TRUE)
+
+
+nb_msf_conf_prob_susp <- with(dta, sum(covid_status %in% c('Confirmed', 'Probable', 'Suspected') & outcome_status %in% c('Cured', 'Died'), na.rm = TRUE))
+
+nb_msf_conf_prob_susp_who_died <- with(dta, sum(covid_status %in% c('Confirmed', 'Probable', 'Suspected') & outcome_status == 'Died', na.rm = TRUE))
+
+nb_msf_conf_above65 <- with(dta, sum(covid_status == 'Confirmed' & age_in_years >=65 & outcome_status %in% c('Cured', 'Died'), na.rm = TRUE))
+nb_msf_conf_above65_who_died <- with(dta, sum(covid_status == 'Confirmed' & age_in_years >=65 & outcome_status == 'Died', na.rm = TRUE))
+
+median_age_confirmed <- dta %>% filter(covid_status == 'Confirmed') %>% pull(age_in_years) %>% median(na.rm = TRUE)
+median_age_confirmed_died <- dta %>% filter(covid_status == 'Confirmed' & outcome_status == 'Died') %>% pull(age_in_years) %>% median(na.rm = TRUE)
+
 ```
 
-**Number of MSF sites**: `r nb_msf_sites` (`r nb_msf_sites_linelist` sites with linelist data and `r nb_msf_sites_aggregated` with aggreagated data). 
+**Number of MSF sites**: `r nb_msf_sites` (`r nb_msf_sites_linelist` sites with linelist data and `r nb_msf_sites_aggregated` with aggregated data). 
 
 **Total patients consulted/admitted**: `r nb_msf_obs` in `r length(call_msf_countries)` countries (`r combine_words(call_msf_countries)`). 
 
@@ -974,7 +988,7 @@ p_pyramid_age_sex <- ggplot(tbl_pyramid, aes(x = age_9gp, y = n, fill = sex)) +
   labs(x = "Age Group", y = "Confirmed Patients", caption = glue::glue("Missing Data: Age {m_age_sex$age}, Sex {m_age_sex$sex}"))  +
   guides(y.sec = guide_axis_label_trans(~paste(.x))) # show age group labels on both axis
 
-ggsave(file.path(path.local.msf.graphs, paste0('msf', 'p_pyramid_age_sex', '.png')),
+ggsave(file.path(path.local.msf.graphs, paste0('msf', 'p_pyramid_age_sex_', week_report, '.png')),
        plot = p_pyramid_age_sex,
        width = 8,
        height = 6)
@@ -1008,7 +1022,7 @@ p_pyramid_age_sex_continent <- ggplot(tbl_pyramid_continent, aes(x = age_9gp, y 
   theme(legend.position = "top") +
   labs(x = "Age Group", y = "Confirmed Patients", caption = glue::glue("Missing Data: Age {m_age_sex$age}, Sex {m_age_sex$sex}")) 
 
-ggsave(file.path(path.local.msf.graphs, paste0('msf', 'p_pyramid_age_sex_continent', '.png')),
+ggsave(file.path(path.local.msf.graphs, paste0('msf', 'p_pyramid_age_sex_continent_', week_report, '.png')),
        plot = p_pyramid_age_sex_continent,
        width = 8,
        height = 8)
@@ -1055,94 +1069,67 @@ dta_care <- dta_care %>%
       merge_ecmo == "Yes" ~ "No at any time",
       TRUE ~ merge_ecmo))
 
-tbl_care <- dta_care %>%
-  group_by(continent) %>%
-  summarise(
-    admit_yes     = freq_prct(merge_admit, 'Yes'),
-    admit_no      = freq_prct(merge_admit, 'No'),
-    admit_ukn     = freq_prct(merge_admit, 'Unknown'),
-    oxygen_yes    = freq_prct(merge_oxygen, 'Yes'),
-    oxygen_no_ukn = freq_prct(merge_oxygen, 'No at admission then not reported'),
-    oxygen_no     = freq_prct(merge_oxygen, 'No at any time'),
-    oxygen_ukn    = freq_prct(merge_oxygen, 'Not reported'),
-    icu_yes       = freq_prct(merge_icu, 'Yes'),
-    icu_no_ukn    = freq_prct(merge_icu, 'No at admission then not reported'),
-    icu_no        = freq_prct(merge_icu, 'No at any time'),
-    icu_ukn       = freq_prct(merge_icu, 'Not reported'),
-    vent_yes      = freq_prct(merge_vent, 'Yes'),
-    vent_no_ukn   = freq_prct(merge_vent, 'No at admission then not reported'),
-    vent_no       = freq_prct(merge_vent, 'No at any time'),
-    vent_ukn      = freq_prct(merge_vent, 'Not reported'),
-    ecmo_yes      = freq_prct(merge_ecmo, 'Yes'),
-    ecmo_no_ukn   = freq_prct(merge_ecmo, 'No at admission then not reported'),
-    ecmo_no       = freq_prct(merge_ecmo, 'No at any time'),
-    ecmo_ukn      = freq_prct(merge_ecmo, 'Not reported'))
 
-tbl_care_total <- dta_care %>%
-  summarise(
-    admit_yes     = freq_prct(merge_admit, 'Yes'),
-    admit_no      = freq_prct(merge_admit, 'No'),
-    admit_ukn     = freq_prct(merge_admit, 'Unknown'),
-    oxygen_yes    = freq_prct(merge_oxygen, 'Yes'),
-    oxygen_no_ukn = freq_prct(merge_oxygen, 'No at admission then not reported'),
-    oxygen_no     = freq_prct(merge_oxygen, 'No at any time'),
-    oxygen_ukn    = freq_prct(merge_oxygen, 'Not reported'),
-    icu_yes       = freq_prct(merge_icu, 'Yes'),
-    icu_no_ukn    = freq_prct(merge_icu, 'No at admission then not reported'),
-    icu_no        = freq_prct(merge_icu, 'No at any time'),
-    icu_ukn       = freq_prct(merge_icu, 'Not reported'),
-    vent_yes      = freq_prct(merge_vent, 'Yes'),
-    vent_no_ukn   = freq_prct(merge_vent, 'No at admission then not reported'),
-    vent_no       = freq_prct(merge_vent, 'No at any time'),
-    vent_ukn      = freq_prct(merge_vent, 'Not reported'),
-    ecmo_yes      = freq_prct(merge_ecmo, 'Yes'),
-    ecmo_no_ukn   = freq_prct(merge_ecmo, 'No at admission then not reported'),
-    ecmo_no       = freq_prct(merge_ecmo, 'No at any time'),
-    ecmo_ukn      = freq_prct(merge_ecmo, 'Not reported'))
+tbl_care_admitted <- make_tbl_prop(dta_care, 'merge_admit', 'continent') %>% 
+  mutate(name_var = 'Admitted')
 
-vars_admit <- tibble(levels = tbl_care %>% select(starts_with('admit_')) %>% names(),
-                     labels = c('Yes, n (%)', 'No, n (%)', 'Unknow, n (%)'))
-
-labels_care <- c('Yes, n (%)', 'No at admission then not reported, n (%)', 'No at any time, n (%)', 'Not reported, n (%)')
-
-vars_oxigen <- tibble(levels = tbl_care %>% select(starts_with('oxygen_')) %>% names(),
-                      labels = labels_care)
-
-vars_icu <- tibble(levels = tbl_care %>% select(starts_with('icu_')) %>% names(),
-                   labels = labels_care)
+tbl_care_oxygen <- make_tbl_prop(dta_care, 'merge_oxygen', 'continent') %>% 
+  mutate(name_var = 'Received oxygen')
+  
+tbl_care_icu <- make_tbl_prop(dta_care, 'merge_icu', 'continent') %>% 
+  mutate(name_var = 'Admitted to the Intensive Care Unit')
+  
+tbl_care_vent <- make_tbl_prop(dta_care, 'merge_vent', 'continent') %>% 
+  mutate(name_var = 'Supported by a ventilator')
+  
+tbl_care_ecmo <- make_tbl_prop(dta_care, 'merge_ecmo', 'continent') %>% 
+  drop_na(merge_ecmo) %>% 
+  mutate(name_var = 'Supported by extracorporeal membrane oxygenation (ECMO)')
 
 
-vars_vent <- tibble(levels = tbl_care %>% select(starts_with('vent_')) %>% names(),
-                    labels = labels_care)
+tbl_care <- tbl_care_admitted %>% rename(values_var = merge_admit) %>% 
+  add_row(tbl_care_oxygen %>% rename(values_var = merge_oxygen)) %>% 
+  add_row(tbl_care_icu %>% rename(values_var = merge_icu)) %>%
+  add_row(tbl_care_vent %>% rename(values_var = merge_vent)) %>%
+  add_row(tbl_care_ecmo %>% rename(values_var = merge_ecmo))
+  
 
-vars_ecmo <- tibble(levels = tbl_care %>% select(starts_with('ecmo_')) %>% names(),
-                    labels = labels_care)
-
-
-gtbl_care <- tbl_care %>%
-  add_row(continent = 'Total', tbl_care_total) %>%
-  gather(characteristics, values, -continent, factor_key = TRUE) %>%
-  spread(continent, values) %>%
-  mutate(
-    type_characteristic = case_when(
-      characteristics %in% vars_admit$levels  ~ 'Admitted',
-      characteristics %in% vars_oxigen$levels ~ 'Received oxygen',
-      characteristics %in% vars_icu$levels    ~ 'Admitted to the Intensive Care Unit',
-      characteristics %in% vars_vent$levels   ~ 'Supported by a ventilator',
-      characteristics %in% vars_ecmo$levels   ~ 'Supported by extracorporeal membrane oxygenation (ECMO)')) %>%
-  mutate(
-    characteristics = factor(characteristics, levels = c(vars_admit$levels, vars_oxigen$levels, vars_icu$levels, vars_vent$levels, vars_ecmo$levels), labels = c(vars_admit$labels, vars_oxigen$labels, vars_icu$labels, vars_vent$labels, vars_ecmo$labels))) %>%
-  gt(rowname_col = "characteristics",
-     groupname_col = "type_characteristic") %>%
+gtbl_care <- tbl_care %>% 
+  gt(rowname_col = "values_var",
+     groupname_col = "name_var") %>%
+  cols_hide(
+    columns = ends_with('Europe')) %>% 
+  cols_label(
+    n_Africa   = 'n', 
+    n_Americas = 'n',
+    n_Asia     = 'n', 
+    n_Total     = 'n', 
+    pct_Africa   = '(%)', 
+    pct_Americas = '(%)', 
+    pct_Asia     = '(%)', 
+    pct_Total    = '(%)') %>% 
+  fmt_number(
+    columns = starts_with('pct_'), 
+    decimals = 1, 
+    scale_by = 100, 
+    pattern = "({x})") %>% 
   tab_spanner(
-    label = 'Project location',
-    columns = vars(Africa, Americas, Asia)
-  ) %>%
+    label = 'Africa',
+    columns = ends_with('_Africa')) %>% 
+  tab_spanner(
+    label = 'Americas',
+    columns = ends_with('_Americas')) %>% 
+  tab_spanner(
+    label = 'Asia',
+    columns = ends_with('_Asia')) %>% 
+  tab_spanner(
+    label = 'Total',
+    columns = ends_with('_Total')) %>% 
   tab_options(
     column_labels.font.weight = "bold",
     row_group.font.weight = 'bold',
-    data_row.padding = px(5),
-    row_group.padding = px(5))
+    data_row.padding = px(2),
+    row_group.padding = px(2))
 
 gtsave(gtbl_care,
        file.path(path.local.msf.tables, paste0('gtbl_care', '_', week_report, '.png'))) %>%
@@ -1158,6 +1145,21 @@ gtbl_care %>%
   tab_header(
     title = "Major care procedures to Covid confirmed patient's in MSF heatlth facilities, by location")
 
+
+gtbl_care
+
+
+# Numbers used in the EpiSitrep
+nb_msf_received_oxygen <- tbl_care %>% filter(name_var == 'Received oxygen', values_var == 'Yes') %>% pull(n_Total)
+
+pct_msf_received_oxygen <- tbl_care %>% filter(name_var == 'Received oxygen', values_var == 'Yes') %>% pull(pct_Total)
+
+
+nb_msf_icu <- tbl_care %>% filter(name_var == 'Admitted to the Intensive Care Unit', values_var == 'Yes') %>% pull(n_Total)
+
+pct_msf_icu <- tbl_care %>% filter(name_var == 'Admitted to the Intensive Care Unit', values_var == 'Yes') %>% pull(pct_Total)
+
+nb_msf_vent <- tbl_care %>% filter(name_var == 'Supported by a ventilator', values_var == 'Yes') %>% pull(n_Total)
 ```
 
 
@@ -1248,48 +1250,18 @@ gtbl_age_sex_outcome %>%
 <!-- CFR by region or country of not too long -->
 ```{r}
 # DONE by Francesco
+# function make_tbl_cfr in utils_vis.R
 
-make_cfr_tbl <- function(dta, x_var, label_var){
-  
-  x_var <- sym(x_var)
-  
-  dta <- dta %>% 
-    filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died'), !is.na(!!x_var))
+tbl_cfr_age <- dta %>% 
+  make_tbl_cfr('age_5gp', 'Age')
 
-    
-  tbl_cfr_total <- dta %>% 
-  select(!!x_var, outcome_status) %>% 
-  group_by(!!x_var) %>% 
-  summarise(
-    totals_Total  = paste0(sum(outcome_status == 'Died'), '/', n()), 
-    died_p_Total = mean(outcome_status == 'Died')) %>% 
-  mutate(
-    label_var = label_var)
-  
-  tbl_cfr_continent <- dta %>%
-  select(continent, !!x_var, outcome_status) %>%
-  group_by(continent, !!x_var) %>%
-  summarise(
-    totals = paste0(sum(outcome_status == 'Died'), '/', n()),
-    died_p = mean(outcome_status == 'Died')) %>%
-  pivot_wider(names_from = continent, values_from = c(totals, died_p))
-  
-  tbl_cfr <- right_join(tbl_cfr_continent, tbl_cfr_total)
-  
-  return(tbl_cfr)
-  }
+tbl_cfr_sex <- dta %>% 
+  mutate(sex = factor(sex, levels = c('F', 'M'), labels = c('Females', 'Males'))) %>% 
+  make_tbl_cfr('sex', 'Sex')
 
-tbl_cfr_age <- make_cfr_tbl(dta, 'age_5gp', 'Age')
-
-tbl_cfr_sex <- make_cfr_tbl(dta %>% 
-                              mutate(sex = factor(sex, levels = c('F', 'M'), labels = c('Females', 'Males'))), 
-                            'sex', 
-                            'Sex')
-
-tbl_cfr_comorb <- make_cfr_tbl(dta %>% 
-                                 mutate(Comcond_present = as.factor(Comcond_present)), 
-                               'Comcond_present', 
-                               'Number of comorbidities')
+tbl_cfr_comorb <- dta %>% 
+  mutate(Comcond_present = as.factor(Comcond_present)) %>% 
+  make_tbl_cfr('Comcond_present', 'Number of comorbidities')
 
 tbl_cfr_factors_1 <- tbl_cfr_age %>% rename(var = age_5gp) %>% 
   add_row(tbl_cfr_sex %>% rename(var = sex)) %>% 
@@ -1355,6 +1327,16 @@ gtbl_cfr_factors_1 %>%
   tab_header(
     title = 'Case fatality risk by age, sex and number of comorbidities'
   )
+
+
+# Numbers for EpiSitrep
+cfr_confirmed_no_comorbidities <- tbl_cfr_comorb %>% 
+  filter(Comcond_present == 0) %>% 
+  pull(died_p_Total)
+
+cfr_confirmed_3_comorbidities <- tbl_cfr_comorb %>% 
+  filter(Comcond_present == 3) %>% 
+  pull(died_p_Total)
 
 ```
 
@@ -1465,7 +1447,7 @@ gtbl_outcome %>%
 <!-- 
 Table not present in the original analysis plan
   - Frequency of co-morbidities, among cured and deaths
-Consider to stratify by continent 
+  - stratify by continent 
 -->
 ```{r}
 # DONE by Francesco
@@ -1501,7 +1483,7 @@ dta_comcond <- dta_comcond %>%
     type_comorbidity = factor(type_comorbidity, levels = levels_comcond, labels = labels_comcond)
 )
 
-tbl_risk_comcond <- make_cfr_tbl(dta_comcond, 'type_comorbidity' ,'Comorbidities')
+tbl_risk_comcond <- make_tbl_cfr(dta_comcond, 'type_comorbidity' ,'Comorbidities')
 
 gtbl_risk_comcond <- tbl_risk_comcond %>%
   gt() %>% 
@@ -1630,7 +1612,7 @@ p_age_cfr <- ggplot(df_severity, aes(x = age_group)) +
   geom_linerange(aes(ymin = p_died_low95, ymax = p_died_upp95)) +
   geom_text(aes(label = died_lab, y = p_died_upp95 + 0.02), size = 4.2) +
   scale_y_continuous(breaks = seq(0, 1, 0.2), labels = scales::percent_format(accuracy = 1), sec.axis = dup_axis(name = NULL)) + # limits = c(0, 1),  
-  labs(x = "Age Group", y = "CFR", caption = "CFR = deaths / known outcomes (recovered + died)\nlinerange shows binomial 95% confidence intervals") 
+  labs(x = "Age Group", y = "CFR", caption = "CFR = deaths / known outcomes (recovered + died)\nline range shows binomial 95% confidence intervals") 
 
 ggsave(file.path(path.local.msf.graphs, glue("msf_age_cfr_{week_report}.png")),
        plot = p_age_cfr,
@@ -1827,7 +1809,7 @@ p_onset_admit_delay
 
 ### Length of stay in hospital
 
-```{r BoxPlotLengthStay, fig.cap = 'Evolution overtime of of length of stay among Covid confirmed hospitalized patients in an MSF supported health facility'}
+```{r BoxPlotLengthStay, fig.cap = 'Evolution overtime of of length of stay among Covid confirmed, probable and suspected patients in an MSF supported health facility'}
 # DONE by Paul
 
 # 2 most recent epi weeks to remove from chart
@@ -1835,7 +1817,7 @@ latest_2_epi_weeks <- max_2(dta$epi_week_consultation)
 
 # length stay
 p_length_stay <- dta %>%
-  filter(covid_status %in% c("Confirmed", "Suspected", "Probable")) %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
   drop_na(epi_week_consultation, length_stay) %>%
   filter(length_stay <= 50, !epi_week_consultation %in% latest_2_epi_weeks) %>% # filter any stays over 50 days
   ggplot(aes(epi_week_consultation, length_stay, group = epi_week_consultation)) +
@@ -1859,19 +1841,80 @@ p_length_stay
 # Non cases analysis
 ```{r}
 
-tbl_non_cases_diagt <- dta %>% 
+dta_non_cases_diagt <- dta %>% 
   filter(covid_status == 'Not a case') %>% 
   select(main_diagnosis, outcome_status) %>% 
   mutate(
-    main_diagnosis = fct_explicit_na(main_diagnosis, na_level = "Not reported")) %>% 
-  count(main_diagnosis, outcome_status) %>% 
-  pivot_wider(names_from = outcome_status, names_sort = TRUE, values_from = n, values_fill = 0) %>% 
-  adorn_totals(c("row", "col"))
+    main_diagnosis = fct_explicit_na(main_diagnosis, na_level = "Not reported"))
+
+tbl_non_cases_diagt <- make_tbl_prop(dta_non_cases_diagt,'main_diagnosis','outcome_status')
 
 gtbl_non_cases_diagt <- tbl_non_cases_diagt %>% 
   gt() %>% 
   cols_label(
-    main_diagnosis = '') %>% 
+    main_diagnosis = '', 
+    n_Cured = 'n', 
+    n_Died = 'n', 
+    `n_Left against medical advice` = 'n', 
+    n_Transferred = 'n', 
+    `n_Sent back home` = 'n', 
+    n_Other = 'n', 
+    `n_Pending/Unknown` = 'n', 
+    n_Total = 'n',
+    pct_Cured = '(%)', 
+    pct_Died = '(%)', 
+    `pct_Left against medical advice` = '(%)', 
+    pct_Transferred = '(%)', 
+    `pct_Sent back home` = '(%)', 
+    pct_Other = '(%)', 
+    `pct_Pending/Unknown` = '(%)', 
+    pct_Total = '(%)') %>% 
+  tab_spanner(
+    label = 'Recovered', 
+    columns = ends_with('_Cured')) %>% 
+  tab_spanner(
+    label = 'Died', 
+    columns = ends_with('_Died')) %>% 
+  tab_spanner(
+    label = html('Left against<br>medical advice'), 
+    columns = ends_with('_Left against medical advice')) %>% 
+  tab_spanner(
+    label = 'Transferred', 
+    columns = ends_with('_Transferred')) %>% 
+  tab_spanner(
+    label = html('Sent<br>back home'), 
+    columns = ends_with('_Sent back home')) %>% 
+  tab_spanner(
+    label = 'Other', 
+    columns = ends_with('_Other')) %>% 
+  tab_spanner(
+    label = html('Pending/<br>Unknown'), 
+    columns = ends_with('_Pending/Unknown')) %>% 
+  tab_spanner(
+    label = 'Total', 
+    columns = ends_with('_Total')) %>% 
+  fmt_number(
+    columns = starts_with('pct_'), 
+    decimals = 1, 
+    scale_by = 100, 
+    pattern = "({x})") %>% 
+  cols_align(
+    align = 'right', 
+    columns = starts_with('n_')) %>% 
+  cols_align(
+    align = 'left', 
+    columns = starts_with('pct_')) %>% 
+  cols_align(
+    align = 'left', 
+    columns = vars(main_diagnosis)) %>% 
+  tab_style(
+    style = list(
+      cell_text(align = "right")),
+    locations = cells_column_labels(starts_with('n_'))) %>% 
+  tab_style(
+    style = list(
+      cell_text(align = "left")),
+    locations = cells_column_labels(starts_with('pct_'))) %>% 
   tab_options(
     column_labels.font.weight = "bold", 
     data_row.padding = px(5))
@@ -1889,7 +1932,7 @@ gtsave(gtbl_non_cases_diagt,
 
 gtbl_non_cases_diagt %>% 
   tab_header(
-    title = 'Frequency of diagnostics among non confirmed patients who attended a Covid facility'
+    title = 'Frequency of main diagnosis among non confirmed patients who attended an MSF Covid facility'
   )
 
 ```
