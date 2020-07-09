@@ -53,7 +53,7 @@ my_doc <- add_par_normal(
   format(date_max_report , "%d %B %Y"), 
   words(nb_msf_sites), 
   format(nb_msf_obs, big.mark   = ','), 
-  nb_msf_confirmed, 
+  format(nb_msf_confirmed, big.mark   = ','), 
   Words(nb_msf_sites_aggregated)))
   
 # 2
@@ -62,7 +62,7 @@ my_doc %<>%
                value = ('Last week data may not be fully complete if projects did not report on time. Given the important number of projects, Table 2 displays numbers by country and detailed data by project is available ')) %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "here", 
-               hyperlink = "https://gt.rstudio.com/reference/cells_column_labels.html") %>% 
+               hyperlink = "https://msfintl-my.sharepoint.com/:f:/g/personal/francesco_grandesso_epicentre_msf_org/Ep8aeLRD7CFKtnxH8SqVQFUBhH3BxEIGpojNrxLiS5gN-g?e=dTYoOT") %>% 
   slip_in_text(style = 'Normal char', 
                str = '. ') 
 
@@ -102,11 +102,11 @@ my_doc <- add_end_section_continuous()
 # --- --- --- --- --- --- 
 # 1
 my_doc <- add_par_normal(
-  sprintf("Figure 8 displays the evolution in number of patients by type of health service received (consultation/admission) and by continent. The proportion of cases admitted in the Americas is stable around 50%% and in Africa. However, it is to note that those numbers bring together MSF projects with very different activities and hospitalization capacities, which influences this analysis and renders difficult any final conclusion."))
+  sprintf("Figure 7 displays the evolution in number of patients by type of health service received (consultation/admission) and by continent. The proportion of cases admitted in the Americas is stable around 50%% and in Africa. However, it is to note that those numbers bring together MSF projects with very different activities and hospitalization capacities, which influences this analysis and renders difficult any final conclusion."))
 
 # 2
 my_doc <- add_par_normal(
-  sprintf("Confirmed cases consulted/admitted to MSF facilities remain relatively young, with a median age of %s years (stable over the last weeks). Figure 8 shows the age pyramid of confirmed patient consulted/admitted to MSF facilities. Globally confirmed patients appear relatively young; in Africa the most represented age group among confirmed patients was 30-39 for males and 20-29 for females. The high number of probable cases in Asia renders the pyramid difficult to interpret for that continent.", 
+  sprintf("Patients consulted/admitted to MSF facilities remain relatively young, with a median age of %s years (stable over the last weeks). Figure 8 shows the age pyramid of patients consulted/admitted to MSF facilities.", 
           median(dta$age_in_years, na.rm = TRUE))) 
 
 # 3
@@ -130,7 +130,7 @@ my_doc <- add_par_normal('')
 # Age pyramid
 my_doc <- add_figure(
   object_name = paste0('msfp_pyramid_age_sex_continent','_', week_report, '.png'), 
-  figure_title = "Age pyramid of patients consulted/ admitted in MSF facilities, by continent", 
+  figure_title = "Age pyramid of patients consulted/admitted in MSF facilities, by continent", 
   folder = 'msf', 
   width = 10 * cm_to_in, 
   height = 10 * cm_to_in)
@@ -143,7 +143,7 @@ my_doc <- add_end_section_continuous()
 # --- --- --- --- --- --- 
 # 1
 my_doc <- add_par_normal(
-  sprintf("Symptoms of patients upon admission are presented in Table 5. To note are loss of smell and taste which were
+  sprintf("Symptoms of patients upon admission are presented in Table 3. To note are loss of smell and taste which were
 more frequent among confirmed and probable patients than non-cases. On the contrary, chills, runny nose and nose congestion appeared to be more frequent in non-case than in confirmed patients"))
 
 my_doc <- add_end_section_2columns()
@@ -167,7 +167,7 @@ my_doc <- add_end_section_continuous()
 # --- --- --- --- --- --- 
 # 1
 my_doc <- add_par_normal(
-  sprintf("%s confirmed, probable, or suspected cases with known outcome (cured/died) died, which gives a case fatality risk (CFR) of %s%% (Table 4 below). CFR among probables and suspects appear really high, though the number of patients with known outcome is lower for those patients. This could reflect the difficult access to testing in some countries, but remain to be further investigated.", 
+  sprintf("%s confirmed, probable, or suspected cases with known outcome (cured/died) died, which gives a case fatality risk (CFR) of %s%% (Table 4). CFR among probables and suspects appear really high, though the number of patients with known outcome is lower for those patients. This could reflect the difficult access to testing in some countries, but remain to be further investigated.", 
           Words(nb_msf_conf_prob_susp_who_died), 
           round(cfr_confirmed_no_comorbidities * 100, digits = 1)))
 
@@ -195,9 +195,15 @@ my_doc <- add_end_section_continuous()
 
 # - Text Confirmed 
 # --- --- --- --- --- --- 
+
+# 1 - Age sex of confirmed
+my_doc <- add_par_normal(
+  sprintf("Codiv-confirmed patients consulted/admitted to MSF facilities remain relatively young, with a median age of %s years (stable over the last weeks). Figure 8 shows the age pyramid of patients consulted/admitted to MSF facilities. Globally confirmed patients appear relatively young; in Africa the most represented age group among confirmed patients was 30-39 for males and 20-29 for females. The high number of probable cases in Asia renders the pyramid difficult to interpret for that continent.", 
+          dta %>% filter(covid_status == 'Confirmed') %>% pull(age_in_years) %>% median(., na.rm = TRUE))) 
+
 # 1 - Care
 my_doc <- add_par_normal(
-  sprintf("%s patients (%s%% of patients with recorded information) were supported with oxygen, about half of them in the Americas. %s (%s%% of patients with recorded information) were admitted into an Intensive Care Unit. %s patients were supported with a ventilator, while no patient received ECMO (Table 7).", 
+  sprintf("%s patients (%s%% of patients with recorded information) were supported with oxygen, about half of them in the Americas. %s (%s%% of patients with recorded information) were admitted into an Intensive Care Unit. %s patients were supported with a ventilator, while no patient received ECMO (Table 5).", 
           Words(nb_msf_received_oxygen), 
           round(pct_msf_received_oxygen * 100, digits = 1), 
           Words(nb_msf_icu), 
@@ -205,6 +211,16 @@ my_doc <- add_par_normal(
           Words(nb_msf_vent)))
 
 my_doc <- add_end_section_2columns()
+
+my_doc <- add_par_normal('')
+
+# Graph Pyramid 
+my_doc <- add_figure(
+  object_name = paste0('msf', 'p_pyramid_age_sex_confirmed_continent', '_', week_report, '.png'), 
+  figure_title = "Age pyramid of Covid-confirmed patients consulted/ admitted in MSF facilities, by continent", 
+  folder = 'msf', 
+  width = 8.37 * cm_to_in, 
+  height = 5.58 * cm_to_in)
 
 my_doc <- add_par_normal('')
 
@@ -246,11 +262,11 @@ my_doc <- add_figure(
 
 my_doc <- add_par_normal('')
 
-# - MORE Text
+# - Text
 # --- --- --- --- --- --- 
 # 1
 my_doc <- add_par_normal(
-  sprintf("In MSF facilities, %s%% of confirmed cases with known outcome over 65 years of age died. The median age among deceased patients was %s years (stable in the last weeks). The proportion of patients who died largely varied with the number of comorbidities declared, from %s%% (0 comorbidities declared) to %s%% (3 comorbidities declared) (Table 5).", 
+  sprintf("In MSF facilities, %s%% of confirmed cases with known outcome over 65 years of age died. The median age among deceased patients was %s years (stable in the last weeks). The proportion of patients who died largely varied with the number of comorbidities declared, from %s%% (0 comorbidities declared) to %s%% (3 comorbidities declared) (Table 6).", 
           round(nb_msf_conf_above65_who_died / nb_msf_conf_above65 * 100, digits = 1), 
           median_age_confirmed_died, 
           round(cfr_confirmed_no_comorbidities * 100, digits = 1), 
@@ -259,7 +275,7 @@ my_doc <- add_par_normal(
 
 # 2 - Comorbidities
 my_doc <- add_par_normal(
-  sprintf("Table 6 presents the types of comorbidities recorded in confirmed patients with known cured or died outcome. Diabetes, cardiovascular disease (mostly hypertension), respiratory diseases and malaria are the most frequently recorded comorbidities. Almost 60%% with underlying respiratory disease died. No patient appears to be recorded with malnutrition, and among those who presented with HIV, TB or malaria, none died."))
+  sprintf("Table 7 presents the types of comorbidities recorded in confirmed patients with known cured or died outcome. Diabetes, cardiovascular disease (mostly hypertension), respiratory diseases and malaria are the most frequently recorded comorbidities. Almost 60%% with underlying respiratory disease died. No patient appears to be recorded with malnutrition, and among those who presented with HIV, TB or malaria, none died."))
 
 
 my_doc <- add_par_normal('')
