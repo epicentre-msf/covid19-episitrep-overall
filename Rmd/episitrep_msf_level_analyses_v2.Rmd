@@ -114,7 +114,8 @@ dta_with_aggregated <- dta %>%
 
 # Overview
 This section will present **Information of completeness of data** (number of MSF projects that are active on Covid19 care, reporting individual data (linelist), reporting aggregated data and not reporting data). Number of projects will be listed by continent and region. 
-The required data are not available yet. And this section will be updated as soon as they are available.
+
+All the required data are not available yet. And this section will be updated as soon as they are available.
 
 <!-- **Information** of completeness of data (number of MSF projects that are active on Covid19 care, reporting individual data (linelist), reporting aggregated data and not reporting data). Number of projects will be listed by continent and region.-->
 ```{r, eval = FALSE}
@@ -165,25 +166,26 @@ median_age_confirmed_died <- dta %>% filter(covid_status == 'Confirmed' & outcom
 
 **Number of MSF sites**: `r nb_msf_sites` (`r nb_msf_sites_linelist` sites with linelist data and `r nb_msf_sites_aggregated` with aggregated data). 
 
-**Total patients consulted/admitted**: `r nb_msf_obs` in `r length(call_msf_countries)` countries (`r combine_words(call_msf_countries)`). 
+**Total patients consulted/admitted**: `r format(nb_msf_obs, big.mark = ',')` in `r length(call_msf_countries)` countries (`r combine_words(call_msf_countries)`). 
 
-**Number of consultation reported through the linelist**: `r nb_msf_obs_linelist`. 
-**Number of consultation reported through the aggregated data reporting**: `r nb_msf_obs_aggregated`. 
+**Number of consultation reported through the linelist**: `r format(nb_msf_obs_linelist, big.mark = ',')`. 
 
-
-Of all consultations/admissions patients were: 
-
-  - `r nb_msf_confirmed` confirmed
-  - `r nb_msf_probable` probable
-  - `r nb_msf_suspected` suspected
+**Number of consultation reported through the aggregated data reporting**: `r format(nb_msf_obs_aggregated, big.mark = ',')`. 
 
 
+Of all consultations/admissions patients were in relation with the COvid-19 infection: 
 
-# Analysis on all patients consulted/admitted
+  - `r format(nb_msf_confirmed, big.mark = ',')` confirmed
+  - `r format(nb_msf_probable, big.mark = ',')` probable
+  - `r format(nb_msf_suspected, big.mark = ',')` suspected
+
+
+
+# Analysis of all patients consulted/admitted
 
 This section provides an overview of **all patients that attended an MSF supported Covid-19 health facility**: number of patients consulted, but not admitted and number of consulted and admitted to the health facility.
 
-Other results are presented by Covid status (confirmed, probable, suspected, not a case and unknown) and listed by country country or site. 
+Other results are presented by Covid status (confirmed, probable, suspected, not a case and unknown) and listed by country or site grouped by continent. 
 
 
 ### Weekly number of consultation and admissions
@@ -243,7 +245,6 @@ p_epicurve_consult_admit
 
 ```
 
-
 <!-- Histogram BY CONTINENT of number of consultation/admissions -->
 ```{r HistConsultationsAdmissionsContinent, fig.cap = paste('Weekly number of consultations and admissions in an MSF supported COvid-19 health service by continent as of', format(date_max_report, "%d %B %Y"))}
 # DONE by Paul
@@ -300,7 +301,6 @@ p_epicurve_consult_admit_continent
 ```
 
 
-
 ### Weekly number of Consultations (including admission) by Covid status
 Aggregated data included
 
@@ -331,7 +331,6 @@ p_epicurve_status
 
 ```
 
-
 <!-- Histogram BY CONTINENT of number of consultation/admissions -->
 ```{r HistConsultationByCovidStatusContinent, fig.cap = 'Weekly number of consultations (including admission) by Covid status, in each continent where MSF is operating'}
 # DONE by Francesco (copied from the Paul graph just above)
@@ -359,7 +358,6 @@ ggsave(file.path(path.local.msf.graphs, glue('msf_epicurve_status_continent_{wee
 p_epicurve_status_continent
 
 ```
-
 
 
 ### Summary tables of patients consulted/admitted to an MSF supported COvid-19 health facility 
@@ -493,7 +491,6 @@ gtbl_countries_covid_status %>%
     subtitle = 'Sites with (*) reported aggregated data')
 
 ```
-
 
 <!-- 
  === SUMMARY TABLE BY SITE === 
@@ -642,24 +639,23 @@ Table by continent (or region)
 ```
 
 
-
 ### Patients' characteristics
 
 <!-- Table age (median, IQR, min-max), sex and presence of at least one morbidity, by Covid status -->
-```{r TblAllGeneralCharacteristics}
+```{r TblAllGeneralCharacteristics, layout = "l-body-outset"}
 # DONE by Francesco
 
-tbl_general <- dta %>% 
+tbl_general_by_status <- dta %>% 
   select(covid_status, age_in_years, age_5gp, sex, Comcond_present) %>%
   group_by(covid_status) %>%
   summarise(
     age_total   = paste0(sum(!is.na(age_in_years)) , '/',  n()),  
     age_min_max = paste0(min(age_in_years, na.rm = TRUE), ' - ', max(age_in_years, na.rm = TRUE)),
     age_median  = format(round(median(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1),
-    age_gp1     = freq_prct(age_5gp, '0-5'),
-    age_gp2     = freq_prct(age_5gp, '5-15'),
-    age_gp3     = freq_prct(age_5gp, '15-45'),
-    age_gp4     = freq_prct(age_5gp, '45-65'),
+    age_gp1     = freq_prct(age_5gp, '0-4'),
+    age_gp2     = freq_prct(age_5gp, '5-14'),
+    age_gp3     = freq_prct(age_5gp, '15-44'),
+    age_gp4     = freq_prct(age_5gp, '45-64'),
     age_gp5     = freq_prct(age_5gp, '65+'),
     sex_total   = paste0(sum(!is.na(sex)) , '/',  n()),
     sex_males   = sum(sex == 'M', na.rm = TRUE),
@@ -668,6 +664,30 @@ tbl_general <- dta %>%
     comorbidity_total = paste0(sum(!is.na(Comcond_present)) , '/',  n()),
     comorbidity_presence = freq_prct(Comcond_present, 1))
 
+tbl_general_total <- dta %>% 
+  select(covid_status, age_in_years, age_5gp, sex, Comcond_present) %>%
+  summarise(
+    age_total   = paste0(sum(!is.na(age_in_years)) , '/',  n()),  
+    age_min_max = paste0(min(age_in_years, na.rm = TRUE), ' - ', max(age_in_years, na.rm = TRUE)),
+    age_median  = format(round(median(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1),
+    age_gp1     = freq_prct(age_5gp, '0-4'),
+    age_gp2     = freq_prct(age_5gp, '5-14'),
+    age_gp3     = freq_prct(age_5gp, '15-44'),
+    age_gp4     = freq_prct(age_5gp, '45-64'),
+    age_gp5     = freq_prct(age_5gp, '65+'),
+    sex_total   = paste0(sum(!is.na(sex)) , '/',  n()),
+    sex_males   = sum(sex == 'M', na.rm = TRUE),
+    sex_females = sum(sex == 'F', na.rm = TRUE),
+    sex_ratio   = format(round(sum(sex == 'M', na.rm = TRUE)/sum(sex == 'F', na.rm = TRUE), digits = 1), nsmall = 1),
+    comorbidity_total = paste0(sum(!is.na(Comcond_present)) , '/',  n()),
+    comorbidity_presence = freq_prct(Comcond_present, 1)) %>% 
+  mutate(
+    covid_status = 'Total')
+
+tbl_general <- tbl_general_by_status %>% 
+  add_row(tbl_general_total) %>% 
+  mutate(
+    covid_status = factor(covid_status, levels = c('Confirmed', 'Probable', 'Suspected', 'Not a case', 'Unknown', 'Total')))
 
 vars_age <- tibble(levels = tbl_general %>% select(starts_with('age_')) %>% names(),
                    labels = c('Totals with age information, n/N', 'Minimum - maximum', 'Median', '0 - 5, n (%)', '5 - 15, n (%)', '15 - 45, n (%)', '45 - 65, n (%)', '65+, n (%)'))
@@ -725,7 +745,6 @@ gtbl_general %>%
 ```
 
 
-
 ### Age and sex distribution of patients consulted/admitted to MSf facilities by continent
 
 <!-- Age/sex pyramid by continent -->
@@ -760,7 +779,6 @@ ggsave(file.path(path.local.msf.graphs, paste0('msf', 'p_pyramid_age_sex_contine
 p_pyramid_age_sex_continent
 
 ```
-
 
 
 ### Patients' symptoms at consultation/admission
@@ -821,7 +839,6 @@ tbl_prop <- tbl_prop %>%
 tbl_sympt <- tbl_freq %>%
   left_join(tbl_prop, by = 'symtpoms', suffix = c(".freq", ".prct")) %>%
   arrange(symtpoms)
-
 
 gtbl_sympt <- tbl_sympt %>%
   gt() %>%
@@ -914,6 +931,7 @@ gtbl_sympt %>%
 <!-- Table Case-fatality risk by Covid status and by continent -->
 ```{r}
 # DONE by Francesco
+# Check to see if Europe needs to be added
 
 tbl_cfr_status <- dta %>%
   select(covid_status, outcome_status) %>%
@@ -922,7 +940,6 @@ tbl_cfr_status <- dta %>%
   summarise(
     totals_Total = paste0(sum(outcome_status == 'Died'), '/', n()),
     died_p_Total = mean(outcome_status == 'Died'))
-
 
 tbl_cfr_status_continent <- dta %>%
   select(continent, covid_status, outcome_status) %>%
@@ -1000,7 +1017,7 @@ gtbl_cfr_status_continent %>%
 
 
 
-# Analysis on confirmed patients
+# Analysis of Covid-19 confirmed patients
 
 ### Age and sex distribution of Covid confirmed patients
 
@@ -1137,16 +1154,16 @@ tbl_care <- tbl_care_admitted %>% rename(values_var = merge_admit) %>%
 gtbl_care <- tbl_care %>% 
   gt(rowname_col = "values_var",
      groupname_col = "name_var") %>%
-  cols_hide(
-    columns = ends_with('Europe')) %>% 
   cols_label(
     n_Africa   = 'n', 
     n_Americas = 'n',
     n_Asia     = 'n', 
+    n_Europe   = 'n', 
     n_Total     = 'n', 
     pct_Africa   = '(%)', 
     pct_Americas = '(%)', 
     pct_Asia     = '(%)', 
+    pct_Europe   = '(%)', 
     pct_Total    = '(%)') %>% 
   fmt_number(
     columns = starts_with('pct_'), 
@@ -1162,6 +1179,9 @@ gtbl_care <- tbl_care %>%
   tab_spanner(
     label = 'Asia',
     columns = ends_with('_Asia')) %>% 
+  tab_spanner(
+    label = 'Europe',
+    columns = ends_with('_Europe')) %>% 
   tab_spanner(
     label = 'Total',
     columns = ends_with('_Total')) %>% 
@@ -1186,14 +1206,11 @@ gtbl_care %>%
     title = "Major care procedures to Covid confirmed patient's in MSF heatlth facilities, by location")
 
 
-gtbl_care
-
 
 # Numbers used in the EpiSitrep
 nb_msf_received_oxygen <- tbl_care %>% filter(name_var == 'Received oxygen', values_var == 'Yes') %>% pull(n_Total)
 
 pct_msf_received_oxygen <- tbl_care %>% filter(name_var == 'Received oxygen', values_var == 'Yes') %>% pull(pct_Total)
-
 
 nb_msf_icu <- tbl_care %>% filter(name_var == 'Admitted to the Intensive Care Unit', values_var == 'Yes') %>% pull(n_Total)
 
@@ -1209,8 +1226,6 @@ nb_msf_vent <- tbl_care %>% filter(name_var == 'Supported by a ventilator', valu
 ```{r}
 # List of medications to be finalised
 ```
-
-
 
 
 ### Age and sex of patients by outcome
@@ -1281,13 +1296,9 @@ gtbl_age_sex_outcome %>%
 ```
 
 
-
-
-
 ### Case fatality risk among confirmed patients
 
-<!-- Table Outcome 1 - Case Fatality Risk by continent -->
-<!-- CFR by region or country of not too long -->
+<!-- CFR by age, sex and number of comorbidities -->
 ```{r}
 # DONE by Francesco
 # function make_tbl_cfr in utils_vis.R
@@ -1369,7 +1380,7 @@ gtbl_cfr_factors_1 %>%
   )
 
 
-# Numbers for EpiSitrep
+# Numbers for EpiSitrep docx
 cfr_confirmed_no_comorbidities <- tbl_cfr_comorb %>% 
   filter(Comcond_present == 0) %>% 
   pull(died_p_Total)
@@ -1379,7 +1390,6 @@ cfr_confirmed_3_comorbidities <- tbl_cfr_comorb %>%
   pull(died_p_Total)
 
 ```
-
 
 
 <!-- 
@@ -1481,14 +1491,7 @@ gtbl_outcome %>%
 
 ```
 
-
-
-### Comorbidities and Underlying conditions
-<!-- 
-Table not present in the original analysis plan
-  - Frequency of co-morbidities, among cured and deaths
-  - stratify by continent 
--->
+<!-- CFR by type of comorbidities among confirmed patients -->
 ```{r}
 # DONE by Francesco
 
@@ -1515,8 +1518,8 @@ dta_comcond <- dta %>%
   pivot_longer(-c(covid_status, outcome_status, continent), names_to = "type_comorbidity") %>%
   filter(!is.na(value), value == 'Yes')
 
-levels_comcond <- c('Comcond_cardi', 'Comcond_immuno', 'Comcond_renal', 'Comcond_liver', 'Comcond_neuro', 'Comcond_diabetes', 'Comcond_lung', 'Comcond_preg', 'Comcond_malig', 'hypertension', 'hiv_status', 'tb_active', 'malaria', 'smoking')
-labels_comcond <- c('Cardiovascular (including hypertention)', 'Immunological (including HIV)', 'Renal', 'Hepatic', 'Neurological', 'Diabetes', 'Respiratory (including chronic lung diseases)', 'Pregnancy', 'Cancer', 'Hypertension', 'HIV', 'TB', 'Malaria', 'Smoking')
+levels_comcond <- c('Comcond_cardi', 'Comcond_immuno', 'Comcond_renal', 'Comcond_liver', 'Comcond_neuro', 'Comcond_diabetes', 'Comcond_lung', 'Comcond_preg', 'Comcond_malig', 'hypertension', 'hiv_status', 'tb_active', 'malaria', 'malnutrition', 'smoking')
+labels_comcond <- c('Cardiovascular (including hypertention)', 'Immunological (including HIV)', 'Renal', 'Hepatic', 'Neurological', 'Diabetes', 'Respiratory (including chronic lung diseases)', 'Pregnancy', 'Cancer', 'Hypertension', 'HIV', 'TB', 'Malaria', 'Malnutrition', 'Smoking')
 
 dta_comcond <- dta_comcond %>%
   mutate(
@@ -1533,11 +1536,11 @@ gtbl_risk_comcond <- tbl_risk_comcond %>%
     type_comorbidity = "Comorbidities/Underlying conditions", 
     totals_Africa    = 'n/N',
     totals_Americas  = 'n/N',
-    totals_Asia      = 'n/N',
+    totals_Asia      = 'n/N', 
     totals_Total     = 'n/N',
     died_p_Africa    = '(%)',
     died_p_Americas  = '(%)',
-    died_p_Asia      = '(%)',
+    died_p_Asia      = '(%)', 
     died_p_Total     = '(%)') %>%
   tab_spanner(
     label = 'Africa',
@@ -1547,7 +1550,7 @@ gtbl_risk_comcond <- tbl_risk_comcond %>%
     columns = ends_with('_Americas')) %>%
   tab_spanner(
     label = 'Asia',
-    columns = ends_with('_Asia')) %>%
+    columns = ends_with('_Asia')) %>% 
   tab_spanner(
     label = 'Total',
     columns = ends_with('_Total')) %>%
@@ -1586,7 +1589,7 @@ gtsave(gtbl_risk_comcond,
 
 gtbl_risk_comcond %>% 
   tab_header(
-    title = 'Frequency and percentage of comorbidities among cured and dead confirmed patients'
+    title = 'Case fatality risk by type of comorbidities among confirmed patients'
   )
 
 ```
@@ -1610,10 +1613,8 @@ Frequency and proportion of symptoms, by case severity
 # TO BE DONE as soon as the proper definition of severity is available
 ```
 
-
-### CFR by Age Group
-
-```{r}
+<!-- CFR by age-group -->
+```{r CFRbyAgegroup, fig.cap = 'Case fatality risk by age-group among confirmed patients'}
 age_cut <- c(seq(0, 80, 10), Inf)
 age_labs <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80+")
 
@@ -1659,15 +1660,16 @@ ggsave(file.path(path.local.msf.graphs, glue("msf_age_cfr_{week_report}.png")),
        scale = 1.1,
        dpi = 320)
 
+
 p_age_cfr
 
 ```
 
 
 
-# Evolution overtime of the following indicators among the Covid19 confirmed cases
+# Indicators overtime among Covid19 confirmed cases
 
-### Outcome by epiweek with CFR
+### Weekly case fatality risk
 
 <!--
 **With all confirmed cases as denominator: time-series and trends plot** with week as time unit of the following indicator:
@@ -1679,6 +1681,8 @@ Time-series plot:
   -	Length of staying for patients hospitalised - boxplot
   -	Case fatality risk for patients hospitalised - line
 -->
+
+<!-- CFR by week overall -->
 ```{r LineCFRWeeks, fig.cap = 'Evolution overtime of the case fatality risk among Covid confirmed patients consulted/admitted to an MSF supported health facility'}
 # DONE by Paul
 # Only including outcomes of cured or died as CFR denominator - is this ok? FG: Yes
@@ -1737,9 +1741,7 @@ p_outcome_cfr
 
 ```
 
-
-### Outcome by epiweek with CFR by continent
-
+<!-- CFR by week and by continent -->
 ```{r BoxPlotCFRContinent, fig.cap = 'Evolution overtime of the case fatality risk among Covid confirmed patients consulted/admitted to an MSF supported health facility, separated by continent', fig.width = 8, fig.height = 8}
 # DONE by Paul
 # Only including outcomes of cured or died as CFR denominator - is this ok? FG: Yes
@@ -1794,12 +1796,13 @@ ggsave(file.path(path.local.msf.graphs, glue("msf_outcome_cfr_continent_{week_re
        scale = 1.1,
        dpi = 320)
 
+
 p_outcome_cfr_continent
 
 ```
 
 
-### Onset to admission delay
+### Delay from onset of symptpoms to consultation/admission
 
 ```{r BoxPlotDelayAdmission, fig.cap = 'Evolution overtime of the delay to admission among Covid confirmed patients consulted/admitted to an MSF supported health facility'}
 # DONE by Paul
@@ -1878,8 +1881,9 @@ p_length_stay
 ```
 
 
-# Non cases analysis
-```{r}
+# Analysis of non-cases 
+
+```{r NonCasesDiagnosis, layout = "l-body-outset"}
 
 dta_non_cases_diagt <- dta %>% 
   filter(covid_status == 'Not a case') %>% 

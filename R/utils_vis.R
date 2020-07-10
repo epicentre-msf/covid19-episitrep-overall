@@ -74,12 +74,12 @@ freq_prct <- function(x, value){
 
 
 
-call_countries_with_more <- function(dta, limit, series){
+call_countries_with <- function(dta, left = -Inf, right = Inf, series){
   
   series <- sym(series)
   
   dta %>% 
-    filter(!!series > limit) %>% 
+    filter(between(!!series, left = left, right =  right)) %>% 
     arrange(desc(!!series)) %>% 
     pull(country)
 }
@@ -365,7 +365,7 @@ make_tbl_prop <- function(dta, var1, var2 = NULL) {
     var2 <- sym(var2)
     
     tbl2 <- dta %>%
-      group_by(!!var1, !!var2, .drop = FALSE) %>%
+      group_by(!!var2, !!var1, .drop = FALSE) %>%
       summarise(
         n = n()) %>% 
       mutate(
