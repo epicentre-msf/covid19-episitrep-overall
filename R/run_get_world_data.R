@@ -53,7 +53,7 @@ if (get_updated_world_data) {
 # TESTS dataset from FIND
 # --- --- --- --- --- ---
 
-df_tests <- read.csv(file.path(path.data, 'COVID-19 cases and tests tracker.csv'), stringsAsFactors = FALSE) %>% 
+df_tests <- read.csv(file.path(path.data, 'cv_tests_download.csv'), stringsAsFactors = FALSE) %>% 
   as_tibble() %>% 
   mutate(date = as.Date(date))
 
