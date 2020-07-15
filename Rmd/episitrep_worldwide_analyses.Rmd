@@ -675,7 +675,7 @@ if (Sys.info()[['effective_user']] == 'F-GRANDESSO') {
 
 
 # Cumulative incidences
-### Maps of cumulative incidences
+
 <!-- Map of cumulative incidences -->
 ```{r TblCumulativeIncidences}
 
@@ -695,7 +695,7 @@ tbl_attack_rates <- tbl_summary_cases_deaths %>%
 
 The cumulative number of cases are mapped in Figure \@ref(fig:MapWorldCasesCumulativeIncidence). The cumulative number of deaths are mapped in Figure \@ref(fig:MapWorldDeathsCumulativeIncidence). 
 
-
+### Cumulative incidences of cases
 <!-- Map of cumulative incidences of cases -->
 ```{r MapWorldCasesCumulativeIncidence, fig.cap = paste0('Cumulative incidence of Covid-19 reported cases since beginning of epidemic per 100,000 population, data until ', format(date_max_report, "%d %B %Y"))}
 
@@ -709,7 +709,7 @@ sf_attack_rates <- tbl_attack_rates %>%
 map_world_cases_attack_rates <- ggplot(sf_attack_rates) + 
   geom_sf(aes(fill = cases_brks), size = .1) + 
   scale_fill_brewer(
-    name = "Cumulative incidence / 100,000", palette = "Blues", 
+    name = "Cumulative incidence of cases / 100,000 population", palette = "Blues", 
     drop = FALSE, 
     guide = guide_legend(
       keyheight = unit(3, units = "mm"),
@@ -735,13 +735,15 @@ ggsave(file.path(path.local.worldwide.graphs, glue("map_world_cases_attack_rates
 ```
 
 
+### Cumulative incidences of Covid associated deaths
+
 <!-- Map of cumulative incidences of deaths -->
 ```{r MapWorldDeathsCumulativeIncidence, fig.cap = glue('Cumulative incidence of Covid-19 associated since beginning of epidemic, per 100,000 population, data until {format(date_max_report, "%d %B %Y")}')}
 
 map_world_deaths_attack_rates <- ggplot(sf_attack_rates) + 
   geom_sf(aes(fill = deaths_brks), size = .1) + 
   scale_fill_brewer(
-    name = "Cumulative incidence / 100,000", palette = "Reds", 
+    name = "Cumulative incidence of deaths / 100,000 population", palette = "Reds", 
     drop = FALSE, 
     guide = guide_legend(
       keyheight = unit(3, units = "mm"),
@@ -1257,7 +1259,7 @@ dots_prop_tests <- ggplot(tbl_tests_inc_reliable, aes(tests_prop, cases_inc_12d)
     aes(tests_prop, cases_inc_12d, label = country, colour = continent),
     size = 3,
     show.legend = FALSE) + 
-  scale_x_continuous(labels = scales::percent) + 
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) + 
   scale_y_continuous(trans = 'log10', 
                      breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
                      labels = scales::trans_format("log10", function(x) round(10^x, 0))) + 
@@ -1277,30 +1279,66 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('dots_prop_tests', '_', wee
 
 dots_prop_tests
 
+
+# Table of missing data
 tbl_tests_country_non_reliable <- tbl_tests_inc %>% 
   filter(reliable == 'No') %>% 
   arrange(country) %>% 
-  select(`Not reliable data` = country)
+  pull(country)
 
 tbl_tests_country_no_data <- tbl_tests_inc %>% 
   filter(is.na(reliable)) %>% 
   arrange(country) %>% 
-  select(`Not data` = country)
+  pull(country)
 
-#tbl_country_missing_tests <- grid.arrange(dots_prop_tests,
-#                                          tableGrob(tbl_tests_country_non_reliable, rows = NULL), 
-#                                          tableGrob(tbl_tests_country_no_data, rows = NULL), 
-#                                          nrow = 1)
+tbl_no_tests <- cbind_diff(list(not_reliable_data = tbl_tests_country_non_reliable, 
+                                 no_data = tbl_tests_country_no_data))
 
 
-#ggplot(file.path(path.local.worldwide.graphs, paste0('dots_prop_tests', 'tbl_country_missing_tests', '_', week_report, '.png')), 
-#       plot = tbl_country_missing_tests, 
-#       width = 8, 
-#       height = 6, 
-#       scale = 1, 
-#       dpi = 320)
+gtbl_no_tests <- tbl_no_tests %>% 
+  gt() %>% 
+  cols_label(
+   not_reliable_data = 'Not reliable data', 
+   no_data = 'No data available') %>% 
+  cols_align(
+    align = 'left', 
+    columns = vars(not_reliable_data, no_data)) %>% 
+  fmt_missing(
+    columns = vars(not_reliable_data, no_data), 
+    missing_text = "") %>% 
+  tab_style(
+    style = list(
+      cell_fill(color = '#C7FFFF'), 
+      cell_borders(color = '#C7FFFF')), 
+    locations = cells_body(
+    columns = vars(not_reliable_data))) %>% 
+  tab_style(
+    style = list(
+      cell_fill(color = '#C7FFFF')), 
+    locations = cells_column_labels(
+    columns = vars(not_reliable_data))) %>% 
+  tab_style(
+    style = list(
+      cell_fill(color = '#EAC5AD'), 
+      cell_borders(color = '#EAC5AD')), 
+    locations = cells_body(
+    columns = vars(no_data))) %>% 
+  tab_style(
+    style = list(
+      cell_fill(color = '#EAC5AD')), 
+    locations = cells_column_labels(
+    columns = vars(no_data))) %>% 
+  tab_options(
+    column_labels.font.weight = "bold",
+    data_row.padding = px(1))
 
-# To fix the size of the table
+gtsave(gtbl_no_tests, 
+       file.path(path.local.worldwide.tables, paste0('gtbl_no_tests', '_', week_report,'.png'))) %>% 
+  invisible()
+
+
+gtbl_no_tests
+
 
 ```
 

@@ -139,6 +139,21 @@ call_countries_doubling <- function(est, continent_name = NULL, threshold = thre
 
 
 
+cbind_diff <- function(x = list()){
+  # Find max length
+  max_length <- max(unlist(lapply(x, length)))
+  
+  # Set length of each vector as
+  res <- lapply(x, function(x){
+    length(x) <- max_length
+    return(x)
+  })
+  
+  return(as.data.frame(res))
+}
+
+
+
 country_plot <- function(country_iso, series, lst_dta = lst_ecdc, model = 'linear', date_min = NULL) {
   
   choice <- paste(series, model, sep = '_')
