@@ -10,7 +10,7 @@ get_world_sf <- function(scale = c('small', 'medium', 'large'), proj = c('robins
   library(dplyr)
   
   scale <- match.arg(scale, several.ok = FALSE)
-  proj <- match.arg(proj, several.ok = FALSE)
+  proj  <- match.arg(proj, several.ok = FALSE)
   
   world_map_raw <- rnaturalearth::ne_countries(scale = scale, type = "countries", returnclass = "sf")
   
@@ -38,47 +38,19 @@ get_ecdc_data <- function() {
   
   base_url <- "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv"
   
-  d <- readr::read_csv(base_url) %>%
-    dplyr::mutate(date = as.Date(dateRep, format = "%d/%m/%Y") -1) %>%
-    dplyr::rename(geoid = geoId, country_ecdc = countriesAndTerritories, iso_a3 = countryterritoryCode, population_2019 = popData2019) %>%
-    dplyr::select(-dateRep) %>%
-    dplyr::arrange(date) %>%
-    dplyr::mutate_at(dplyr::vars(cases, deaths), ~ifelse(. < 0, 0L, .)) %>% 
-    dplyr::mutate(
-      country = countrycode::countrycode(iso_a3, origin = "iso3c", destination = "country.name"),
-      # Complete missing infos
-      country = dplyr::case_when(
-        country == "Congo - Kinshasa" ~ "Democratic Republic of the Congo", 
-        country == "Congo - Brazzaville" ~ "Republic of Congo", 
-        country_ecdc == 'Cases_on_an_international_conveyance_Japan' ~ 'Cruise Ship', 
-        is.na(country) ~ gsub('_', ' ', country_ecdc), 
-        TRUE ~ country), 
-      iso_a3 = dplyr::case_when(
-        country == 'Kosovo' ~ 'XKX', 
-        country == 'Anguilla' ~ 'AIA', 
-        country == 'Bonaire, Saint Eustatius and Saba' ~ 'BES', 
-        country == 'Falkland Islands (Malvinas)' ~ 'FLK', 
-        country == 'Montserrat' ~ 'MSR',  
-        country == 'Taiwan' ~ 'TWN', 
-        country == 'Western Sahara' ~ 'ESH', 
-        country == 'Cruise Ship' ~ NA_character_, 
-        TRUE ~ iso_a3), 
-      continent = countrycode::countrycode(iso_a3, origin = 'iso3c', destination = 'continent'), 
-      continent = dplyr::case_when(
-        country == 'Kosovo' ~ 'Europe', 
-        country == 'Cruise Ship' ~ 'Undefined', 
-        is.na(country) ~ "Unknown", 
-        TRUE ~ continent), 
-      region = countrycode::countrycode(iso_a3, origin = "iso3c", destination = "region23"), 
-      region = dplyr::case_when(
-        country == 'Kosovo' ~ 'Southern Europe', 
-        country == 'Cruise Ship' ~ 'Undefined', 
-        is.na(country) ~ "Unknown", 
-        TRUE ~ region), 
-      source = "ECDC"
-    ) %>% 
-    dplyr::select(date, country_ecdc:geoid, country:region, iso_a3, cases, deaths, population_2019, source)
+  d <- readr::read_csv(base_url)
   
 }
 
 
+
+#' Import FIND test dataset
+#' 
+#' @export
+get_find_data <- function() {
+  
+  base_url <- "https://finddx.shinyapps.io/FIND_Cov_19_Tracker/_w_989488b3/downloads/cv_tests_download.csv"
+  
+  d <- readr::read_csv(base_url)
+  
+}

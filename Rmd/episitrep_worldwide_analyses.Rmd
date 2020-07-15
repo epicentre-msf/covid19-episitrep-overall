@@ -63,6 +63,15 @@ update_models <- ifelse(isTRUE(get_updated_world_data) |
                         FALSE)
 
 
+# Option to update the trend models
+update_test_data <- ifelse(isTRUE(get_updated_world_data) | 
+                          isTRUE(update_models) | 
+                          !file.exists(file.path(path.local.worldwide.data, 'models_trends.RData')), 
+                        TRUE, 
+                        FALSE)
+
+
+
 # Choice for models to be used
 model_for_trends   <- 'linear' # for trends
 model_for_doubling <- 'linear' # for doubling time

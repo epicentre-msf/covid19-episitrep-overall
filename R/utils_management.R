@@ -23,7 +23,7 @@ set_date_max <- function(date_max, get_updated_data = FALSE){
 }
 
 
-# set date to the monday of the ISO week
+# set date to the Monday of the ISO week
 make_epiweek_date <- function(date) {
   lubridate::wday(date, week_start = 1) <- 1
   return(date)
@@ -112,21 +112,62 @@ attach_prefix <- function(var_in, suffix_var_out) {
 
 
 # --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
-# Specific functions for preparing MSF linelist dataset
+# Specific functions for worldwide ECDC dataset
 # --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
 
-
-recode_care <- function(var1, var2){
-  case_when(
-    var1 == 'Yes' ~ 'Yes', 
-    var2 == 'Yes' ~ 'Yes', 
-    var1 == 'No' & (var2 == 'Unknown' | is.na(var2)) ~ 'No at admission then not reported', 
-    (var1 == 'No' | is.na(var1)) & var2 == 'No' ~ 'No at any time', 
-    TRUE ~ 'Not reported') %>% 
-    factor(levels = c('Yes', 'No at admission then not reported', 'No at any time', 'Not reported'))
+prepare_ecdc_dta <- function(dta){
+  
+  dta <- dta %>% 
+    dplyr::mutate(date = lubridate::make_date(year, month, day)-1) %>% 
+    dplyr::rename(geoid = geoId, country_ecdc = countriesAndTerritories, iso_a3 = countryterritoryCode, population_2019 = popData2019) %>% 
+    dplyr::arrange(date) %>%
+    dplyr::mutate_at(dplyr::vars(cases, deaths), ~ifelse(. < 0, 0L, .)) %>% 
+    dplyr::mutate(
+      country = countrycode::countrycode(iso_a3, origin = "iso3c", destination = "country.name"),
+      # Complete missing infos
+      country = dplyr::case_when(
+        country == "Congo - Kinshasa" ~ "Democratic Republic of the Congo", 
+        country == "Congo - Brazzaville" ~ "Republic of Congo", 
+        country_ecdc == 'Cases_on_an_international_conveyance_Japan' ~ 'Cruise Ship', 
+        is.na(country) ~ gsub('_', ' ', country_ecdc), 
+        TRUE ~ country), 
+      iso_a3 = dplyr::case_when(
+        country == 'Kosovo' ~ 'XKX', 
+        country == 'Anguilla' ~ 'AIA', 
+        country == 'Bonaire, Saint Eustatius and Saba' ~ 'BES', 
+        country == 'Falkland Islands (Malvinas)' ~ 'FLK', 
+        country == 'Montserrat' ~ 'MSR',  
+        country == 'Taiwan' ~ 'TWN', 
+        country == 'Western Sahara' ~ 'ESH', 
+        country == 'Cruise Ship' ~ NA_character_, 
+        TRUE ~ iso_a3), 
+      continent = countrycode::countrycode(iso_a3, origin = 'iso3c', destination = 'continent'), 
+      continent = dplyr::case_when(
+        country == 'Kosovo' ~ 'Europe', 
+        country == 'Cruise Ship' ~ 'Undefined', 
+        is.na(country) ~ "Unknown", 
+        TRUE ~ continent), 
+      region = countrycode::countrycode(iso_a3, origin = "iso3c", destination = "region23"), 
+      region = dplyr::case_when(
+        country == 'Kosovo' ~ 'Southern Europe', 
+        country == 'Cruise Ship' ~ 'Undefined', 
+        is.na(country) ~ "Unknown", 
+        TRUE ~ region), 
+      source = "ECDC"
+    ) %>% 
+    dplyr::select(dateRep, date, country_ecdc:geoid, country:region, iso_a3, cases, deaths, population_2019, source)
+  
+  return(dta)
+  
 }
 
 
+
+
+
+# --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
+# Specific functions for MSF linelist dataset
+# --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
 
 prepare_msf_dta <- function(dta){
   
@@ -199,6 +240,18 @@ prepare_msf_dta <- function(dta){
     filter(between(date_consultation, left = date_min_consultation, right = date_max_report) | is.na(date_consultation))
   
   return(dta)
+}
+
+
+
+recode_care <- function(var1, var2){
+  case_when(
+    var1 == 'Yes' ~ 'Yes', 
+    var2 == 'Yes' ~ 'Yes', 
+    var1 == 'No' & (var2 == 'Unknown' | is.na(var2)) ~ 'No at admission then not reported', 
+    (var1 == 'No' | is.na(var1)) & var2 == 'No' ~ 'No at any time', 
+    TRUE ~ 'Not reported') %>% 
+    factor(levels = c('Yes', 'No at admission then not reported', 'No at any time', 'Not reported'))
 }
 
 

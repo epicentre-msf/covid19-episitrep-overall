@@ -24,7 +24,9 @@ df_pop_continent <- readRDS(file.path(path.data, paste0('df_pop_continent','.RDS
 # Get the ECDC data
 if (get_updated_world_data) {
   
-  df_ecdc <- get_ecdc_data()
+  df_ecdc <- get_ecdc_data() 
+  
+  df_ecdc <- prepare_ecdc_dta(df_ecdc)
   
   # ECDC data until date_max_report
   dfc_ecdc <- df_ecdc %>% 
@@ -49,11 +51,11 @@ if (get_updated_world_data) {
 }
 
 
-# --- --- --- --- --- ---
+# === === === === === === === 
 # TESTS dataset from FIND
-# --- --- --- --- --- ---
+# === === === === === === === 
 
-df_tests <- read.csv(file.path(path.data, 'cv_tests_download.csv'), stringsAsFactors = FALSE) %>% 
+df_tests <- get_find_data() %>% 
   as_tibble() %>% 
   mutate(date = as.Date(date))
 
