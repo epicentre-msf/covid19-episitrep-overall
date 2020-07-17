@@ -86,17 +86,6 @@ call_countries_with <- function(dta, left = -Inf, right = Inf, series){
 
 
 
-call_countries_with_less <- function(dta, limit, series){
-  
-  series <- sym(series)
-  
-  dta %>% 
-    filter(!!series < limit) %>% 
-    arrange(desc(!!series)) %>%  
-    pull(country)
-}
-
-
 
 call_countries_increasing <- function(obs, continent_name = NULL){
   
@@ -150,6 +139,102 @@ cbind_diff <- function(x = list()){
   })
   
   return(as.data.frame(res))
+}
+
+
+
+
+plot_map_world_count <- function(tbl_dta, series){
+  
+  legend_title <- switch(series, 
+                         cases  = 'Covid-19 cases', 
+                         deaths = 'Covid-19 associated deaths')
+  
+  plot_title <- switch(series, 
+                       cases  = 'Cases count', 
+                       deaths = 'Deaths count')
+  
+  plot_palette <- switch(series, 
+                         cases  = 'Blues', 
+                         deaths = 'Reds')
+  
+  labels <- tbl_dta %>% pull(brks) %>% levels()
+  
+  sf_dta <- tbl_dta %>% 
+    full_join(
+      select(sf_world, iso_a3),
+      by = "iso_a3"
+    ) %>% 
+    st_as_sf()
+  
+  plot_map <- ggplot(sf_dta) + 
+    geom_sf(aes(fill = brks), size = .1) + 
+    scale_fill_brewer(
+      name = legend_title, palette = plot_palette, 
+      drop = FALSE, 
+      guide = guide_legend(
+        keyheight = unit(3, units = "mm"),
+        keywidth = unit(70 / length(labels), units = "mm"),
+        title.hjust = 0.5,
+        nrow = 1,
+        label.position = "bottom",
+        title.position = 'top')) +
+    labs(title = plot_title, 
+         caption = caption_world_map) +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5), 
+          legend.position = "bottom")
+  
+  return(plot_map)
+  
+}
+
+
+
+
+plot_map_world_trend <- function(tbl_dta, series, model_for_trends = 'linear', plot_palette = RdAmGn){
+  
+  RdAmGn <- c('#D95F02', '#E6AB02', '#1B9E77') # Three-colours palette (Red-Amber-Green) colour-blind safe
+  
+  legend_title <- switch(series, 
+                         cases  = 'Trends of cases count', 
+                         deaths = 'Trends of deaths count')
+  
+  plot_title <- switch(series, 
+                       cases  = 'Trends in cases', 
+                       deaths = 'Trends in deaths')
+  
+  series <- sym(series)
+  
+  sf_dta <- tbl_dta %>% 
+    select(c(iso_a3 : !!series), all_of(vars_trends(model_for_trends))) %>% 
+    inner_join(
+      select(sf_world, iso_a3),
+      by = "iso_a3"
+    ) %>% 
+    st_as_sf()
+  
+  labels <- sf_dta %>% as_tibble() %>% pull(trend) %>% levels()
+  
+  plot_map <- ggplot(sf_dta) + 
+    geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
+    scale_fill_manual(
+      name = legend_title, 
+      values = plot_palette, 
+      drop = FALSE, 
+      guide = guide_legend(
+        keyheight = unit(3, units = "mm"),
+        keywidth = unit(50 / length(labels), units = "mm"),
+        title.hjust = 0.5,
+        nrow = 1,
+        label.position = "bottom",
+        title.position = 'top')) +
+    labs(title = plot_title, caption = caption_world_map) +
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+  
+  return(plot_map)
+  
 }
 
 

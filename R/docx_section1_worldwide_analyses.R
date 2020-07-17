@@ -32,12 +32,12 @@ my_doc <- add_par_normal(
 # 2
 my_doc <- add_par_normal(
   sprintf('%s countries (%s) reported more than 100 thousand cases. The United States rached the 3 million cases threshold, and Brazil has crossed the 1.5 million mark. India is now third in number of cases reported with more than 700 thousand cases. %s African countries reported less than 50 cases (%s). %s reported more than 1,000 cases (%s) (Figure 1 - Cases count).', 
-          tbl_cases_count %>% call_countries_with_more(100000, "cases") %>% length() %>% Words(), 
-          tbl_cases_count %>% call_countries_with_more(100000, "cases") %>% combine_words(), 
-          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with_less(50, "cases") %>% length() %>% Words(), 
-          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with_less(50, "cases") %>% combine_words(), 
-          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with_more(1000, "cases") %>% length() %>% Words(), 
-          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with_more(1000, "cases") %>% combine_words()))
+          tbl_cases_count %>% call_countries_with(100000, Inf, "cases") %>% length() %>% Words(), 
+          tbl_cases_count %>% call_countries_with(100000, Inf, "cases") %>% combine_words(), 
+          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(0, 50, "cases") %>% length() %>% Words(), 
+          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(0, 50, "cases") %>% combine_words(), 
+          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(1000, Inf, "cases") %>% length() %>% Words(), 
+          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(1000, Inf, "cases") %>% combine_words()))
 
 # 3
 my_doc <- add_par_normal(

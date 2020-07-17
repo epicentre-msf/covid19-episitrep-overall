@@ -54,43 +54,51 @@ if (get_updated_world_data) {
 # === === === === === === === 
 # TESTS dataset from FIND
 # === === === === === === === 
-
-df_tests <- get_find_data() %>% 
-  as_tibble() %>% 
-  mutate(date = as.Date(date))
-
-iso_tests <- read.csv(file.path(path.data, 'iso-a3_for_tests.csv'), stringsAsFactors = FALSE)
-
-lst_tests <- df_tests %>% 
-  select(country, date, new_tests) %>% 
-  filter(date <= date_max_report) %>% 
-  mutate(
-    country = case_when(
-      country == "N/A" ~ NA_character_,
-      TRUE ~ country)
-  ) %>% 
-  tidyr::drop_na(country) %>% 
-  full_join(iso_tests, by = 'country') %>% 
-  arrange(iso_a3, date) %>% 
-  multisplit("iso_a3")
-
-
-# Fill possible gap in tests time-series
-for (i in names(lst_tests)) {
+if (get_updated_world_data) {
   
-  tests_dta <- lst_tests[[i]]
-  if (nrow(tests_dta) > 1) {
+  df_tests <- get_find_data() %>% 
+    as_tibble() %>% 
+    mutate(date = as.Date(date))
+  
+  iso_tests <- read.csv(file.path(path.data, 'iso-a3_for_tests.csv'), stringsAsFactors = FALSE)
+  
+  lst_tests <- df_tests %>% 
+    select(country, date, new_tests) %>% 
+    filter(date <= date_max_report) %>% 
+    mutate(
+      country = case_when(
+        country == "N/A" ~ NA_character_,
+        TRUE ~ country)
+    ) %>% 
+    tidyr::drop_na(country) %>% 
+    full_join(iso_tests, by = 'country') %>% 
+    arrange(iso_a3, date) %>% 
+    multisplit("iso_a3")
+  
+  
+  # Fill possible gap in tests time-series
+  for (i in names(lst_tests)) {
     
-    tests_dta <- tests_dta %>% 
-      tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
-                                      date_max_report, by = 1), 
-                      fill = list(new_tests = NA_real_))
+    tests_dta <- lst_tests[[i]]
+    if (nrow(tests_dta) > 1) {
+      
+      tests_dta <- tests_dta %>% 
+        tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
+                                        date_max_report, by = 1), 
+                        fill = list(new_tests = NA_real_))
+    }
+    lst_tests[[i]] <- tests_dta
   }
-  lst_tests[[i]] <- tests_dta
+  
+  save(df_tests, 
+       lst_tests, 
+       file = file.path(path.local.worldwide.data, paste0('lst_tests','.RData')))
+  
+} else {
+  
+  load(file.path(path.local.worldwide.data, paste0('lst_tests','.RData')))
+  
 }
 
-save(df_tests, 
-     lst_tests, 
-     file = file.path(path.local.worldwide.data, paste0('lst_tests','.RData')))
 
 
