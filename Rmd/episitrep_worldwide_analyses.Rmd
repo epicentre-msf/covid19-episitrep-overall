@@ -205,12 +205,13 @@ tbl_deaths_count_12d <- dfc_ecdc %>%
 
 map_world_cases_count <- plot_map_world_count(tbl_cases_count, 'cases')
 
-map_world_cases_count + labs(title = NULL)
-
 ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_cases_count', '_', week_report, '.png')), 
        plot = map_world_cases_count, 
        scale = 1, 
        dpi = 320)
+
+
+map_world_cases_count + labs(title = NULL)
 
 ```
 
@@ -219,8 +220,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_cases_count', '_
 ```{r TblCasesTrends, include = FALSE}
 
 # This table display trends estimated with 4 different models
-# It is not meant to appreciated differences among models
-# It is not meant to be distributed
+# It is meant to appreciated differences among models, but not to be distributed
 
 coeff_vars <-  c("coeff", "lwr", "upr")
 
@@ -276,30 +276,53 @@ tbl_cases_increasing_trend <- tbl_cases_trends %>%
 
 **Worldwide, a total of `r length(call_countries_increasing('cases'))` countries reported an increasing trend in cases** (Figure \@ref(fig:MapWorldCasesTrends)):
 
-**Africa:** `r glue("({length(call_countries_increasing('cases', 'Africa'))}) {call_countries_increasing('cases', 'Africa') %>% combine_words()}")`. 
+**Africa:** (`r length(call_countries_increasing('cases', 'Africa'))`)`r glue(": {call_countries_increasing('cases', 'Africa') %>% combine_words()}")`. 
 
-**Asia:** `r glue("({length(call_countries_increasing('cases', 'Asia'))}) {call_countries_increasing('cases', 'Asia') %>% combine_words()}")`. 
+**Asia:** (`r length(call_countries_increasing('cases', 'Asia'))`)`r glue(": {call_countries_increasing('cases', 'Asia') %>% combine_words()}")`. 
 
-**Americas:** `r glue("({length(call_countries_increasing('cases', 'Americas'))}) {call_countries_increasing('cases', 'Americas') %>% combine_words()}")`. 
+**Americas:** (`r length(call_countries_increasing('cases', 'Americas'))`)`r glue(": {call_countries_increasing('cases', 'Americas') %>% combine_words()}")`. 
 
-**Europe:** `r glue("({length(call_countries_increasing('cases', 'Europe'))}) {call_countries_increasing('cases', 'Europe') %>% combine_words()}")`. 
+**Europe:** (`r length(call_countries_increasing('cases', 'Europe'))`)`r glue(": {call_countries_increasing('cases', 'Europe') %>% combine_words()}")`. 
 
-**Oceania:** `r glue("({length(call_countries_increasing('cases', 'Oceania'))}) {call_countries_increasing('cases', 'Oceania') %>% combine_words()}")`. 
+**Oceania:** (`r length(call_countries_increasing('cases', 'Oceania'))`)`r glue(": {call_countries_increasing('cases', 'Oceania') %>% combine_words()}")`. 
 
 
-<!-- Map cases trends -->
-```{r MapWorldCasesTrends, fig.cap = glue('Mapping of cases trends estimated during the period from {format(date_max_report - (period_trends - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} ({period_trends} days)')}
+<!-- Map cases counts and trends in the last 12 days -->
+```{r MapWorldCasesTrends, layout = "l-body-outset", fig.width = 10, fig.height = 3, fig.cap = glue('Mapping of cases counts and trends during the period from {format(date_max_report - (period_trends - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} ({period_trends} days)')}
 
-map_world_cases_trends <- plot_map_world_trend(tbl_cases_trends, 'cases')
+map_world_cases_count_12d <- plot_map_world_count(tbl_cases_count_12d, 'cases') + 
+  labs(title = 'Cases counts (12 days)')
 
-map_world_cases_trends + labs(title = NULL)
+map_world_cases_trends    <- plot_map_world_trend(tbl_cases_trends, 'cases') + 
+  labs(title = 'Cases trends (12 days)')
+
+
+ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_cases_count_12d', '_', week_report, '.png')), 
+       plot = map_world_cases_count_12d, 
+       scale = 1, 
+       dpi = 320)
 
 ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_cases_trends', '_', week_report, '.png')), 
        plot = map_world_cases_trends, 
        scale = 1, 
        dpi = 320)
 
+
+
+map_world_cases_count_trend_12d_grid <- grid.arrange(map_world_cases_count_12d + labs(caption = ''), 
+                                                     map_world_cases_trends, 
+                                                     ncol = 2, 
+                                                     respect = FALSE)
+
+ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_cases_count_trend_12d_grid', '_', week_report, '.png')), 
+       plot = map_world_cases_count_trend_12d_grid, 
+       scale = 1.6, 
+       width = 7, 
+       height = 3)
+
 ```
+
+
 
 <!-- Table cases trends -->
 ```{r TblCountriesCasesIncreasing}
@@ -423,20 +446,30 @@ tbl_deaths_increasing_trend <- tbl_deaths_trends %>%
 
 **Worldwide, a total of `r length(call_countries_increasing('deaths'))` countries reported an increasing trend in deaths** (Figure \@ref(fig:MapWorldDeathsTrends)):
 
-**Africa:** `r glue("({length(call_countries_increasing('deaths', 'Africa'))}):   {call_countries_increasing('deaths', 'Africa') %>% combine_words()}")`. 
+**Africa:** (`r length(call_countries_increasing('deaths', 'Africa'))`)`r glue(": {call_countries_increasing('deaths', 'Africa') %>% combine_words()}")``. 
 
-**Asia:** `r glue("({length(call_countries_increasing('deaths', 'Asia'))}):     {call_countries_increasing('deaths', 'Asia') %>% combine_words()}")`. 
+**Asia:** (`r length(call_countries_increasing('deaths', 'Asia'))`)`r glue(": {call_countries_increasing('deaths', 'Asia') %>% combine_words()}")``. 
 
-**Americas:** `r glue("({length(call_countries_increasing('deaths', 'Americas'))}): {call_countries_increasing('deaths', 'Americas') %>% combine_words()}")`. 
+**Americas:** (`r length(call_countries_increasing('deaths', 'Americas'))`)`r glue(": {call_countries_increasing('deaths', 'Americas') %>% combine_words()}")`. 
 
-**Europe:** `r glue("({length(call_countries_increasing('deaths', 'Europe'))}):   {call_countries_increasing('deaths', 'Europe') %>% combine_words()}")`. 
+**Europe:** (`r length(call_countries_increasing('deaths', 'Europe'))`)`r glue(": {call_countries_increasing('deaths', 'Europe') %>% combine_words()}")`. 
 
-**Oceania:** `r glue("({length(call_countries_increasing('deaths', 'Oceania'))}):  {call_countries_increasing('deaths', 'Oceania') %>% combine_words()}")`. 
+**Oceania:** (`r length(call_countries_increasing('deaths', 'Oceania'))`)`r glue(":  {call_countries_increasing('deaths', 'Oceania') %>% combine_words()}")`. 
 
-<!-- Map deaths trends -->
-```{r MapWorldDeathsTrends, fig.cap = glue('Mapping of deaths trends estimated during the period from {format(date_max_report - (period_trends - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} ({period_trends} days)')}
+<!-- Map deaths counts and trends in the last 12 days -->
+```{r MapWorldDeathsTrends, layout = "l-body-outset", fig.width = 10, fig.height = 3, fig.cap = glue('Mapping of Covid-19 associated deaths and trends during the period from {format(date_max_report - (period_trends - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} ({period_trends} days)')}
 
-map_world_deaths_trends <- plot_map_world_trend(tbl_deaths_trends, 'deaths')
+map_world_deaths_count_12d <- plot_map_world_count(tbl_deaths_count_12d, 'deaths') + 
+  labs(title = 'Deaths count (12 days)')
+
+map_world_deaths_trends    <- plot_map_world_trend(tbl_deaths_trends, 'deaths') + 
+  labs(title = 'Deaths trends (12 days)')
+
+
+ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_deaths_count_12d', '_', week_report, '.png')), 
+       plot = map_world_deaths_count_12d, 
+       scale = 1, 
+       dpi = 320)
 
 ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_deaths_trends', '_', week_report, '.png')), 
        plot = map_world_deaths_trends, 
@@ -444,9 +477,26 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_deaths_trends', 
        dpi = 320)
 
 
-map_world_deaths_trends + labs(title = NULL)
+
+map_world_deaths_count_trend_12d_grid <- grid.arrange(map_world_deaths_count_12d + labs(caption = ''), 
+                                                     map_world_deaths_trends, 
+                                                     ncol = 2, 
+                                                     respect = FALSE)
+
+ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_deaths_count_trend_12d_grid', '_', week_report, '.png')), 
+       plot = map_world_deaths_count_trend_12d_grid, 
+       scale = 1.6, 
+       width = 7, 
+       height = 3)
 
 ```
+
+
+
+
+
+
+
 
 <!-- Table deaths trends -->
 ```{r TblCountriesDeathsIncreasing}
@@ -922,15 +972,15 @@ tbl_cfr_doubling_rank <- tbl_cfr_doubling %>%
 
 A sharp increasing of cases (doubling time of less than `r threshold_doubling_time` days) (Figure \@ref(fig:MapWorldCasesDoubling)) is observed in: 
 
-**Africa:** `r glue("({length(call_countries_doubling('cases_est', 'Africa'))}) {call_countries_doubling('cases_est', 'Africa') %>% combine_words()}")`. 
+**Africa:** (`r length(call_countries_doubling('cases_est', 'Africa'))`)`r glue(": {call_countries_doubling('cases_est', 'Africa') %>% combine_words()}")`. 
 
-**Asia:** `r glue("({length(call_countries_doubling('cases_est', 'Asia'))}) {call_countries_doubling('cases_est', 'Asia') %>% combine_words()}")`. 
+**Asia:** (`r length(call_countries_doubling('cases_est', 'Asia'))`)`r glue(": {call_countries_doubling('cases_est', 'Asia') %>% combine_words()}")`. 
 
-**Americas:** `r glue("({length(call_countries_doubling('cases_est', 'Americas'))}) {call_countries_doubling('cases_est', 'Americas') %>% combine_words()}")`. 
+**Americas:** (`r length(call_countries_doubling('cases_est', 'Americas'))`)`r glue(": {call_countries_doubling('cases_est', 'Americas') %>% combine_words()}")`. 
 
-**Europe:** `r glue("({length(call_countries_doubling('cases_est', 'Europe'))}) {call_countries_doubling('cases_est', 'Europe') %>% combine_words()}")`. 
+**Europe:** (`r length(call_countries_doubling('cases_est', 'Europe'))`)`r glue(": {call_countries_doubling('cases_est', 'Europe') %>% combine_words()}")`. 
 
-**Oceania:** `r glue("({length(call_countries_doubling('cases_est', 'Oceania'))}) {call_countries_doubling('cases_est', 'Oceania') %>% combine_words()}")`. 
+**Oceania:** (`r length(call_countries_doubling('cases_est', 'Oceania'))`)`r glue(": {call_countries_doubling('cases_est', 'Oceania') %>% combine_words()}")`. 
 
 
 <!-- Map doubling cases -->
@@ -995,15 +1045,15 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_doubling_cases',
 
 A sharp increasing of deaths (doubling time of less than `r threshold_doubling_time` days) (Figure \@ref(fig:MapWorldDeathsDoubling)) is observed in: 
 
-**Africa:** `r glue("({length(call_countries_doubling('deaths_est', 'Africa'))}) {call_countries_doubling('deaths_est', 'Africa') %>% combine_words()}")`. 
+**Africa:** (`r length(call_countries_doubling('deaths_est', 'Africa'))`)`r glue(": {call_countries_doubling('deaths_est', 'Africa') %>% combine_words()}")`. 
 
-**Asia:** `r glue("({length(call_countries_doubling('deaths_est', 'Asia'))}) {call_countries_doubling('deaths_est', 'Asia') %>% combine_words()}")`. 
+**Asia:** (`r length(call_countries_doubling('deaths_est', 'Asia'))`)`r glue(": {call_countries_doubling('deaths_est', 'Asia') %>% combine_words()}")`. 
 
-**Americas:** `r glue("({length(call_countries_doubling('deaths_est', 'Americas'))}) {call_countries_doubling('deaths_est', 'Americas') %>% combine_words()}")`. 
+**Americas:** (`r length(call_countries_doubling('deaths_est', 'Americas'))`)`r glue(": {call_countries_doubling('deaths_est', 'Americas') %>% combine_words()}")`. 
 
-**Europe:** `r glue("({length(call_countries_doubling('deaths_est', 'Europe'))}) {call_countries_doubling('deaths_est', 'Europe') %>% combine_words()}")`. 
+**Europe:** (`r length(call_countries_doubling('deaths_est', 'Europe'))`)`r glue(": {call_countries_doubling('deaths_est', 'Europe') %>% combine_words()}")`. 
 
-**Oceania:** `r glue("({length(call_countries_doubling('deaths_est', 'Oceania'))}) {call_countries_doubling('deaths_est', 'Oceania') %>% combine_words()}")`. 
+**Oceania:** (`r length(call_countries_doubling('deaths_est', 'Oceania'))`)`r glue(": {call_countries_doubling('deaths_est', 'Oceania') %>% combine_words()}")`. 
 
 <!-- Map doubling deaths -->
 ```{r MapWorldDeathsDoubling, fig.cap = paste0("Doubling time of the number of Covid-19 associated deaths estimated in the last ", threshold_doubling_time, " (only countries with increasing trends are displayed)")}

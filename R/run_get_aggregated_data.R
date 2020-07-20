@@ -9,7 +9,7 @@ path.sharepoint.agg.data <- file.path(path.sharepoint, "coordination", "Surveill
 agg_data_names <- c("sheet", "oc", "country", "project", "date", "week", "suspected", "probable", "confirmed", "non_cases", "unknown")
 
 dta_weekly_aggregated <- excel_sheets(path.sharepoint.agg.data) %>% 
-  setdiff(., "Sheet1") %>% 
+  setdiff(., c('Feuil1','Sheet1')) %>% 
   map_df(~{
     oc      <- read_excel(path = path.sharepoint.agg.data, sheet = .x, range = "B1", col_names = FALSE) %>% pull()
     country <- read_excel(path = path.sharepoint.agg.data, sheet = .x, range = "D1", col_names = FALSE) %>% pull()
