@@ -14,6 +14,13 @@ if (update_models) {
                                               time_unit_extent = period_trends, 
                                               min_sum = 30)
   
+  model_cnt_cases_linear_30d  <- linear_model_cnt(series = 'cases', 
+                                                  lst_dta = lst_ecdc, 
+                                                  last_date = date_max_report, 
+                                                  time_unit_extent = 30, 
+                                                  min_sum = 30)
+  
+  
   model_cml_cases_linear  <- linear_model_cml(series = 'cases', 
                                               lst_dta = lst_ecdc, 
                                               last_date = date_max_report, 

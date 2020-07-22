@@ -46,7 +46,7 @@ source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
 source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
 
 update_world_data <- FALSE
-update_models <- FALSE
+update_models <- TRUE
 
 
 # Option to update ECDC data
@@ -188,6 +188,8 @@ tbl_deaths_count_12d <- dfc_ecdc %>%
 
 # Counts and trends of Covid-19 cases
 
+## Cases counts 
+
 **`r Words(length(tbl_cases_count %>% call_countries_with(100000, Inf, 'cases')))` countries with more than 100k cases**`r glue(" (in decreasing order): {tbl_cases_count %>% call_countries_with(100000, Inf, 'cases') %>% combine_words()}")` (Figure \@ref(fig:MapWorldCasesCount)). 
 
 **`r Words(length(tbl_cases_count %>% call_countries_with(1000000, Inf, 'cases')))` countries with more than 1M cases** (in decreasing order): `r glue(" (in decreasing order): {tbl_cases_count %>% call_countries_with(1000000, Inf, 'cases') %>% combine_words()}")`. 
@@ -215,6 +217,8 @@ map_world_cases_count + labs(title = NULL)
 
 ```
 
+
+## Cases trends
 
 <!-- TABLE - Trends in number of cases -->
 ```{r TblCasesTrends, include = FALSE}
@@ -331,6 +335,7 @@ tbl_countries_increasing_cases <- tbl_cases_trends %>%
   select(c(iso_a3 : cases), all_of(vars_trends(model_for_trends))) %>% 
   left_join(tbl_cases_count_30d %>% select(iso_a3, cases_30d = cases), by = 'iso_a3') %>% 
   left_join(tbl_cases_count_12d %>% select(iso_a3, cases_12d = cases), by = 'iso_a3') %>% 
+  left_join(model_cnt_cases_linear_30d[[3]] %>% select(iso_a3, coeff_30d = coeff, lwr_30d = lwr, upr_30d = upr), by = 'iso_a3') %>%
   filter(trend == 'Increasing') %>% 
   select(-c(iso_a3, region)) %>% 
   arrange(continent, desc(coeff)) %>% 
@@ -339,7 +344,13 @@ tbl_countries_increasing_cases <- tbl_cases_trends %>%
     coeff_ci = combine_ci(exp(lwr), exp(upr), digits = 2), 
     lwr = NULL,
     upr = NULL, 
-    trend = NULL)
+    trend = NULL) %>% 
+  mutate(
+    coeff_30d = round(exp(coeff_30d), digits = 2), 
+    coeff_ci_30d = combine_ci(exp(lwr_30d), exp(upr_30d), digits = 2), 
+    lwr_30d = NULL,
+    upr_30d = NULL) %>% 
+  select(continent, country, cases, cases_30d, cases_12d, coeff_30d, coeff_ci_30d, coeff, coeff_ci)
 
 gtbl_countries_increasing_cases <- tbl_countries_increasing_cases %>% 
   gt(rowname_col = 'country', groupname_col = 'continent') %>% 
@@ -348,15 +359,20 @@ gtbl_countries_increasing_cases <- tbl_countries_increasing_cases %>%
     cases_30d = 'Last 30 days', 
     cases_12d = 'Last 12 days',  
     coeff     = 'Rate', 
-    coeff_ci  = '95% CI') %>% 
+    coeff_ci  = '95% CI', 
+    coeff_30d = 'Rate',
+    coeff_ci_30d = '95% CI') %>% 
   tab_spanner(
     label = 'Number of cases', 
     columns = starts_with('cases')) %>% 
   tab_spanner(
+    label = 'Trend (30 days)', 
+    columns = vars(coeff_30d, coeff_ci_30d)) %>% 
+  tab_spanner(
     label = 'Trend (12 days)', 
-    columns = starts_with('coeff')) %>% 
+    columns = vars(coeff, coeff_ci)) %>% 
   fmt_number(
-    columns = vars(coeff), 
+    columns = vars(coeff, coeff_30d), 
     decimals = 2) %>% 
   tab_options(
     column_labels.font.weight = "bold", 
@@ -373,6 +389,8 @@ gtbl_countries_increasing_cases %>%
 
 
 # Counts and trends of Covid-19 associated deaths
+
+## Deaths counts
 
 **Countries with more than 10k deaths** (in decreasing order): `r tbl_deaths_count %>% call_countries_with(10000, Inf, 'deaths') %>% combine_words()`.
 
@@ -398,6 +416,7 @@ map_world_deaths_count + labs(title = NULL)
 ```
 
 
+## Deaths trends
 <!-- TABLE - Trend in number of deaths -->
 ```{r}
 
