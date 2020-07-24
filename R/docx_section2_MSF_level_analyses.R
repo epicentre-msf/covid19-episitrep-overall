@@ -111,7 +111,7 @@ my_doc <- add_par_normal(
 
 # 3
 my_doc <- add_par_normal(
-  sprintf("Twice as many males than females consulted in MSF facility. %s (%s%%) confirmed cases reported at least one comorbidity. ", 
+  sprintf("Twice as many males than females consulted in MSF facility. %s (%s%%) patients reported at least one comorbidity. ", 
           nb_msf_confirmed_with_comorbidity, 
           round(nb_msf_confirmed_with_comorbidity / nb_msf_confirmed_linelist * 100, digits = 1)))
 
@@ -169,7 +169,7 @@ my_doc <- add_end_section_continuous()
 my_doc <- add_par_normal(
   sprintf("%s confirmed, probable, or suspected cases with known outcome (cured/died) died, which gives a case fatality risk (CFR) of %s%% (Table 4). CFR among probables and suspects appear really high, though the number of patients with known outcome is lower for those patients. This could reflect the difficult access to testing in some countries, but remain to be further investigated.", 
           Words(nb_msf_conf_prob_susp_who_died), 
-          round(cfr_confirmed_no_comorbidities * 100, digits = 1)))
+          round(cfr_confirmed_probable_suspected * 100, digits = 1)))
 
 my_doc <- add_par_normal('')
 

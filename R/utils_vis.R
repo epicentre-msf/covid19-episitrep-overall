@@ -28,12 +28,12 @@ add_brks <- function(x, n = 5, style = "jenks") {
 }
 
 
-label_breaks <- function(breaks, big_numbers = FALSE, replace_Inf = TRUE) {
+label_breaks <- function(breaks, exclusive = FALSE, replace_Inf = TRUE) {
   
-  if (big_numbers){
-    labs <- sprintf("%s-%s", frmt_num(breaks[1:length(breaks) - 1]), frmt_num(breaks[2:length(breaks)]))
-  } else {
+  if (exclusive){
     labs <- sprintf("%s-%s", breaks[-length(breaks)], breaks[-1] - 1)
+  } else {
+    labs <- sprintf("%s-%s", frmt_num(breaks[1:length(breaks) - 1]), frmt_num(breaks[2:length(breaks)]))
   }
   
   if(replace_Inf){
@@ -140,7 +140,6 @@ cbind_diff <- function(x = list()){
   
   return(as.data.frame(res))
 }
-
 
 
 
@@ -317,8 +316,9 @@ country_duo_plots <- function(series, country_iso, lst_dta = lst_ecdc, model = '
 
 
 
-# To to plot both cases and deaths into a single graphic plot
-country_multi_plots <- function(country_iso, lst_dta = lst_ecdc, model = 'linear') {
+# To plot both cases and deaths into a single graphic plot
+# This function was replace by the one below "country_four_plots" from week 29-2020
+country_four_plots <- function(country_iso, lst_dta = lst_ecdc, model = 'linear') {
   
   # Parameters
   main_colour  <- c(cases = '#1A62A3', deaths = '#e10000')
@@ -400,6 +400,137 @@ country_multi_plots <- function(country_iso, lst_dta = lst_ecdc, model = 'linear
                                     sep = "\n"), 
                               gp = gpar(fontface = 'bold')))
 }
+
+
+
+
+# To plot both cases and deaths into a single graphic plot
+country_six_plots <- function(country_iso) {
+  
+  lst_dta <- lst_ecdc
+  
+  # Parameters
+  main_colour  <- c(cases = '#1A62A3', deaths = '#e10000')
+  name_country <- df_countries %>% filter(iso_a3 == country_iso) %>% pull(country)
+  date_min     <- lst_dta[[country_iso]] %>% filter(cases != 0) %>% pull(date) %>% min()
+  
+  # Table observations
+  dta_obs <- lst_dta[[country_iso]] %>% 
+    select(date, cases, deaths) %>% 
+    pivot_longer(-date, names_to = 'obs', values_to = 'count')
+  
+  
+  # Table predictions
+  mdl_cases_12d  <- model_cnt_cases_linear
+  mdl_cases_30d  <- model_cnt_cases_linear_30d
+  mdl_deaths_12d <- model_cnt_deaths_linear
+  mdl_deaths_30d <- model_cnt_deaths_linear_30d
+  
+  mld_par_12d <- mdl_cases_12d$par
+  dates_extent_12d <- c(mld_par_12d[[1]][1], mld_par_12d[[1]][2])
+  
+  mld_par_30d <- mdl_cases_30d$par
+  dates_extent_30d <- c(mld_par_30d[[1]][1], mld_par_30d[[1]][2])
+  
+  
+  dta_cases_12d <- lst_dta[[country_iso]] %>% 
+    select(date, count = cases) %>% 
+    mutate(
+      obs = 'cases') %>% 
+    filter(between(date, dates_extent_12d[1], dates_extent_12d[2])) %>% 
+    tibble::add_column(mdl_cases_12d[['preds']][[country_iso]])
+  
+  dta_cases_30d <- lst_dta[[country_iso]] %>% 
+    select(date, count = cases) %>% 
+    mutate(
+      obs = 'cases') %>% 
+    filter(between(date, dates_extent_30d[1], dates_extent_30d[2])) %>% 
+    tibble::add_column(mdl_cases_30d[['preds']][[country_iso]])
+  
+  dta_deaths_12d <- lst_dta[[country_iso]] %>% 
+    select(date, count = deaths) %>% 
+    mutate(
+      obs = 'deaths') %>% 
+    filter(between(date, dates_extent_12d[1], dates_extent_12d[2])) %>% 
+    tibble::add_column(mdl_deaths_12d[['preds']][[country_iso]]) 
+  
+  dta_deaths_30d <- lst_dta[[country_iso]] %>% 
+    select(date, count = deaths) %>% 
+    mutate(
+      obs = 'deaths') %>% 
+    filter(between(date, dates_extent_30d[1], dates_extent_30d[2])) %>% 
+    tibble::add_column(mdl_deaths_30d[['preds']][[country_iso]]) 
+  
+  
+  dta_mld_12d <- rbind(dta_cases_12d, dta_deaths_12d)
+  dta_mld_30d <- rbind(dta_cases_30d, dta_deaths_30d)
+  
+  
+  # Plots
+  plot_obs <- ggplot(dta_obs, aes(x = date, y = count)) + 
+    facet_wrap(~obs, scales = "free_y", ncol = 1) + 
+    geom_col(aes(colour = obs, fill = obs)) + 
+    scale_colour_manual(values = main_colour) + 
+    scale_fill_manual(values = main_colour) + 
+    scale_x_date(limits = c(date_min, NA), breaks = '2 months', date_labels = "%b-%Y") +
+    xlab('') + 
+    ylab('frequency') + 
+    labs(subtitle = 'Since the first cases reported') + 
+    theme_light() + 
+    theme(legend.position = "none", 
+          strip.text = element_text(size = 11))
+  
+  
+  plot_mdl_30d <- ggplot(dta_mld_30d, aes(x = date, y = count)) + 
+    facet_wrap(~ obs, scales = "free_y", ncol = 1) + 
+    geom_point(aes(colour = obs), size = 2) + 
+    scale_colour_manual(values = main_colour) + 
+    geom_ribbon(aes(ymin = lwr, ymax = upr, fill = obs), alpha = 0.4) + 
+    geom_line(aes(y = fit, colour = obs), size = 1) + 
+    scale_fill_manual(values = main_colour) + 
+    scale_x_date(limits = dates_extent_30d, date_labels = "%d-%b") +
+    xlab('') + 
+    ylab(paste0('frequency and fitted values')) + 
+    labs(subtitle = paste('Last', (dates_extent_30d[[2]] - dates_extent_30d[[1]] + 1), 'days')) + 
+    theme_light() + 
+    theme_light() + 
+    theme(legend.position = "none", 
+          strip.text = element_text(size = 11))
+  
+  
+  plot_mdl_12d <- ggplot(dta_mld_12d, aes(x = date, y = count)) + 
+    facet_wrap(~ obs, scales = "free_y", ncol = 1) + 
+    geom_point(aes(colour = obs), size = 2) + 
+    scale_colour_manual(values = main_colour) + 
+    geom_ribbon(aes(ymin = lwr, ymax = upr, fill = obs), alpha = 0.4) + 
+    geom_line(aes(y = fit, colour = obs), size = 1) + 
+    scale_fill_manual(values = main_colour) + 
+    scale_x_date(limits = dates_extent_12d, breaks = '4 days', date_labels = "%d-%b") +
+    xlab('') + 
+    ylab(paste0('frequency and fitted values')) + 
+    labs(subtitle = paste('Last', (dates_extent_12d[[2]] - dates_extent_12d[[1]] + 1), 'days')) + 
+    theme_light() + 
+    theme_light() + 
+    theme(legend.position = "none", 
+          strip.text = element_text(size = 11))
+  
+  
+  
+  ggarrange(plot_obs, 
+            plot_mdl_30d, 
+            plot_mdl_12d, 
+            ncol = 3, 
+            widths = c(2,1.4,1.1)) %>% 
+    
+    annotate_figure(top = text_grob(paste(glue('Covid-19 cases and deaths and trend estimations in {name_country}'), 
+                                          glue('Data until {format(date_max_report, "%d %B %Y")} (fitting with linear regression model)'), 
+                                          sep = "\n"), 
+                                    face = "bold", size = 14))
+}
+
+
+
+
 
 
 

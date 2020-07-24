@@ -57,7 +57,7 @@ my_doc <- add_end_section_2columns()
 
 ## - Map Cases count and trend
 my_doc <- add_figure_map_world_grid(
-  object_name  = glue('map_world_cases_grid_{week_report}.png'),
+  object_name  = glue('map_world_cases_count_trend_grid_{week_report}.png'),
   figure_title = glue('Mapping of number of Covid-19 cases and cases trends estimated during the period from {format(date_max_report - 11, "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} (12 days)'))
 
 my_doc <- add_end_section_continuous()
@@ -114,7 +114,7 @@ my_doc <- add_end_section_2columns()
 
 ## - Map
 my_doc <- add_figure_map_world_grid(
-  object_name  = glue('map_world_deaths_grid_{week_report}.png'), 
+  object_name  = glue('map_world_deaths_count_trend_grid_{week_report}.png'), 
   figure_title = glue('Mapping of number of Covid-19 associated deaths and deaths trends estimated during the period from {format(date_max_report - 11, "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} (12 days)'))
 
 

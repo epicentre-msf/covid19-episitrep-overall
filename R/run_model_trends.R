@@ -49,6 +49,12 @@ if (update_models) {
                                                time_unit_extent = period_trends, 
                                                min_sum = 30)
   
+  model_cnt_deaths_linear_30d  <- linear_model_cnt(series = 'deaths', 
+                                                   lst_dta = lst_ecdc, 
+                                                   last_date = date_max_report, 
+                                                   time_unit_extent = 30, 
+                                                   min_sum = 30)
+  
   model_cml_deaths_linear  <- linear_model_cml(series = 'deaths', 
                                                lst_dta = lst_ecdc, 
                                                last_date = date_max_report, 
@@ -71,7 +77,9 @@ if (update_models) {
   
   # <!-- Save models in a unique RData -->
   save(model_cnt_cases_linear, 
+       model_cnt_cases_linear_30d, 
        model_cml_cases_linear,
+       model_cnt_deaths_linear_30d, 
        model_cnt_deaths_linear,
        model_cml_deaths_linear,
        model_cnt_cases_quasipoisson, 

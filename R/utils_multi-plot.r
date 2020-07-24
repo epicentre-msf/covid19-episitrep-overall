@@ -24,13 +24,14 @@ country_list <- df_countries
 # Loop of plots
 for (i in country_list$iso_a3){
   name_country <- country_list %>% filter(iso_a3 == i) %>% pull(country) %>% gsub(" ", "_", .)
-  plots <- country_multi_plots(i)
+  plots <- country_six_plots(i)
   ggsave(file.path(path.local.worldwide.graphs.country_trends, glue("trends_{name_country}_{week_report}.png")), 
          plot = plots, 
          scale = 1, 
+         width = 9,
          dpi = 320)
 }
-
+plots
 
 
 

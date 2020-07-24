@@ -159,8 +159,24 @@ nb_msf_conf_prob_susp_who_died <- with(dta, sum(covid_status %in% c('Confirmed',
 nb_msf_conf_above65 <- with(dta, sum(covid_status == 'Confirmed' & age_in_years >=65 & outcome_status %in% c('Cured', 'Died'), na.rm = TRUE))
 nb_msf_conf_above65_who_died <- with(dta, sum(covid_status == 'Confirmed' & age_in_years >=65 & outcome_status == 'Died', na.rm = TRUE))
 
-median_age_confirmed <- dta %>% filter(covid_status == 'Confirmed') %>% pull(age_in_years) %>% median(na.rm = TRUE)
-median_age_confirmed_died <- dta %>% filter(covid_status == 'Confirmed' & outcome_status == 'Died') %>% pull(age_in_years) %>% median(na.rm = TRUE)
+median_age_all_by_sex <- dta %>% 
+  group_by(sex) %>% 
+  summarise(
+    age_median = median(age_in_years, na.rm = TRUE))
+
+median_age_confirmed <- dta %>% 
+  filter(covid_status == 'Confirmed') %>% 
+  pull(age_in_years) %>% median(na.rm = TRUE)
+
+median_age_confirmed_by_sex <- dta %>% 
+  filter(covid_status == 'Confirmed') %>% 
+  group_by(sex) %>% 
+  summarise(
+    age_median = median(age_in_years, na.rm = TRUE))
+
+median_age_confirmed_died <- dta %>% 
+  filter(covid_status == 'Confirmed' & outcome_status == 'Died') %>% 
+  pull(age_in_years) %>% median(na.rm = TRUE)
 
 ```
 
@@ -931,7 +947,6 @@ gtbl_sympt %>%
 <!-- Table Case-fatality risk by Covid status and by continent -->
 ```{r}
 # DONE by Francesco
-# Check to see if Europe needs to be added
 
 tbl_cfr_status <- dta %>%
   select(covid_status, outcome_status) %>%
@@ -957,11 +972,13 @@ gtbl_cfr_status_continent <- tbl_cfr_status_continent %>%
     covid_status     = 'Covid status',
     totals_Africa    = 'n/N',
     totals_Americas  = 'n/N',
-    totals_Asia      = 'n/N',
+    totals_Asia      = 'n/N', 
+    totals_Europe    = 'n/N',
     totals_Total     = 'n/N',
     died_p_Africa    = '(%)',
     died_p_Americas  = '(%)',
-    died_p_Asia      = '(%)',
+    died_p_Asia      = '(%)', 
+    died_p_Europe    = '(%)', 
     died_p_Total     = '(%)') %>%
   tab_spanner(
     label = 'Africa',
@@ -971,7 +988,10 @@ gtbl_cfr_status_continent <- tbl_cfr_status_continent %>%
     columns = ends_with('_Americas')) %>%
   tab_spanner(
     label = 'Asia',
-    columns = ends_with('_Asia')) %>%
+    columns = ends_with('_Asia')) %>% 
+  tab_spanner(
+    label = 'Europe',
+    columns = ends_with('_Europe')) %>%
   tab_spanner(
     label = 'Total',
     columns = ends_with('_Total')) %>%
@@ -1012,6 +1032,15 @@ gtbl_cfr_status_continent %>%
     title = 'Case-fatality risk by Covid status and continent among patients an MSF supported Covid-19 health service', 
     subtitle = 'In the denominator only patients with outcome as cured or died'
   )
+
+
+
+cfr_confirmed_probable_suspected <- dta %>%
+  select(covid_status, outcome_status) %>% 
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>% 
+  filter(outcome_status %in% c('Cured', 'Died'), ) %>% 
+  summarise(cfr = mean(outcome_status == 'Died')) %>% 
+  pull()
 
 ```
 
@@ -1124,7 +1153,8 @@ dta_care <- dta_care %>%
     merge_ecmo = as.character(merge_ecmo),
     merge_ecmo = case_when(
       merge_ecmo == "Yes" ~ "No at any time",
-      TRUE ~ merge_ecmo))
+      TRUE ~ merge_ecmo)) %>% 
+  mutate(merge_ecmo = factor(merge_ecmo, levels = c('Yes', 'No at admission then not reported', 'No at any time', 'Not reported')))
 
 
 tbl_care_admitted <- make_tbl_prop(dta_care, 'merge_admit', 'continent') %>% 
@@ -1159,7 +1189,7 @@ gtbl_care <- tbl_care %>%
     n_Americas = 'n',
     n_Asia     = 'n', 
     n_Europe   = 'n', 
-    n_Total     = 'n', 
+    n_Total    = 'n', 
     pct_Africa   = '(%)', 
     pct_Americas = '(%)', 
     pct_Asia     = '(%)', 
@@ -1325,10 +1355,12 @@ gtbl_cfr_factors_1 <- tbl_cfr_factors_1 %>%
     totals_Africa    = 'n/N',
     totals_Americas  = 'n/N',
     totals_Asia      = 'n/N',
+    totals_Europe    = 'n/N', 
     totals_Total     = 'n/N',
     died_p_Africa    = '(%)',
     died_p_Americas  = '(%)',
-    died_p_Asia      = '(%)',
+    died_p_Asia      = '(%)', 
+    died_p_Europe    = '(%)',
     died_p_Total     = '(%)') %>%
   tab_spanner(
     label = 'Africa',
@@ -1338,7 +1370,10 @@ gtbl_cfr_factors_1 <- tbl_cfr_factors_1 %>%
     columns = ends_with('_Americas')) %>%
   tab_spanner(
     label = 'Asia',
-    columns = ends_with('_Asia')) %>%
+    columns = ends_with('_Asia')) %>% 
+  tab_spanner(
+    label = 'Europe',
+    columns = ends_with('_Europe')) %>%
   tab_spanner(
     label = 'Total',
     columns = ends_with('_Total')) %>%
@@ -1360,8 +1395,9 @@ gtbl_cfr_factors_1 <- tbl_cfr_factors_1 %>%
     align = 'right',
     columns = starts_with('totals')) %>%
   tab_options(
-    column_labels.font.weight = "bold",
-    data_row.padding = px(2),
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
     row_group.padding = px(2))
 
   gtsave(gtbl_cfr_factors_1, 
@@ -1537,10 +1573,12 @@ gtbl_risk_comcond <- tbl_risk_comcond %>%
     totals_Africa    = 'n/N',
     totals_Americas  = 'n/N',
     totals_Asia      = 'n/N', 
+    totals_Europe    = 'n/N', 
     totals_Total     = 'n/N',
     died_p_Africa    = '(%)',
     died_p_Americas  = '(%)',
     died_p_Asia      = '(%)', 
+    died_p_Europe    = '(%)', 
     died_p_Total     = '(%)') %>%
   tab_spanner(
     label = 'Africa',
@@ -1551,6 +1589,9 @@ gtbl_risk_comcond <- tbl_risk_comcond %>%
   tab_spanner(
     label = 'Asia',
     columns = ends_with('_Asia')) %>% 
+  tab_spanner(
+    label = 'Europe',
+    columns = ends_with('_Europe')) %>% 
   tab_spanner(
     label = 'Total',
     columns = ends_with('_Total')) %>%
@@ -1883,7 +1924,7 @@ p_length_stay
 
 # Analysis of non-cases 
 
-```{r NonCasesDiagnosis, layout = "l-body-outset"}
+```{r NonCasesDiagnosis, layout="l-body-outset"}
 
 dta_non_cases_diagt <- dta %>% 
   filter(covid_status == 'Not a case') %>% 
