@@ -90,7 +90,7 @@ caption_world_map <- paste0('Analysis and graphic by Epicentre | Data source: EC
 
 
 <!-- Import data -->
-```{r GetData, include = FALSE}
+```{r Get-data, include = FALSE}
 
 source(file.path(path.R, 'run_get_world_data.R'), encoding = 'UTF-8')
 source(file.path(path.R, 'run_model_trends.R')  , encoding = 'UTF-8')

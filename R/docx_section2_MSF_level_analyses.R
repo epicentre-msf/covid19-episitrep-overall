@@ -189,7 +189,7 @@ my_doc <- add_par_normal('')
 # --- --- --- --- --- --- 
 # ANALYSES CONFIRMED
 # --- --- --- --- --- --- 
-my_doc <- add_heading2("Covid19 patients consulted or admitted in MSF facilities")
+my_doc <- add_heading2("Covid19 confirmed patients consulted or admitted in MSF facilities")
 
 my_doc <- add_end_section_continuous()
 
@@ -254,7 +254,7 @@ my_doc <- add_par_normal(
 my_doc <- add_par_normal('')
 
 my_doc <- add_figure(
-  object_name  = glue("msf_onset_admit_delay_{week_report}.png"), 
+  object_name  = glue("msf_length_stay_{week_report}.png"), 
   figure_title = "Weekly evolution of the distribution of length of stay among hospitalized patient", 
   folder = 'msf', 
   width = 8.37 * cm_to_in, 
