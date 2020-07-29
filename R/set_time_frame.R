@@ -1,12 +1,12 @@
 
+# This script is to be launched after setup.R
 
 # Set the term of dates this is also used to separate output files
+date_max_report <- as.Date("2020-07-26")
+week_report     <- ISOweek::ISOweek(date_max_report) %>% gsub("W","w", .)
 
-date_max_report <- as.Date("2020-07-19")
 
-week_report <- ISOweek(date_max_report) %>% gsub("W","w", .)
-
-# Create folders specific to date_max_report
+# Create paths specific to the week of the report
 path.local.week   <- file.path(path.local, week_report)
 
 path.local.worldwide        <- file.path(path.local.week, 'worldwide')
@@ -20,6 +20,7 @@ path.local.msf.graphs <- file.path(path.local.msf, 'graphs')
 path.local.msf.tables <- file.path(path.local.msf, 'tables')
 
 
+# Create folders based on the paths
 dir.create(path.local.week, showWarnings = FALSE, recursive = TRUE) 
 
 dir.create(path.local.worldwide.data   , showWarnings = FALSE, recursive = TRUE) 
