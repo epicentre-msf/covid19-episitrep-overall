@@ -5,8 +5,17 @@ rm(list = ls())
 source(here::here('R', 'setup.R'), encoding = 'UTF-8')
 source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
 source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
+source(file.path(path.R, "utils_get_data.R")       , encoding = "UTF-8")
 source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
 
+# === === === === === === === === 
+# update geo data if required
+# === === === === === === === === 
+update_geo_data <- FALSE
+
+if (update_geo_data) {
+  source(file.path(path.R, "run_get_geo_data.R"), encoding = "UTF-8")
+}
 
 # === === === === === === === === 
 # Run analysis
