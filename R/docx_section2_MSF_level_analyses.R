@@ -49,9 +49,10 @@ my_doc <- add_end_section_continuous()
 
 # 1
 my_doc <- add_par_normal(
-  sprintf("As of %s, %s MSF project sites representing all 5 OCs reported data, for a total of %s patients consulted and/or admitted, including %s confirmed. %s projects reported only aggregated data (included in Table 2 and Figure 6, but not in further analysis below nor in dashboard). The number of projects reporting is steadily progressing.", 
+  sprintf("As of %s, %s MSF project sites representing all 5 OCs and %s countries reported data, for a total of %s patients consulted and/or admitted, including %s confirmed. %s projects reported only aggregated data (included in Table 2 and Figure 6, but not in further analysis below nor in dashboard). The number of projects reporting continue to steadily progressing.", 
   format(date_max_report , "%d %B %Y"), 
   words(nb_msf_sites), 
+  nb_msf_countries, 
   format(nb_msf_obs, big.mark   = ','), 
   format(nb_msf_confirmed, big.mark   = ','), 
   Words(nb_msf_sites_aggregated)))
@@ -219,8 +220,8 @@ my_doc <- add_figure(
   object_name = paste0('pyramid_age_sex_confirmed_continent', '_', week_report, '.png'), 
   figure_title = "Age pyramid of Covid-confirmed patients consulted/ admitted in MSF facilities, by continent", 
   folder = 'msf', 
-  width = 8.37 * cm_to_in, 
-  height = 5.58 * cm_to_in)
+  width = 8.17 * cm_to_in, 
+  height = 8.03 * cm_to_in)
 
 my_doc <- add_par_normal('')
 
@@ -337,7 +338,7 @@ my_doc <- add_table(
   table_title = 'Frequency of main diagnosis among non confirmed patients who attended an MSF Covid facility, by type of outcome', 
   folder = 'msf', 
   width = 15.85 * cm_to_in, 
-  height = 10.33 * cm_to_in)
+  height = 11.92 * cm_to_in)
 
 my_doc <- add_par_normal('')
 

@@ -78,8 +78,8 @@ add_figure_map_world_grid <- function(object_name, figure_title){
     x = my_doc, 
     style = 'Figure body', 
     src = file.path(path.local.worldwide.graphs, object_name), 
-    width = 7, 
-    height = 3) %>% 
+    width = 14.71 * cm_to_in, 
+    height = 12.02 * cm_to_in) %>% 
     body_add_par(
       style = 'Figure title', 
       value = figure_title)

@@ -5,13 +5,13 @@ rm(list = ls())
 source(here::here('R', 'setup.R'), encoding = 'UTF-8')
 source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
 source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
-source(file.path(path.R, "utils_get_data.R")       , encoding = "UTF-8")
+source(file.path(path.R, "utils_get_data.R")  , encoding = "UTF-8")
 source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
 
 # === === === === === === === === 
 # update geo data if required
 # === === === === === === === === 
-update_geo_data <- FALSE
+update_geo_data <- TRUE
 
 if (update_geo_data) {
   source(file.path(path.R, "run_get_geo_data.R"), encoding = "UTF-8")
@@ -36,7 +36,7 @@ if (run_analyes_worldwide) {
 run_analyes_msf_level <- TRUE
 
 if (run_analyes_msf_level) {
-  rmarkdown::render(input = file.path(path.Rmd, 'episitrep_msf_level_analyses_v2.Rmd'), 
+  rmarkdown::render(input = file.path(path.Rmd, 'episitrep_msf_level_analyses.Rmd'), 
                     output_file = paste0(week_report, '_', 'episitrep_msf_level_analysis', '.html'),
                     output_dir  = path.local.week)
   } else {
@@ -59,7 +59,7 @@ styles_info(my_doc)
 
 
 # Doc title
-source(file.path(path.R, 'docx_heading.R'), encoding = 'UTF-8')
+source(file.path(path.R, 'docx_section0_heading.R'), encoding = 'UTF-8')
 
 # I. Worldwide analyses
 source(file.path(path.R, 'docx_section1_worldwide_analyses.R'), encoding = 'UTF-8')
