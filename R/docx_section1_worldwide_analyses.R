@@ -154,7 +154,9 @@ my_doc <- add_end_section_2columns()
 ## - Map
 my_doc <- add_figure_map_world_grid(
   object_name  = glue('map_world_doubling_grid_{week_report}.png'),
-  figure_title = glue('Doubling time of the number of Covid-19 cases and associated deaths estimated in the last 12 days (only countries with increasing trends are displayed)'))
+  figure_title = glue('Doubling time of the number of Covid-19 cases and associated deaths estimated in the last 12 days (only countries with increasing trends are displayed)'),
+  width = 18.11, 
+  height = 7.77)
 
 my_doc <- add_par_normal('')
 
@@ -195,7 +197,7 @@ my_doc <- add_end_section_continuous()
 
 
 # --- --- --- --- --- --- --- 
-# TEASTING
+# TESTING
 # --- --- --- --- --- --- --- 
 
 ## - Heading
