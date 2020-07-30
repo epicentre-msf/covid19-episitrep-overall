@@ -235,7 +235,7 @@ hist_epicurve_status <- tbl_epicurve_status %>%
                sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
   labs(y = "Patients") + 
     theme_light() + 
-  theme(legend.position = 'top')
+  theme(legend.position = 'top', panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank())
 
 ggsave(file.path(path.local.msf.graphs, paste0('hist_epicurve_status', '_', week_report, '.png')),
        plot = hist_epicurve_status, 
@@ -266,7 +266,7 @@ hist_epicurve_status_continent <- tbl_epicurve_status_continent %>%
                sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y"))) +
   labs(y = "Patients", caption = 'NOTE: free y axis scale among graphics') +
   theme_light() +
-  theme(legend.position = 'top')
+  theme(legend.position = 'top', panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank())
 
 ggsave(file.path(path.local.msf.graphs, paste0('hist_epicurve_status_continent', '_', week_report, '.png')),
        plot = hist_epicurve_status_continent, 
