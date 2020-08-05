@@ -220,8 +220,8 @@ my_doc <- add_figure(
   object_name = paste0('pyramid_age_sex_confirmed_continent', '_', week_report, '.png'), 
   figure_title = "Age pyramid of Covid-confirmed patients consulted/ admitted in MSF facilities, by continent", 
   folder = 'msf', 
-  width = 8.17 * cm_to_in, 
-  height = 8.03 * cm_to_in)
+  width = 10 * cm_to_in, 
+  height = 10 * cm_to_in)
 
 my_doc <- add_par_normal('')
 
