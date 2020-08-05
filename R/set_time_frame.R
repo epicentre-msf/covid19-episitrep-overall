@@ -2,7 +2,10 @@
 # This script is to be launched after setup.R
 
 # Set the term of dates this is also used to separate output files
-date_max_report <- as.Date("2020-07-26")
+
+# defaults to previous Sunday from today 
+# enter a custom date inside function to change
+date_max_report <- get_max_date_report() 
 week_report     <- ISOweek::ISOweek(date_max_report) %>% gsub("W","w", .)
 
 

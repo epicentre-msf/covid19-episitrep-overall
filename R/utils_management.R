@@ -1,4 +1,11 @@
 
+get_prev_sunday <- function(date) {
+  lubridate::floor_date(as.Date(date), unit = "week", week_start = 7)
+}
+
+get_max_date_report <- function(date = get_prev_sunday(Sys.Date())) {
+  return(as.Date(date))
+}
 
 # Set the term of dates this is also used to separate output files
 set_date_max <- function(date_max, get_updated_data = FALSE){
