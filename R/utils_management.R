@@ -204,7 +204,10 @@ prepare_msf_dta <- function(dta){
       epi_week_report = make_epiweek_date(report_date),
       epi_week_consultation = make_epiweek_date(date_consultation),
       epi_week_admission = make_epiweek_date(presHCF),
-      epi_week_onset = make_epiweek_date(dateonset)
+      epi_week_onset = make_epiweek_date(dateonset),
+      Comcond_present_01 = case_when(
+        Comcond_present == 0 ~ 0,
+        Comcond_present >=1 ~ 1)
     )
   
   # Create age-groups
