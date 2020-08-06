@@ -110,6 +110,7 @@ my_doc <- add_par_normal(
   sprintf("Patients consulted/admitted to MSF facilities remain relatively young, with a median age of %s years (stable over the last weeks). Figure 8 shows the age pyramid of patients consulted/admitted to MSF facilities.", 
           median(dta$age_in_years, na.rm = TRUE))) 
 
+
 # 3
 my_doc <- add_par_normal(
   sprintf("Twice as many males than females consulted in MSF facility. %s (%s%%) patients reported at least one comorbidity. ", 
@@ -154,7 +155,7 @@ my_doc <- add_par_normal('')
 # Table symptoms
 my_doc <- add_table(
   object_name = paste0('gtbl_sympt_all', '_', week_report, '.png'), 
-  table_title = 'Distribution of patient outcomes in MSF facilities, among confirmed, probable and suspected case', 
+  table_title = 'Frequency and percentage of signs and symptoms of patients admitted', 
   folder = 'msf', 
   width = 17.45 * cm_to_in, 
   height = 9.45 * cm_to_in)
