@@ -1586,7 +1586,7 @@ dta_comcond <- dta %>%
     smoking = case_when(
       smoking %in% c('Yes (current)', 'Yes (former)') ~ 'Yes', 
       TRUE ~ smoking)) %>% 
-  select(-c(Comcond_present, Comcond_pregt)) %>% 
+  select(-c(Comcond_present, Comcond_pregt, Comcond_present_01)) %>% 
   pivot_longer(-c(covid_status, outcome_status, continent), names_to = "type_comorbidity") %>%
   filter(!is.na(value), value == 'Yes')
 
