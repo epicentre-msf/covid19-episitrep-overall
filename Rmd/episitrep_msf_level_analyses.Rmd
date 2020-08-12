@@ -134,8 +134,10 @@ At the date the required data are not yet available. And this section will be up
 
 <!-- Some figure outputs to be used in the text --> 
 ```{r numbers, include = FALSE}
+```
 
 
+```{r numbers, include = FALSE}
 nb_msf_sites_linelist   <- length(unique(dta$site_name))                   # Nb of sites using the linelist
 nb_msf_sites_aggregated <- length(unique(dta_weekly_expanded$site_name))   # Nb of sites using aggregated data
 nb_msf_sites            <- nb_msf_sites_linelist + nb_msf_sites_aggregated # Sum of the two above
@@ -689,7 +691,7 @@ Table by continent (or region)
 # DONE by Francesco
 
 tbl_general_by_status <- dta %>% 
-  select(covid_status, age_in_years, age_5gp, sex, Comcond_present) %>%
+  select(covid_status, age_in_years, age_5gp, sex, Comcond_present_01) %>%
   group_by(covid_status) %>%
   summarise(
     age_total   = paste0(sum(!is.na(age_in_years)) , '/',  n()),  
@@ -704,11 +706,12 @@ tbl_general_by_status <- dta %>%
     sex_males   = sum(sex == 'M', na.rm = TRUE),
     sex_females = sum(sex == 'F', na.rm = TRUE),
     sex_ratio   = format(round(sum(sex == 'M', na.rm = TRUE)/sum(sex == 'F', na.rm = TRUE), digits = 1), nsmall = 1),
-    comorbidity_total = paste0(sum(!is.na(Comcond_present)) , '/',  n()),
-    comorbidity_presence = freq_prct(Comcond_present, 1))
+    comorbidity_total = paste0(sum(!is.na(Comcond_present_01)) , '/',  n()),
+    comorbidity_presence = freq_prct(Comcond_present_01, 1))
+
 
 tbl_general_total <- dta %>% 
-  select(covid_status, age_in_years, age_5gp, sex, Comcond_present) %>%
+  select(covid_status, age_in_years, age_5gp, sex, Comcond_present_01) %>%
   summarise(
     age_total   = paste0(sum(!is.na(age_in_years)) , '/',  n()),  
     age_min_max = paste0(min(age_in_years, na.rm = TRUE), ' - ', max(age_in_years, na.rm = TRUE)),
@@ -722,8 +725,8 @@ tbl_general_total <- dta %>%
     sex_males   = sum(sex == 'M', na.rm = TRUE),
     sex_females = sum(sex == 'F', na.rm = TRUE),
     sex_ratio   = format(round(sum(sex == 'M', na.rm = TRUE)/sum(sex == 'F', na.rm = TRUE), digits = 1), nsmall = 1),
-    comorbidity_total = paste0(sum(!is.na(Comcond_present)) , '/',  n()),
-    comorbidity_presence = freq_prct(Comcond_present, 1)) %>% 
+    comorbidity_total = paste0(sum(!is.na(Comcond_present_01)) , '/',  n()),
+    comorbidity_presence = freq_prct(Comcond_present_01, 1)) %>% 
   mutate(
     covid_status = 'Total')
 
@@ -772,6 +775,7 @@ gtbl_general <- tbl_general %>%
 gtsave(gtbl_general,
        file.path(path.local.msf.tables, paste0('gtbl_general','_', week_report, '.png'))) %>%
   invisible()
+
 
 gtsave(gtbl_general %>% 
          tab_header(
@@ -1582,7 +1586,7 @@ dta_comcond <- dta %>%
     smoking = case_when(
       smoking %in% c('Yes (current)', 'Yes (former)') ~ 'Yes', 
       TRUE ~ smoking)) %>% 
-  select(-c(Comcond_present, Comcond_pregt)) %>% 
+  select(-c(Comcond_present, Comcond_pregt, Comcond_present_01)) %>% 
   pivot_longer(-c(covid_status, outcome_status, continent), names_to = "type_comorbidity") %>%
   filter(!is.na(value), value == 'Yes')
 

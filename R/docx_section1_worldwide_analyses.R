@@ -223,6 +223,6 @@ my_doc <- add_end_section_2columns()
 # - Graph
 my_doc <- add_figure(
   object_name = glue('dots_prop_tests_{week_report}.png'), 
-  figure_title = glue('Relation between the number of tests carried out in the last 12 days (as ratio of the number of confirmed cases) and the cumulative number of cases reported'), 
+  figure_title = glue('Relation between the number of tests carried out in the last 12 days (as proportion of positive tests) and the cumulative number of cases reported'), 
   folder = 'worldwide')
 
