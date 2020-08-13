@@ -296,7 +296,7 @@ my_doc <- add_par_normal('')
 # Table CFR by age-group and sex
 my_doc <- add_table(
   object_name = paste0('gtbl_cfr_age_sex_comorbidities', '_', week_report, '.png'), 
-  table_title = 'Distribution of patient outcomes in MSF facilities, among confirmed cases', 
+  table_title = 'Case Fatality Risk in confirmed patients, by patient characteristics and continent', 
   folder = 'msf', 
   width = 8.1 * cm_to_in, 
   height = 7.91 * cm_to_in)

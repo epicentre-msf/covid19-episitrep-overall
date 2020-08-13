@@ -30,8 +30,8 @@ if (!exists('path.root')) {
   source(here::here('R', 'setup.r'), encoding = 'UTF-8')
 }
 
-source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
 source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
+source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
 source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
 
 
@@ -806,7 +806,7 @@ pyramid_age_sex_all_continent <- ggplot(tbl_pyramid_continent, aes(x = age_9gp, 
   facet_wrap(~continent, ncol = 2, scales = "free_x") +
   geom_col() +
   geom_hline(yintercept = 0, colour = "black") +
-  geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 4) +
+  #geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 4) +
   coord_flip() +
   scale_fill_manual(name = NULL, values = c("#4E79A7FF", "#A0CBE8FF"), breaks = c("M", "F"), labels = c("Males", "Females")) +
   scale_y_continuous(label = abs, limits = pyramid_limits) + 
@@ -1094,7 +1094,7 @@ tbl_pyramid_confirmed <- dta %>%
 pyramid_age_sex_confirmed <- ggplot(tbl_pyramid_confirmed, aes(x = age_9gp, y = n, fill = sex)) +
   geom_col() +
   geom_hline(yintercept = 0, colour = "black") +
-  geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 4) +
+  #geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 4) +
   coord_flip() +
   scale_fill_manual(name = NULL, values = c("#4E79A7FF", "#A0CBE8FF"), breaks = c("M", "F"), labels = c("Males", "Females")) +
   scale_y_continuous(limits = pyramid_limits, breaks = pyramid_brks, label = abs) + 
@@ -1131,7 +1131,7 @@ pyramid_age_sex_confirmed_continent <- ggplot(tbl_pyramid_confirmed_continent, a
   facet_wrap(~continent, ncol = 2, scales = "free_x") +
   geom_col() +
   geom_hline(yintercept = 0, colour = "black") +
-  geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 4) +
+  #geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 4) +
   coord_flip() +
   scale_fill_manual(name = NULL, values = c("#4E79A7FF", "#A0CBE8FF"), breaks = c("M", "F"), labels = c("Males", "Females")) +
   scale_y_continuous(label = abs, limits = pyramid_limits) + 
