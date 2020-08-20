@@ -31,16 +31,45 @@ get_world_sf <- function(scale = c('small', 'medium', 'large'), proj = c('robins
 }
 
 
+
 #' Import ECDC dataset
 #' 
 #' @export
-get_ecdc_data <- function() {
+get_ecdc_data <- function(local_path = path.local.worldwide.data, file_name = 'dta_ECDC.RDS', update_data = FALSE) {
   
   base_url <- "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv"
   
-  d <- readr::read_csv(base_url)
   
+  get_new_dta <- if(!file.exists(file.path(local_path, file_name))) {
+    
+    TRUE
+    
+    } else {
+      
+      last_update <- readRDS(file.path(local_path, file_name))$last_update
+      ifelse(last_update == Sys.Date(), FALSE, TRUE)
+      
+    }
+  
+  
+  
+  if (get_new_dta | update_data) {
+    
+    dta <- readr::read_csv(base_url)
+    last_update <-  Sys.Date()
+    dta <- list("dta" = dta, "last_update" = last_update)
+    saveRDS(dta, file = file.path(path.local.worldwide.data, file_name))
+    
+    } else {
+      
+      dta <- readRDS(file.path(path.local.worldwide.data, file_name))
+      
+    }
+  
+  return(dta)
 }
+
+
 
 
 #' Download and save shapefiles and geo data locally if not present
@@ -85,13 +114,40 @@ get_geo_data <- function(path, force = FALSE) {
 #' Import FIND test dataset
 #' 
 #' @export
-get_find_data <- function() {
+get_find_data <- function(local_path = path.local.worldwide.data, file_name = 'dta_tests.RDS', update_data = FALSE) {
   
   base_url <- "https://finddx.shinyapps.io/FIND_Cov_19_Tracker/_w_989488b3/downloads/cv_tests_download.csv"
   
-  d <- readr::read_csv(base_url)
+  get_new_dta <- if(!file.exists(file.path(local_path, file_name))) {
+    
+    TRUE
+    
+  } else {
+    
+    last_update <- readRDS(file.path(local_path, file_name))$last_update
+    ifelse(last_update == Sys.Date(), FALSE, TRUE)
+    
+  }
+  
+  
+  
+  if (get_new_dta | update_data) {
+    
+    dta <- readr::read_csv(base_url)
+    last_update <-  Sys.Date()
+    dta <- list("dta" = dta, "last_update" = last_update)
+    saveRDS(dta, file = file.path(path.local.worldwide.data, file_name))
+    
+  } else {
+    
+    dta <- readRDS(file.path(path.local.worldwide.data, file_name))
+    
+  }
+  
+  return(dta)
   
 }
+
 
 get_iso_for_tests <- function() {
   tibble::tribble(

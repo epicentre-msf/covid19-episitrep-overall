@@ -447,3 +447,93 @@ ts_coeff <- function(series, lst_dta, time_unit_extent = 5, ma_window = 3, min_s
   }
   return(lst_coeffs)
 }
+
+
+
+
+get_trend_models <- function(lst_ecdc = lst_dta_ecdc, date_max = date_max_report, periods_trends = c(12, 30), local_path = path.local.worldwide.data, file_name = 'trends_models.RDS', last_update = last_update_dta_ecdc, update_trends = FALSE) {
+  
+  make_new_models <- ifelse(!file.exists(file.path(local_path, file_name)) | last_update != Sys.Date() | update_trends, TRUE, FALSE)
+  
+  
+  if (make_new_models) {
+    
+    # <!-- Modelling Cases Trends -->
+    
+    model_cnt_cases_linear_short  <- linear_model_cnt(series = 'cases', 
+                                                      lst_dta = lst_ecdc, 
+                                                      last_date = date_max, 
+                                                      time_unit_extent = periods_trends[1], 
+                                                      min_sum = 30)
+    
+    model_cnt_cases_linear_long   <- linear_model_cnt(series = 'cases', 
+                                                      lst_dta = lst_ecdc, 
+                                                      last_date = date_max, 
+                                                      time_unit_extent = periods_trends[2], 
+                                                      min_sum = 30)
+    
+    
+    model_cml_cases_linear_short  <- linear_model_cml(series = 'cases', 
+                                                      lst_dta = lst_ecdc, 
+                                                      last_date = date_max, 
+                                                      time_unit_extent = periods_trends[1], 
+                                                      min_sum = 50)
+    
+    # <!-- Modelling Deaths Trends -->
+    
+    model_cnt_deaths_linear_short  <- linear_model_cnt(series = 'deaths', 
+                                                       lst_dta = lst_ecdc, 
+                                                       last_date = date_max, 
+                                                       time_unit_extent = periods_trends[1], 
+                                                       min_sum = 30)
+    
+    model_cnt_deaths_linear_long   <- linear_model_cnt(series = 'deaths', 
+                                                       lst_dta = lst_ecdc, 
+                                                       last_date = date_max, 
+                                                       time_unit_extent = periods_trends[2], 
+                                                       min_sum = 30)
+    
+    model_cml_deaths_linear_short  <- linear_model_cml(series = 'deaths', 
+                                                       lst_dta = lst_ecdc, 
+                                                       last_date = date_max, 
+                                                       time_unit_extent = periods_trends[1], 
+                                                       min_sum = 50)
+    
+    lst_coeffs_cases <- ts_coeff(series = 'cases', 
+                                 lst_dta = lst_dta_ecdc, 
+                                 time_unit_extent = 5, 
+                                 ma_window = 3, 
+                                 min_sum = 30)
+    
+    lst_coeffs_deaths <- ts_coeff(series = 'deaths', 
+                                  lst_dta = lst_dta_ecdc, 
+                                  time_unit_extent = 5, 
+                                  ma_window = 3, 
+                                  min_sum = 30)
+    
+    
+    mdls <- list("model_cnt_cases_linear_short"  = model_cnt_cases_linear_short, 
+                 "model_cnt_cases_linear_long"   = model_cnt_cases_linear_long, 
+                 "model_cml_cases_linear_short"  = model_cml_cases_linear_short,
+                 "model_cnt_deaths_linear_short" = model_cnt_deaths_linear_short, 
+                 "model_cnt_deaths_linear_long"  = model_cnt_deaths_linear_long,
+                 "model_cml_deaths_linear_short" = model_cml_deaths_linear_short, 
+                 "lst_coeffs_cases"  = lst_coeffs_cases, 
+                 "lst_coeffs_deaths" = lst_coeffs_deaths, 
+                 "periods_trends" = c("short" = periods_trends[1], "long" = periods_trends[2]))
+    
+    # <!-- Save models in a unique RDS -->
+    
+    saveRDS(mdls, file = file.path(path.local.worldwide.data, file_name)) 
+    
+  } else {
+    
+    mdls <- readRDS(file = file.path(path.local.worldwide.data, file_name))
+    
+  }
+  
+  return(mdls)
+  
+}
+
+
