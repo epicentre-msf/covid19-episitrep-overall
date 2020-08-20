@@ -97,8 +97,8 @@ vars_doubling_time <- function(model, series){
   stub_vars <- c('est', 'lwr', 'upr')
   
   lst_vars <- switch(model, 
-                     linear       = paste0('l_cml_', stub_vars), 
-                     quasipoisson = paste0('p_cml_', stub_vars))
+                     linear       = paste0('l_cnt_', stub_vars), 
+                     quasipoisson = paste0('p_cnt_', stub_vars))
   
   names(lst_vars) <- switch(series, 
                      cases  = paste0('cases_' , stub_vars), 

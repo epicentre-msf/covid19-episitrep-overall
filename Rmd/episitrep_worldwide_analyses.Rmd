@@ -1217,12 +1217,9 @@ dotsgplot_inc_Europe
 <!-- Doubling in cases -->
 ```{r estimate_doubling_cases}
 
-doubling_vars <-  c("est", "lwr", "upr")
-
 tbl_cases_doubling_time <- tbl_cases_count %>% 
   select(-brks) %>% 
-  left_join(rename(model_cnt_cases_linear_short[['doubling_time']] , all_of(attach_prefix(doubling_vars, 'l_cnt_')))) %>% 
-  left_join(rename(model_cml_cases_linear_short[['doubling_time']] , all_of(attach_prefix(doubling_vars, 'l_cml_'))))
+  left_join(model_cnt_cases_linear_short[['doubling_time']])
 
 write.csv(tbl_cases_doubling_time,
           file.path(path.local.worldwide.tables, paste0('tbl_cases_doubling_time', '_', week_report, '.csv')), 
@@ -1236,10 +1233,8 @@ write.csv(tbl_cases_doubling_time,
 ```{r}
 
 tbl_countries_doubling_time_cases <- tbl_cases_doubling_time %>% 
-  select(iso_a3 : cases, vars_doubling_time(model_for_doubling, 'cases')) %>% 
-  right_join(tbl_cases_increasing_trend %>% 
-               select(iso_a3)) %>% 
-  filter(between(cases_est, 0, threshold_doubling_time))
+  right_join(tbl_cases_increasing_trend %>% select(iso_a3)) %>% 
+  filter(between(est, 0, threshold_doubling_time))
 
 ```
 
@@ -1248,8 +1243,7 @@ tbl_countries_doubling_time_cases <- tbl_cases_doubling_time %>%
 
 tbl_deaths_doubling_time <- tbl_deaths_count %>% 
   select(iso_a3, continent, region, country, deaths) %>% 
-  left_join(rename(model_cnt_deaths_linear_short[['doubling_time']] , all_of(attach_prefix(doubling_vars, 'l_cnt_')))) %>% 
-  left_join(rename(model_cml_deaths_linear_short[['doubling_time']] , all_of(attach_prefix(doubling_vars, 'l_cml_'))))
+  left_join(model_cnt_deaths_linear_short[['doubling_time']])
 
 write.csv(tbl_deaths_doubling_time, 
           file.path(path.local.worldwide.tables, paste0('tbl_deaths_doubling_time', '_', week_report, '.csv')), 
@@ -1263,10 +1257,8 @@ write.csv(tbl_deaths_doubling_time,
 ```{r}
 # Categorise the doubling time
 tbl_countries_doubling_time_deaths <- tbl_deaths_doubling_time %>% 
-  select(iso_a3 : deaths, vars_doubling_time(model_for_doubling, 'deaths')) %>% 
-  right_join(tbl_deaths_increasing_trend %>% 
-               select(iso_a3)) %>% 
-  filter(between(deaths_est, 0, threshold_doubling_time))
+  right_join(tbl_deaths_increasing_trend %>% select(iso_a3)) %>% 
+  filter(between(est, 0, threshold_doubling_time))
 
 ```
 
@@ -1275,40 +1267,25 @@ tbl_countries_doubling_time_deaths <- tbl_deaths_doubling_time %>%
 
 tbl_doubling <- tbl_cases_doubling_time %>% 
   filter(!is.na(country)) %>% 
-  select(c(iso_a3 : cases), vars_doubling_time(model_for_doubling, 'cases')) %>% 
-  mutate(
-    cases_ci95 = case_when(
-      !is.na(cases_est) ~ combine_ci(cases_lwr, cases_upr), 
-      TRUE ~ NA_character_),
-    cases_est = round(cases_est, digits = 1), 
-    cases_lwr = NULL, 
-    cases_upr = NULL) %>% 
-  left_join(tbl_deaths_doubling_time %>% 
-  filter(!is.na(country)) %>% 
-  select(c(iso_a3, deaths), vars_doubling_time(model_for_doubling, 'deaths')) %>% 
-  mutate(
-    deaths_ci95 = case_when(
-      !is.na(deaths_est) ~ combine_ci(deaths_lwr, deaths_upr), 
-      TRUE ~ NA_character_),
-    deaths_est = round(deaths_est, digits = 1), 
-    deaths_lwr = NULL, 
-    deaths_upr = NULL)) %>% 
-  right_join(full_join(tbl_cases_increasing_trend %>% 
-                         select(iso_a3, trend_cases = trend), 
-                       tbl_deaths_increasing_trend %>% 
-                         select(iso_a3, trend_deaths = trend)))
+  rename(cases_est = est, cases_lwr = lwr, cases_upr = upr) %>% 
 
-tbl_cfr_doubling <- tbl_doubling %>%
+  full_join(tbl_deaths_doubling_time %>% 
+  filter(!is.na(country)) %>% 
+  rename(deaths_est = est, deaths_lwr = lwr, deaths_upr = upr)) %>% 
+  right_join(full_join(tbl_cases_increasing_trend %>% select(iso_a3, trend_cases = trend), 
+                       tbl_deaths_increasing_trend %>% select(iso_a3, trend_deaths = trend)))
+
+tbl_doubling_cfr <- tbl_doubling %>%
   mutate(
     cfr = round(deaths / cases * 100, digits = 1)) %>% 
-  select(c(iso_a3 : country), cases, deaths, cfr, cases_est, cases_ci95, deaths_est, deaths_ci95) 
+  select(c(iso_a3 : country), cases, deaths, cfr, cases_est, cases_lwr, cases_upr, deaths, deaths_est, deaths_lwr, deaths_upr, trend_cases, trend_deaths) 
 
 
-tbl_cfr_doubling_rank <- tbl_cfr_doubling %>% 
+tbl_doubling_cfr_rank <- tbl_doubling_cfr %>% 
   filter(between(cases_est, left = 0, right = threshold_doubling_time) | 
            between(deaths_est, left = 0, right = threshold_doubling_time)) %>% 
   arrange(cases_est)
-
+    
 ```
 
 
@@ -1456,11 +1433,30 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_doubling_deaths'
 ```{r}
 #  The tbl_cfr_doubling_rank is made above
 
-gtbl_cfr_doubling_rank <- tbl_cfr_doubling_rank %>% 
+gtbl_doubling_cfr_rank <- tbl_doubling_cfr_rank %>% 
   arrange(cases_est) %>% 
+  mutate(
+    cases_ci95 = case_when(
+      is.na(cases_est) | cases_est <= 0 ~ NA_character_, 
+      cases_est > 0 & cases_upr <= 0 ~ 'Non significant', 
+      TRUE ~ combine_ci(cases_lwr, cases_upr)),
+    cases_est = case_when(
+      cases_est <= 0 ~ NA_real_, 
+      TRUE ~ round(cases_est, digits = 1)), 
+    cases_lwr = NULL, 
+    cases_upr = NULL, 
+    deaths_ci95 = case_when(
+      is.na(deaths_est) | deaths_est <= 0 ~ NA_character_, 
+      deaths_est > 0 & deaths_upr <= 0 ~ 'Non significant', 
+      TRUE ~ combine_ci(deaths_lwr, deaths_upr)),
+    deaths_est = case_when(
+      deaths_est <= 0 ~ NA_real_, 
+      TRUE ~ round(deaths_est, digits = 1)), 
+    deaths_lwr = NULL, 
+    deaths_upr = NULL) %>% 
   gt(rowname_col = 'country', groupname_col = 'continent') %>% 
   cols_hide(
-    columns = vars(iso_a3, region)) %>% 
+    columns = vars(iso_a3, region, trend_cases, trend_deaths)) %>% 
   cols_label(
     country = 'Country', 
     cases = 'Cases', 
@@ -1496,13 +1492,21 @@ gtbl_cfr_doubling_rank <- tbl_cfr_doubling_rank %>%
     data_row.padding = px(2), 
     table_body.border.top.width = px(2))
 
-gtsave(gtbl_cfr_doubling_rank, 
+gtsave(gtbl_doubling_cfr_rank, 
        file.path(path.local.worldwide.tables, paste0('gtbl_cfr_doubling_rank', '_', week_report,'.html')), 
        inline_css = TRUE) %>% 
   invisible()
 
+gtsave(gtbl_doubling_cfr_rank %>% 
+         tab_options(
+           column_labels.font.size = px(10), 
+           table.font.size = px(10)),
+       file.path(path.local.worldwide.tables, paste0('gtbl_cfr_doubling_rank', '_', week_report, '.png')), 
+       vwidth = 720,
+       vheight = 720*1.414) %>% 
+  invisible()
 
-gtbl_cfr_doubling_rank
+gtbl_doubling_cfr_rank
 
 ```
 
@@ -1809,19 +1813,6 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('dots_rate_tests', '_', wee
 <!-- === === === === === === === === -->
 <!-- Graphs and table for EpiSitrep  -->
 <!-- === === === === === === === === -->
-
-<!-- Table Ranking doubling time -->
-```{r save_gtbl_rank_doubling, include = FALSE}
-gtsave(gtbl_cfr_doubling_rank %>% 
-         tab_options(
-           column_labels.font.size = px(10), 
-           table.font.size = px(10)),
-       file.path(path.local.worldwide.tables, paste0('gtbl_cfr_doubling_rank', '_', week_report, '.png')), 
-       vwidth = 720,
-       vheight = 720*1.414) %>% 
-  invisible()
-
-```
 
 <!-- Map world cases grid -->
 ```{r MapWorldCasesGrid, include = FALSE}
