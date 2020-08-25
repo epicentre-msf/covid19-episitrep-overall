@@ -1,5 +1,6 @@
 
 source(file.path(path.R, "setup.R")  , encoding = "UTF-8")
+
 # Upload functions
 source(file.path(path.R, 'utils_management.R'), encoding = 'UTF-8')
 source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
@@ -7,6 +8,7 @@ source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
 source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
 
 load(file.path(path.local.worldwide.data, glue('episitrep_worldwide_analyses_{week_report}.RData')))
+
 
 ts_coeff_single <- function(dta, series = "cases", time_unit_extent = 5, ma_window = 3, min_sum = 30){
   
@@ -61,11 +63,11 @@ ts_coeff_single <- function(dta, series = "cases", time_unit_extent = 5, ma_wind
   return(dta_coeff)
 }
 
-plot_coeff <- function(dta, name, series ="cases") {
+
+
+plot_coeff <- function(dta, name, series = "cases") {
   
   name_country <- name
-  
-  df_country <- dta
   
   quo_series <- sym(series)
   
@@ -73,10 +75,10 @@ plot_coeff <- function(dta, name, series ="cases") {
                         cases  = '#1A62A3',
                         deaths = '#e10000')
   
-  date_min <- min(df_country$date, na.rm = TRUE)
-  date_max <- max(df_country$date, na.rm = TRUE)
+  date_min <- min(dta$date, na.rm = TRUE)
+  date_max <- max(dta$date, na.rm = TRUE)
   
-  plot_crv <- ggplot(df_country, aes(x = date, y = !!quo_series)) + 
+  plot_crv <- ggplot(dta, aes(x = date, y = !!quo_series)) + 
     geom_col(colour = main_colour,  fill = main_colour) + 
     scale_y_continuous(labels = scales::label_number_si()) +
     xlim(c(date_min, date_max)) + 
@@ -85,7 +87,7 @@ plot_coeff <- function(dta, name, series ="cases") {
     labs(subtitle = glue('Number of {series} reported')) + 
     theme_light()
   
-  plot_cff <- ggplot(df_country, aes(x = date)) +
+  plot_cff <- ggplot(dta, aes(x = date)) +
     geom_hline(yintercept = 0, colour = "red", alpha = .6) +
     geom_line(aes(y = coeff), colour = '#1B9E77', size = 1) + 
     geom_ribbon(aes(ymin = lwr, ymax = upr), fill = '#1B9E77', alpha = 0.4) + 
@@ -96,15 +98,13 @@ plot_coeff <- function(dta, name, series ="cases") {
     labs(subtitle = 'Slope coefficient curve') + 
     theme_light()
   
-  grid_plot <- grid.arrange(rbind(ggplotGrob(plot_crv), ggplotGrob(plot_cff)), 
-                            top = textGrob(glue('Evolution of the slope cofficient in {name_country}'), 
-                                           gp = gpar(fontface = 'bold')))
-  
-  return(grid_plot)
+  grid.arrange(rbind(ggplotGrob(plot_crv), ggplotGrob(plot_cff)), 
+               top = textGrob(glue('Evolution of the slope cofficient in {name_country}'), 
+                              gp = gpar(fontface = 'bold')))
   
 }
 
-world_coeffs <- dfc_ecdc %>% 
+world_coeffs <- dta_ecdc_right_censored %>% 
   count(date, wt = cases, name = "cases") %>% 
   arrange(date) %>% 
   ts_coeff_single(series = "cases")
@@ -113,7 +113,7 @@ continent_coeffs <-
   c("Asia", "Africa", "Oceania", "Europe", "Americas") %>% 
   setNames(nm = .) %>% 
   purrr::map(~{
-    dfc_ecdc %>% 
+    dta_ecdc_right_censored %>% 
       filter(continent == .x) %>% 
       count(date, wt = cases, name = "cases") %>% 
       arrange(date) %>% 
@@ -132,9 +132,10 @@ all_plots <- plot_list %>%
   })
 
 
+
+## Save plots
 path_world_continent_growth_rates <- file.path(path.local.worldwide.graphs, 'world_continent_growth_rates')
 dir.create(path_world_continent_growth_rates, showWarnings = FALSE, recursive = TRUE) 
-
 
 plot_list %>% 
   purrr::walk(
@@ -143,4 +144,3 @@ plot_list %>%
       plot = all_plots[[.x]], scale = 1, dpi = 320, width = 10, height = 6
     )
   )
-

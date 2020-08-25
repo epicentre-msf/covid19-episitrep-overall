@@ -263,7 +263,7 @@ tbl_deaths_count_12d <- dta_ecdc_right_censored %>%
 
 
 <!-- Map World cases -->
-```{r MapWorldCasesCount, fig.cap = glue('Mapping of number of Covid-19 cases as of {format(max(dta_ecdc$date, na.rm = TRUE), "%d %B %Y")}')}
+```{r map-world-cases-count, fig.cap = glue('Mapping of number of Covid-19 cases as of {format(max(dta_ecdc$date, na.rm = TRUE), "%d %B %Y")}')}
 
 map_world_cases_count <- plot_map_world_count(tbl_cases_count, 'cases')
 
@@ -281,7 +281,7 @@ map_world_cases_count + labs(title = NULL)
 ## Cases trends
 
 <!-- TABLE - Trends in number of cases -->
-```{r TblCasesTrends, include = FALSE}
+```{r tbl-cases-trends, include = FALSE}
 
 coeff_vars <-  c("coeff", "lwr", "upr")
 
@@ -331,7 +331,7 @@ tbl_cases_trend %>%
 ```
 
 <!-- TABLE - Countries with increasing trend in number of cases -->
-```{r list_increasing_trends, include = FALSE}
+```{r list-increasing-trends, include = FALSE}
 
 tbl_cases_increasing_trend <- tbl_cases_trend %>% 
   select(c(iso_a3 : cases), all_of(vars_trends(model_for_trends))) %>% 
@@ -355,7 +355,7 @@ tbl_cases_increasing_trend <- tbl_cases_trend %>%
 
 
 <!-- Map cases counts and trends in the last 12 days -->
-```{r MapWorldCasesTrends,fig.width=8, fig.height=10, fig.cap = glue('Mapping of cases counts and trends during the period from {format(date_max_report - (period_trends - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} ({period_trends} days)')}
+```{r map-world-cases-trends,fig.width=8, fig.height=10, fig.cap = glue('Mapping of cases counts and trends during the period from {format(date_max_report - (period_trends - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} ({period_trends} days)')}
 
 map_world_cases_count_12d <- plot_map_world_count(tbl_cases_count_12d, 'cases') + 
   labs(title = 'Cases counts (12 days)')
@@ -411,7 +411,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_cases_count_tren
 
 
 <!-- Table cases trends -->
-```{r TblCountriesCasesIncreasing, layout="l-body-outset"}
+```{r tbl-countries-cases-increasing, layout="l-body-outset"}
 
 tbl_countries_increasing_cases <- tbl_cases_trend %>% 
   select(c(iso_a3 : cases), all_of(vars_trends(model_for_trends))) %>% 
@@ -532,7 +532,7 @@ gtbl_countries_increasing_cases %>%
 
 
 <!-- Map deaths count -->
-```{r MapWorldDeathsCount, fig.cap = glue('Mapping of number of Covid-19 associated deaths as of {format(date_max_report, "%d %b %Y")}')}
+```{r map-world-deaths-count, fig.cap = glue('Mapping of number of Covid-19 associated deaths as of {format(date_max_report, "%d %b %Y")}')}
 
 map_world_deaths_count <- plot_map_world_count(tbl_deaths_count, 'deaths')
 
@@ -586,7 +586,7 @@ write.csv(tbl_deaths_trend,
 ```
 
 <!-- TABLE - Countries with increasing trend in number of deaths -->
-```{r tbl_deaths_increasing_trend}
+```{r tbl-deaths-increasing-trend}
 
 tbl_deaths_increasing_trend <- tbl_deaths_trend %>% 
   select(c(iso_a3 : deaths), all_of(vars_trends(model_for_trends))) %>% 
@@ -609,7 +609,7 @@ tbl_deaths_increasing_trend <- tbl_deaths_trend %>%
 **Oceania:** (`r length(call_countries_increasing('deaths', 'Oceania'))`)`r glue(":  {call_countries_increasing('deaths', 'Oceania') %>% combine_words()}")`. 
 
 <!-- Map deaths counts and trends in the last 12 days -->
-```{r MapWorldDeathsTrends, fig.width=8, fig.height=10, fig.cap = glue('Mapping of Covid-19 associated deaths and trends during the period from {format(date_max_report - (period_trends - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} ({period_trends} days)')}
+```{r map-world-deaths-trends, fig.width=8, fig.height=10, fig.cap = glue('Mapping of Covid-19 associated deaths and trends during the period from {format(date_max_report - (period_trends - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} ({period_trends} days)')}
 
 map_world_deaths_count_12d <- plot_map_world_count(tbl_deaths_count_12d, 'deaths') + 
   labs(title = 'Deaths count (12 days)')
@@ -663,7 +663,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_deaths_count_tre
 
 
 <!-- Table deaths trends -->
-```{r TblCountriesDeathsIncreasing, layout="l-body-outset"}
+```{r tbl-countries-deaths-increasing, layout="l-body-outset"}
 
 tbl_countries_increasing_deaths <- tbl_deaths_trend %>% 
   select(c(iso_a3 : deaths), all_of(vars_trends(model_for_trends))) %>% 
@@ -772,7 +772,7 @@ gtbl_countries_increasing_deaths %>%
 ```
 
 <!-- BIG SUMMARY TABLE -->
-```{r TblSummaryCasesAndDeaths, include = FALSE}
+```{r tbl-summary-cases-and-deaths, include = FALSE}
 
 tbl_summary_cases_deaths <- df_countries %>% 
   left_join(tbl_cases_count %>% select(iso_a3, cases)) %>% 
@@ -898,7 +898,7 @@ if (Sys.info()[['effective_user']] == 'F-GRANDESSO') {
 # Cumulative incidences
 
 <!-- Map of cumulative incidences -->
-```{r TblCumulativeIncidences}
+```{r tbl-cumulative-incidences}
 
 # Specific breaks for incidence
 breaks_ar <- c(0, 10, 100, 1000, 10000, Inf)
@@ -918,7 +918,7 @@ The cumulative number of cases are mapped in Figure \@ref(fig:MapWorldCasesCumul
 
 ### Cumulative incidences of cases
 <!-- Map of cumulative incidences of cases -->
-```{r MapWorldCasesCumulativeIncidence, fig.cap = paste0('Cumulative incidence of Covid-19 reported cases since beginning of epidemic per 100,000 population, data until ', format(date_max_report, "%d %B %Y"))}
+```{r map-world-cases-cumulative-incidence, fig.cap = paste0('Cumulative incidence of Covid-19 reported cases since beginning of epidemic per 100,000 population, data until ', format(date_max_report, "%d %B %Y"))}
 
 sf_attack_rates <- tbl_attack_rates %>% 
   inner_join(
@@ -959,7 +959,7 @@ ggsave(file.path(path.local.worldwide.graphs, glue("map_world_cases_attack_rates
 ### Cumulative incidences of Covid associated deaths
 
 <!-- Map of cumulative incidences of deaths -->
-```{r MapWorldDeathsCumulativeIncidence, fig.cap = glue('Cumulative incidence of Covid-19 associated since beginning of epidemic, per 100,000 population, data until {format(date_max_report, "%d %B %Y")}')}
+```{r map-world-deaths-cumulative-incidence, fig.cap = glue('Cumulative incidence of Covid-19 associated since beginning of epidemic, per 100,000 population, data until {format(date_max_report, "%d %B %Y")}')}
 
 map_world_deaths_attack_rates <- ggplot(sf_attack_rates) + 
   geom_sf(aes(fill = deaths_brks), size = .1) + 
@@ -1215,7 +1215,7 @@ dotsgplot_inc_Europe
 # Doubling times
 
 <!-- Doubling in cases -->
-```{r estimate_doubling_cases}
+```{r estimate-doubling-cases}
 
 tbl_cases_doubling_time <- tbl_cases_count %>% 
   select(-brks) %>% 
@@ -1239,7 +1239,7 @@ tbl_countries_doubling_time_cases <- tbl_cases_doubling_time %>%
 ```
 
 <!-- Doubling in deaths -->
-```{r estimate_doubling_deaths}
+```{r estimate-doubling-deaths}
 
 tbl_deaths_doubling_time <- tbl_deaths_count %>% 
   select(iso_a3, continent, region, country, deaths) %>% 
@@ -1263,7 +1263,7 @@ tbl_countries_doubling_time_deaths <- tbl_deaths_doubling_time %>%
 ```
 
 <!-- Combine countries with doubling time in cases and in deaths -->
-```{r tbl_rank_doubling}
+```{r tbl-doubling-rank}
 
 tbl_doubling <- tbl_cases_doubling_time %>% 
   filter(!is.na(country)) %>% 
@@ -1305,14 +1305,14 @@ A sharp increasing of cases (doubling time of less than `r threshold_doubling_ti
 
 
 <!-- Map doubling cases -->
-```{r MapWorldCasesDoubling, fig.cap = glue('Doubling time of the number of Covid-19 cases estimated in the last 12 days (only countries with increasing trends are displayed)')}
+```{r map-world-cases-doubling, fig.cap = glue('Doubling time of the number of Covid-19 cases estimated in the last 12 days (only countries with increasing trends are displayed)')}
 
 breaks <- c(0, 4, 8, 12, Inf)
 labels <- label_breaks(breaks)
 
 # Categorise the doubling time
 df_doubling_cases <- tbl_cases_doubling_time %>% 
-  select(c(iso_a3:cases), doubling_time = 'l_cml_est') %>% 
+  select(c(iso_a3:est), doubling_time = 'est') %>% 
   left_join(tbl_cases_trend %>% 
               select(iso_a3, trend = trend_linear), 
             by = 'iso_a3') %>% 
@@ -1377,11 +1377,11 @@ A sharp increasing of deaths (doubling time of less than `r threshold_doubling_t
 **Oceania:** (`r length(call_countries_doubling('deaths_est', 'Oceania'))`)`r glue(": {call_countries_doubling('deaths_est', 'Oceania') %>% combine_words()}")`. 
 
 <!-- Map doubling deaths -->
-```{r MapWorldDeathsDoubling, fig.cap = paste0("Doubling time of the number of Covid-19 associated deaths estimated in the last ", threshold_doubling_time, " (only countries with increasing trends are displayed)")}
+```{r map-world-deaths-doubling, fig.cap = paste0("Doubling time of the number of Covid-19 associated deaths estimated in the last ", threshold_doubling_time, " (only countries with increasing trends are displayed)")}
 
 # Categorise the doubling time
 df_doubling_deaths <- tbl_deaths_doubling_time %>% 
-  select(c(iso_a3:deaths), doubling_time = 'l_cml_est') %>% 
+  select(c(iso_a3:deaths), doubling_time = 'est') %>% 
   left_join(tbl_deaths_trend %>% 
               select(iso_a3, trend = trend_linear), 
             by = 'iso_a3') %>% 
@@ -1513,7 +1513,7 @@ gtbl_doubling_cfr_rank
 
 ### Countries with critical doubling time of cases
 <!-- Dot plot doubling time over number of days with increasing trend -->
-```{r DotsHotspotCases, fig.cap = glue('Distribution of doubling time of Covid-19 cases according to length in days since the first significant increasing trend reported (only countries with doubling time of less than {threshold_doubling_time} days as of {format(date_max_report, "%d %B %Y")} are displayed)')}
+```{r dots-hotspot-cases, fig.cap = glue('Distribution of doubling time of Covid-19 cases according to length in days since the first significant increasing trend reported (only countries with doubling time of less than {threshold_doubling_time} days as of {format(date_max_report, "%d %B %Y")} are displayed)')}
 
 # Identify the date of a significant positive trend (We might need to sue cusum at one point)
 tbl_cases_date_pos_trend <- tibble(iso_a3 = as.character(), 
@@ -1547,7 +1547,7 @@ tbl_cases_date_pos_trend <- tbl_cases_date_pos_trend %>%
   )
 
 # The table
-tbl_hot_countries <- tbl_cfr_doubling %>% 
+tbl_hot_countries <- tbl_doubling_cfr %>% 
   left_join(tbl_cases_date_pos_trend) %>% 
   mutate(
     nb_days = as.numeric(date_max_report - date_lwr_pos)
@@ -1635,7 +1635,7 @@ tbl_tests_inc <- df_countries %>%
 ```
 
 <!-- Plot test proportion -->
-```{r DotsTestsProportion, fig.cap = 'Relation between the proportion of positive tests in the last 12 days and the cumulative number of cases reported'}
+```{r dots-tests-proportion, fig.cap = 'Relation between the proportion of positive tests in the last 12 days and the cumulative number of cases reported'}
 
 tbl_tests_inc_reliable <- tbl_tests_inc %>% 
   filter(reliable == 'Yes')
@@ -1732,7 +1732,7 @@ gtbl_no_tests
 
 
 <!-- Plot test ratio -->
-```{r DotsTestsRatio, fig.cap = glue('Relation between the number of tests carried out in the last 12 days (as ratio of the number of confirmed cases) and the cumulative number of cases reported')}
+```{r dots-tests-ratio, fig.cap = glue('Relation between the number of tests carried out in the last 12 days (as ratio of the number of confirmed cases) and the cumulative number of cases reported')}
 
 dots_ratio_tests <- ggplot(tbl_tests_inc, aes(tests_ratio, cases_inc_12d)) + 
   geom_point(aes(tests_ratio, cases_inc_12d, colour = continent)) + 
@@ -1770,7 +1770,7 @@ ggsave(file.path(path.local.worldwide.graphs, glue("dots_ratio_tests_{week_repor
 ```
 
 <!-- Plot test rate -->
-```{r DotsTestsRate, fig.cap = glue('Relation between the number of tests carried out in the last 12 days (as rate of the country population) and the cumulative number of cases reported')}
+```{r dots-tests-rate, fig.cap = glue('Relation between the number of tests carried out in the last 12 days (as rate of the country population) and the cumulative number of cases reported')}
 
 dots_rate_tests <- ggplot(tbl_tests_inc, aes(tests_rate, cases_inc_12d)) + 
   geom_point(aes(tests_rate, cases_inc_12d, colour = continent)) + 
@@ -1815,7 +1815,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('dots_rate_tests', '_', wee
 <!-- === === === === === === === === -->
 
 <!-- Map world cases grid -->
-```{r MapWorldCasesGrid, include = FALSE}
+```{r map-world-cases-grid, include = FALSE}
 
 map_world_cases_grid <- grid.arrange(map_world_cases_count + labs(caption = ''), 
                                      map_world_cases_trends, 
@@ -1829,7 +1829,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_cases_grid', '_'
 ```
 
 <!-- Map world deaths grid -->
-```{r MapWorldDeathsGrid, include = FALSE}
+```{r map-world-deaths-grid, include = FALSE}
 
 map_world_deaths_grid <- grid.arrange(map_world_deaths_count + labs(caption = ''), 
                                       map_world_deaths_trends, ncol = 2)
@@ -1842,7 +1842,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_deaths_grid', '_
 ```
 
 <!-- Map world doubling time grid -->
-```{r MapWorldDoublingGrid, include = FALSE}
+```{r map-world-doubling-grid, include = FALSE}
 
 map_world_doubling_grid <- grid.arrange(map_world_doubling_cases + labs(caption = ''), 
                                         map_world_doubling_deaths, ncol = 2)
@@ -1856,7 +1856,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_doubling_grid', 
 
 
 <!-- Save results -->
-```{r save_results, include = FALSE}
+```{r save-results, include = FALSE}
 
 rm(list = lsf.str())
 save.image(file.path(path.local.worldwide.data, paste0('episitrep_worldwide_analyses', '_', week_report, '.RData')))

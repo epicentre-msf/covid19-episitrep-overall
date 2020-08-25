@@ -1,15 +1,7 @@
 ---
 title: "How we estimated the trends and the doubling time in MSF EpiSitrep on Covid-19 epidemic" 
-date: "2020-04-28"
-author:
-  - name: "Francesco Grandesso"
-affiliation: Epicentre (MSF)
-output: 
-  distill::distill_article:
-    toc: TRUE
-    toc_depth: 2
-editor_options: 
-  chunk_output_type: console
+date: "20-08-2020"
+output: pdf_document
 ---
 
 
@@ -50,6 +42,9 @@ It is estimated in number of days (or fraction of day); the less the number of d
 
 The doubling time was estimated as follows. 
 
+
+## Until week 32-2020 (week ending on 9 August 2020)
+
 We first calculated the cumulative number of cases (or deaths) for each country. We then selected the last 12 days of the time-series of each country and modelled the slope of the natural logarithm of the cumulative cases (or cumulative deaths) using a linear regression.
 
 
@@ -63,3 +58,20 @@ The doubling time was finally calculated as the ratio of the natural logarithm o
 
 To ensure reliable estimates we calculated the doubling time only if the cumulative cases (or deaths) was higher than 50 at the first day of the 12 days window that was used in the model.
 
+
+## From week 33-2020 (week ending on 16 August 2020)
+
+We first calculated the cumulative number of cases (or deaths) for each country. We then selected the last 12 days of the time-series of each country and modelled the slope of the natural logarithm of the cases counts (or deaths counts) using a linear regression.
+
+
+> <center> **linear model = lm(ln(cases counts) ~ 12 days)** </center>
+
+The standard error of linear regression model was used to calculate the confidence intervals. 
+
+The doubling time was finally calculated as the ratio of the natural logarithm of 2 over the coefficient of the slope estimated by the model. 
+
+> <center> **doubling time = ln(2) / coeff(linear model)** </center>
+
+To ensure reliable estimates we calculated the doubling time only if the cumulative cases (or deaths) was higher than 50 at the first day of the 12 days window that was used in the model.
+
+The changes in the way we calculated the doubling time was due to the multiple epidemic waves that several countries are experiencing, so that the changes in the cumulative count do not represent the actual epidemic stage. 

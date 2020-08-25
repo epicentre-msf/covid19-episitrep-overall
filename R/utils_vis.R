@@ -107,14 +107,14 @@ call_countries_increasing <- function(obs, continent_name = NULL){
 
 
 
-call_countries_doubling <- function(est, continent_name = NULL, threshold = threshold_doubling_time){
+call_countries_doubling <- function(est, continent_name = NULL, tbl_dta = tbl_doubling_cfr_rank, threshold = threshold_doubling_time){
   
-  est <- sym(est)
+  est <- rlang::sym(est)
   
   if (!is.null(continent_name)) {
-    selected_tbl <- filter(tbl_cfr_doubling_rank, continent %in% continent_name)
+    selected_tbl <- filter(tbl_dta, continent %in% continent_name)
   } else {
-    selected_tbl <- tbl_cfr_doubling_rank
+    selected_tbl <- tbl_dta
   }
   
   selected_tbl <- filter(selected_tbl, !!est < threshold)

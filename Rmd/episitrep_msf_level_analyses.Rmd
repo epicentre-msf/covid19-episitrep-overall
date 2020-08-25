@@ -134,10 +134,6 @@ At the date the required data are not yet available. And this section will be up
 
 <!-- Some figure outputs to be used in the text --> 
 ```{r numbers, include = FALSE}
-```
-
-
-```{r numbers, include = FALSE}
 nb_msf_sites_linelist   <- length(unique(dta$site_name))                   # Nb of sites using the linelist
 nb_msf_sites_aggregated <- length(unique(dta_weekly_expanded$site_name))   # Nb of sites using aggregated data
 nb_msf_sites            <- nb_msf_sites_linelist + nb_msf_sites_aggregated # Sum of the two above
@@ -206,7 +202,7 @@ median_age_confirmed_died <- dta %>%
 Of all consultations/admissions patients were in relation with the COvid-19 infection: 
 
   - `r format(nb_msf_confirmed, big.mark = ',')` confirmed
-  - `r format(nb_msf_probable, big.mark = ',')` probable
+  - `r format(nb_msf_probable , big.mark = ',')` probable
   - `r format(nb_msf_suspected, big.mark = ',')` suspected
 
 
@@ -402,6 +398,18 @@ hist_epicurve_consult_admit_continent
 
 ```
 
+```{r}
+
+tbl_consultation_continent <- dta %>%
+  filter(merge_admit != "Unknown") %>% 
+  mutate(merge_admit = recode(merge_admit, "Yes" = "Admitted", "No" = "Not Admitted")) %>% 
+  count(continent, merge_admit) %>% 
+  pivot_wider(names_from = merge_admit, values_from = n) %>% 
+  adorn_totals(c('col', 'row')) %>% 
+  mutate(
+    admitted_percent = Admitted / Total* 100)
+
+```
 
 
 ### Summary tables of patients consulted/admitted to an MSF supported COvid-19 health facility 
@@ -792,6 +800,35 @@ gtbl_general %>%
 ```
 
 
+```{r}
+
+
+# les âges médian des hommes et des femmes parmi le total de patients, et parmi les cas confirmés
+
+tbl_age_sex_all <- dta %>% 
+  select(covid_status, age_in_years, age_5gp, sex) %>% 
+  drop_na() %>% 
+  group_by(sex) %>% 
+  summarise(
+    age_min_max = paste0(min(age_in_years, na.rm = TRUE), ' - ', max(age_in_years, na.rm = TRUE)), 
+    age_mean    = format(round(mean(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1), 
+    age_median  = format(round(median(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1))
+
+tbl_age_sex_confirmed_only <- dta %>% 
+  select(covid_status, age_in_years, age_5gp, sex) %>% 
+  filter(covid_status == 'Confirmed') %>% 
+  drop_na() %>% 
+  group_by(sex) %>% 
+  summarise(
+    age_min_max = paste0(min(age_in_years, na.rm = TRUE), ' - ', max(age_in_years, na.rm = TRUE)), 
+    age_mean    = format(round(mean(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1), 
+    age_median  = format(round(median(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1))
+
+```
+
+
+
+
 ### Age and sex distribution of patients consulted/admitted to MSf facilities by continent
 
 <!-- Age/sex pyramid by continent -->
@@ -810,7 +847,7 @@ pyramid_age_sex_all_continent <- ggplot(tbl_pyramid_continent, aes(x = age_9gp, 
   facet_wrap(~continent, ncol = 2, scales = "free_x") +
   geom_col() +
   geom_hline(yintercept = 0, colour = "black") +
-  #geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 4) +
+  geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 3.5) +
   coord_flip() +
   scale_fill_manual(name = NULL, values = c("#4E79A7FF", "#A0CBE8FF"), breaks = c("M", "F"), labels = c("Males", "Females")) +
   scale_y_continuous(label = abs, limits = pyramid_limits) + 
@@ -1135,7 +1172,7 @@ pyramid_age_sex_confirmed_continent <- ggplot(tbl_pyramid_confirmed_continent, a
   facet_wrap(~continent, ncol = 2, scales = "free_x") +
   geom_col() +
   geom_hline(yintercept = 0, colour = "black") +
-  #geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 4) +
+  geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 3.5) +
   coord_flip() +
   scale_fill_manual(name = NULL, values = c("#4E79A7FF", "#A0CBE8FF"), breaks = c("M", "F"), labels = c("Males", "Females")) +
   scale_y_continuous(label = abs, limits = pyramid_limits) + 
