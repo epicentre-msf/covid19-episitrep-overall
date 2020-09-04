@@ -90,8 +90,8 @@ call_countries_with <- function(dta, left = -Inf, right = Inf, series){
 call_countries_increasing <- function(obs, continent_name = NULL){
   
   selected_tbl <- switch(obs, 
-                         cases  = tbl_cases_increasing_trend, 
-                         deaths = tbl_deaths_increasing_trend)
+                         cases  = tbl_case_increasing_trend, 
+                         deaths = tbl_death_increasing_trend)
   
   if (!is.null(continent_name)) {
     selected_tbl <- filter(selected_tbl, continent %in% continent_name)
@@ -150,8 +150,8 @@ plot_map_world_count <- function(tbl_dta, series){
                          deaths = 'Covid-19 associated deaths')
   
   plot_title <- switch(series, 
-                       cases  = 'Cases count', 
-                       deaths = 'Deaths count')
+                       cases  = 'Cumulative Case count', 
+                       deaths = 'Cumulative Death count')
   
   plot_palette <- switch(series, 
                          cases  = 'Blues', 
@@ -196,8 +196,8 @@ plot_map_world_trend <- function(tbl_dta, series, model_for_trends = 'linear', p
   RdAmGn <- c('#D95F02', '#E6AB02', '#1B9E77') # Three-colours palette (Red-Amber-Green) colour-blind safe
   
   legend_title <- switch(series, 
-                         cases  = 'Trends of cases count', 
-                         deaths = 'Trends of deaths count')
+                         cases  = 'Trends of case count', 
+                         deaths = 'Trends of death count')
   
   plot_title <- switch(series, 
                        cases  = 'Trends in cases', 

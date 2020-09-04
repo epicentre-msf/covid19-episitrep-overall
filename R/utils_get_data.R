@@ -361,3 +361,120 @@ get_iso_for_tests <- function() {
     "ZWE",                          "Zimbabwe"
   )
 }
+
+
+
+#' Import MSF linelist dataset
+#' 
+#' @import
+get_msf_linelist <- function(path_local = path.local.msf.data, file_name = 'dta_MSF_linelist.RDS', path_remote = path.sharepoint.data, update_data = FALSE) {
+  
+  dta_path_local  <- file.path(path_local, file_name) 
+  dta_path_remote <- max(fs::dir_ls(path_remote, regexp = "[.]rds$"))
+  
+  if (!file.exists(dta_path_local) | update_data) {
+    
+    dta <- readRDS(dta_path_remote)
+    saveRDS(dta, file = dta_path_local)
+    
+  } else {
+    
+    dta <- readRDS(dta_path_local)
+    
+  }
+  
+  return(dta)
+}
+
+
+
+#' Import MSF aggregated dataset
+#' 
+#' @import
+get_msf_aggregated <- function(path_local = path.local.msf.data, file_name = 'dta_MSF_aggregated.RDS', path_remote = file.path(path.sharepoint, "coordination", "Surveillance focal points coordination", "Aggregated reporting", "Report_covid_aggregate_all_v2.xlsx"), vars_name = c("sheet", "oc", "country", "project", "date", "week", "suspected", "probable", "confirmed", "non_cases", "unknown"), update_data = FALSE) {
+  
+  library(purrr)
+  library(readxl)
+
+  dta_path_local <- file.path(path_local, file_name) 
+  
+  if (!file.exists(dta_path_local) | update_data) {
+    
+    dta <- excel_sheets(path_remote) %>% 
+      setdiff(., c('Feuil1','Sheet1')) %>% 
+      map_df(~{
+        oc      <- read_excel(path = path_remote, sheet = .x, range = "B1", col_names = FALSE) %>% pull()
+        country <- read_excel(path = path_remote, sheet = .x, range = "D1", col_names = FALSE) %>% pull()
+        project <- read_excel(path = path_remote, sheet = .x, range = "F1", col_names = FALSE) %>% pull()
+        
+        read_excel(path = path_remote, sheet = .x, skip = 5, col_names = FALSE) %>% 
+          mutate(sheet = .x, oc = oc, country = country, project = project)
+      }) %>% 
+      select(sheet, oc, country, project, 1:7) %>% 
+      set_names(vars_name)
+    
+    saveRDS(dta, file = dta_path_local)
+    
+  } else {
+      
+    dta <- readRDS(dta_path_local)
+      
+  }
+  
+  return(dta)
+  
+}
+
+
+
+# Get first and last activity dates by project
+#' 
+#' @import
+get_msf_aggregated_dates <- function(path_local = path.local.msf.data, file_name = 'dta_MSF_aggregated_dates.RDS', path_remote = file.path(path.sharepoint, "coordination", "Surveillance focal points coordination", "Aggregated reporting", "Report_covid_aggregate_all_v2.xlsx"), update_data = FALSE) {
+  
+  library(purrr)
+  library(readxl)
+  
+  dta_path_local <- file.path(path_local, file_name) 
+  
+  if (!file.exists(dta_path_local) | update_data) {
+    
+    dta <- excel_sheets(path_remote) %>% 
+      setdiff(., "Sheet1") %>% 
+      map_df(~{
+        
+        if (is_empty(read_excel(path = path_remote, sheet = .x, range = "I1", col_names = FALSE))) {
+          date_first <- NA
+        } else {
+          date_first <- read_excel(path = path_remote, sheet = .x, range = "I1", col_names = FALSE) %>% pull()
+          date_first <- lubridate::as_date(date_first)
+        }
+        
+        if (is_empty(read_excel(path = path_remote, sheet = .x, range = "K1", col_names = FALSE))) {
+          date_last  <- NA
+        } else {
+          date_last <- read_excel(path = path_remote, sheet = .x, range = "K1", col_names = FALSE) %>% pull()
+          date_last <- lubridate::as_date(date_last)
+        }
+        
+        tibble::tibble(sheet = .x, date_first = date_first, date_last = date_last)
+      })
+    
+    saveRDS(dta, file = dta_path_local)
+    
+  } else {
+    
+    dta <- readRDS(dta_path_local)
+    
+  }
+  
+  return(dta)
+  
+}
+
+  
+  
+ 
+
+
+

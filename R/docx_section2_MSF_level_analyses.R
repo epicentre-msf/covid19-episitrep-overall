@@ -15,7 +15,7 @@ my_doc <- add_end_section_continuous()
 ##  What we expect - Heading
 my_doc %<>% 
   body_add_fpar(style = 'Description', 
-                fpar(ftext('This section analyses data reported by MSF in the reporting system created by Epicentre and distributed to MSF projects. OCs are highly encouraged to send updated linelist exports on a weekly basis by Tuesdays nights to the following email address (EPI-COVID19-DATA@epicentre.msf.org) (please respect your OC guidelines by discussing with identified surveillance focal point).', 
+                fpar(ftext("This section analyses data reported by MSF in the reporting system created by Epicentre and distributed to MSF projects. OCs are highly encouraged to send updated linelist exports on a weekly basis by Tuesdays nights to the following email address (EPI-COVID19-DATA@epicentre.msf.org) (please respect your OC guidelines by discussing with identified surveillance focal point).", 
                            prop = calibri_8)))
 
 
@@ -51,7 +51,7 @@ my_doc <- add_end_section_continuous()
 my_doc <- add_par_normal(
   sprintf("As of %s, %s MSF project sites representing all 5 OCs and %s countries reported data, for a total of %s patients consulted and/or admitted, including %s confirmed. %s projects reported only aggregated data (included in Table 2 and Figure 6, but not in further analysis below nor in dashboard). The number of projects reporting continue to steadily progressing.", 
   format(date_max_report , "%d %B %Y"), 
-  words(nb_msf_sites), 
+  nb_msf_sites, 
   nb_msf_countries, 
   format(nb_msf_obs, big.mark   = ','), 
   format(nb_msf_confirmed, big.mark   = ','), 
@@ -108,7 +108,7 @@ my_doc <- add_par_normal(
 # 2
 my_doc <- add_par_normal(
   sprintf("Patients consulted/admitted to MSF facilities remain relatively young, with a median age of %s years (stable over the last weeks). Figure 8 shows the age pyramid of patients consulted/admitted to MSF facilities.", 
-          median(dta$age_in_years, na.rm = TRUE))) 
+          median(dta_linelist$age_in_years, na.rm = TRUE))) 
 
 
 # 3
@@ -201,7 +201,7 @@ my_doc <- add_end_section_continuous()
 # 1 - Age sex of confirmed
 my_doc <- add_par_normal(
   sprintf("Codiv-confirmed patients consulted/admitted to MSF facilities remain relatively young, with a median age of %s years (stable over the last weeks). Figure 8 shows the age pyramid of patients consulted/admitted to MSF facilities. Globally confirmed patients appear relatively young; in Africa the most represented age group among confirmed patients was 30-39 for males and 20-29 for females. The high number of probable cases in Asia renders the pyramid difficult to interpret for that continent.", 
-          dta %>% filter(covid_status == 'Confirmed') %>% pull(age_in_years) %>% median(., na.rm = TRUE))) 
+          median_age_confirmed)) 
 
 # 1 - Care
 my_doc <- add_par_normal(
