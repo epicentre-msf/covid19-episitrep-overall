@@ -196,7 +196,7 @@ get_iso_for_tests <- function() {
     "CPV",                        "Cape Verde",
     "CRI",                        "Costa Rica",
     "CUB",                              "Cuba",
-    "CUW",                           "CuraÁao",
+    "CUW",                           "Curaçao",
     "CYM",                    "Cayman Islands",
     "CYP",                            "Cyprus",
     "CZE",                    "Czech Republic",
