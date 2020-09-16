@@ -90,8 +90,8 @@ call_countries_with <- function(dta, left = -Inf, right = Inf, series){
 call_countries_increasing <- function(obs, continent_name = NULL){
   
   selected_tbl <- switch(obs, 
-                         cases  = tbl_cases_increasing_trend, 
-                         deaths = tbl_deaths_increasing_trend)
+                         cases  = tbl_case_increasing_trend, 
+                         deaths = tbl_death_increasing_trend)
   
   if (!is.null(continent_name)) {
     selected_tbl <- filter(selected_tbl, continent %in% continent_name)
@@ -107,14 +107,14 @@ call_countries_increasing <- function(obs, continent_name = NULL){
 
 
 
-call_countries_doubling <- function(est, continent_name = NULL, threshold = threshold_doubling_time){
+call_countries_doubling <- function(est, continent_name = NULL, tbl_dta = tbl_doubling_cfr_rank, threshold = threshold_doubling_time){
   
-  est <- sym(est)
+  est <- rlang::sym(est)
   
   if (!is.null(continent_name)) {
-    selected_tbl <- filter(tbl_cfr_doubling_rank, continent %in% continent_name)
+    selected_tbl <- filter(tbl_dta, continent %in% continent_name)
   } else {
-    selected_tbl <- tbl_cfr_doubling_rank
+    selected_tbl <- tbl_dta
   }
   
   selected_tbl <- filter(selected_tbl, !!est < threshold)
@@ -150,8 +150,8 @@ plot_map_world_count <- function(tbl_dta, series){
                          deaths = 'Covid-19 associated deaths')
   
   plot_title <- switch(series, 
-                       cases  = 'Cases count', 
-                       deaths = 'Deaths count')
+                       cases  = 'Cumulative Case count', 
+                       deaths = 'Cumulative Death count')
   
   plot_palette <- switch(series, 
                          cases  = 'Blues', 
@@ -196,8 +196,8 @@ plot_map_world_trend <- function(tbl_dta, series, model_for_trends = 'linear', p
   RdAmGn <- c('#D95F02', '#E6AB02', '#1B9E77') # Three-colours palette (Red-Amber-Green) colour-blind safe
   
   legend_title <- switch(series, 
-                         cases  = 'Trends of cases count', 
-                         deaths = 'Trends of deaths count')
+                         cases  = 'Trends of case count', 
+                         deaths = 'Trends of death count')
   
   plot_title <- switch(series, 
                        cases  = 'Trends in cases', 
@@ -405,13 +405,11 @@ country_four_plots <- function(country_iso, lst_dta = lst_ecdc, model = 'linear'
 
 
 # To plot both cases and deaths into a single graphic plot
-country_six_plots <- function(country_iso) {
-  
-  lst_dta <- lst_ecdc
+country_six_plots <- function(country_iso, lst_dta = lst_dta_ecdc, countries = df_countries) {
   
   # Parameters
   main_colour  <- c(cases = '#1A62A3', deaths = '#e10000')
-  name_country <- df_countries %>% filter(iso_a3 == country_iso) %>% pull(country)
+  name_country <- countries %>% filter(iso_a3 == country_iso) %>% pull(country)
   date_min     <- lst_dta[[country_iso]] %>% filter(cases != 0) %>% pull(date) %>% min()
   
   # Table observations
@@ -421,49 +419,50 @@ country_six_plots <- function(country_iso) {
   
   
   # Table predictions
-  mdl_cases_12d  <- model_cnt_cases_linear
-  mdl_cases_30d  <- model_cnt_cases_linear_30d
-  mdl_deaths_12d <- model_cnt_deaths_linear
-  mdl_deaths_30d <- model_cnt_deaths_linear_30d
+  mdl_cases_short  <- model_cnt_cases_linear_short
+  mdl_cases_long   <- model_cnt_cases_linear_long
+  mdl_deaths_short <- model_cnt_deaths_linear_short
+  mdl_deaths_long  <- model_cnt_deaths_linear_long
   
-  mld_par_12d <- mdl_cases_12d$par
-  dates_extent_12d <- c(mld_par_12d[[1]][1], mld_par_12d[[1]][2])
+  mld_par_short <- mdl_cases_short$par
+  dates_extent_short <- c(mld_par_short[[1]][1], mld_par_short[[1]][2])
   
-  mld_par_30d <- mdl_cases_30d$par
-  dates_extent_30d <- c(mld_par_30d[[1]][1], mld_par_30d[[1]][2])
+  mld_par_long <- mdl_cases_long$par
+  dates_extent_long <- c(mld_par_long[[1]][1], mld_par_long[[1]][2])
   
   
-  dta_cases_12d <- lst_dta[[country_iso]] %>% 
+  dta_cases_short <- lst_dta[[country_iso]] %>% 
     select(date, count = cases) %>% 
     mutate(
       obs = 'cases') %>% 
-    filter(between(date, dates_extent_12d[1], dates_extent_12d[2])) %>% 
-    tibble::add_column(mdl_cases_12d[['preds']][[country_iso]])
+    filter(between(date, dates_extent_short[1], dates_extent_short[2])) %>% 
+    tibble::add_column(mdl_cases_short[['preds']][[country_iso]])
   
-  dta_cases_30d <- lst_dta[[country_iso]] %>% 
+  dta_deaths_short <- lst_dta[[country_iso]] %>% 
+    select(date, count = deaths) %>% 
+    mutate(
+      obs = 'deaths') %>% 
+    filter(between(date, dates_extent_short[1], dates_extent_short[2])) %>% 
+    tibble::add_column(mdl_deaths_short[['preds']][[country_iso]]) 
+  
+  dta_mld_short <- rbind(dta_cases_short, dta_deaths_short)
+  
+  
+  dta_cases_long <- lst_dta[[country_iso]] %>% 
     select(date, count = cases) %>% 
     mutate(
       obs = 'cases') %>% 
-    filter(between(date, dates_extent_30d[1], dates_extent_30d[2])) %>% 
-    tibble::add_column(mdl_cases_30d[['preds']][[country_iso]])
+    filter(between(date, dates_extent_long[1], dates_extent_long[2])) %>% 
+    tibble::add_column(mdl_cases_long[['preds']][[country_iso]])
   
-  dta_deaths_12d <- lst_dta[[country_iso]] %>% 
+  dta_deaths_long <- lst_dta[[country_iso]] %>% 
     select(date, count = deaths) %>% 
     mutate(
       obs = 'deaths') %>% 
-    filter(between(date, dates_extent_12d[1], dates_extent_12d[2])) %>% 
-    tibble::add_column(mdl_deaths_12d[['preds']][[country_iso]]) 
+    filter(between(date, dates_extent_long[1], dates_extent_long[2])) %>% 
+    tibble::add_column(mdl_deaths_long[['preds']][[country_iso]]) 
   
-  dta_deaths_30d <- lst_dta[[country_iso]] %>% 
-    select(date, count = deaths) %>% 
-    mutate(
-      obs = 'deaths') %>% 
-    filter(between(date, dates_extent_30d[1], dates_extent_30d[2])) %>% 
-    tibble::add_column(mdl_deaths_30d[['preds']][[country_iso]]) 
-  
-  
-  dta_mld_12d <- rbind(dta_cases_12d, dta_deaths_12d)
-  dta_mld_30d <- rbind(dta_cases_30d, dta_deaths_30d)
+  dta_mld_long <- rbind(dta_cases_long, dta_deaths_long)
   
   
   # Plots
@@ -481,34 +480,34 @@ country_six_plots <- function(country_iso) {
           strip.text = element_text(size = 11))
   
   
-  plot_mdl_30d <- ggplot(dta_mld_30d, aes(x = date, y = count)) + 
+  plot_mdl_long <- ggplot(dta_mld_long, aes(x = date, y = count)) + 
     facet_wrap(~ obs, scales = "free_y", ncol = 1) + 
     geom_point(aes(colour = obs), size = 2) + 
     scale_colour_manual(values = main_colour) + 
     geom_ribbon(aes(ymin = lwr, ymax = upr, fill = obs), alpha = 0.4) + 
     geom_line(aes(y = fit, colour = obs), size = 1) + 
     scale_fill_manual(values = main_colour) + 
-    scale_x_date(limits = dates_extent_30d, date_labels = "%d-%b") +
+    scale_x_date(limits = dates_extent_long, date_labels = "%d-%b") +
     xlab('') + 
     ylab(paste0('frequency and fitted values')) + 
-    labs(subtitle = paste('Last', (dates_extent_30d[[2]] - dates_extent_30d[[1]] + 1), 'days')) + 
+    labs(subtitle = paste('Last', (dates_extent_long[[2]] - dates_extent_long[[1]] + 1), 'days')) + 
     theme_light() + 
     theme_light() + 
     theme(legend.position = "none", 
           strip.text = element_text(size = 11))
   
   
-  plot_mdl_12d <- ggplot(dta_mld_12d, aes(x = date, y = count)) + 
+  plot_mdl_short <- ggplot(dta_mld_short, aes(x = date, y = count)) + 
     facet_wrap(~ obs, scales = "free_y", ncol = 1) + 
     geom_point(aes(colour = obs), size = 2) + 
     scale_colour_manual(values = main_colour) + 
     geom_ribbon(aes(ymin = lwr, ymax = upr, fill = obs), alpha = 0.4) + 
     geom_line(aes(y = fit, colour = obs), size = 1) + 
     scale_fill_manual(values = main_colour) + 
-    scale_x_date(limits = dates_extent_12d, breaks = '4 days', date_labels = "%d-%b") +
+    scale_x_date(limits = dates_extent_short, breaks = '4 days', date_labels = "%d-%b") +
     xlab('') + 
     ylab(paste0('frequency and fitted values')) + 
-    labs(subtitle = paste('Last', (dates_extent_12d[[2]] - dates_extent_12d[[1]] + 1), 'days')) + 
+    labs(subtitle = paste('Last', (dates_extent_short[[2]] - dates_extent_short[[1]] + 1), 'days')) + 
     theme_light() + 
     theme_light() + 
     theme(legend.position = "none", 
@@ -517,8 +516,8 @@ country_six_plots <- function(country_iso) {
   
   
   ggarrange(plot_obs, 
-            plot_mdl_30d, 
-            plot_mdl_12d, 
+            plot_mdl_long, 
+            plot_mdl_short, 
             ncol = 3, 
             widths = c(2,1.4,1.1)) %>% 
     
@@ -538,7 +537,7 @@ country_plot_coeff <- function(series, country_iso) {
   
   name_country <- df_countries %>% filter(iso_a3 == country_iso) %>% pull(country)
   
-  df_country <- switch(series, 
+  lst_coeffs <- switch(series, 
                        cases  = lst_coeffs_cases[[country_iso]], 
                        deaths = lst_coeffs_deaths[[country_iso]])
   
@@ -548,10 +547,10 @@ country_plot_coeff <- function(series, country_iso) {
                         cases  = '#1A62A3',
                         deaths = '#e10000')
   
-  date_min <- min(df_country$date, na.rm = TRUE)
-  date_max <- max(df_country$date, na.rm = TRUE)
+  date_min <- min(lst_coeffs$date, na.rm = TRUE)
+  date_max <- max(lst_coeffs$date, na.rm = TRUE)
   
-  plot_crv <- ggplot(df_country, aes(x = date, y = !!quo_series)) + 
+  plot_crv <- ggplot(lst_coeffs, aes(x = date, y = !!quo_series)) + 
     geom_col(colour = main_colour,  fill = main_colour) + 
     xlim(c(date_min, date_max)) + 
     xlab('') + 
@@ -559,21 +558,18 @@ country_plot_coeff <- function(series, country_iso) {
     labs(subtitle = glue('Number of {series} reported')) + 
     theme_light()
   
-  plot_cff <- ggplot(df_country, aes(x = date)) +
+  plot_cff <- ggplot(lst_coeffs, aes(x = date)) +
     geom_line(aes(y = coeff), colour = '#1B9E77', size = 1) + 
     geom_ribbon(aes(ymin = lwr, ymax = upr), fill = '#1B9E77', alpha = 0.4) + 
     xlim(c(date_min, date_max)) + 
-    #scale_x_date(date_breaks = "4 weeks", date_labels = "%d %b") + 
     xlab(NULL) + 
     ylab('Slope coefficient') + 
     labs(subtitle = 'Slope coefficient curve') + 
     theme_light()
   
-  grid_plot <- grid.arrange(rbind(ggplotGrob(plot_crv), ggplotGrob(plot_cff)), 
-                               top = textGrob(glue('Evolution of the slope cofficient in {name_country}'), 
-                                              gp = gpar(fontface = 'bold')))
-  
-  return(grid_plot)
+  grid.arrange(rbind(ggplotGrob(plot_crv), ggplotGrob(plot_cff)), 
+               top = textGrob(glue('Evolution of the slope cofficient in {name_country}'), 
+                              gp = gpar(fontface = 'bold')))
   
 }
 

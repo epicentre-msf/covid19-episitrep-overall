@@ -24,24 +24,27 @@ my_doc <- add_end_section_continuous()
 # --- --- --- --- --- --- --- 
 # 1
 my_doc <- add_par_normal(
-  sprintf('As of %s, the total number of Covid-19 cases reported worldwide was %s, and the total Covid-19 associated deaths was %s.', 
-          format(max(df_ecdc$date), "%d %B %Y"), 
-          format(sum(df_ecdc$cases, na.rm = TRUE), big.mark = ","), 
-          format(sum(df_ecdc$deaths, na.rm = TRUE), big.mark = ",")))
+  sprintf("As of %s, %s Covid-19 cases and %s Covid-19 associated deaths were reported worldwide. The number of cases and deaths in the last %s days were %s and %s respectively.", 
+          format(max(dta_ecdc$date), "%d %B %Y"), 
+          format(sum(dta_ecdc$cases, na.rm = TRUE), big.mark = ","), 
+          format(sum(dta_ecdc$deaths, na.rm = TRUE), big.mark = ","), 
+          period_trend, 
+          n_cases_12d, 
+          n_deaths_12d))
 
 # 2
-my_doc <- add_par_normal(
-  sprintf('%s countries (%s) reported more than 100 thousand cases. The United States rached the 3 million cases threshold, and Brazil has crossed the 1.5 million mark. India is now third in number of cases reported with more than 700 thousand cases. %s African countries reported less than 50 cases (%s). %s reported more than 1,000 cases (%s) (Figure 1). The pandemic continues to accelerate with X.X million cases (XX%) and XXK deaths (XX%) of the total cases reportend in the last 12 days.', 
-          tbl_cases_count %>% call_countries_with(100000, Inf, "cases") %>% length() %>% Words(), 
-          tbl_cases_count %>% call_countries_with(100000, Inf, "cases") %>% combine_words(), 
-          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(0, 50, "cases") %>% length() %>% Words(), 
-          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(0, 50, "cases") %>% combine_words(), 
-          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(1000, Inf, "cases") %>% length() %>% Words(), 
-          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(1000, Inf, "cases") %>% combine_words()))
+#my_doc <- add_par_normal(
+#  sprintf('%s countries (%s) reported more than 100 thousand cases. The United States rached the 3 million cases threshold, and Brazil has crossed the 1.5 million mark. India is now third in number of cases reported with more than 700 thousand cases. %s African countries reported less than 50 cases (%s). %s reported more than 1,000 cases (%s) (Figure 1). The pandemic continues to accelerate with X.X million cases (XX%) and XXK deaths (XX%) of the total cases reportend in the last 12 days.', 
+#          tbl_cases_count %>% call_countries_with(100000, Inf, "cases") %>% length() %>% Words(), 
+#          tbl_cases_count %>% call_countries_with(100000, Inf, "cases") %>% combine_words(), 
+#          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(0, 50, "cases") %>% length() %>% Words(), 
+#          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(0, 50, "cases") %>% combine_words(), 
+#          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(1000, Inf, "cases") %>% length() %>% Words(), 
+#          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(1000, Inf, "cases") %>% combine_words()))
 
 # 3
 my_doc <- add_par_normal(
-  sprintf('Most of countries worldwide have been reporting new cases with an increasing or stable trend. %s countries reported an increasing trend this week (compared to XX last week) (Figure 1). Trends calculated on the last 30 days are also available in the full worldwide analysis report.', 
+  sprintf('%s countries reported an increasing trend (compared to XX last/two week) (Figure 1). Trends calculated on the last 30 days are also available in the full worldwide analysis report.', 
   call_countries_increasing('cases') %>% length() %>% Words()))
 
 # 4
@@ -57,23 +60,23 @@ my_doc <- add_end_section_2columns()
 
 ## - Map Cases count and trend
 my_doc <- add_figure_map_world_grid(
-  object_name  = glue('map_world_cases_count_trend_grid_{week_report}.png'),
-  figure_title = glue('Mapping of number of Covid-19 cases and cases trends estimated during the period from {format(date_max_report - 11, "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} (12 days)'))
+  object_name  = paste0('map_world_cases_count_trend_grid', '_', week_report, '.png'),
+  figure_title = glue("Number of Covid-19 cases and cases trends estimated during the period from {format(date_max_report - period_trend - 1, '%d %B %Y')} to {format(date_max_report, '%d %B %Y')} ({period_trend} days)"))
 
 my_doc <- add_end_section_continuous()
 
 # 5 - Incidence
 my_doc <- add_par_normal(
-  sprintf('Since the beginning of the epidemic, countries presenting the highest cumulative incidences are in North and South America, Europe, and Middle East. In Africa roughly half of the countries remain below the threshold of 10 reported cases per 100,000 population, while the other half is below the threshold of 100 reported cases per 100,000 population, with the exception of Mauritania, Gabon and South Africa (Figure 2).'))
+  sprintf("Since the beginning of the epidemic, countries presenting the highest cumulative incidences are in North and South America, Europe, and Middle East. In Africa roughly half of the countries remain below the threshold of 10 reported cases per 100,000 population, while the other half is below the threshold of 100 reported cases per 100,000 population, with the exception of Mauritania, Gabon and South Africa (Figure 2)."))
 
 # 6
 my_doc <- add_par_normal(
-  sprintf('Since last week, NAME OF THE COUNTRIES reached the threshold of 10 confirmed cases per 100,000 population. Some others, including NAME OF THE COUNTRIES, are now over 100 confirmed cases per 100,000 population.'))
+  sprintf("Since last week, NAME OF THE COUNTRIES reached the threshold of 10 confirmed cases per 100,000 population. Some others, including NAME OF THE COUNTRIES, are now over 100 confirmed cases per 100,000 population."))
 
 ## - Map Case Incidence
 my_doc <- add_figure_map_world(
   object_name  = glue("map_world_cases_attack_rates_{week_report}.png"), 
-  figure_title = glue('Cumulative incidence of Covid-19 reported cases since beginning of epidemic, per 100,000 population'))
+  figure_title = glue("Cumulative incidence of Covid-19 reported cases since beginning of epidemic, per 100,000 population"))
 
 
 my_doc <- add_end_section_2columns(widths = c(7 * cm_to_in, 10 * cm_to_in))
@@ -154,7 +157,7 @@ my_doc <- add_end_section_2columns()
 ## - Map
 my_doc <- add_figure_map_world_grid(
   object_name  = glue('map_world_doubling_grid_{week_report}.png'),
-  figure_title = glue('Doubling time of the number of Covid-19 cases and associated deaths estimated in the last 12 days (only countries with increasing trends are displayed)'),
+  figure_title = glue("Doubling time of cases and associated deaths estimated in the last {period_trend} days (only countries with increasing trends are displayed)"),
   width = 18.11, 
   height = 7.77)
 
@@ -163,7 +166,7 @@ my_doc <- add_par_normal('')
 ## - Table
 my_doc <- add_table(
   object_name = glue("gtbl_cfr_doubling_rank_{week_report}.png"), 
-  table_title = glue('Countries with estimated cases or deaths doubling time of less than {threshold_doubling_time} days'), 
+  table_title = glue("Countries with estimated doubling time of cases or deaths of less than {threshold_doubling_time} days"), 
   folder = "worldwide", 
   width = 13.55 * cm_to_in, 
   height = 5.01 * cm_to_in)

@@ -97,8 +97,8 @@ vars_doubling_time <- function(model, series){
   stub_vars <- c('est', 'lwr', 'upr')
   
   lst_vars <- switch(model, 
-                     linear       = paste0('l_cml_', stub_vars), 
-                     quasipoisson = paste0('p_cml_', stub_vars))
+                     linear       = paste0('l_cnt_', stub_vars), 
+                     quasipoisson = paste0('p_cnt_', stub_vars))
   
   names(lst_vars) <- switch(series, 
                      cases  = paste0('cases_' , stub_vars), 
@@ -212,10 +212,10 @@ prepare_msf_dta <- function(dta){
   
   # Create age-groups
   age_breaks_5 <- c(0, 5, 15, 45, 65, Inf)
-  age_labels_5 <- label_breaks(age_breaks_5)
+  age_labels_5 <- label_breaks(age_breaks_5, exclusive = TRUE)
   
   age_breaks_9 <- c(seq(0, 80, 10), Inf)
-  age_labels_9 <- label_breaks(age_breaks_9)
+  age_labels_9 <- label_breaks(age_breaks_9, exclusive = TRUE)
   
   dta <- dta %>% 
     mutate(

@@ -17,10 +17,10 @@ get_geo_data(path.data)
 # === === === === === === === === 
 # Run analysis
 # === === === === === === === === 
-run_analyes_worldwide <- TRUE
+update_analyes_worldwide <- TRUE
 
 
-if (run_analyes_worldwide) {
+if (update_analyes_worldwide) {
   rmarkdown::render(input = file.path(path.Rmd, 'episitrep_worldwide_analyses.Rmd'), 
                     output_file = paste0(week_report, '_', 'episitrep_worldwide_analyses', '.html'), 
                     output_dir  = path.local.week) 
@@ -30,9 +30,9 @@ if (run_analyes_worldwide) {
 
 
 
-run_analyes_msf_level <- TRUE
+update_analyes_msf_level <- TRUE
 
-if (run_analyes_msf_level) {
+if (update_analyes_msf_level) {
   rmarkdown::render(input = file.path(path.Rmd, 'episitrep_msf_level_analyses.Rmd'), 
                     output_file = paste0(week_report, '_', 'episitrep_msf_level_analysis', '.html'),
                     output_dir  = path.local.week)
@@ -43,7 +43,7 @@ if (run_analyes_msf_level) {
 
 
 # === === === === === === === ===  
-# Edit EpiSitrep docx
+# Edit docx file
 # === === === === === === === === 
 
 my_doc <- read_docx(file.path(path.templates, 'template_EpiSitrep_world_Covid-19.docx'))
