@@ -60,7 +60,7 @@ my_doc <- add_end_section_2columns()
 
 ## - Map Cases count and trend
 my_doc <- add_figure_map_world_grid(
-  object_name  = paste0('map_world_cases_count_trend_grid', '_', week_report, '.png'),
+  object_name  = paste0('map_world_case_count_trend_grid', '_', week_report, '.png'),
   figure_title = glue("Number of Covid-19 cases and cases trends estimated during the period from {format(date_max_report - period_trend - 1, '%d %B %Y')} to {format(date_max_report, '%d %B %Y')} ({period_trend} days)"))
 
 my_doc <- add_end_section_continuous()
@@ -75,7 +75,7 @@ my_doc <- add_par_normal(
 
 ## - Map Case Incidence
 my_doc <- add_figure_map_world(
-  object_name  = glue("map_world_cases_attack_rates_{week_report}.png"), 
+  object_name  = glue("map_world_case_attack_rates_{week_report}.png"), 
   figure_title = glue("Cumulative incidence of Covid-19 reported cases since beginning of epidemic, per 100,000 population"))
 
 
@@ -117,7 +117,7 @@ my_doc <- add_end_section_2columns()
 
 ## - Map
 my_doc <- add_figure_map_world_grid(
-  object_name  = glue('map_world_deaths_count_trend_grid_{week_report}.png'), 
+  object_name  = glue('map_world_death_count_trend_grid_{week_report}.png'), 
   figure_title = glue('Mapping of number of Covid-19 associated deaths and deaths trends estimated during the period from {format(date_max_report - 11, "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} (12 days)'))
 
 

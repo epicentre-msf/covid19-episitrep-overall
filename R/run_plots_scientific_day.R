@@ -4,6 +4,7 @@
 ## Plots for Scientific day
 ## === === === === === === === === 
 
+# ---- Setup ----
 
 source(here::here('R', 'setup.r'), encoding = 'UTF-8')
 
@@ -20,13 +21,7 @@ path.sharepoint.scientific.day.2020 <- file.path(path.sharepoint, 'template', 's
 
 
 
-## --- --- --- --- --- --- --- --- --- --- --- --- --- ---
-## ---- GRID Epidemic curve and growth rates by continent 
-## --- --- --- --- --- --- --- --- --- --- --- --- --- ---
-
-
-load(file.path(path.local.worldwide.data, glue('episitrep_worldwide_analyses_{week_report}.RData')))
-
+## NEw function
 
 ts_coeff_single <- function(dta, series = "cases", time_unit_extent = 5, ma_window = 3, min_sum = 30){
   
@@ -82,12 +77,21 @@ ts_coeff_single <- function(dta, series = "cases", time_unit_extent = 5, ma_wind
 }
 
 
-## Plot 1 - Epidemic curve with continents
 
-continent_ordered <- c("Asia", "Europe", "Americas", "Africa", "Oceania")
+
+# ---- World analysis ----
+
+## ---- Upload data ----
+
+load(file.path(path.local.worldwide.data, glue('episitrep_worldwide_analyses_{week_report}.RData')))
+
+levels_continents_ordered <- c("Asia", "Europe", "Americas", "Africa", "Oceania")
+
+
+## ---- Epidemic curve by continent ----
 
 hist_epi_curve_world <- dta_ecdc_right_censored %>% 
-  mutate(continent = factor(continent, levels =  continent_ordered)) %>% 
+  mutate(continent = factor(continent, levels =  levels_continents_ordered)) %>% 
   ggplot(aes(x = date, y = cases, fill = continent)) + 
   geom_col() + 
   scale_x_date(date_breaks = "1 month", date_labels = "%b") + 
@@ -97,63 +101,10 @@ hist_epi_curve_world <- dta_ecdc_right_censored %>%
   theme(legend.position = "top", legend.title = element_blank())
 
 
-## Plot 2 - Growth rate as multi-facet by continents
-
-### Calculate growth rate by continent
-
-growth_rate_world <- dta_ecdc_right_censored %>% 
-  count(date, wt = cases, name = "cases") %>% 
-  arrange(date) %>% 
-  ts_coeff_single(series = "cases", time_unit_extent = 12, ma_window = 7) %>% 
-  mutate(
-    gr  = exp(coeff), 
-    lwr = exp(lwr), 
-    upr = exp(upr)) %>% 
-  select(date, cases, gr, lwr, upr)
-
-growth_rate_continent <- continent_ordered %>% 
-  setNames(nm = .) %>% 
-  purrr::map(~{
-    dta_ecdc_right_censored %>% 
-      filter(continent == .x) %>% 
-      count(date, wt = cases, name = "cases") %>% 
-      arrange(date) %>% 
-      ts_coeff_single(series = "cases", time_unit_extent = 12, ma_window = 7) %>% 
-      mutate(
-        gr  = exp(coeff), 
-        lwr = exp(lwr), 
-        upr = exp(upr)) %>% 
-      select(date, cases, gr, lwr, upr)
-  })
-
-growth_rate_all <- c(list("World" = growth_rate_world), growth_rate_continent)
-
-df_growth_rate_all <- growth_rate_all %>% 
-  bind_rows(.id = "geo_unit") %>% 
-  mutate(geo_unit = factor(geo_unit, levels = c('World', continent_ordered)))
-
-
-lines_growth_rate <- ggplot(df_growth_rate_all, aes(x = date)) + 
-  facet_wrap(~geo_unit, ncol = 3, dir = 'h') + 
-  geom_hline(yintercept = 1, colour = "red", alpha = .6) +
-  geom_line(aes(y = gr), colour = '#1B9E77', size = 0.75) + 
-  geom_ribbon(aes(ymin = lwr, ymax = upr), fill = '#1B9E77', alpha = 0.4) + 
-  scale_x_date(date_breaks = "1 month", date_labels = "%b") + 
-  scale_y_continuous(labels = function(x) paste0(round((x - 1) * 100, 1), "%")) + # Transform the rate in percentage increase
-  labs(x = NULL, y = 'Growth rate') + 
-  theme_light()
-
-graph_epicurve_trends_by_continent <- hist_epi_curve_world + 
-  lines_growth_rate + 
-  plot_layout(ncol = 1)
-
-
 hist_epi_curve_world
-lines_growth_rate
-graph_epicurve_trends_by_continent
 
 
-ggsave(file.path(path.sharepoint.scientific.day.2020, glue("graph_epicurve_trends_by_continent_{week_report}.png")), 
+ggsave(file.path(path.sharepoint.scientific.day.2020, paste0('hist_epi_curve_world', '_', week_report, '.png')), 
        plot = graph_epicurve_trends_by_continent, 
        scale = 1, 
        dpi = 720, 
@@ -161,128 +112,87 @@ ggsave(file.path(path.sharepoint.scientific.day.2020, glue("graph_epicurve_trend
        height = 9)
 
 
-ggsave(file.path(path.sharepoint.scientific.day.2020, paste0('lines_growth_rate', '_', week_report,'.png')), 
-       plot = lines_growth_rate, 
-       scale = 0.8, 
-       dpi = 720, 
-       width = 10, 
+
+
+## ---- FACET epidemic curve by continent ----
+
+hist_epicurve_continent <- dta_ecdc_right_censored %>% 
+  transform(continent = factor(continent, levels = levels_continents_ordered)) %>% 
+  ggplot(aes(x = date, y = cases, fill = continent)) + 
+  facet_wrap(vars(continent), nrow = 1) + 
+  geom_col(width = 1) + 
+  scale_x_date(date_breaks = "3 month", date_labels = "%b") + 
+  scale_y_continuous(labels = scales::label_number_si()) +
+  labs(x = NULL, y = "Case count") + 
+  theme_light() + 
+  theme(legend.position = "none", 
+        axis.text.x = element_blank(), 
+        strip.text = element_text(size = 11), 
+        strip.background = element_rect(fill = "#969696"))
+
+hist_epicurve_continent
+
+ggsave(file.path(path.sharepoint.scientific.day.2020, paste0('hist_epicurve_continent', '_', week_report, '.png')), 
+       plot = hist_epicurve_continent, 
+       scale = 0.3, 
+       dpi = 1200, 
+       width = 19, 
        height = 6)
 
 
 
+## ---- FACET growth rate by continent ----
 
-## --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
-## ---- FACET epcurve by continent
-## --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
-
-hist_epicurve_by_continent <- dta_ecdc_right_censored %>% 
-  mutate(continent = factor(continent, levels = continent_ordered)) %>% 
-  ggplot(aes(x = date, y = cases, fill = continent)) + 
-  facet_wrap(vars(continent)) + 
-  geom_col() + 
-  scale_x_date(date_breaks = "1 month", date_labels = "%b") + 
-  scale_y_continuous(labels = scales::label_number_si()) +
-  labs(x = NULL, y = "Number of Cases") + 
-  theme_light() + 
-  theme(legend.position = "none")
-
-hist_epicurve_by_continent
-
-ggsave(file.path(path.sharepoint.scientific.day.2020, paste0('hist_epicurve_by_continent', '_', week_report, '.png')), 
-       plot = hist_epicurve_by_continent, 
-       scale = 0.7, 
-       dpi = 720, 
-       width = 15, 
-       height = 9)
-
-
-
-dta_ecdc_count_continents <- dta_ecdc_right_censored %>% 
-  select(geo_unit = continent, date, cases, deaths)
-
-dta_ecdc_count_world <- dta_ecdc_right_censored %>% 
-  group_by(date) %>% 
-  summarise(
-    cases = sum(cases, na.rm = TRUE), 
-    deaths = sum(cases, na.rm = TRUE)) %>% 
-  mutate(
-    geo_unit = "World")
-
-
-dta_ecdc_count_continents_plus_world <- dta_ecdc_count_continents %>% 
-   add_row(dta_ecdc_count_world)
-
-
-hist_epicurve_world <- dta_ecdc_count_continents_plus_world %>% 
-  mutate(continent = factor(geo_unit, levels = c('World', continent_ordered))) %>% 
-  ggplot(aes(x = date, y = cases, fill = geo_unit)) + 
-  facet_wrap(vars(geo_unit)) + 
-  geom_col() + 
-  scale_x_date(date_breaks = "1 month", date_labels = "%b") + 
-  scale_y_continuous(labels = scales::label_number_si()) +
-  labs(x = NULL, y = "Number of Cases") + 
-  theme_light() + 
-  theme(legend.position = "none")
-
-hist_epicurve_world
-
-ggsave(file.path(path.sharepoint.scientific.day.2020, paste0('hist_epicurve_world', '_', week_report, '.png')), 
-       plot = hist_epicurve_world, 
-       scale = 0.7, 
-       dpi = 720, 
-       width = 15, 
-       height = 9)
-
-
-
-
-hist_epicurve_by_continent <- dta_ecdc_right_censored %>% 
-  mutate(continent = factor(continent, levels = continent_ordered)) %>% 
-  ggplot(aes(x = date, y = cases, fill = continent)) + 
-  facet_wrap(vars(continent), nrow = 1) + 
-  geom_col() + 
-  scale_x_date(date_breaks = "1 month", date_labels = "%b") + 
-  scale_y_continuous(labels = scales::label_number_si()) +
-  labs(x = NULL, y = "Number of Cases") + 
-  theme_light() + 
-  theme(legend.position = "none")
-
-df_growth_rate_continent <- growth_rate_continent %>% 
+tbl_growth_rate_continent <- growth_rate_continent %>% 
   bind_rows(.id = "continent") %>% 
-  mutate(continent = factor(continent, levels = continent_ordered))
+  transform(continent = factor(continent, levels = levels_continents_ordered))
 
-lines_growth_rate_continent <- ggplot(df_growth_rate_continent, aes(x = date)) + 
+lines_growth_rate_continent <- ggplot(tbl_growth_rate_continent, aes(x = date)) + 
   facet_wrap(vars(continent), nrow = 1) + 
   geom_hline(yintercept = 1, colour = "red", alpha = .6) +
-  geom_line(aes(y = gr), colour = '#1B9E77', size = 0.75) + 
+  geom_line(aes(y = gr, colour = continent), size = 0.75) + 
   geom_ribbon(aes(ymin = lwr, ymax = upr), fill = '#1B9E77', alpha = 0.4) + 
-  scale_x_date(date_breaks = "1 month", date_labels = "%b") + 
+  scale_x_date(date_breaks = "3 month", date_labels = "%b") + 
   scale_y_continuous(labels = function(x) paste0(round((x - 1) * 100, 1), "%")) + # Transform the rate in percentage increase
   labs(x = NULL, y = 'Growth rate') + 
-  theme_light()
+  theme_light() + 
+  theme(legend.position = "none", 
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
 
-graph_epicurves_trends_continent <- hist_epicurve_by_continent + 
+lines_growth_rate_continent
+
+ggsave(file.path(path.sharepoint.scientific.day.2020, paste0('lines_growth_rate_continent', '_', week_report, '.png')), 
+       plot = lines_growth_rate_continent, 
+       scale = 0.3, 
+       dpi = 1200, 
+       width = 19, 
+       height = 5)
+
+
+graph_epicurves_trends_continent <- hist_epicurve_continent + 
   lines_growth_rate_continent +
   plot_layout(ncol = 1)
 
 ggsave(file.path(path.sharepoint.scientific.day.2020, paste0('graph_epicurves_trends_continent', '_', week_report, '.png')), 
        plot = graph_epicurves_trends_continent, 
-       scale = 0.7, 
-       dpi = 720, 
-       width = 21, 
-       height = 7)
+       scale = 0.3, 
+       dpi = 1200, 
+       width = 25, 
+       height = 9)
 
-# === === === === ===
 
+
+## ---- Map cumulative incidence ----
 
 ## breaks for cumulative incidence %
-breaks_ar <- c(0, 0.01, 0.1, 1, 10, Inf)
-labels_ar <- c("0 - 0.01%", "0.01 - 0.1%", "0.1 - 1%", "1 - 10%", "10%+")  
+breaks_ar <- c(0, 0.01, 0.1, 1, Inf)
+labels_ar <- c("0 - 0.01%", "0.01 - 0.1%", "0.1 - 1%", "1%+")  
 
 
 tbl_attack_rates <- df_countries %>% 
-  left_join(tbl_cases_count %>% select(iso_a3, cases)) %>% 
-  left_join(tbl_deaths_count %>% select(iso_a3, deaths)) %>% 
+  left_join(tbl_case_count %>% select(iso_a3, cases)) %>% 
+  left_join(tbl_death_count %>% select(iso_a3, deaths)) %>% 
   left_join(df_pop_country %>% select(iso_a3, pop)) %>% 
   mutate(
     cases_ar  = cases  / pop * 100, 
@@ -306,7 +216,7 @@ map_world_cases_attack_rates <- ggplot(sf_attack_rates) +
     drop = FALSE, 
     guide = guide_legend(
       keyheight = unit(3, units = "mm"),
-      keywidth = unit(70 / length(labels_ar), units = "mm"),
+      keywidth = unit(80 / length(labels_ar), units = "mm"),
       title.hjust = 0.5,
       nrow = 1,
       label.position = "bottom",
@@ -321,24 +231,97 @@ ggsave(file.path(path.sharepoint.scientific.day.2020, paste0('map_world_cases_at
        plot = map_world_cases_attack_rates, 
        width = 10 * cm_to_in, 
        height = 6.66 * cm_to_in, 
-       scale = 1.5, 
-       dpi = 720)
+       scale = 1, 
+       dpi = 1200)
 
 
-## --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
-## ---- FACET Weekly number of consultation versus admission by continent 
-## --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+
+## ---- DOTS cumulative incidences versus predictions ----
+
+
+dta_survey_estimates <- read.csv(file.path(path.sharepoint.scientific.day.2020, 'figure_3_values.csv'), sep = ";")
+lst_survey_pop <- readRDS(file.path(path.sharepoint.scientific.day.2020, 'poplist.RDS'))
+
+dta_survey_pop <- tibble(country = character(), 
+                  pop = numeric())
+
+for (c in names(lst_survey_pop)) {
+  
+  dta_survey_pop <- dta_survey_pop %>% 
+    add_row(country = c, 
+            pop = sum(lst_survey_pop[[c]][,c(2:3)], na.rm = TRUE))
+}
+
+
+tbl_case_count_may2020 <- dta_ecdc %>% 
+  filter(date <= as.Date("2020-05-30")) %>% 
+  group_by(continent, country) %>% 
+  summarise(
+    cases = sum(cases, na.rm = TRUE)) %>% 
+  mutate(
+    country = case_when(
+      country == 'United States' ~ 'United States of America', 
+      country == 'Czechia' ~ 'Czech Republic', 
+    TRUE ~ country))
+
+
+tbl_inc_obs_prd <- left_join(dta_survey_estimates, dta_survey_pop) %>% 
+  left_join(tbl_case_count_may2020) %>% 
+  drop_na() %>% 
+  mutate(
+    inc_obs = cases / pop * 100, 
+    inc_prd = mean * 100) %>% 
+  filter(inc_obs > 0.05)
+
+
+ablines <- tibble(abline_name = c('Ratio 1:1', 'Ratio 1:10'), 
+                  simple_intercept = c(0, 0), 
+                  simple_slope = c(1, 10))
+
+dots_inc_obs_prd <- ggplot(tbl_inc_obs_prd) + 
+  geom_point(aes(inc_obs, inc_prd, col = continent)) + 
+  ggrepel::geom_text_repel(aes(inc_obs, inc_prd, label = country, colour = continent), size = 3.5, show.legend = FALSE) + 
+  geom_abline(data = ablines, mapping = aes(slope = simple_slope,
+                                            intercept = simple_intercept, 
+                                            linetype = as.factor(abline_name)),
+              size = 0.5) + 
+  scale_x_continuous(limits = c(0, 1), n.breaks = 5) + 
+  scale_y_continuous(limits = c(0, 24), n.breaks = 12) + 
+  xlab("Cumulative incidence (%) of confirmed cases until 30 May 2020") + 
+  ylab("Predicted proportion (%) of population infected (O'Driscoll et al)") + 
+  theme(legend.position = "top", 
+        legend.title = element_blank(), 
+        legend.text = element_text(size = 12))
+
+dots_inc_obs_prd
+
+ggsave(file.path(path.sharepoint.scientific.day.2020, paste0('dots_inc_obs_prd', '_', week_report, '.png')), 
+       plot = dots_inc_obs_prd, 
+       width = 16 * cm_to_in, 
+       height = 16 * cm_to_in, 
+       scale = 1, 
+       dpi = 1200)
+
+
+
+# ---- MSF data analysis ----
+
+## ---- Upload data ----
+
 load(file.path(path.local.msf.data, glue('episitrep_msf_level_analyses_{week_report}.RData')))
 
 
 
-tbl_epicurve_consultation_continent <- dta %>%
+## ---- FACET - MSF consultation versus admission by continent ----
+
+
+tbl_epicurve_consultation_continent <- dta_linelist %>%
   filter(merge_admit != "Unknown", covid_status == "Confirmed") %>% 
   count(continent, epi_week_consultation, merge_admit) %>%
   drop_na() %>%
   mutate(merge_admit = recode(merge_admit, "Yes" = "Admitted", "No" = "Not Admitted"))
 
-tbl_admit_prop_continent <- dta %>%
+tbl_admit_prop_continent <- dta_linelist %>%
   filter(merge_admit != "Unknown", covid_status == "Confirmed") %>% 
   drop_na(epi_week_consultation) %>%
   group_by(continent, epi_week_consultation) %>%
@@ -355,8 +338,8 @@ cfr_max <- rounder(max(tbl_admit_prop_continent$admit_prop, na.rm = TRUE), .1)
 cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
 scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
 
-missing_consultation <- sum(is.na(dta$epi_week_consultation))
-missing_admission    <- sum(dta$merge_admit == "Unknown")
+missing_consultation <- sum(is.na(dta_linelist$epi_week_consultation))
+missing_admission    <- sum(dta_linelist$merge_admit == "Unknown")
 
 hist_confirmed_consult_admit_continent <- tbl_epicurve_consultation_continent %>% 
   ggplot(aes(epi_week_consultation, n)) +
@@ -366,13 +349,15 @@ hist_confirmed_consult_admit_continent <- tbl_epicurve_consultation_continent %>
             aes(y = admit_prop / scaling_factor, colour = "Admitted %"),
             key_glyph = "timeseries", size = 0.5) +
   ggthemes::scale_fill_tableau(name = "          ", palette = "Tableau 20") +
-  scale_x_date(name = "Week of Consultation", date_breaks = "3 week", date_labels = "%V", 
-               sec.axis = ggplot2::sec_axis(trans = ~ .), expand = expansion(mult = c(0.01, 0.01))) +
+  scale_x_date(name = "Week of Consultation", date_breaks = "3 months", date_labels = "%b") +
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1)),
                      expand = expansion(mult = c(0, 0.02))) +
   labs(y = "Patients", colour = NULL, caption = glue::glue("Missing data: Consultation Date {missing_consultation}, Admission: {missing_admission}")) + 
   theme_light() + 
-  theme(legend.position = "top", panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank())
+  theme(legend.position = "top", 
+        legend.text = element_text(size = 11), 
+        strip.text = element_text(size = 11), 
+        strip.background = element_rect(fill = "#969696"))
 
 
 hist_confirmed_consult_admit_continent
@@ -380,10 +365,101 @@ hist_confirmed_consult_admit_continent
 
 ggsave(file.path(path.sharepoint.scientific.day.2020, paste0('hist_confirmed_consult_admit_continent', '_', week_report, '.png')),
        plot = hist_confirmed_consult_admit_continent,
-       width = 6, 
-       height = 4, 
-       scale = 1.1,
-       dpi = 720)
+       width = 10, 
+       height = 7, 
+       scale = 0.5,
+       dpi = 1200)
+
+
+
+
+## ---- FACET - MSF covid status ----
+
+
+tbl_epicurve_status_continent <- dta_linelist_with_aggregated %>% 
+  transform(covid_status = droplevels(covid_status)) %>% 
+  transform(covid_status = factor(covid_status, levels = c('Confirmed', 'Probable', 'Suspected', 'Not a case', 'Unknown'), labels = c('Confirmed', 'Probable', 'Suspected', 'CoViD-19 negative', 'Unknown'))) %>% 
+  count(continent, covid_status, epi_week_consultation)
+
+
+hist_epicurve_status_continent <- tbl_epicurve_status_continent %>% 
+  ggplot(aes(epi_week_consultation, n, fill = covid_status)) +
+  facet_wrap(vars(continent), scales = 'free_y') +
+  geom_col() +
+  ggthemes::scale_fill_tableau(name = NULL, palette = "Tableau 20") +
+  scale_x_date(name = 'Week of Consultation', date_breaks = '2 months', date_labels = '%b') +
+  scale_y_continuous(name = "Patients", expand = expansion(mult = c(0, 0.02))) +
+  labs(y = 'Patients', caption = 'NOTE: free y axis scale among graphics') + 
+  guides(fill = guide_legend(nrow = 1, byrow = TRUE)) + 
+  theme_light() +
+  theme(legend.position = 'top', 
+        legend.direction = 'vertical', 
+        legend.text = element_text(size = 11), 
+        strip.text = element_text(size = 11), 
+        strip.background = element_rect(fill = "#969696"))
+
+hist_epicurve_status_continent
+
+ggsave(file.path(path.sharepoint.scientific.day.2020, paste0('hist_epicurve_status_continent', '_', week_report, '.png')),
+       plot = hist_epicurve_status_continent, 
+       width = 16, 
+       height = 9, 
+       scale = 0.5,
+       dpi = 1200)
+
+
+
+
+
+## ---- CFR by age-group ----
+
+age_cut <- c(seq(0, 80, 10), Inf)
+age_labs <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80+")
+
+df_severity <- dta_linelist %>% 
+  mutate(age_group = cut(age_in_years, breaks = age_cut, labels = age_labs, right = FALSE, include.lowest = TRUE)) %>% 
+  filter(!is.na(age_group), covid_status == "Confirmed") %>% 
+  group_by(age_group) %>% 
+  summarize(
+    n = n(),
+    n_hosp = sum(admit == "Yes", na.rm = TRUE),
+    n_hosp_known = sum(admit %in% c("Yes", "No"), na.rm = TRUE),
+    p_hosp = n_hosp / n_hosp_known,
+    p_hosp_low95 = as.numeric(binom.test(n_hosp, n_hosp_known)$conf.int)[1],
+    p_hosp_upp95 = as.numeric(binom.test(n_hosp, n_hosp_known)$conf.int)[2],
+    n_died = sum(outcome_status == "Died", na.rm = TRUE),
+    n_died_known = sum(outcome_status %in% c("Died", "Cured"), na.rm = TRUE),
+    p_died_low95 = as.numeric(binom.test(n_died, n_died_known)$conf.int)[1],
+    p_died_upp95 = as.numeric(binom.test(n_died, n_died_known)$conf.int)[2],
+    p_died = n_died / n_died_known,
+    # hosp_lab = paste0("(", n_hosp_known, ")"),
+    # died_lab = paste0("(", n_died_known, ")"),
+    hosp_lab = paste0("(", n_hosp, "/", n_hosp_known, ")"),
+    died_lab = paste0("(", n_died, "/", n_died_known, ")")
+  ) %>% 
+  ungroup()
+
+
+dots_cfr_agegroup <- ggplot(df_severity, aes(x = age_group)) +
+  geom_point(aes(y = p_died), size = 2) +
+  geom_linerange(aes(ymin = p_died_low95, ymax = p_died_upp95)) +
+  geom_text(aes(label = died_lab, y = p_died_upp95 + 0.02), size = 3.5) +
+  scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1), labels = scales::percent_format(accuracy = 1), sec.axis = dup_axis(name = NULL)) +  
+  labs(x = "Age Group", y = "CFR", caption = "CFR = deaths / known outcomes (cured + died)\nLine range shows binomial 95% confidence intervals") 
+
+
+dots_cfr_agegroup
+
+
+ggsave(file.path(path.sharepoint.scientific.day.2020, paste0('dots_cfr_agegroup', '_', week_report, '.png')),
+       plot = dots_cfr_agegroup,
+       width = 11, 
+       height = 7, 
+       scale = 0.5,
+       dpi = 1200)
+
+
+
 
 
 

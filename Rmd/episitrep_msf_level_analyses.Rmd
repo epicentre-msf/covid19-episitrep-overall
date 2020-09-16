@@ -55,11 +55,11 @@ caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF line
 <!-- Import and manage data -->
 ```{r get-data, include = FALSE}
 
-# Import the list of countries
+## Import the list of countries
 df_countries <- readRDS(file.path(path.data, 'df_countries.RDS'))
 
 
-# Import MSF linelist 
+## Import MSF linelist 
 path.sharepoint.data <- file.path(path.sharepoint, 'data', 'linelist', 'world')
 
 dta_linelist <- get_msf_linelist() %>% prepare_msf_dta()
