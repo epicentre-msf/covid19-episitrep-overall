@@ -1648,7 +1648,7 @@ dta_comcond <- dta_linelist %>%
       malaria == 'Negative' ~ 'No',
       TRUE ~ malaria), 
     hiv_status = case_when(
-      hiv_status %in% c('Positive (on ARV)', 'Positive (unknown)') ~ 'Yes', 
+      hiv_status %in% c('Positive (no ARV)', 'Positive (on ART)', 'Positive (unknown)') ~ 'Yes', 
       hiv_status == 'Negative' ~ 'No',
       TRUE ~ hiv_status), 
     tb_active = case_when(
