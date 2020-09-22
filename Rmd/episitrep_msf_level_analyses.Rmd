@@ -222,12 +222,14 @@ Of all consultations/admissions patients were in relation with the COvid-19 infe
 
 ---
 
-# Analysis of all patients consulted/admitted
+# All patients consulted/admitted
 
 This section provides an overview of **all patients that attended an MSF supported Covid-19 health facility**: number of patients consulted, but not admitted and number of consulted and admitted to the health facility.
 
 Other results are presented by Covid status (confirmed, probable, suspected, not a case and unknown) and listed by country or site and grouped by continent. 
 
+
+## Time & place
 
 ### Weekly number of consultations (including admission) by Covid status
 Aggregated data included
@@ -412,7 +414,8 @@ hist_epicurve_consult_admit_continent
 
 ```
 
-```{r}
+
+```{r gtbl-consultation-continent}
 
 tbl_consultation_continent <- dta_linelist %>%
   filter(merge_admit != "Unknown") %>% 
@@ -423,7 +426,21 @@ tbl_consultation_continent <- dta_linelist %>%
   mutate(
     admitted_percent = Admitted / Total* 100)
 
+gtbl_consultation_continent <- tbl_consultation_continent %>% 
+  gt() %>% 
+  cols_label(
+    continent = "", 
+    admitted_percent = "Admitted (%)") %>% 
+  fmt_number(
+    columns = vars(admitted_percent), 
+    decimals = 1) %>% 
+  tab_header(title = "Admitted by continent")
+
+
+gtbl_consultation_continent
+
 ```
+
 
 
 ### Summary tables of patients consulted/admitted to an MSF supported COvid-19 health facility 
@@ -561,7 +578,7 @@ gtbl_countries_covid_status %>%
 
 <!-- 
  === SUMMARY TABLE BY SITE === 
-Counts of patients consulted/admitted to an MSF supported health facility by Covid status (confirmed, probable, suspected, not a case and unknown) 
+Not in the EpiSitrep -- Too long
 -->
 ```{r tbl-covid-status-site, layout = "l-page"}
 # DONE by Francesco
@@ -706,11 +723,116 @@ Table by continent (or region)
 ```
 
 
-### Patients' characteristics
+## Patients' characteristics
 
+### Age distribution by sex of patients consulted/admitted
+
+```{r gtbl-age-distribution-by-sex-all}
+
+dta_age_sex <- dta_linelist %>% 
+  select(covid_status, age_in_years, age_5gp, sex) %>% 
+  drop_na() %>% 
+  transform(sex = factor(sex, levels = c('F', 'M'), labels = c('Female', 'Male')))
+
+tbl_age_distribution_by_sex_all <- dta_age_sex %>% 
+  group_by(sex) %>% 
+  summarise(
+    age_min_max = paste0(min(age_in_years, na.rm = TRUE), ' - ', max(age_in_years, na.rm = TRUE)), 
+    age_mean    = format(round(mean(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1), 
+    age_median  = format(round(median(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1)) %>% 
+  add_row(
+    dta_age_sex %>% 
+      summarise(
+        sex = 'All', 
+        age_min_max = paste0(min(age_in_years, na.rm = TRUE), ' - ', max(age_in_years, na.rm = TRUE)), 
+        age_mean    = format(round(mean(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1), 
+        age_median  = format(round(median(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1)))
+
+
+gtbl_age_distribution_by_sex_all <- tbl_age_distribution_by_sex_all %>% 
+  gt() %>% 
+  cols_label(
+    sex = 'Sex', 
+    age_min_max = 'Min-Max', 
+    age_mean = 'Mean', 
+    age_median = 'Median') %>% 
+  tab_header(
+    title = 'Age distribution of all patients consulted/admitted')
+
+gtbl_age_distribution_by_sex_all
+
+```
+
+
+
+```{r gtbl-age-sex-continent}
+
+tbl_age_sex <- dta_linelist %>% 
+  group_by(sex) %>% 
+  summarise(
+    age_median = median(age_in_years, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  pivot_wider(names_from = sex, values_from = age_median) %>% 
+  mutate(
+    continent = 'Total')
+
+tbl_age_sex_continent <- dta_linelist %>% 
+  group_by(continent, sex) %>% 
+  summarise(
+    age_median = median(age_in_years, na.rm = TRUE)) %>% 
+  ungroup() %>% 
+  pivot_wider(names_from = sex, values_from = age_median)
+
+gtbl_age_sex_continent <- tbl_age_sex_continent %>% 
+  add_row(tbl_age_sex) %>% 
+  gt() %>% 
+  cols_label(
+    continent = "", 
+    `F` = 'Females',
+    M = 'Males', 
+    `NA` = 'Missing') %>% 
+  fmt_number(
+    columns = 2:4, 
+    decimals = 0) %>% 
+  tab_header(title = 'Median age (years) of patients by continent, all patients consulted/admitted')
+
+
+gtbl_age_sex_continent
+
+```
+
+
+### Sex ratio
+```{r}
+
+tbl_sex_ratio <- dta_linelist %>% 
+  select(continent, sex) %>% 
+  transform(sex = factor(sex, levels = c('M', 'F'), labels = c('Male', 'Female')) %>% fct_explicit_na()) %>% 
+  group_by(continent) %>% 
+  count(sex) %>% 
+  pivot_wider(names_from = sex, values_from = n) %>% 
+  adorn_totals() %>% 
+  mutate(
+    ratio_mf = round(Male/Female, 1))
+
+gtbl_sex_ratio <- tbl_sex_ratio %>% 
+  gt() %>% 
+  cols_label(
+    continent = '',
+    ratio_mf = 'M/F ratio') %>% 
+  tab_header(title = 'Sex ratio of all patients consulted/admitted by continent')
+
+gtbl_sex_ratio
+
+```
+
+
+
+### Summary table of patients consulted/admitted by type of case
 <!-- Table age (median, IQR, min-max), sex and presence of at least one morbidity, by Covid status -->
 ```{r tbl-all-general-characteristics, layout = "l-page"}
 # DONE by Francesco
+## This is a complicated table, there might be a simpler way that this one
 
 tbl_general_by_status <- dta_linelist %>% 
   select(covid_status, age_in_years, age_5gp, sex, Comcond_present_01) %>%
@@ -758,7 +880,7 @@ tbl_general <- tbl_general_by_status %>%
     covid_status = factor(covid_status, levels = c('Confirmed', 'Probable', 'Suspected', 'Not a case', 'Unknown', 'Total')))
 
 vars_age <- tibble(levels = tbl_general %>% select(starts_with('age_')) %>% names(),
-                   labels = c('Totals with age information, n/N', 'Minimum - maximum', 'Median', '0 - 5, n (%)', '5 - 15, n (%)', '15 - 45, n (%)', '45 - 65, n (%)', '65+, n (%)'))
+                   labels = c('Totals with age information, n/N', 'Minimum - maximum', 'Median', '0 - 4, n (%)', '5 - 14, n (%)', '15 - 44, n (%)', '45 - 64, n (%)', '65+, n (%)'))
 
 vars_sex <- tibble(levels = tbl_general %>% select(starts_with('sex_')) %>% names(),
                    labels = c('Totals with sex information, n/N', 'Men, n', 'Women, n', 'Sex ratio (M/F)'))
@@ -809,46 +931,34 @@ gtsave(gtbl_general %>%
 
 gtbl_general %>% 
   tab_header(
-    title = paste('Characteristics of patients consulted in an MSF supported Covid-19 health service by continent as of', format(date_max_report, "%d %B %Y")))
+    title = paste('Characteristics of patients consulted/admitted by type of case as of', format(date_max_report, "%d %B %Y")))
 
 ```
 
 
 ```{r}
 
-# les âges médian des hommes et des femmes parmi le total de patients, et parmi les cas confirmés
-
-tbl_age_sex_all <- dta_linelist %>% 
-  select(covid_status, age_in_years, age_5gp, sex) %>% 
-  drop_na() %>% 
-  group_by(sex) %>% 
-  summarise(
-    age_min_max = paste0(min(age_in_years, na.rm = TRUE), ' - ', max(age_in_years, na.rm = TRUE)), 
-    age_mean    = format(round(mean(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1), 
-    age_median  = format(round(median(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1))
-
-tbl_age_sex_confirmed_only <- dta_linelist %>% 
-  select(covid_status, age_in_years, age_5gp, sex) %>% 
-  filter(covid_status == 'Confirmed') %>% 
-  drop_na() %>% 
-  group_by(sex) %>% 
-  summarise(
-    age_min_max = paste0(min(age_in_years, na.rm = TRUE), ' - ', max(age_in_years, na.rm = TRUE)), 
-    age_mean    = format(round(mean(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1), 
-    age_median  = format(round(median(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1))
+tbl_comcond_status <- dta_linelist %>% 
+  select(covid_status, Comcond_present_01) %>% 
+  mutate(covid_status = na_if(covid_status, "Unknown") %>%  fct_explicit_na()) %>% 
+  mutate(Comcond_present_01 = factor(Comcond_present_01, levels = c(1, 0), labels = c('Yes', 'No')) %>%  fct_explicit_na()) %>% 
+  group_by(covid_status) %>% 
+  count(Comcond_present_01) %>% 
+  pivot_wider(names_from = Comcond_present_01, values_from = n) %>% 
+  adorn_totals(c('row', 'col')) %>% 
+  mutate(
+    p_Yes = round(Yes / (Total - `(Missing)`) * 100, 1)
+  )
 
 ```
 
 
 
-
-### Age and sex distribution of patients consulted/admitted to MSf facilities by continent
-
 <!-- Age/sex pyramid by continent -->
 ```{r pyramid-age-all-continent, fig.cap = 'Age pyramid of patients consulted/admitted to an MSF supported Covid-19 health service by continent', fig.width = 8, fig.height = 8}
 # Done by Paul
 
-m_age_sex <- dta_linelist %>% 
+missing_age_sex <- dta_linelist %>% 
   summarise(age = sum(is.na(age_in_years)), sex = sum(is.na(sex)))
 
 tbl_pyramid_continent <- dta_linelist %>% 
@@ -865,7 +975,7 @@ pyramid_age_sex_all_continent <- ggplot(tbl_pyramid_continent, aes(x = age_9gp, 
   scale_fill_manual(name = NULL, values = c("#4E79A7FF", "#A0CBE8FF"), breaks = c("M", "F"), labels = c("Males", "Females")) +
   scale_y_continuous(label = abs, limits = pyramid_limits) + 
   theme(legend.position = "top") +
-  labs(x = "Age Group", y = "Patients consulted/admitted", caption = glue::glue("Missing Data: Age {m_age_sex$age}, Sex {m_age_sex$sex}")) 
+  labs(x = "Age Group", y = "Patients consulted/admitted", caption = glue::glue("Missing Data: Age {missing_age_sex$age}, Sex {missing_age_sex$sex}")) 
 
 ggsave(file.path(path.local.msf.graphs, paste0('pyramid_age_sex_all_continent', '_', week_report, '.png')),
        plot = pyramid_age_sex_all_continent,
@@ -878,7 +988,7 @@ pyramid_age_sex_all_continent
 ```
 
 
-### Patients' symptoms at consultation/admission
+### Symptoms at consultation/admission
 
 <!-- Table - Frequency and proportion of symptoms by Covid status -->
 ```{r tbl-symtopms-all, layout = "l-page"}
@@ -1129,27 +1239,47 @@ cfr_confirmed_probable_suspected <- dta_linelist %>%
 
 --- 
 
-# Analysis of Covid-19 confirmed patients
+# Covid-19 confirmed patients
 
 ### Age and sex distribution of Covid confirmed patients
 
-```{r}
-median_age_confirmed <- dta_linelist %>% 
+```{r gtbl-age-distribution-by-sex-confirmed-only}
+
+dta_age_sex_confirmed <- dta_linelist %>% 
+  select(covid_status, age_in_years, age_5gp, sex) %>% 
   filter(covid_status == 'Confirmed') %>% 
-  pull(age_in_years) %>% 
-  median(., na.rm = TRUE)
+  drop_na() %>% 
+  transform(sex = factor(sex, levels = c('F', 'M'), labels = c('Female', 'Male')))
 
-median_age_confirmed_female <- dta_linelist %>% 
-  filter(covid_status == 'Confirmed', sex == 'F') %>% 
-  pull(age_in_years) %>% 
-  median(., na.rm = TRUE)
+tbl_age_distribution_by_sex_confirmed_only <- dta_age_sex_confirmed %>% 
+  group_by(sex) %>% 
+  summarise(
+    age_min_max = paste0(min(age_in_years, na.rm = TRUE), ' - ', max(age_in_years, na.rm = TRUE)), 
+    age_mean    = round(mean(age_in_years, na.rm = TRUE), digits = 1), 
+    age_median  = round(median(age_in_years, na.rm = TRUE), digits = 1)) %>% 
+  add_row(
+    dta_age_sex_confirmed %>% 
+      summarise(
+        sex = 'All', 
+        age_min_max = paste0(min(age_in_years, na.rm = TRUE), ' - ', max(age_in_years, na.rm = TRUE)), 
+        age_mean    = round(mean(age_in_years, na.rm = TRUE), digits = 1), 
+        age_median  = round(median(age_in_years, na.rm = TRUE), digits = 1)))
 
-median_age_confirmed_male <- dta_linelist %>% 
-  filter(covid_status == 'Confirmed', sex == 'M') %>% 
-  pull(age_in_years) %>% 
-  median(., na.rm = TRUE)
+gtbl_age_distribution_by_sex_confirmed_only <- tbl_age_distribution_by_sex_confirmed_only %>% 
+  gt() %>% 
+  cols_label(
+    sex = 'Sex', 
+    age_min_max = 'Min-Max', 
+    age_mean = 'Mean', 
+    age_median = 'Median') %>% 
+  tab_header(
+    title = 'Covid-confirmed patients consulted/admitted')
+
+gtbl_age_distribution_by_sex_confirmed_only
 
 ```
+
+
 
 
 
@@ -1158,7 +1288,7 @@ median_age_confirmed_male <- dta_linelist %>%
 ```{r pyramid-age--sex-confirmed, fig.cap = 'Age pyramid of Covid-confirmed patients consulted/admitted to an MSF supported health service', fig.width = 8, fig.height = 8}
 # Done by Paul
 
-m_age_sex <- dta_linelist %>% filter(covid_status == "Confirmed") %>% summarise(age = sum(is.na(age_in_years)), sex = sum(is.na(sex)))
+missing_age_sex <- dta_linelist %>% filter(covid_status == "Confirmed") %>% summarise(age = sum(is.na(age_in_years)), sex = sum(is.na(sex)))
 
 tbl_pyramid_confirmed <- dta_linelist %>% 
   drop_na(sex, age_in_years) %>% 
@@ -1174,7 +1304,7 @@ pyramid_age_sex_confirmed <- ggplot(tbl_pyramid_confirmed, aes(x = age_9gp, y = 
   scale_fill_manual(name = NULL, values = c("#4E79A7FF", "#A0CBE8FF"), breaks = c("M", "F"), labels = c("Males", "Females")) +
   scale_y_continuous(limits = pyramid_limits, breaks = pyramid_brks, label = abs) + 
   theme(legend.position = "top") +
-  labs(x = "Age Group", y = "Confirmed Patients", caption = glue::glue("Missing Data: Age {m_age_sex$age}, Sex {m_age_sex$sex}"))  +
+  labs(x = "Age Group", y = "Confirmed Patients", caption = glue::glue("Missing Data: Age {missing_age_sex$age}, Sex {missing_age_sex$sex}"))  +
   guides(y.sec = guide_axis_label_trans(~paste(.x))) # show age group labels on both axis
 
 ggsave(file.path(path.local.msf.graphs, paste0('pyramid_age_sex_confirmed', '_', week_report, '.png')),
@@ -1194,7 +1324,7 @@ pyramid_age_sex_confirmed
 ```{r pyramid-age-sex-confirmed-continent, fig.cap = 'Age pyramid of patients consulted/admitted to an MSF supported Covid-19 health service by continent', fig.width = 8, fig.height = 8}
 # Done by Paul
 
-m_age_sex <- dta_linelist %>% filter(covid_status == "Confirmed") %>% summarise(age = sum(is.na(age_in_years)), sex = sum(is.na(sex)))
+missing_age_sex <- dta_linelist %>% filter(covid_status == "Confirmed") %>% summarise(age = sum(is.na(age_in_years)), sex = sum(is.na(sex)))
 
 tbl_pyramid_confirmed_continent <- dta_linelist %>% 
   drop_na(sex, age_in_years) %>% 
@@ -1211,7 +1341,7 @@ pyramid_age_sex_confirmed_continent <- ggplot(tbl_pyramid_confirmed_continent, a
   scale_fill_manual(name = NULL, values = c("#4E79A7FF", "#A0CBE8FF"), breaks = c("M", "F"), labels = c("Males", "Females")) +
   scale_y_continuous(label = abs, limits = pyramid_limits) + 
   theme(legend.position = "top") +
-  labs(x = "Age Group", y = "Confirmed Patients", caption = glue::glue("Missing Data: Age {m_age_sex$age}, Sex {m_age_sex$sex}")) 
+  labs(x = "Age Group", y = "Confirmed Patients", caption = glue::glue("Missing Data: Age {missing_age_sex$age}, Sex {missing_age_sex$sex}")) 
 
 ggsave(file.path(path.local.msf.graphs, paste0('pyramid_age_sex_confirmed_continent', '_', week_report, '.png')),
        plot = pyramid_age_sex_confirmed_continent,
@@ -1248,7 +1378,7 @@ Table Patient’s care 1
 ```{r tbl-care-procedures}
 # DONE by Francesco
 
-dta_care <- dta_linelist %>%
+dta_care <- dta_linelist %>% 
   filter(covid_status %in% c('Confirmed')) %>%
   select(continent, country, starts_with('merge_'))
 
@@ -1295,13 +1425,13 @@ gtbl_care <- tbl_care %>%
     n_Asia     = 'n', 
     n_Europe   = 'n', 
     n_Total    = 'n', 
-    pct_Africa   = '(%)', 
-    pct_Americas = '(%)', 
-    pct_Asia     = '(%)', 
-    pct_Europe   = '(%)', 
-    pct_Total    = '(%)') %>% 
+    p_Africa   = '(%)', 
+    p_Americas = '(%)', 
+    p_Asia     = '(%)', 
+    p_Europe   = '(%)', 
+    p_Total    = '(%)') %>% 
   fmt_number(
-    columns = starts_with('pct_'), 
+    columns = starts_with('p_'), 
     decimals = 1, 
     scale_by = 100, 
     pattern = "({x})") %>% 
@@ -1340,18 +1470,6 @@ gtbl_care %>%
   tab_header(
     title = "Major care procedures to Covid confirmed patient's in MSF heatlth facilities, by location")
 
-
-
-# Numbers used in the EpiSitrep
-nb_msf_received_oxygen <- tbl_care %>% filter(name_var == 'Received oxygen', values_var == 'Yes') %>% pull(n_Total)
-
-pct_msf_received_oxygen <- tbl_care %>% filter(name_var == 'Received oxygen', values_var == 'Yes') %>% pull(pct_Total)
-
-nb_msf_icu <- tbl_care %>% filter(name_var == 'Admitted to the Intensive Care Unit', values_var == 'Yes') %>% pull(n_Total)
-
-pct_msf_icu <- tbl_care %>% filter(name_var == 'Admitted to the Intensive Care Unit', values_var == 'Yes') %>% pull(pct_Total)
-
-nb_msf_vent <- tbl_care %>% filter(name_var == 'Supported by a ventilator', values_var == 'Yes') %>% pull(n_Total)
 ```
 
 
@@ -1433,42 +1551,47 @@ gtbl_age_sex_outcome %>%
 ```
 
 
-### Case fatality risk among confirmed patients
-
+### Case fatality among confirmed patients
 <!-- CFR by age, sex and number of comorbidities -->
 ```{r tbl-cfr-age-sex-comorbidities}
 # DONE by Francesco
 # function make_tbl_cfr in utils_vis.R
 
 tbl_cfr_age <- dta_linelist %>% 
-  make_tbl_cfr('age_5gp', 'Age')
+  make_tbl_cfr('age_5gp')
 
 tbl_cfr_sex <- dta_linelist %>% 
   mutate(sex = factor(sex, levels = c('F', 'M'), labels = c('Females', 'Males'))) %>% 
-  make_tbl_cfr('sex', 'Sex')
+  make_tbl_cfr('sex')
 
-tbl_cfr_comorb <- dta_linelist %>% 
+tbl_cfr_comorbidities <- dta_linelist %>% 
   mutate(Comcond_present = as.factor(Comcond_present)) %>% 
-  make_tbl_cfr('Comcond_present', 'Number of comorbidities')
+  make_tbl_cfr('Comcond_present')
 
-tbl_cfr_age_sex_comorbidities <- tbl_cfr_age %>% rename(var = age_5gp) %>% 
-  add_row(tbl_cfr_sex %>% rename(var = sex)) %>% 
-  add_row(tbl_cfr_comorb %>% rename(var = Comcond_present))
+tbl_cfr_age_sex_comorbidities <- tbl_cfr_age %>% 
+  rename(var = age_5gp) %>% 
+  mutate(label_var = 'Age') %>% 
+  add_row(tbl_cfr_sex %>% 
+            rename(var = sex) %>% 
+            mutate(label_var = 'Sex')) %>% 
+  add_row(tbl_cfr_comorbidities %>% 
+            rename(var = Comcond_present) %>% 
+            mutate(label_var = 'Number of comorbidities'))
 
 gtbl_cfr_age_sex_comorbidities <- tbl_cfr_age_sex_comorbidities %>% 
   gt(rowname_col = "var", 
      groupname_col = "label_var") %>% 
     cols_label(
-    totals_Africa    = 'n/N',
-    totals_Americas  = 'n/N',
-    totals_Asia      = 'n/N',
-    totals_Europe    = 'n/N', 
-    totals_Total     = 'n/N',
-    died_p_Africa    = '(%)',
-    died_p_Americas  = '(%)',
-    died_p_Asia      = '(%)', 
-    died_p_Europe    = '(%)',
-    died_p_Total     = '(%)') %>%
+    nN_Africa    = 'n/N',
+    nN_Americas  = 'n/N',
+    nN_Asia      = 'n/N',
+    nN_Europe    = 'n/N', 
+    nN_Total     = 'n/N',
+    p_Africa    = '(%)',
+    p_Americas  = '(%)',
+    p_Asia      = '(%)', 
+    p_Europe    = '(%)',
+    p_Total     = '(%)') %>%
   tab_spanner(
     label = 'Africa',
     columns = ends_with('_Africa')) %>%
@@ -1485,22 +1608,22 @@ gtbl_cfr_age_sex_comorbidities <- tbl_cfr_age_sex_comorbidities %>%
     label = 'Total',
     columns = ends_with('_Total')) %>%
   fmt_number(
-    columns = starts_with('died_p_'),
+    columns = starts_with('p_'),
     decimals = 1,
     scale_by = 100,
     pattern = '({x})') %>%
   fmt_missing(
-    columns = starts_with('totals_'),
+    columns = starts_with('nN_'),
     missing_text = "0/0") %>%
   fmt_missing(
-    columns = starts_with('died_p_'),
+    columns = starts_with('p_'),
     missing_text = "---") %>%
   cols_align(
     align = 'left',
     columns = vars(var)) %>%
   cols_align(
     align = 'right',
-    columns = starts_with('totals')) %>%
+    columns = starts_with('nN_')) %>%
   tab_options(
     column_labels.font.weight = "bold", 
     row_group.font.weight = "bold", 
@@ -1524,13 +1647,13 @@ gtbl_cfr_age_sex_comorbidities %>%
 
 
 # Numbers for editing report
-cfr_confirmed_no_comorbidities <- tbl_cfr_comorb %>% 
+cfr_confirmed_no_comorbidities <- tbl_cfr_comorbidities %>% 
   filter(Comcond_present == 0) %>% 
-  pull(died_p_Total)
+  pull(p_Total)
 
-cfr_confirmed_3_comorbidities <- tbl_cfr_comorb %>% 
+cfr_confirmed_3_comorbidities <- tbl_cfr_comorbidities %>% 
   filter(Comcond_present == 3) %>% 
-  pull(died_p_Total)
+  pull(p_Total)
 
 ```
 
@@ -1634,6 +1757,7 @@ gtbl_outcome_admission %>%
 
 ```
 
+
 <!-- CFR by type of comorbidities among confirmed patients -->
 ```{r tbl-cfr-type-comorbidities}
 # DONE by Francesco
@@ -1669,24 +1793,26 @@ dta_comcond <- dta_comcond %>%
     type_comorbidity = factor(type_comorbidity, levels = levels_comcond, labels = labels_comcond)
 )
 
-tbl_cfr_type_comcond <- make_tbl_cfr(dta_comcond, 'type_comorbidity' ,'Comorbidities')
+
+tbl_cfr_type_comcond <- dta_comcond %>% 
+  drop_na() %>% 
+  make_tbl_cfr(x_var = 'type_comorbidity') %>% 
+  arrange(desc(p_Total))
 
 gtbl_cfr_type_comcond <- tbl_cfr_type_comcond %>%
   gt() %>% 
-  cols_hide(
-    columns = vars(label_var)) %>% 
   cols_label(
     type_comorbidity = "Comorbidities/Underlying conditions", 
-    totals_Africa    = 'n/N',
-    totals_Americas  = 'n/N',
-    totals_Asia      = 'n/N', 
-    totals_Europe    = 'n/N', 
-    totals_Total     = 'n/N',
-    died_p_Africa    = '(%)',
-    died_p_Americas  = '(%)',
-    died_p_Asia      = '(%)', 
-    died_p_Europe    = '(%)', 
-    died_p_Total     = '(%)') %>%
+    nN_Africa    = 'n/N',
+    nN_Americas  = 'n/N',
+    nN_Asia      = 'n/N', 
+    nN_Europe    = 'n/N', 
+    nN_Total     = 'n/N',
+    p_Africa    = '(%)',
+    p_Americas  = '(%)',
+    p_Asia      = '(%)', 
+    p_Europe    = '(%)', 
+    p_Total     = '(%)') %>%
   tab_spanner(
     label = 'Africa',
     columns = ends_with('_Africa')) %>%
@@ -1703,22 +1829,22 @@ gtbl_cfr_type_comcond <- tbl_cfr_type_comcond %>%
     label = 'Total',
     columns = ends_with('_Total')) %>%
   fmt_number(
-    columns = starts_with('died_p_'),
+    columns = starts_with('p_'),
     decimals = 1,
     scale_by = 100,
     pattern = '({x})') %>%
   fmt_missing(
-    columns = starts_with('totals_'),
+    columns = starts_with('nN_'),
     missing_text = "0/0") %>%
   fmt_missing(
-    columns = starts_with('died_p_'),
+    columns = starts_with('p_'),
     missing_text = "---") %>%
   cols_align(
     align = 'left',
     columns = vars(type_comorbidity)) %>%
   cols_align(
     align = 'right',
-    columns = starts_with('totals')) %>%
+    columns = starts_with('nN_')) %>%
   tab_options(
     column_labels.font.weight = "bold", 
     data_row.padding = px(2),
@@ -1763,6 +1889,7 @@ Frequency and proportion of symptoms, by case severity
 
 <!-- CFR by age-group -->
 ```{r tbl-cfr-agegroup, fig.cap = 'Case fatality risk by age-group among confirmed patients'}
+
 age_cut <- c(seq(0, 80, 10), Inf)
 age_labs <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80+")
 
@@ -1962,45 +2089,29 @@ line_cfr_week_continent
 ```{r boxplot-delay-admission-week, fig.cap = 'Evolution overtime of the delay to admission among Covid confirmed patients consulted/admitted to an MSF supported health facility'}
 # DONE by Paul
 
-# onset admission delay
-# p_onset_admit_delay <- dta_linelist %>%
-#   filter(covid_status %in% c("Confirmed", "Suspected", "Probable")) %>%
-#   drop_na(epi_week_consultation, delay_before_admission) %>%
-#   group_by(epi_week_consultation) %>%
-#   summarise(
-#     lower_2_5 = quantile(delay_before_admission, 0.025),
-#     lower_25 = quantile(delay_before_admission, 0.25),
-#     median = median(delay_before_admission),
-#     upper_75 = quantile(delay_before_admission, 0.55),
-#     upper_97_5 = quantile(delay_before_admission, 0.975)
-#   ) %>%
-#   ungroup() %>%
-#   slice(1:(n()-1)) %>%
-#   ggplot(aes(epi_week_consultation, median)) +
-#   geom_linerange(aes(ymin = lower_2_5, ymax = upper_97_5)) +
-#   geom_point(colour = "red", size = 3) +
-#   scale_x_date(name = "Week of Consultation", date_breaks = "1 week", date_labels = "%V",
-#                sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.), labels = function(x) format(x, "%b-%Y")))
+dta_delay <- dta_linelist %>% 
+  filter(covid_status %in% c("Confirmed")) %>% 
+  select(epi_week_consultation, dateonset, date_consultation, covid_status) %>% 
+  drop_na(epi_week_consultation) %>% 
+  mutate(
+    delay_before_consultation = as.numeric(date_consultation - dateonset)) %>% 
+  filter(between(delay_before_consultation, left = 0, right = 50)) # filter any delays negative or over 50 days
 
-dta_delay <- dta_linelist %>%
-  filter(covid_status %in% c("Confirmed", "Suspected", "Probable")) %>%
-  drop_na(epi_week_consultation, delay_before_admission) %>%
-  filter(delay_before_admission >= 0, delay_before_admission <= 50) # filter any delays over 50 days
-  
-boxplot_delay_admission_week <- ggplot(dta_delay, aes(epi_week_consultation, delay_before_admission, group = epi_week_consultation)) +
-  #geom_jitter(colour = "red", alpha = 0.5) +
-  geom_boxplot() +
+
+boxplot_delay_before_consultation <- ggplot(dta_delay, aes(x = epi_week_consultation, y = delay_before_consultation)) + 
+  geom_boxplot(aes(group = epi_week_consultation)) + 
+  #geom_smooth(fill = "lightblue") + 
   scale_x_date(name = "Week of Consultation", date_breaks = "2 weeks", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .)) +
-  labs(y = "Onset to admission delay (days)")
+  labs(y = "Delay to consultation (days)")
 
-ggsave(file.path(path.local.msf.graphs, paste0('boxplot_delay_admission_week', '_', week_report, '.png')),
-       plot = boxplot_delay_admission_week, 
+ggsave(file.path(path.local.msf.graphs, paste0('boxplot_delay_before_consultation', '_', week_report, '.png')),
+       plot = boxplot_delay_before_consultation, 
        width = 6, 
        height = 4, 
        scale = 1.1,
        dpi = 320)
 
-boxplot_delay_admission_week
+boxplot_delay_before_consultation
 
 ```
 
@@ -2014,20 +2125,21 @@ boxplot_delay_admission_week
 latest_2_epiweeks <- max_2(dta_linelist$epi_week_consultation)
 
 # length stay
-tbl_length_stay <- dta_linelist %>% 
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>% 
-  filter(admit == 'Yes') %>% 
+dta_length_stay <- dta_linelist %>% 
+  select(epi_week_consultation, covid_status, merge_admit, length_stay) %>% 
+  filter(covid_status %in% c('Confirmed')) %>% 
+  filter(merge_admit == 'Yes') %>% 
   drop_na(epi_week_consultation, length_stay) %>% 
-  filter(length_stay <= 50, !epi_week_consultation %in% latest_2_epiweeks) # filter any stays over 50 days
+  filter(between(length_stay, left = 0, right = 50), !epi_week_consultation %in% latest_2_epiweeks)
 
 
-boxplot_length_stay_week <- ggplot(tbl_length_stay, aes(epi_week_consultation, length_stay, group = epi_week_consultation)) + 
+boxplot_length_stay_week <- ggplot(dta_length_stay, aes(epi_week_consultation, length_stay, group = epi_week_consultation)) + 
   geom_boxplot() + 
   #geom_jitter(colour = "red", alpha = 0.3) +
   scale_x_date(name = "Week of Admission", date_breaks = "2 weeks", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .)) +
   labs(y = "Length of stay in hospital (days)", caption = "Latest 2 weeks omitted for data completeness purposes")
 
-ggsave(file.path(path.local.msf.graphs, paste0('boxplot_length_stay_week', '_', week_report, '.png')),
+ggsave(file.path(path.local.msf.graphs, paste0('boxplot_length_stay', '_', week_report, '.png')),
        plot = boxplot_length_stay_week, 
        width = 6, 
        height = 4, 
@@ -2049,7 +2161,7 @@ dta_non_cases_diagt <- dta_linelist %>%
   mutate(
     main_diagnosis = fct_explicit_na(main_diagnosis, na_level = "Not reported"))
 
-tbl_non_cases_diagt <- make_tbl_prop(dta_non_cases_diagt,'main_diagnosis','outcome_status')
+tbl_non_cases_diagt <- make_tbl_prop(dta_non_cases_diagt, 'main_diagnosis', 'outcome_status')
 
 gtbl_non_cases_diagt <- tbl_non_cases_diagt %>% 
   gt() %>% 
@@ -2063,14 +2175,14 @@ gtbl_non_cases_diagt <- tbl_non_cases_diagt %>%
     n_Other = 'n', 
     `n_Pending/Unknown` = 'n', 
     n_Total = 'n',
-    pct_Cured = '(%)', 
-    pct_Died = '(%)', 
-    `pct_Left against medical advice` = '(%)', 
-    pct_Transferred = '(%)', 
-    `pct_Sent back home` = '(%)', 
-    pct_Other = '(%)', 
-    `pct_Pending/Unknown` = '(%)', 
-    pct_Total = '(%)') %>% 
+    p_Cured = '(%)', 
+    p_Died = '(%)', 
+    `p_Left against medical advice` = '(%)', 
+    p_Transferred = '(%)', 
+    `p_Sent back home` = '(%)', 
+    p_Other = '(%)', 
+    `p_Pending/Unknown` = '(%)', 
+    p_Total = '(%)') %>% 
   tab_spanner(
     label = 'Recovered', 
     columns = ends_with('_Cured')) %>% 
@@ -2096,7 +2208,7 @@ gtbl_non_cases_diagt <- tbl_non_cases_diagt %>%
     label = 'Total', 
     columns = ends_with('_Total')) %>% 
   fmt_number(
-    columns = starts_with('pct_'), 
+    columns = starts_with('p_'), 
     decimals = 1, 
     scale_by = 100, 
     pattern = "({x})") %>% 
@@ -2105,7 +2217,7 @@ gtbl_non_cases_diagt <- tbl_non_cases_diagt %>%
     columns = starts_with('n_')) %>% 
   cols_align(
     align = 'left', 
-    columns = starts_with('pct_')) %>% 
+    columns = starts_with('p_')) %>% 
   cols_align(
     align = 'left', 
     columns = vars(main_diagnosis)) %>% 
@@ -2116,7 +2228,7 @@ gtbl_non_cases_diagt <- tbl_non_cases_diagt %>%
   tab_style(
     style = list(
       cell_text(align = "left")),
-    locations = cells_column_labels(starts_with('pct_'))) %>% 
+    locations = cells_column_labels(starts_with('p_'))) %>% 
   tab_options(
     column_labels.font.weight = "bold", 
     data_row.padding = px(5))

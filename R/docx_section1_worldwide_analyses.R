@@ -47,14 +47,27 @@ my_doc <- add_par_normal(
   sprintf('%s countries reported an increasing trend (compared to XX last/two week) (Figure 1). Trends calculated on the last 30 days are also available in the full worldwide analysis report.', 
   call_countries_increasing('cases') %>% length() %>% Words()))
 
+my_doc %<>% 
+body_add_par(style = 'Normal', 
+             value = sprintf('%s countries reported an increasing trend (compared to XX last/two week) (Figure 1). Trends calculated on the last 30 days (see ', 
+                     call_countries_increasing('cases') %>% length() %>% Words())) %>% 
+  slip_in_text(style = 'Hyperlink', 
+               str = "full report", 
+               hyperlink = "https://msfintl.sharepoint.com/:f:/s/grp-epi-proj-ncov/EqBjzm2ohydAkMTzMRpI7GsBwzSR_x6JTh_IDrv4fwmo8g") %>% 
+  slip_in_text(style = 'Normal char', 
+               str = ').')
+
 # 4
 my_doc <- add_par_normal(
-  sprintf('%s countries had an increasing trend in Africa (%s). Also in Asia several countries reported an increasing trend (%s). %s countries of the Americas (%s) also reported an increasing trend.', 
+  sprintf('%s countries had an increasing trend in Africa (%s), %s countries in Asia (%s), %s countries in the Americas (%s), %s countries in Europe (%s).', 
   call_countries_increasing("cases", "Africa") %>% length() %>% Words(), 
   call_countries_increasing("cases", "Africa") %>% combine_words(), 
+  call_countries_increasing("cases", "Asia") %>% length(), 
   call_countries_increasing("cases", "Asia") %>% combine_words(), 
-  call_countries_increasing("cases", "Americas") %>% length() %>% Words(), 
-  call_countries_increasing("cases", "Americas") %>% combine_words()))
+  call_countries_increasing("cases", "Americas") %>% length(), 
+  call_countries_increasing("cases", "Americas") %>% combine_words(),
+  call_countries_increasing("cases", "Europe") %>% length(), 
+  call_countries_increasing("cases", "Europe") %>% combine_words()))
 
 my_doc <- add_end_section_2columns()
 
@@ -97,11 +110,13 @@ my_doc <- add_end_section_continuous()
 # --- --- --- --- --- --- --- 
 # 1
 my_doc <- add_par_normal(
-  sprintf('Countries that reported the highest numbers of Covid-19 associated deaths are the USA, Brazil and some countries in Europe. NAME OF THE COUNTRIES also reached the threshold of 10,000 Covid19 associated deaths in the last two weeks. About half of African countries are now reporting more than 100 deaths (Figure 3 - Deaths count).'))
+  sprintf("Countries that reported the highest numbers of Covid-19 associated deaths are the USA, Brazil, India, Iran, Russia,
+Peru, Mexico and some countries in Europe. Now NAME OF THE COUNTRIES reported more than 10,000 Covid19 associated deaths overall (Figure 3 - Deaths count)."))
 
 # 2
 my_doc <- add_par_normal(
-  sprintf('More countries reported an increasing trend in death this week. This includes more countries of .... (Figure 3 – Trends in deaths).'))
+  sprintf("%s countries reported an increasing trend in death (x two weks age). This includes more countries of .... (Figure 3 – Trends in deaths).", 
+  length(call_countries_increasing('deaths')) %>% Words()))
 
 # 3
 my_doc <- my_doc %<>% 
@@ -109,7 +124,7 @@ my_doc <- my_doc %<>%
                value = 'The full table of cases, deaths and trends can be found ') %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "here", 
-               hyperlink = "https://msfintl-my.sharepoint.com/:f:/g/personal/francesco_grandesso_epicentre_msf_org/Ek1jIZ1ghe5GqibjBM3GnpsBJyTF7QBYmFY6bEhgSGVHAA?e=bewh3q/") %>% 
+               hyperlink = "https://msfintl.sharepoint.com/:f:/s/grp-epi-proj-ncov/Es1-_W5jkHJNtgK3lmLYVl0BG7f_XDXukieo0dth6G_eGA") %>% 
   slip_in_text(style = 'Normal char', 
                str = ".") 
 
@@ -133,8 +148,20 @@ my_doc <- add_end_section_continuous()
 ## - Text
 # --- --- --- --- --- --- --- 
 # 1
+
+my_doc <- my_doc %<>% 
+  body_add_par(style = 'Normal', 
+               value = "Doubling time calculation should take into account that most countries now reached an important number of cases,
+and sometimes are going through a second surge in cases. Therefore, doubling time calculation is now only considering cases and deaths reported in the last 12 days, instead of cumulative cases (method ") %>% 
+  slip_in_text(style = 'Hyperlink', 
+               str = "here", 
+               hyperlink = "https://msfintl.sharepoint.com/:b:/s/grp-epi-proj-ncov/Ed-Telbib0VMt03oD2nPR1ABOwAPbzS__kbyz46PJ6l4nw") %>% 
+  slip_in_text(style = 'Normal char', 
+               str = ').')
+
+
 my_doc <- add_par_normal(
-  sprintf("A sharp increasing of cases (doubling time of less than 12 days) is observed in %s countries this week, compared to XX last week (Figure 4 and Table 1).", 
+  sprintf("As a result, a sharp increasing of cases (doubling time of less than 12 days) is observed in %s countries this week, compared to XX of two weeks ago (Figure 4 and Table 1).", 
           length(call_countries_doubling('cases_est'))))
 
 # 2
@@ -198,7 +225,6 @@ my_doc <- add_end_section_continuous()
 #  folder = 'worldwide')
 
 
-
 # --- --- --- --- --- --- --- 
 # TESTING
 # --- --- --- --- --- --- --- 
@@ -219,7 +245,7 @@ my_doc <- add_par_normal(
 
 # 3
 my_doc <- add_par_normal(
-  sprintf("To note that XXXXX displayed a very high proportion of positive tests. These countries, as well as some others which reported high cumulative number of cases in the last 12 days (such as LIST OF COUNTRIES) are to be closely monitored as they are facing an important rise in cases while having possible gaps in testing strategy sensitivity."))
+  sprintf("To note that XXXXX displayed a very high proportion of positive tests. These countries, as well as some others which reported high cumulative number of cases in the last 12 days (such as LIST OF COUNTRIES) are to be closely monitored as they are facing an important rise in cases while having possible gaps in testing strategy sensitivity (Figure 5)."))
 
 my_doc <- add_end_section_2columns()
 

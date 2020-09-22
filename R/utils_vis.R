@@ -64,6 +64,14 @@ guide_train.guide_axis_trans <- function(x, ...) {
 }
 
 
+format_percent <- function(x, digits = 1L, symbol = FALSE){
+  if (symbol) {
+    paste0(format(round(x * 100, digits = digits), nsmall = digits), '%')
+  } else {
+    round(x * 100, digits = digits)
+  }
+}
+
 
 freq_prct <- function(x, value){
   paste0(sum(x == value, na.rm = TRUE), 
@@ -584,7 +592,7 @@ make_tbl_prop <- function(dta, var1, var2 = NULL) {
     summarise(
       n = n()) %>% 
     mutate(
-      pct = n/sum(n)) %>% 
+      p = n/sum(n)) %>% 
     ungroup()
   
   if (!is.null(var2)){
@@ -596,10 +604,10 @@ make_tbl_prop <- function(dta, var1, var2 = NULL) {
       summarise(
         n = n()) %>% 
       mutate(
-        pct = n/sum(n)) %>% 
-      pivot_wider(names_from = !!var2, values_from = c('n', 'pct')) %>% 
+        p = n/sum(n)) %>% 
+      pivot_wider(names_from = !!var2, values_from = c('n', 'p')) %>% 
       full_join(tbl1) %>% 
-      rename(n_Total = n, pct_Total = pct) %>% 
+      rename(n_Total = n, p_Total = p) %>% 
       ungroup()
   }
   
@@ -613,29 +621,24 @@ make_tbl_prop <- function(dta, var1, var2 = NULL) {
 
 
 
-make_tbl_cfr <- function(dta, x_var, label_var){
+make_tbl_cfr <- function(dta, x_var){
   
   x_var <- sym(x_var)
-  
-  dta <- dta %>% 
-    filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died'), !is.na(!!x_var))
   
   tbl_cfr_total <- dta %>% 
     select(!!x_var, outcome_status) %>% 
     group_by(!!x_var) %>% 
     summarise(
-      totals_Total  = paste0(sum(outcome_status == 'Died'), '/', n()), 
-      died_p_Total = mean(outcome_status == 'Died')) %>% 
-    mutate(
-      label_var = label_var)
+      nN_Total  = paste0(sum(outcome_status == 'Died'), '/', n()), 
+      p_Total = mean(outcome_status == 'Died'))
   
   tbl_cfr_continent <- dta %>%
     select(continent, !!x_var, outcome_status) %>%
     group_by(continent, !!x_var) %>%
     summarise(
-      totals = paste0(sum(outcome_status == 'Died'), '/', n()),
-      died_p = mean(outcome_status == 'Died')) %>%
-    pivot_wider(names_from = continent, values_from = c(totals, died_p))
+      nN = paste0(sum(outcome_status == 'Died'), '/', n()),
+      p = mean(outcome_status == 'Died')) %>%
+    pivot_wider(names_from = continent, values_from = c(nN, p))
   
   tbl_cfr <- right_join(tbl_cfr_continent, tbl_cfr_total)
   

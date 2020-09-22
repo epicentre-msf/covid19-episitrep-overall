@@ -118,7 +118,7 @@ get_find_data <- function(local_path = path.local.worldwide.data, file_name = 'd
   
   base_url <- "https://finddx.shinyapps.io/FIND_Cov_19_Tracker/_w_989488b3/downloads/cv_tests_download.csv"
   
-  get_new_dta <- if(!file.exists(file.path(local_path, file_name))) {
+  get_dta <- if(!file.exists(file.path(local_path, file_name))) {
     
     TRUE
     
@@ -131,7 +131,7 @@ get_find_data <- function(local_path = path.local.worldwide.data, file_name = 'd
   
   
   
-  if (get_new_dta | update_data) {
+  if (get_dta | update_data) {
     
     dta <- readr::read_csv(base_url)
     last_update <-  Sys.Date()
