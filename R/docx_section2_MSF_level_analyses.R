@@ -27,7 +27,7 @@ my_doc %<>%
                            prop = calibri_8))) %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "here", 
-               hyperlink = "https://msfintl.sharepoint.com/:f:/s/grp-epi-proj-ncov/EqBjzm2ohydAkMTzMRpI7GsBwzSR_x6JTh_IDrv4fwmo8g") %>% 
+               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/additional_episitrep_outputs/") %>% 
   slip_in_text(style = 'Description char', 
                str = '. ') 
 
@@ -63,9 +63,13 @@ my_doc %<>%
                value = ('Last week data may not be fully complete if projects did not report on time. Given the important number of projects, Table 2 displays numbers by country and detailed data by project is available ')) %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "here", 
-               hyperlink = "https://msfintl.sharepoint.com/:f:/s/grp-epi-proj-ncov/ElNwkfBWePxHlflHHpkfHfMBM5pIexST0G-EKfHYpGMbow") %>% 
+               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/tables_msf_sites/") %>% 
   slip_in_text(style = 'Normal char', 
                str = '. ') 
+
+my_doc %<>% 
+  body_add_par(style = 'Normal', 
+               value = ('Last week data may not be fully complete if projects did not report on time. Given the important number of projects, Table 2 displays numbers by country and detailed data by project is available here'))
 
 
 # 3
@@ -366,20 +370,24 @@ my_doc <- add_par_normal(
   sprintf("Among patients received in MSF facilities, some were considered non-cases after testing negative. As expected, Covid-19 disease was mainly confused with respiratory syndromes such as upper respiratory tract infection, lower respiratory tract infection, flu syndrome or chronic lung disease."))
 
 
+#my_doc %<>% 
+#  body_add_fpar(style = 'Normal', 
+#                fpar(ftext('For more information are available ', 
+#                           prop = calibri_8))) %>% 
+#  slip_in_text(style = 'Hyperlink', 
+#               str = "here", 
+#               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/additional_episitrep_outputs/") %>% 
+#  slip_in_text(style = 'Normal char', 
+#               str = ".") 
+
 my_doc %<>% 
   body_add_fpar(style = 'Normal', 
-                fpar(ftext('For more information are available ', 
-                           prop = calibri_8))) %>% 
-  slip_in_text(style = 'Hyperlink', 
-               str = "here", 
-               hyperlink = "https://msfintl.sharepoint.com/:f:/s/grp-epi-proj-ncov/EqBjzm2ohydAkMTzMRpI7GsBwzSR_x6JTh_IDrv4fwmo8g/") %>% 
-  slip_in_text(style = 'Normal char', 
-               str = '.') 
-
+                fpar(ftext('For more information are available here.', 
+                           prop = calibri_8)))
 
 my_doc <- add_end_section_2columns()
 
-my_doc <- add_par_normal('')
+my_doc <- add_par_normal("")
 
 my_doc <- add_table(
   object_name = paste0('gtbl_non_cases_diagt', '_', week_report, '.png'), 

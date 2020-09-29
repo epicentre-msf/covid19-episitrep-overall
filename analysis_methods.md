@@ -33,10 +33,11 @@ The doubling time is defined as the time it takes for the reported number of cas
 
 It is estimated in number of days (or fraction of day); the less the number of days, the higher the increase rate of the number of cases or deaths.
 
-The doubling time was estimated as follows.
+Over the course of the epidemic we changed the the type of data used for the estimation.
 
 
-## Until week 32-2020 (week ending on 9 August 2020)
+
+### Until week 32-2020 (week ending on 9 August 2020)
 
 We first calculated the cumulative number of cases (or deaths) for each country. We then selected the last 12 days of the time-series of each country and modelled the slope of the natural logarithm of the cumulative cases (or cumulative deaths) using a linear regression.
 
@@ -52,7 +53,8 @@ The doubling time was finally calculated as the ratio of the natural logarithm o
 To ensure reliable estimates we calculated the doubling time only if the cumulative cases (or deaths) was higher than 50 at the first day of the 12 days window that was used in the model.
 
 
-## From week 33-2020 (week ending on 16 August 2020)
+
+### From week 33-2020 (week ending on 16 August 2020)
 
 We first calculated the cumulative number of cases (or deaths) for each country. We then selected the last 12 days of the time-series of each country and modelled the slope of the natural logarithm of the cases counts (or deaths counts) using a linear regression.
 

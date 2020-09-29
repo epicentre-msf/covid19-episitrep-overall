@@ -52,8 +52,8 @@ body_add_par(style = 'Normal',
              value = sprintf('%s countries reported an increasing trend (compared to XX last/two week) (Figure 1). Trends calculated on the last 30 days (see ', 
                      call_countries_increasing('cases') %>% length() %>% Words())) %>% 
   slip_in_text(style = 'Hyperlink', 
-               str = "full report", 
-               hyperlink = "https://msfintl.sharepoint.com/:f:/s/grp-epi-proj-ncov/EqBjzm2ohydAkMTzMRpI7GsBwzSR_x6JTh_IDrv4fwmo8g") %>% 
+               str = "html report", 
+               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/additional_episitrep_outputs/") %>% 
   slip_in_text(style = 'Normal char', 
                str = ').')
 
@@ -124,7 +124,7 @@ my_doc <- my_doc %<>%
                value = 'The full table of cases, deaths and trends can be found ') %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "here", 
-               hyperlink = "https://msfintl.sharepoint.com/:f:/s/grp-epi-proj-ncov/Es1-_W5jkHJNtgK3lmLYVl0BG7f_XDXukieo0dth6G_eGA") %>% 
+               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/world_summary_tables/") %>% 
   slip_in_text(style = 'Normal char', 
                str = ".") 
 
@@ -149,16 +149,20 @@ my_doc <- add_end_section_continuous()
 # --- --- --- --- --- --- --- 
 # 1
 
+#my_doc <- my_doc %<>% 
+#  body_add_par(style = 'Normal', 
+#               value = "Doubling time calculation should take into account that most countries now reached an important number of cases,
+#and sometimes are going through a second surge in cases. Therefore, doubling time calculation is now only considering cases and deaths reported in the last 12 days, instead of cumulative cases (method ") %>% 
+#  slip_in_text(style = 'Hyperlink', 
+#               str = "here", 
+#               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/analysis_methods_2020-04-28.html") %>% 
+#  slip_in_text(style = 'Normal char', 
+#               str = ").")
+
 my_doc <- my_doc %<>% 
   body_add_par(style = 'Normal', 
                value = "Doubling time calculation should take into account that most countries now reached an important number of cases,
-and sometimes are going through a second surge in cases. Therefore, doubling time calculation is now only considering cases and deaths reported in the last 12 days, instead of cumulative cases (method ") %>% 
-  slip_in_text(style = 'Hyperlink', 
-               str = "here", 
-               hyperlink = "https://msfintl.sharepoint.com/:b:/s/grp-epi-proj-ncov/Ed-Telbib0VMt03oD2nPR1ABOwAPbzS__kbyz46PJ6l4nw") %>% 
-  slip_in_text(style = 'Normal char', 
-               str = ').')
-
+and sometimes are going through a second surge in cases. Therefore, doubling time calculation is now only considering cases and deaths reported in the last 12 days, instead of cumulative cases.")
 
 my_doc <- add_par_normal(
   sprintf("As a result, a sharp increasing of cases (doubling time of less than 12 days) is observed in %s countries this week, compared to XX of two weeks ago (Figure 4 and Table 1).", 

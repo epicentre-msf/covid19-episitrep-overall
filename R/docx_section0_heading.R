@@ -18,7 +18,7 @@ my_doc %<>%
   slip_in_text(style = 'Description char', 
                str = ". Additional information on data collected through MSF linelists is now also available on the ") %>% 
   slip_in_text(style = 'Hyperlink', 
-               str = "MSF COVID-19 Dashboard", 
+               str = "MSF COVID-19 Dashboard ", 
                hyperlink = "https://reports.msf.net/secure/app/covid19-linelist-dashboard/") %>% 
   slip_in_text(style = 'Description char', 
                str ="(sign-up ") %>% 
@@ -58,15 +58,15 @@ my_doc %<>%
                value = "MSF ") %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "GIS Unit", 
-               hyperlink = "https://mapcentre.msf.org") %>% 
+               hyperlink = "https://mapcentre.msf.org/") %>% 
   slip_in_text(style = 'Description char', 
                str = glue(" (baseline country maps)")) %>% 
 
   body_add_par(style = 'Description bullet', 
              value = "FIND ") %>% 
   slip_in_text(style = 'Hyperlink', 
-               str = "Diagnostics resource centre Unit", 
-               hyperlink = "https://www.finddx.org/covid-19/") %>% 
+               str = "SARS-COV-2 Test Tracker", 
+               hyperlink = "https://www.finddx.org/covid-19/test-tracker/") %>% 
   slip_in_text(style = 'Description char', 
                str = glue(" for data on Covid-19 tests"))
 
@@ -81,7 +81,7 @@ my_doc %<>%
                value = "Definitions of increasing, declining and stable trends and the definition of doubling time, as well as detailed information on the analysis methods can be found ") %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "here", 
-               hyperlink = "https://msfintl.sharepoint.com/:u:/s/grp-epi-proj-ncov/ETbSSi7d-u9Ig6zaYJBqs3gBvt5qVCHE2t6CEafDKNClrg/")
+               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/analysis_methods_2020-04-28.html")
 
 
 

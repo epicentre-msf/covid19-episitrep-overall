@@ -96,14 +96,14 @@ df_pop_continent <- readRDS(file.path(path.data, paste0('df_pop_continent','.RDS
 # TESTS dataset from FIND
 # === === === === === === === 
   
-rds_tests <- get_find_data()
+rds_tests <- get_FIND_data()
 
 dta_tests <- rds_tests[[1]]
 
 iso_tests <- read.csv(file.path(path.data, 'iso-a3_for_tests.csv'), stringsAsFactors = FALSE)
   
 lst_tests <- dta_tests %>% 
-  select(country, date, new_tests) %>% 
+  select(country = name, date = time, new_tests = new_tests_orig) %>% 
   filter(date <= date_max_report) %>% 
   mutate(
     country = case_when(
@@ -165,9 +165,9 @@ threshold_doubling_time <- 12
 This report uses the following data sources: 
 
   - [ECDC data](https://opendata.ecdc.europa.eu/covid19/casedistribution/csv) last updated `r format(max(dta_ecdc$date, na.rm = TRUE), "%d %b %Y")`.   
-  -	FIND [Diagnostics Resource Centre Unit](https://www.finddx.org/covid-19/) for data on Covid-19 tests
+  -	FIND [SARS-COV-2 Test Tracker](https://www.finddx.org/covid-19/test-tracker/) for data on Covid-19 tests
 
-Definitions of increasing, declining and stable trends and the definition of doubling time, as well as detailed information on the analysis methods, can be found [here](https://msfintl-my.sharepoint.com/:u:/g/personal/francesco_grandesso_epicentre_msf_org/EZqExKcP8axMj06voaLlveABpiicCfzkk5OWB-EaJvo9Fw?e=lwU1eM).
+Definitions of increasing, declining and stable trends and the definition of doubling time, as well as detailed information on the analysis methods, can be found [here](https://reports.msf.net/secure/app_direct/covid19-additional-analysis/analysis_methods_2020-08-20.html).
 
 Additional graphics and tables are also available at the [Epicentre COVID-19 Epi Dashboard](https://reports.msf.net/public/covid19/).
 

@@ -114,9 +114,9 @@ get_geo_data <- function(path, force = FALSE) {
 #' Import FIND test dataset
 #' 
 #' @export
-get_find_data <- function(local_path = path.local.worldwide.data, file_name = 'dta_tests.RDS', update_data = FALSE) {
+get_FIND_data <- function(local_path = path.local.worldwide.data, file_name = 'dta_tests.RDS', update_data = FALSE) {
   
-  base_url <- "https://finddx.shinyapps.io/FIND_Cov_19_Tracker/_w_989488b3/downloads/cv_tests_download.csv"
+  base_url <- "https://raw.githubusercontent.com/dsbbfinddx/FINDCov19TrackerData/master/processed/data_all.csv"
   
   get_dta <- if(!file.exists(file.path(local_path, file_name))) {
     
@@ -401,7 +401,7 @@ get_msf_aggregated <- function(path_local = path.local.msf.data, file_name = 'dt
   if (!file.exists(dta_path_local) | update_data) {
     
     dta <- excel_sheets(path_remote) %>% 
-      setdiff(., c('Feuil1','Sheet1')) %>% 
+      setdiff(., c('Feuil1', 'feuil1', 'Sheet1', 'sheet1')) %>% 
       map_df(~{
         oc      <- read_excel(path = path_remote, sheet = .x, range = "B1", col_names = FALSE) %>% pull()
         country <- read_excel(path = path_remote, sheet = .x, range = "D1", col_names = FALSE) %>% pull()
