@@ -583,28 +583,29 @@ country_plot_coeff <- function(series, country_iso) {
 
 
 
-make_tbl_prop <- function(dta, var1, var2 = NULL) {
+make_tbl_prop <- function(dta, var1, var2 = NULL, drop_levels = FALSE) {
   
   var1 <- sym(var1)
   
   tbl1 <- dta %>%
-    group_by(!!var1, .drop = FALSE) %>%
+    group_by(!!var1, .drop = drop_levels) %>%
     summarise(
       n = n()) %>% 
     mutate(
-      p = n/sum(n)) %>% 
+      p = n / sum(n)) %>% 
     ungroup()
+  
   
   if (!is.null(var2)){
     
     var2 <- sym(var2)
     
     tbl2 <- dta %>%
-      group_by(!!var2, !!var1, .drop = FALSE) %>%
+      group_by(!!var2, !!var1, .drop = drop_levels) %>%
       summarise(
         n = n()) %>% 
       mutate(
-        p = n/sum(n)) %>% 
+        p = n / sum(n)) %>% 
       pivot_wider(names_from = !!var2, values_from = c('n', 'p')) %>% 
       full_join(tbl1) %>% 
       rename(n_Total = n, p_Total = p) %>% 

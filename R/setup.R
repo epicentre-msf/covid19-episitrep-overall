@@ -1,5 +1,5 @@
 
-rm(list=ls())
+rm(list = ls())
 
 
 # Load packages -----
@@ -38,11 +38,11 @@ path.R     <- file.path(path.root,'R')
 path.Rmd   <- file.path(path.root,'Rmd')
 path.templates <- file.path(path.root,'templates')
 path.local <- file.path(path.root,'local')
-path.data  <- file.path(path.local,'data')
+path.local.data  <- file.path(path.local,'data')
 
-# Create local folder or all types of outputs -----
+# Create local folder for all types of outputs -----
 dir.create(path.local, showWarnings = FALSE, recursive = TRUE)
-dir.create(path.data, showWarnings = FALSE, recursive = TRUE)
+dir.create(path.local.data, showWarnings = FALSE, recursive = TRUE)
 
 
 # Create the path to NCovEpi Sharepoint

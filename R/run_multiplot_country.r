@@ -33,7 +33,7 @@ lst_coeffs_cases  <- trend_models$lst_coeffs_cases
 lst_coeffs_deaths <- trend_models$lst_coeffs_deaths
 
 # Countries list dataset
-df_countries <- readRDS(file.path(path.data, paste0('df_countries','.RDS')))
+df_countries <- readRDS(file.path(path.local.data, paste0('df_countries','.RDS')))
 
 
 # --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- 

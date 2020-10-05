@@ -62,7 +62,7 @@ caption_world_map <- paste0('Analysis and graphic by Epicentre | Data source: EC
 # === === === === === === === 
 
 # Get ECDC data either from the web or from the saved RDS file
-rds_ecdc <- get_ecdc_data()
+rds_ecdc <- get_ecdc_data(force = TRUE)
 
 dta_ecdc <- rds_ecdc[[1]] %>% 
   prepare_ecdc_dta()
@@ -80,15 +80,16 @@ lst_dta_ecdc <- dta_ecdc_right_censored %>%
 last_update_dta_ecdc <- rds_ecdc[[2]]
 
 
+
 # === === === === === === === 
 # Geo and population data
 # === === === === === === === 
 
-sf_world         <- readRDS(file.path(path.data, paste0('sf_world','.RDS')))
-df_countries     <- readRDS(file.path(path.data, paste0('df_countries','.RDS')))
-df_pop_country   <- readRDS(file.path(path.data, paste0('df_pop_country','.RDS')))
-df_pop_region    <- readRDS(file.path(path.data, paste0('df_pop_region','.RDS')))
-df_pop_continent <- readRDS(file.path(path.data, paste0('df_pop_continent','.RDS')))
+sf_world         <- readRDS(file.path(path.local.data, paste0('sf_world','.RDS')))
+df_countries     <- readRDS(file.path(path.local.data, paste0('df_countries','.RDS')))
+df_pop_country   <- readRDS(file.path(path.local.data, paste0('df_pop_country','.RDS')))
+df_pop_region    <- readRDS(file.path(path.local.data, paste0('df_pop_region','.RDS')))
+df_pop_continent <- readRDS(file.path(path.local.data, paste0('df_pop_continent','.RDS')))
 
 
 
@@ -100,7 +101,7 @@ rds_tests <- get_FIND_data()
 
 dta_tests <- rds_tests[[1]]
 
-iso_tests <- read.csv(file.path(path.data, 'iso-a3_for_tests.csv'), stringsAsFactors = FALSE)
+iso_tests <- read.csv(file.path(path.local.data, 'iso-a3_for_tests.csv'), stringsAsFactors = FALSE)
   
 lst_tests <- dta_tests %>% 
   select(country = name, date = time, new_tests = new_tests_orig) %>% 
@@ -116,7 +117,7 @@ lst_tests <- dta_tests %>%
   multisplit("iso_a3")
 
 
-# Fill possible gap in tests time-series
+# Fill possible gaps in tests time-series
 for (i in names(lst_tests)) {
   
   tests_dta <- lst_tests[[i]]
@@ -582,7 +583,7 @@ tbl_death_trend <- tbl_death_count %>%
       factor(levels = c('Increasing', 'Stable', 'Declining')))
 
 write.csv(tbl_death_trend, 
-          file.path(path.local.worldwide.tables, glue("tbl_death_trend_{week_report}.csv")), 
+          file.path(path.local.worldwide.tables, paste0('tbl_death_trend', '_', week_report, '.csv')), 
           na = "", 
           row.names = FALSE, 
           fileEncoding = "UTF-8")
@@ -885,16 +886,9 @@ gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>%
 gtbl_summary_cases_deaths
 
 gtsave(gtbl_summary_cases_deaths, 
-       file.path(path.local.worldwide.tables, glue("gtbl_summary_cases_deaths_{week_report}.html")), 
+       file.path(path.local.worldwide.tables, paste0(week_report, '_world_summary_cases_deaths', '.html')), 
        inline_css = TRUE) %>% 
   invisible()
-
-if (Sys.info()[['effective_user']] == 'F-GRANDESSO') {
-  gtsave(gtbl_summary_cases_deaths, 
-       file.path("D:/OneDrive - MSF/covid-19/public/world_summary_tables", paste0( week_report, '_world_summary_cases_deaths', '.html')), 
-       inline_css = TRUE) %>% 
-  invisible()
-}
 
 ```
 
@@ -950,7 +944,7 @@ map_world_case_attack_rates <- ggplot(sf_attack_rates) +
 
 map_world_case_attack_rates 
 
-ggsave(file.path(path.local.worldwide.graphs, glue("map_world_case_attack_rates_{week_report}.png")), 
+ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_case_attack_rates', '_', week_report, '.png')), 
        plot = map_world_case_attack_rates + labs(title = NULL), 
        width = 10 * cm_to_in, 
        height = 6.66 * cm_to_in, 
@@ -984,7 +978,7 @@ map_world_death_attack_rates <- ggplot(sf_attack_rates) +
 
 map_world_death_attack_rates 
 
-ggsave(file.path(path.local.worldwide.graphs, glue("map_world_death_attack_rates_{week_report}.png")), 
+ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_death_attack_rates', '_', week_report, '.png')), 
        plot = map_world_death_attack_rates + labs(title = NULL), 
        width = 10 * cm_to_in, 
        height = 6.66 * cm_to_in, 
@@ -1496,10 +1490,6 @@ gtbl_doubling_cfr_rank <- tbl_doubling_cfr_rank %>%
     data_row.padding = px(2), 
     table_body.border.top.width = px(2))
 
-gtsave(gtbl_doubling_cfr_rank, 
-       file.path(path.local.worldwide.tables, paste0('gtbl_cfr_doubling_rank', '_', week_report,'.html')), 
-       inline_css = TRUE) %>% 
-  invisible()
 
 gtsave(gtbl_doubling_cfr_rank %>% 
          tab_options(
@@ -1507,7 +1497,7 @@ gtsave(gtbl_doubling_cfr_rank %>%
            table.font.size = px(10)),
        file.path(path.local.worldwide.tables, paste0('gtbl_cfr_doubling_rank', '_', week_report, '.png')), 
        vwidth = 720,
-       vheight = 720*1.414) %>% 
+       vheight = 720 * 1.414) %>% 
   invisible()
 
 gtbl_doubling_cfr_rank

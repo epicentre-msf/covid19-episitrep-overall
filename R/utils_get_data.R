@@ -35,7 +35,7 @@ get_world_sf <- function(scale = c('small', 'medium', 'large'), proj = c('robins
 #' Import ECDC dataset
 #' 
 #' @export
-get_ecdc_data <- function(local_path = path.local.worldwide.data, file_name = 'dta_ECDC.RDS', update_data = FALSE) {
+get_ecdc_data <- function(local_path = path.local.worldwide.data, file_name = 'dta_ECDC.RDS', force = FALSE) {
   
   base_url <- "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv"
   
@@ -53,7 +53,7 @@ get_ecdc_data <- function(local_path = path.local.worldwide.data, file_name = 'd
   
   
   
-  if (get_new_dta | update_data) {
+  if (get_new_dta | force) {
     
     dta <- readr::read_csv(base_url)
     last_update <-  Sys.Date()
@@ -75,6 +75,7 @@ get_ecdc_data <- function(local_path = path.local.worldwide.data, file_name = 'd
 #' Download and save shapefiles and geo data locally if not present
 #'
 #' @param path path to local directory to store geo data
+#' @param update if force = FALSE files are downloaded only if they do not exist in the local directory. If force = TRUE the files are downloaded even if they already exist in the local directory
 #'
 #' @export
 get_geo_data <- function(path, force = FALSE) {
@@ -86,14 +87,14 @@ get_geo_data <- function(path, force = FALSE) {
     saveRDS(sf_world, file = path_shp)
   }
   
-  path_countries <- file.path(path, paste0('df_countries','.RDS'))
-  path_pop_country <- file.path(path, paste0('df_pop_country','.RDS'))
-  path_pop_region <- file.path(path, paste0('df_pop_region','.RDS'))
+  path_countries     <- file.path(path, paste0('df_countries','.RDS'))
+  path_pop_country   <- file.path(path, paste0('df_pop_country','.RDS'))
+  path_pop_region    <- file.path(path, paste0('df_pop_region','.RDS'))
   path_pop_continent <- file.path(path, paste0('df_pop_continent','.RDS'))
-  path_iso_a3 <- file.path(path, paste0('iso-a3_for_tests','.csv'))
+  path_iso_a3        <- file.path(path, paste0('iso-a3_for_tests','.csv'))
   
   if (any(!file.exists(c(path_countries, path_pop_country, path_pop_region, path_pop_continent, path_iso_a3))) | force) {
-    df_ecdc <- get_ecdc_data() %>% prepare_ecdc_dta()
+    df_ecdc <- get_ecdc_data()[[1]] %>% prepare_ecdc_dta()
     
     df_countries     <- df_ecdc %>% filter(!is.na(iso_a3)) %>% distinct_at(vars(continent, region, iso_a3, country))
     df_pop_country   <- df_ecdc %>% filter(!is.na(iso_a3)) %>% distinct_at(vars(iso_a3, country, pop = population_2019))
@@ -114,7 +115,7 @@ get_geo_data <- function(path, force = FALSE) {
 #' Import FIND test dataset
 #' 
 #' @export
-get_FIND_data <- function(local_path = path.local.worldwide.data, file_name = 'dta_tests.RDS', update_data = FALSE) {
+get_FIND_data <- function(local_path = path.local.worldwide.data, file_name = 'dta_tests.RDS', force = FALSE) {
   
   base_url <- "https://raw.githubusercontent.com/dsbbfinddx/FINDCov19TrackerData/master/processed/data_all.csv"
   
@@ -128,10 +129,10 @@ get_FIND_data <- function(local_path = path.local.worldwide.data, file_name = 'd
     ifelse(last_update == Sys.Date(), FALSE, TRUE)
     
   }
+
   
   
-  
-  if (get_dta | update_data) {
+  if (get_dta | force) {
     
     dta <- readr::read_csv(base_url)
     last_update <-  Sys.Date()
@@ -367,12 +368,12 @@ get_iso_for_tests <- function() {
 #' Import MSF linelist dataset
 #' 
 #' @import
-get_msf_linelist <- function(path_local = path.local.msf.data, file_name = 'dta_MSF_linelist.RDS', path_remote = path.sharepoint.data, update_data = FALSE) {
+get_msf_linelist <- function(path_local = path.local.msf.data, file_name = 'dta_MSF_linelist.RDS', path_remote = path.sharepoint.data, force = FALSE) {
   
   dta_path_local  <- file.path(path_local, file_name) 
   dta_path_remote <- max(fs::dir_ls(path_remote, regexp = "[.]rds$"))
   
-  if (!file.exists(dta_path_local) | update_data) {
+  if (!file.exists(dta_path_local) | force) {
     
     dta <- readRDS(dta_path_remote)
     saveRDS(dta, file = dta_path_local)
@@ -391,14 +392,14 @@ get_msf_linelist <- function(path_local = path.local.msf.data, file_name = 'dta_
 #' Import MSF aggregated dataset
 #' 
 #' @import
-get_msf_aggregated <- function(path_local = path.local.msf.data, file_name = 'dta_MSF_aggregated.RDS', path_remote = file.path(path.sharepoint, "coordination", "Surveillance focal points coordination", "Aggregated reporting", "Report_covid_aggregate_all_v2.xlsx"), vars_name = c("sheet", "oc", "country", "project", "date", "week", "suspected", "probable", "confirmed", "non_cases", "unknown"), update_data = FALSE) {
+get_msf_aggregated <- function(path_local = path.local.msf.data, file_name = 'dta_MSF_aggregated.RDS', path_remote = file.path(path.sharepoint, "coordination", "Surveillance focal points coordination", "Aggregated reporting", "Report_covid_aggregate_all_v2.xlsx"), vars_name = c("sheet", "oc", "country", "project", "date", "week", "suspected", "probable", "confirmed", "non_cases", "unknown"), force = FALSE) {
   
   library(purrr)
   library(readxl)
 
   dta_path_local <- file.path(path_local, file_name) 
   
-  if (!file.exists(dta_path_local) | update_data) {
+  if (!file.exists(dta_path_local) | force) {
     
     dta <- excel_sheets(path_remote) %>% 
       setdiff(., c('Feuil1', 'feuil1', 'Sheet1', 'sheet1')) %>% 
@@ -430,14 +431,14 @@ get_msf_aggregated <- function(path_local = path.local.msf.data, file_name = 'dt
 # Get first and last activity dates by project
 #' 
 #' @import
-get_msf_aggregated_dates <- function(path_local = path.local.msf.data, file_name = 'dta_MSF_aggregated_dates.RDS', path_remote = file.path(path.sharepoint, "coordination", "Surveillance focal points coordination", "Aggregated reporting", "Report_covid_aggregate_all_v2.xlsx"), update_data = FALSE) {
+get_msf_aggregated_dates <- function(path_local = path.local.msf.data, file_name = 'dta_MSF_aggregated_dates.RDS', path_remote = file.path(path.sharepoint, "coordination", "Surveillance focal points coordination", "Aggregated reporting", "Report_covid_aggregate_all_v2.xlsx"), force = FALSE) {
   
   library(purrr)
   library(readxl)
   
   dta_path_local <- file.path(path_local, file_name) 
   
-  if (!file.exists(dta_path_local) | update_data) {
+  if (!file.exists(dta_path_local) | force) {
     
     dta <- excel_sheets(path_remote) %>% 
       setdiff(., "Sheet1") %>% 
@@ -471,10 +472,4 @@ get_msf_aggregated_dates <- function(path_local = path.local.msf.data, file_name
   return(dta)
   
 }
-
-  
-  
- 
-
-
 

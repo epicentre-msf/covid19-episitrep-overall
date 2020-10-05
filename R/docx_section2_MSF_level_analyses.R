@@ -27,7 +27,7 @@ my_doc %<>%
                            prop = calibri_8))) %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "here", 
-               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/additional_episitrep_outputs/") %>% 
+               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/additional_episitrep_outputs_msf/") %>% 
   slip_in_text(style = 'Description char', 
                str = '. ') 
 
@@ -125,10 +125,10 @@ my_doc <- add_par_normal(
 
 # 3
 my_doc <- add_par_normal(
-  sprintf("The male/female ratio was %s among all covid19-related patients (stable). %s (%s%%) patients reported at least one comorbidity (Table 3).", 
+  sprintf("The male/female ratio was %s among all covid19-related patients (stable). %s (%s%%) patients reported at least one comorbidity (Table 3). The frequency of comorbidities by covid status are listed in Table 4.", 
           tbl_sex_ratio %>% pull(ratio_mf) %>% last(), 
-          tbl_comcond_status %>% filter(covid_status == 'Total') %>% pull(Yes), 
-          tbl_comcond_status %>% filter(covid_status == 'Total') %>% pull(p_Yes)))
+          sum(dta_linelist$Comcond_01), 
+          format_percent(sum(dta_linelist$Comcond_01)/count(dta_linelist)) %>% pull()))
 
 my_doc <- add_end_section_2columns()
 
@@ -170,16 +170,26 @@ my_doc <- add_end_section_2columns()
 # --- --- --- --- --- --- 
 # 1
 my_doc <- add_par_normal(
-  sprintf("Symptoms of patients upon admission are presented in Table 4. There is not a clear pattern of symptoms that allows to differentiate confirmed and non-cases. Loss of smell and taste is more frequent among confirmed cases, as expected. Nevertheless, a non-negligible proportion of non-cases present these symptoms; these appear to mainly come from two specific projects, and remain to be further investigated."))
+  sprintf("Symptoms of patients upon admission are presented in Table 5. There is not a clear pattern of symptoms that allows to differentiate confirmed and non-cases. Loss of smell and taste is more frequent among confirmed cases, as expected. Nevertheless, a non-negligible proportion of non-cases present these symptoms; these appear to mainly come from two specific projects, and remain to be further investigated."))
 
 my_doc <- add_end_section_2columns()
+
+my_doc <- add_par_normal('')
+
+# Table Comorbidities
+my_doc <- add_table(
+  object_name = paste0('gtbl_comcond_status', '_', week_report, '.png'), 
+  table_title = 'Frequency and percentage of comorbidities or underlying conditions among patients consulted/admitted', 
+  folder = 'msf', 
+  width = 15.61 * cm_to_in, 
+  height = 9.45 * cm_to_in)
 
 my_doc <- add_par_normal('')
 
 # Table symptoms
 my_doc <- add_table(
   object_name = paste0('gtbl_sympt_all', '_', week_report, '.png'), 
-  table_title = 'Frequency and percentage of signs and symptoms of patients admitted', 
+  table_title = 'Frequency and percentage of signs and symptoms of patients consulted/admitted', 
   folder = 'msf', 
   width = 17.45 * cm_to_in, 
   height = 9.45 * cm_to_in)
@@ -192,7 +202,7 @@ my_doc <- add_end_section_continuous()
 # - Text CFR all patients
 # --- --- --- --- --- --- 
 my_doc <- add_par_normal(
-  sprintf("%s confirmed, probable, or suspected cases with known outcome (cured/died) died, which gives a case fatality risk (CFR) of %s%% (Table 5). CFR among probables and suspects appear really high. This could reflect the difficult access to testing in some countries, but remain to be further investigated.", 
+  sprintf("%s confirmed, probable, or suspected cases with known outcome (cured/died) died, which gives a case fatality risk (CFR) of %s%% (Table 6). CFR among probables and suspects appear really high. This could reflect the difficult access to testing in some countries, but remain to be further investigated.", 
           Words(nb_msf_conf_prob_susp_who_died), 
           round(cfr_confirmed_probable_suspected * 100, digits = 1)))
 
@@ -231,7 +241,7 @@ my_doc <- add_par_normal(
 
 
 my_doc <- add_par_normal(
-  sprintf("Among confirmed patients, %s%% were admitted in hospitals. %s patients (%s%% of patients with recorded information) were supported with oxygen. %s (%s%% of patients with recorded information) were admitted into an Intensive Care Unit. %s patients (%s%%) were supported with a ventilator (Table 6).", 
+  sprintf("Among confirmed patients, %s%% were admitted in hospitals. %s patients (%s%% of patients with recorded information) were supported with oxygen. %s (%s%% of patients with recorded information) were admitted into an Intensive Care Unit. %s patients (%s%%) were supported with a ventilator (Table 7).", 
           tbl_care_admitted %>% filter(merge_admit == 'Yes') %>% pull(p_Total) %>% format_percent(digits = 1), 
           tbl_care_oxygen %>% filter(merge_oxygen == 'Yes') %>% pull(n_Total) %>% Words(), 
           tbl_care_oxygen %>% filter(merge_oxygen == 'Yes') %>% pull(p_Total) %>% format_percent(digits = 1), 
@@ -300,7 +310,7 @@ my_doc <- add_end_section_2columns()
 # --- --- --- --- --- --- 
 # 1
 my_doc <- add_par_normal(
-  sprintf("In MSF facilities, %s%% of confirmed cases with known outcome over 65 years of age died. The median age among deceased patients was %s years (stable in the last weeks). The proportion of patients who died largely varied with the number of comorbidities declared, from %s%% (0 comorbidities declared) to %s%% (3 comorbidities declared) (Table 7).", 
+  sprintf("In MSF facilities, %s%% of confirmed cases with known outcome over 65 years of age died. The median age among deceased patients was %s years (stable in the last weeks). The proportion of patients who died largely varied with the number of comorbidities declared, from %s%% (0 comorbidities declared) to %s%% (3 comorbidities declared) (Table 8).", 
           round(nb_msf_conf_above65_who_died / nb_msf_conf_above65 * 100, digits = 1), 
           median_age_confirmed_died, 
           format_percent(cfr_confirmed_no_comorbidities, digits = 1), 
@@ -340,7 +350,7 @@ my_doc <- add_end_section_2columns()
 
 # 2 - Comorbidities
 my_doc <- add_par_normal(
-  sprintf("Table 8 presents the case fatality among confirmed cases according to the types of comorbidity (patients with known cured or died outcome in the denominator). XXXX are the comorbidities associated wit hthe highest case fatality. Over/Almost XX%% with underlying respiratory disease died......"))
+  sprintf("Table 9 presents the case fatality among confirmed cases according to the types of comorbidity (patients with known cured or died outcome in the denominator). XXXX are the comorbidities associated wit hthe highest case fatality. Over/Almost XX%% with underlying respiratory disease died......"))
 
 
 my_doc <- add_end_section_2columns()
@@ -379,11 +389,6 @@ my_doc <- add_par_normal(
 #               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/additional_episitrep_outputs/") %>% 
 #  slip_in_text(style = 'Normal char', 
 #               str = ".") 
-
-my_doc %<>% 
-  body_add_fpar(style = 'Normal', 
-                fpar(ftext('For more information are available here.', 
-                           prop = calibri_8)))
 
 my_doc <- add_end_section_2columns()
 

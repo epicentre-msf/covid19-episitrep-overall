@@ -81,7 +81,7 @@ my_doc %<>%
                value = "Definitions of increasing, declining and stable trends and the definition of doubling time, as well as detailed information on the analysis methods can be found ") %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "here", 
-               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/analysis_methods_2020-04-28.html")
+               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/analysis_methods_2020-08-20.html")
 
 
 

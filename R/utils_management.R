@@ -176,6 +176,25 @@ prepare_ecdc_dta <- function(dta){
 # Specific functions for MSF linelist dataset
 # --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
 
+clean_msf_dta <- function(dta) {
+  
+  dta <- dta %>% 
+    mutate(
+        age_in_years = case_when(
+          age_in_years > 110 ~ NA_real_, 
+          TRUE ~ age_in_years), 
+      Comcond_immuno = case_when(
+        grepl('Positive', MSF_hiv_status) ~ 'Yes', 
+        TRUE ~ Comcond_immuno), 
+      Comcond_cardi = case_when(
+        MSF_hypertension == 'Yes' ~ 'Yes', 
+        TRUE ~ Comcond_cardi))
+  
+  return(dta)
+  
+}
+
+
 prepare_msf_dta <- function(dta){
   
   # Rename variables
@@ -223,6 +242,14 @@ prepare_msf_dta <- function(dta){
       age_9gp = cut(age_in_years, breaks = age_breaks_9, labels = age_labels_9, include.lowest = TRUE, right = FALSE)
     )
   
+  # Recoding Comorbidities count and presence by including comorbidities not included by WHO
+  Comcond_count <- rowSums(select(dta, starts_with('Comcond_'), hiv_status, hypertension, tb_active, malaria, malnutrition, smoking) == "Yes", na.rm = TRUE)
+  
+  Comcond_01 <- ifelse(Comcond_count > 0, 1,0)
+  
+  dta <- cbind(dta, Comcond_count, Comcond_01)
+  
+  
   # Merging patients' care variables
   dta <- dta %>% 
     mutate( 
@@ -251,6 +278,39 @@ prepare_msf_dta <- function(dta){
   
   return(dta)
 }
+
+
+prepare_msf_dta_comcond <- function(dta){
+  
+  dta <- dta %>% 
+    select(continent, covid_status, outcome_status, starts_with('Comcond_'), hiv_status, hypertension, tb_active, malaria, malnutrition, smoking) %>% 
+    select(-c(Comcond_present, Comcond_pregt, Comcond_present_01))
+  
+  dta <- dta %>% 
+    mutate(
+      malaria = case_when(
+        malaria == 'Positive' ~ 'Yes', 
+        malaria == 'Negative' ~ 'No', 
+        malaria %in% c('Inconclusive', 'Not done') ~ 'Unknown', 
+        TRUE ~ malaria), 
+      hiv_status = case_when(
+        hiv_status %in% c('Positive (no ARV)', 'Positive (on ART)', 'Positive (unknown)') ~ 'Yes', 
+        hiv_status == 'Negative' ~ 'No', 
+        TRUE ~ hiv_status), 
+      tb_active = case_when(
+        tb_active %in% c('Yes (currently no treatment)', 'Yes (currently on treatment)', 'Yes (unknown)') ~ 'Yes', 
+        TRUE ~ tb_active), 
+      smoking = case_when(
+        smoking %in% c('Yes (current)', 'Yes (former)') ~ 'Yes', 
+        TRUE ~ smoking))
+  
+  return(dta)
+}
+
+df_labels_comcond <- data.frame(
+  levels = c('Comcond_cardi', 'Comcond_diabetes', 'Comcond_immuno', 'Comcond_liver', 'Comcond_lung', 'Comcond_malig', 'Comcond_neuro', 'Comcond_other', 'Comcond_partum', 'Comcond_preg', 'Comcond_renal', 'hiv_status', 'hypertension', 'malaria', 'malnutrition', 'smoking', 'tb_active'),
+  labels = c('Cardiovascular (including hypertention)', 'Diabetes', 'Immunological (including HIV)','Hepatic', 'Respiratory (including chronic lung diseases)', 'Cancer', 'Neurological', 'Other condition', 'Post-partum', 'Pregnancy', 'Renal', 'HIV', 'Hypertension', 'Malaria', 'Malnutrition', 'Smoking', 'TB'))
+
 
 
 

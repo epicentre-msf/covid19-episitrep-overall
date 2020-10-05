@@ -1,6 +1,5 @@
-  
-  
-rm(list = ls())
+
+# -- Prepare environment
 
 source(here::here('R', 'setup.R'), encoding = 'UTF-8')
 source(file.path(path.R, "utils_get_data.R")  , encoding = "UTF-8")
@@ -8,10 +7,10 @@ source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
 source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
 source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
 
-# === === === === === === === === === === === === 
-# download geo data if not already present locally
-get_geo_data(path.data)
-# === === === === === === === === === === === === 
+
+# -- Download geo data if not already present locally
+get_geo_data(path = path.local.data, force = FALSE)
+
 
 
 # === === === === === === === === 
@@ -50,8 +49,7 @@ my_doc <- read_docx(file.path(path.templates, 'template_EpiSitrep_world_Covid-19
 source(file.path(path.R, "utils_vis.R")    , encoding = "UTF-8")
 source(file.path(path.R, 'utils_officer.R'), encoding = 'UTF-8')
 
-
-styles_info(my_doc)
+#styles_info(my_doc)
 
 
 # Doc title

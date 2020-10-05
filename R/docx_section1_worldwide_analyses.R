@@ -53,7 +53,7 @@ body_add_par(style = 'Normal',
                      call_countries_increasing('cases') %>% length() %>% Words())) %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "html report", 
-               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/additional_episitrep_outputs/") %>% 
+               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/addtional_episitrep_outputs_worldwide/") %>% 
   slip_in_text(style = 'Normal char', 
                str = ').')
 
@@ -124,7 +124,7 @@ my_doc <- my_doc %<>%
                value = 'The full table of cases, deaths and trends can be found ') %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "here", 
-               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/world_summary_tables/") %>% 
+               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/tables_world_summary/") %>% 
   slip_in_text(style = 'Normal char', 
                str = ".") 
 
