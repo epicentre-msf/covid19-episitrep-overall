@@ -195,41 +195,33 @@ clean_msf_dta <- function(dta) {
 }
 
 
-prepare_msf_dta <- function(dta){
+prepare_msf_dta <- function(dta, shorten_var_names = FALSE){
   
-  # Rename variables
-  var_names_stub <- c('^patinfo_', '^patcourse_', '^MSF_', '_patcourse')
-  
-  for (i in var_names_stub) {
-    names(dta) <- gsub(i, '', names(dta))
-  }
-  
-  # Factorise variables
+  # Create variable levels
   levels_covid_status <- c('Confirmed', 'Probable', 'Suspected', 'Not a case', '(Unknown)')
-  
   levels_outcome_status <- c('Cured', 'Died', 'Left against medical advice', 'Transferred', 'Sent back home', 'Other')
-  
   levels_ynu <- c('Yes', 'No', 'Unknown')
   
+  
+  # Covid status
   dta <- dta %>% 
     mutate(
-      covid_status = factor(covid_status, levels = levels_covid_status) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
-      country = factor(country, levels = df_countries$iso_a3, labels = df_countries$country), 
-      age_in_years = floor(age_in_years), 
-      admit = factor(admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
-      outcome_admit = factor(outcome_admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
-      date_consultation = as.Date(date_consultation), 
-      outcome_status = factor(outcome_status, levels = levels_outcome_status) %>% forcats::fct_explicit_na(na_level = 'Pending/Unknown'),
+      MSF_covid_status = factor(MSF_covid_status, levels = levels_covid_status) %>% forcats::fct_explicit_na(na_level = 'Unknown'))
+  
+  
+  # Dates (and weeks)
+  dta <- dta %>% 
+    mutate(
+      MSF_date_consultation = as.Date(MSF_date_consultation), 
+      outcome_patcourse_status = factor(outcome_patcourse_status, levels = levels_outcome_status) %>% forcats::fct_explicit_na(na_level = 'Pending/Unknown'),
       epi_week_report = make_epiweek_date(report_date),
-      epi_week_consultation = make_epiweek_date(date_consultation),
-      epi_week_admission = make_epiweek_date(presHCF),
-      epi_week_onset = make_epiweek_date(dateonset),
-      Comcond_present_01 = case_when(
-        Comcond_present == 0 ~ 0,
-        Comcond_present >=1 ~ 1)
+      epi_week_consultation = make_epiweek_date(MSF_date_consultation),
+      epi_week_admission = make_epiweek_date(patcourse_presHCF),
+      epi_week_onset = make_epiweek_date(patcourse_dateonset)
     )
   
-  # Create age-groups
+  
+  # Age
   age_breaks_5 <- c(0, 5, 15, 45, 65, Inf)
   age_labels_5 <- label_breaks(age_breaks_5, exclusive = TRUE)
   
@@ -238,45 +230,48 @@ prepare_msf_dta <- function(dta){
   
   dta <- dta %>% 
     mutate(
+      age_in_years = floor(age_in_years), 
       age_5gp = cut(age_in_years, breaks = age_breaks_5, labels = age_labels_5, include.lowest = TRUE, right = FALSE),
       age_9gp = cut(age_in_years, breaks = age_breaks_9, labels = age_labels_9, include.lowest = TRUE, right = FALSE)
     )
   
-  # Recoding Comorbidities count and presence by including comorbidities not included by WHO
-  Comcond_count <- rowSums(select(dta, starts_with('Comcond_'), hiv_status, hypertension, tb_active, malaria, malnutrition, smoking) == "Yes", na.rm = TRUE)
   
-  Comcond_01 <- ifelse(Comcond_count > 0, 1,0)
+  # Comorbidities count and presence by including comorbidities not included by WHO
+  Comcond_count <- rowSums(select(dta, starts_with('Comcond_'), MSF_hiv_status, MSF_hypertension, MSF_tb_active, MSF_malaria, MSF_malnutrition, MSF_smoking) == "Yes", na.rm = TRUE)
+  
+  Comcond_01 <- ifelse(Comcond_count > 0, 1, 0)
   
   dta <- cbind(dta, Comcond_count, Comcond_01)
   
   
-  # Merging patients' care variables
+  # Patients' care variables
   dta <- dta %>% 
-    mutate( 
-      merge_admit = case_when(
-        admit == 'Yes' ~ 'Yes', 
-        outcome_admit == 'Yes' ~ 'Yes', 
-        is.na(outcome_admit) ~ 'Unknown', 
-        TRUE ~ 'No') %>% factor(levels = c('Yes', 'No', 'Unknown')), 
-      merge_oxygen = recode_care(received_oxygen, outcome_received_oxygen), 
-      merge_icu    = recode_care(icu , outcome_icu), 
-      merge_vent   = recode_care(vent, outcome_vent), 
-      merge_ecmo   = recode_care(ecmo, outcome_ecmo)) 
-  
-  # Add geographical variables
-  dta <- dta %>% 
-    left_join(df_countries %>% select(continent, region, iso_a3, country), by = 'country') %>% 
     mutate(
-      continent = as.factor(continent)
-    )
+      patcourse_admit = factor(patcourse_admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
+      outcome_patcourse_admit = factor(outcome_patcourse_admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
+      merge_admit = case_when(
+        patcourse_admit == 'Yes' ~ 'Yes', 
+        outcome_patcourse_admit == 'Yes' ~ 'Yes', 
+        is.na(outcome_patcourse_admit) ~ 'Unknown', 
+        TRUE ~ 'No') %>% factor(levels = c('Yes', 'No', 'Unknown')), 
+      merge_oxygen = recode_care(MSF_received_oxygen, MSF_outcome_received_oxygen), 
+      merge_icu    = recode_care(patcourse_icu , outcome_patcourse_icu), 
+      merge_vent   = recode_care(patcourse_vent, outcome_patcourse_vent), 
+      merge_ecmo   = recode_care(patcourse_ecmo, outcome_patcourse_ecmo)) 
   
-  # Filter date of consultation until the Sunday the EpiSitrep (see set_time_frame.R)
-  # but keep NAs as there is a considerable number of rows with missing date of consultation data
-  date_min_consultation <- min(pull(dta, date_consultation), na.rm = TRUE) 
-  dta <- dta %>% 
-    filter(between(date_consultation, left = date_min_consultation, right = date_max_report) | is.na(date_consultation))
+
+  # Shorten variables names to make easy to handle them
+  if (shorten_var_names) {
+    
+    var_names_stub <- c('^patinfo_', '^patcourse_', '^MSF_', '_patcourse')
+    
+    for (i in var_names_stub) {
+      names(dta) <- gsub(i, '', names(dta))
+    }
+    
+  }
   
-  return(dta)
+  return(as_tibble(dta))
 }
 
 
@@ -284,7 +279,7 @@ prepare_msf_dta_comcond <- function(dta){
   
   dta <- dta %>% 
     select(continent, covid_status, outcome_status, starts_with('Comcond_'), hiv_status, hypertension, tb_active, malaria, malnutrition, smoking) %>% 
-    select(-c(Comcond_present, Comcond_pregt, Comcond_present_01))
+    select(-c(Comcond_present, Comcond_pregt))
   
   dta <- dta %>% 
     mutate(
@@ -306,6 +301,7 @@ prepare_msf_dta_comcond <- function(dta){
   
   return(dta)
 }
+
 
 df_labels_comcond <- data.frame(
   levels = c('Comcond_cardi', 'Comcond_diabetes', 'Comcond_immuno', 'Comcond_liver', 'Comcond_lung', 'Comcond_malig', 'Comcond_neuro', 'Comcond_other', 'Comcond_partum', 'Comcond_preg', 'Comcond_renal', 'hiv_status', 'hypertension', 'malaria', 'malnutrition', 'smoking', 'tb_active'),
