@@ -32,8 +32,22 @@ if (!exists('path.root')) {
 
 source(file.path(path.R, 'utils_management.R'), encoding = 'UTF-8')
 source(file.path(path.R, 'utils_get_data.R')  , encoding = 'UTF-8')
-source(file.path(path.R, 'set_time_frame.R')  , encoding = 'UTF-8')
+#source(file.path(path.R, 'set_time_frame.R')  , encoding = 'UTF-8')
 source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
+
+
+# Set the right censoring date terms. This create also the folders where to save the outputs
+date_and_week_max <- set_date_max()
+
+date_max_report <- date_and_week_max[[1]]
+week_report     <- date_and_week_max[[2]]
+
+
+# Set the left censoring date (if NULL non left-censoring is made)
+date_min_report <- NULL
+
+
+caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF linelists as of {format(date_max_report, "%d %b %Y")}')
 
 
 knitr::opts_chunk$set(cache = FALSE,
@@ -48,8 +62,6 @@ knitr::opts_chunk$set(cache = FALSE,
                       message = FALSE,
                       encoding = "UTF-8")
 
-
-caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF linelists as of {format(date_max_report, "%d %b %Y")}')
 ```
 
 <!-- Import and manage data -->
@@ -59,7 +71,7 @@ caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF line
 df_countries <- readRDS(file.path(path.local.data, 'df_countries.RDS'))
 
 
-## Import MSF linelist 
+## Import MSF linelist --- --- --- 
 path.sharepoint.data <- file.path(path.sharepoint, 'data', 'linelist', 'world')
 
 dta_linelist <- get_msf_linelist(force = TRUE) %>% 
@@ -69,29 +81,25 @@ dta_linelist <- get_msf_linelist(force = TRUE) %>%
   left_join(df_countries %>% select(continent, region, iso_a3, country), by = 'iso_a3') %>% 
   mutate(
     country = as.factor(country), 
-    continent = as.factor(continent))
+    continent = as.factor(continent)) %>% 
+  filter(between(date_consultation, left = date_min_report, right = date_max_report) | is.na(date_consultation)) # Filter date limits using date of consultation
 
-  # Problem with date
-  
 
-# Date limits using date of consultation
-dta_linelist <- dta_linelist %>% 
-  filter(between(date_consultation, left = NULL, right = date_max_report) | is.na(date_consultation))
-
-# Import aggregated data
+## Import aggregated data --- --- --- 
 dta_weekly_aggregated <- get_msf_aggregated()
 dta_project_aggregated_dates <- get_msf_aggregated_dates()
 
-# Remove temporarily Quito that grouped the whole activity in a single week
+### Remove temporarily Quito that grouped the whole activity in a single week
 dta_weekly_aggregated <- dta_weekly_aggregated %>% 
   filter(project != 'Quito-Fixed & mobile brigades')
 
 
-# Expand the aggregated
+### Expand the aggregated
 dta_aggregated_expanded <- dta_weekly_aggregated %>% 
   filter(!project %in% c('Lesvos-Moria', 'Lesvos-Moria Ped')) %>% 
   select(-week) %>% 
   mutate(
+    date = as.Date(date), 
     epi_week_consultation = make_epiweek_date(date) %>% as.Date(), 
     country = case_when(
       country == 'DRC' ~ 'Democratic Republic of the Congo', 
@@ -105,8 +113,8 @@ dta_aggregated_expanded <- dta_weekly_aggregated %>%
     select(-c(value, obs)) %>% 
     mutate(
       covid_status = factor(covid_status, levels = c('confirmed', 'probable', 'suspected', 'non_cases', 'unknown'), labels = c('Confirmed', 'Probable', 'Suspected', 'Not a case', 'Unknown'))) %>% 
-  rename('OC' = oc, 'site_name' = project)
-
+  rename('OC' = oc, 'site_name' = project) %>% 
+  filter(between(date, left = date_min_report, right = date_max_report) | is.na(date))
 
 
 
@@ -118,8 +126,6 @@ dta_linelist_with_aggregated <- dta_linelist %>%
             mutate(
               country = paste(country, '(*)'), 
               site_name = paste(site_name, '(*)')))
-
-
 
 
 tbl_aggregated_expanded_with_dates <- dta_aggregated_expanded %>% 
@@ -144,7 +150,7 @@ tbl_aggregated_expanded_with_dates <- dta_aggregated_expanded %>%
 
 
 # Overview
-This section will present **information of completeness of data** (number of MSF projects that are active on Covid19 care, reporting individual data (linelist), reporting aggregated data and not reporting data). Number of projects will be listed by continent and region. 
+This section will present **information of completeness of data** (number of MSF projects that are active on Covid-19 care, reporting individual data (linelist), reporting aggregated data and not reporting data). Number of projects will be listed by continent and region. 
 
 At the date the required data are not yet available. And this section will be updated as soon as they will be available.
 
@@ -161,7 +167,8 @@ nb_msf_sites_aggregated <- length(unique(dta_aggregated_expanded$site_name))   #
 nb_msf_sites            <- nb_msf_sites_linelist + nb_msf_sites_aggregated     # Sum of the two above
 
 
-call_msf_countries <- unique(c(dta_linelist$country, dta_aggregated_expanded$country)) # List of countries reporting data
+call_msf_countries <- unique(c(as.character(dta_linelist$country), as.character(dta_aggregated_expanded$country))) %>% 
+  sort() # List of countries reporting data
 nb_msf_countries <- length(call_msf_countries)
 
 nb_msf_obs_linelist   <- dta_linelist %>% count() %>% pull(n)         # Nb of observations in the linelist
@@ -222,7 +229,7 @@ median_age_confirmed_died <- dta_linelist %>%
 **Number of consultation reported through the aggregated data reporting**: `r format(nb_msf_obs_aggregated, big.mark = ',')`. 
 
 
-Of all consultations/admissions patients were in relation with the COvid-19 infection: 
+Of all consultations/admissions patients were in relation with the Covid-19 infection: 
 
   - `r format(nb_msf_confirmed, big.mark = ',')` confirmed
   - `r format(nb_msf_probable , big.mark = ',')` probable
@@ -424,7 +431,7 @@ hist_epicurve_consult_admit_continent
 ```
 
 
-```{r gtbl-consultation-continent}
+```{r gtbl-consultation-continent, layout = "l-body-outset"}
 
 tbl_consultation_continent <- dta_linelist %>%
   filter(merge_admit != "Unknown") %>% 
@@ -436,14 +443,24 @@ tbl_consultation_continent <- dta_linelist %>%
     admitted_percent = Admitted / Total* 100)
 
 gtbl_consultation_continent <- tbl_consultation_continent %>% 
-  gt() %>% 
+  gt(rowname_col = "continent") %>% 
   cols_label(
-    continent = "", 
     admitted_percent = "Admitted (%)") %>% 
+  fmt_number(
+    columns = vars(Admitted, `Not Admitted`, Total), 
+    decimals = 0) %>% 
   fmt_number(
     columns = vars(admitted_percent), 
     decimals = 1) %>% 
-  tab_header(title = "Admitted by continent")
+  cols_align(
+    align = 'right', 
+    columns = vars(Admitted, `Not Admitted`, Total, admitted_percent)) %>% 
+  cols_width(
+    vars(Admitted, `Not Admitted`, Total) ~ px(120), 
+    everything() ~ px(100)) %>% 
+  tab_options(
+    column_labels.font.weight = "bold") %>% 
+  tab_header(title = "Number of admissions by continent")
 
 
 gtbl_consultation_continent
@@ -1011,17 +1028,19 @@ tbl_comcond_status <- names(dta_comcond)[4:ncol(dta_comcond)] %>%
       make_tbl_prop(.x, 'covid_status', drop_levels = TRUE) %>% 
       rename('value'= .x) %>% 
       mutate(
-        name_var = .x)
+        type_comorbidity = .x)
     }) %>% 
-  filter(value == 'Yes')
+  filter(value == 'Yes') %>% 
+  mutate(
+    type_comorbidity = factor(type_comorbidity, levels = df_labels_comcond$levels, labels = df_labels_comcond$labels))
 
 
 gtbl_comcond_status <- tbl_comcond_status %>% 
   gt() %>% 
   cols_hide('value') %>% 
-  cols_move_to_start(columns = vars(name_var)) %>% 
+  cols_move_to_start(columns = vars(type_comorbidity)) %>% 
   cols_label(
-    name_var = "Comorbidities/Underlying conditions", 
+    type_comorbidity = "Comorbidities/Underlying conditions", 
     n_Confirmed    = 'n', 
     n_Probable     = 'n',
     n_Suspected    = 'n', 
@@ -1036,7 +1055,7 @@ gtbl_comcond_status <- tbl_comcond_status %>%
     p_Total        = '(%)') %>% 
   cols_align(
    align = 'left', 
-   columns = vars(name_var)) %>% 
+   columns = vars(type_comorbidity)) %>% 
   cols_align(
     align = 'right',
     columns = starts_with(c('n_', '.p_'))) %>%
@@ -1691,7 +1710,9 @@ gtbl_age_sex_outcome %>%
 ```
 
 
+
 ### Case fatality among confirmed patients
+
 <!-- CFR by age, sex and number of comorbidities -->
 ```{r tbl-cfr-age-sex-comorbidities}
 # DONE by Francesco
