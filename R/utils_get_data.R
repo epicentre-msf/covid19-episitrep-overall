@@ -402,7 +402,7 @@ get_msf_aggregated <- function(path_local = path.local.msf.data, file_name = 'dt
   if (!file.exists(dta_path_local) | force) {
     
     dta <- excel_sheets(path_remote) %>% 
-      setdiff(., c('Feuil1', 'feuil1', 'Sheet1', 'sheet1')) %>% 
+      setdiff(., c('Feuil1', 'feuil1', 'Sheet1', 'sheet1', 'Sheet4')) %>% 
       map_df(~{
         oc      <- read_excel(path = path_remote, sheet = .x, range = "B1", col_names = FALSE) %>% pull()
         country <- read_excel(path = path_remote, sheet = .x, range = "D1", col_names = FALSE) %>% pull()
@@ -441,7 +441,7 @@ get_msf_aggregated_dates <- function(path_local = path.local.msf.data, file_name
   if (!file.exists(dta_path_local) | force) {
     
     dta <- excel_sheets(path_remote) %>% 
-      setdiff(., "Sheet1") %>% 
+      setdiff(., c('Feuil1', 'feuil1', 'Sheet1', 'sheet1', 'Sheet4')) %>% 
       map_df(~{
         
         if (is_empty(read_excel(path = path_remote, sheet = .x, range = "I1", col_names = FALSE))) {

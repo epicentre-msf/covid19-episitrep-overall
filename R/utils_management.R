@@ -1,7 +1,12 @@
 
 
 # Set the term of dates this is also used to separate output files
-set_date_max <- function(date_max = NULL, week_suffix = NULL, create_folders = TRUE){
+set_date_frame <- function(date_min = NULL, date_max = NULL, week_suffix = NULL, create_folders = TRUE){
+  
+  
+  if (!is.null(date_min)) {
+    date_min <- lubridate::floor_date(as.Date(date_min), unit = "week", week_start = 1)
+  }
   
   if (!is.null(date_max)) {
     date_max <- as.Date(date_max)
@@ -45,7 +50,7 @@ set_date_max <- function(date_max = NULL, week_suffix = NULL, create_folders = T
     dir.create(path.local.msf.tables , showWarnings = FALSE, recursive = TRUE) 
   }
   
-  return(list(date_max = date_max, week_max = week_max))
+  return(list(date_min = date_min, date_max = date_max, week_max = week_max))
 
 }
 

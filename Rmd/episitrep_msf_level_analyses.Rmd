@@ -32,19 +32,20 @@ if (!exists('path.root')) {
 
 source(file.path(path.R, 'utils_management.R'), encoding = 'UTF-8')
 source(file.path(path.R, 'utils_get_data.R')  , encoding = 'UTF-8')
-#source(file.path(path.R, 'set_time_frame.R')  , encoding = 'UTF-8')
 source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
 
 
-# Set the right censoring date terms. This create also the folders where to save the outputs
-date_and_week_max <- set_date_max()
+# Set the left and right censoring date terms. 
+# The right-censoring create also the week and the folders where to save the outputs
+dates_and_week <- set_date_frame(date_min = '2020-06-01', date_max = '2020-08-30', week_suffix = 'june-august')
 
-date_max_report <- date_and_week_max[[1]]
-week_report     <- date_and_week_max[[2]]
+date_min_report <- dates_and_week[[1]]
+date_max_report <- dates_and_week[[2]]
+week_report     <- dates_and_week[[3]]
 
 
 # Set the left censoring date (if NULL non left-censoring is made)
-date_min_report <- NULL
+
 
 
 caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF linelists as of {format(date_max_report, "%d %b %Y")}')
@@ -1946,12 +1947,12 @@ gtbl_cfr_type_comcond <- tbl_cfr_type_comcond %>%
     nN_Africa    = 'n/N',
     nN_Americas  = 'n/N',
     nN_Asia      = 'n/N', 
-    nN_Europe    = 'n/N', 
+    #nN_Europe    = 'n/N', 
     nN_Total     = 'n/N',
     p_Africa    = '(%)',
     p_Americas  = '(%)',
     p_Asia      = '(%)', 
-    p_Europe    = '(%)', 
+    #p_Europe    = '(%)', 
     p_Total     = '(%)') %>%
   tab_spanner(
     label = 'Africa',
@@ -1962,9 +1963,9 @@ gtbl_cfr_type_comcond <- tbl_cfr_type_comcond %>%
   tab_spanner(
     label = 'Asia',
     columns = ends_with('_Asia')) %>% 
-  tab_spanner(
-    label = 'Europe',
-    columns = ends_with('_Europe')) %>% 
+  #tab_spanner(
+  #  label = 'Europe',
+  #  columns = ends_with('_Europe')) %>% 
   tab_spanner(
     label = 'Total',
     columns = ends_with('_Total')) %>%
