@@ -5,7 +5,15 @@ source(here::here('R', 'setup.R'), encoding = 'UTF-8')
 source(file.path(path.R, "utils_get_data.R")  , encoding = "UTF-8")
 source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
 source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
-source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
+
+
+# Set the left and right censoring for date of consultation. 
+# The right-censoring create also the week value and the folders where to save the outputs
+dates_and_week <- set_date_frame(create_folders = TRUE)
+
+date_min_report <- dates_and_week[[1]]
+date_max_report <- dates_and_week[[2]]
+week_report     <- dates_and_week[[3]]
 
 
 # -- Download geo data if not already present locally

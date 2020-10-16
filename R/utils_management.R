@@ -1,7 +1,8 @@
 
 
-# Set the term of dates this is also used to separate output files
-set_date_frame <- function(date_min = NULL, date_max = NULL, week_suffix = NULL, create_folders = TRUE){
+# Set the terms of dates 
+# This is also used to create folder where to save output files
+set_date_frame <- function(date_min = NULL, date_max = NULL, week_suffix = NULL, create_folders = FALSE){
   
   
   if (!is.null(date_min)) {
@@ -20,34 +21,32 @@ set_date_frame <- function(date_min = NULL, date_max = NULL, week_suffix = NULL,
   if (!is.null(week_suffix)) {
     week_max <- paste(week_max, week_suffix, sep = '_')
   }
+    
+  # Create paths
+  path.local.week   <<- file.path(path.local, week_max)
   
-  # Create folders specific to week_max
+  path.local.worldwide        <<- file.path(path.local.week, 'worldwide')
+  path.local.worldwide.data   <<- file.path(path.local.worldwide, 'data')
+  path.local.worldwide.graphs <<- file.path(path.local.worldwide, 'graphs')
+  path.local.worldwide.tables <<- file.path(path.local.worldwide, 'tables')
+  
+  path.local.msf        <<- file.path(path.local.week, 'msf')
+  path.local.msf.data   <<- file.path(path.local.msf, 'data')
+  path.local.msf.graphs <<- file.path(path.local.msf, 'graphs')
+  path.local.msf.tables <<- file.path(path.local.msf, 'tables')
+  
+  # Create folders based on the paths
   if (create_folders) {
     
-    # Create paths
-    path.local.week   <- file.path(path.local, week_max)
-    
-    path.local.worldwide        <<- file.path(path.local.week, 'worldwide')
-    path.local.worldwide.data   <<- file.path(path.local.worldwide, 'data')
-    path.local.worldwide.graphs <<- file.path(path.local.worldwide, 'graphs')
-    path.local.worldwide.tables <<- file.path(path.local.worldwide, 'tables')
-    
-    path.local.msf        <<- file.path(path.local.week, 'msf')
-    path.local.msf.data   <<- file.path(path.local.msf, 'data')
-    path.local.msf.graphs <<- file.path(path.local.msf, 'graphs')
-    path.local.msf.tables <<- file.path(path.local.msf, 'tables')
-    
-    
-    # Create folders based on the paths
     dir.create(path.local.week, showWarnings = FALSE, recursive = TRUE) 
     
-    dir.create(path.local.worldwide.data   , showWarnings = FALSE, recursive = TRUE) 
-    dir.create(path.local.worldwide.graphs , showWarnings = FALSE, recursive = TRUE) 
-    dir.create(path.local.worldwide.tables , showWarnings = FALSE, recursive = TRUE) 
+    dir.create(path.local.worldwide.data  , showWarnings = FALSE, recursive = TRUE) 
+    dir.create(path.local.worldwide.graphs, showWarnings = FALSE, recursive = TRUE) 
+    dir.create(path.local.worldwide.tables, showWarnings = FALSE, recursive = TRUE) 
     
-    dir.create(path.local.msf.data   , showWarnings = FALSE, recursive = TRUE) 
-    dir.create(path.local.msf.graphs , showWarnings = FALSE, recursive = TRUE) 
-    dir.create(path.local.msf.tables , showWarnings = FALSE, recursive = TRUE) 
+    dir.create(path.local.msf.data  , showWarnings = FALSE, recursive = TRUE) 
+    dir.create(path.local.msf.graphs, showWarnings = FALSE, recursive = TRUE) 
+    dir.create(path.local.msf.tables, showWarnings = FALSE, recursive = TRUE) 
   }
   
   return(list(date_min = date_min, date_max = date_max, week_max = week_max))

@@ -8,7 +8,14 @@ rm(list = ls())
 source(here::here('R', 'setup.R'), encoding = 'UTF-8')
 source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
 source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
-source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
+
+
+dates_and_week <- set_date_frame(create_folders = FALSE)
+
+date_min_report <- dates_and_week[[1]]
+date_max_report <- dates_and_week[[2]]
+week_report     <- dates_and_week[[3]]
+
 
 
 # Get ECDC data either from the web or from the saved RDS file
