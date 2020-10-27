@@ -32,46 +32,6 @@ get_world_sf <- function(scale = c('small', 'medium', 'large'), proj = c('robins
 
 
 
-#' Import ECDC dataset
-#' 
-#' @export
-get_ecdc_data <- function(local_path = path.local.worldwide.data, file_name = 'dta_ECDC.RDS', force = FALSE) {
-  
-  base_url <- "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv"
-  
-  
-  get_new_dta <- if(!file.exists(file.path(local_path, file_name))) {
-    
-    TRUE
-    
-    } else {
-      
-      last_update <- readRDS(file.path(local_path, file_name))$last_update
-      ifelse(last_update == Sys.Date(), FALSE, TRUE)
-      
-    }
-  
-  
-  
-  if (get_new_dta | force) {
-    
-    dta <- readr::read_csv(base_url)
-    last_update <-  Sys.Date()
-    dta <- list("dta" = dta, "last_update" = last_update)
-    saveRDS(dta, file = file.path(path.local.worldwide.data, file_name))
-    
-    } else {
-      
-      dta <- readRDS(file.path(path.local.worldwide.data, file_name))
-      
-    }
-  
-  return(dta)
-}
-
-
-
-
 #' Download and save shapefiles and geo data locally if not present
 #'
 #' @param path path to local directory to store geo data
@@ -108,6 +68,45 @@ get_geo_data <- function(path, force = FALSE) {
     saveRDS(df_pop_continent, file = path_pop_continent)
     readr::write_csv(df_iso_a3, path = path_iso_a3)
   }
+}
+
+
+
+#' Import ECDC dataset
+#' 
+#' @export
+get_ecdc_data <- function(local_path = path.local.worldwide.data, file_name = 'dta_ECDC.RDS', force = FALSE) {
+  
+  base_url <- "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv"
+  
+  
+  get_new_dta <- if(!file.exists(file.path(local_path, file_name))) {
+    
+    TRUE
+    
+    } else {
+      
+      last_update <- readRDS(file.path(local_path, file_name))$last_update
+      ifelse(last_update == Sys.Date(), FALSE, TRUE)
+      
+    }
+  
+  
+  
+  if (get_new_dta | force) {
+    
+    dta <- readr::read_csv(base_url)
+    last_update <-  Sys.Date()
+    dta <- list("dta" = dta, "last_update" = last_update)
+    saveRDS(dta, file = file.path(path.local.worldwide.data, file_name))
+    
+    } else {
+      
+      dta <- readRDS(file.path(path.local.worldwide.data, file_name))
+      
+    }
+  
+  return(dta)
 }
 
 

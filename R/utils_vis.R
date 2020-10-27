@@ -647,3 +647,49 @@ tbl_cfr <- function(dta, x_var){
   return(tbl_cfr)
 }
 
+
+tbl_cfr2 <- function(dta, x_var, y_var = NULL, drop_levels = FALSE){
+  
+  x_var <- sym(x_var)
+  
+  dta <- dta %>%
+    filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died'), !is.na(!!x_var))
+  
+  tblx <- dta %>% 
+    select(!!x_var, outcome_status) %>% 
+    group_by(!!x_var, .drop = drop_levels) %>% 
+    summarise(
+      n = sum(outcome_status == 'Died'), 
+      N = n(), 
+      p = mean(outcome_status == 'Died'))
+  
+  
+  if (!is.null(y_var)){
+    
+    y_var <- sym(y_var)
+    
+    tbly <- dta %>% 
+      select(!!y_var, !!x_var, outcome_status) %>% 
+      group_by(!!y_var, !!x_var, .drop = drop_levels) %>% 
+      summarise(
+        n = sum(outcome_status == 'Died'), 
+        N = n(), 
+        p = mean(outcome_status == 'Died')) %>% 
+      pivot_wider(names_from = !!y_var, values_from = c('n', 'N', 'p')) %>% 
+      right_join(tblx) %>% 
+      rename(n_Total = n, N_Total = N, p_Total = p) %>% 
+      ungroup()
+  }
+  
+  
+  if (is.null(y_var)) {
+    
+    return(tblx)
+    
+  } else {
+    
+    return(tbly)
+    
+  }
+  
+}
