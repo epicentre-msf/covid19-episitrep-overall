@@ -412,7 +412,16 @@ country_four_plots <- function(country_iso, lst_dta = lst_ecdc, model = 'linear'
 
 
 
-# To plot both cases and deaths into a single graphic plot
+#' To plot both cases and deaths into a single graphic plot
+#'
+#' @param country_iso 
+#' @param lst_dta 
+#' @param countries 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 country_six_plots <- function(country_iso, lst_dta = lst_dta_ecdc, countries = df_countries) {
   
   # Parameters
@@ -583,41 +592,72 @@ country_plot_coeff <- function(series, country_iso) {
 
 
 
-tbl_prop <- function(dta, var1, var2 = NULL, drop_levels = FALSE) {
+#' Title
+#'
+#' @param dta 
+#' @param var_x 
+#' @param var_y 
+#' @param prop_by 
+#' @param drop_levels 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+tbl_prop <- function(dta, var_x, var_y = NULL, prop_by = 'col', drop_levels = FALSE) {
   
-  var1 <- sym(var1)
+  var_x <- sym(var_x)
   
   tbl1 <- dta %>%
-    group_by(!!var1, .drop = drop_levels) %>%
+    group_by(!!var_x, .drop = drop_levels) %>%
     summarise(
-      n = n()) %>% 
+      n = n())
+  
+  if (prop_by == 'row') {
+    tbl1 <- tbl1 %>% 
+      group_by(!!var_x)
+  }
+  
+  tbl1 <- tbl1 %>% 
     mutate(
       N = sum(n), 
       p = n / N) %>% 
     ungroup()
   
   
-  if (!is.null(var2)){
+  if (!is.null(var_y)) {
     
-    var2 <- sym(var2)
+    var_y <- sym(var_y)
     
-    tbl2 <- dta %>%
-      group_by(!!var2, !!var1, .drop = drop_levels) %>%
+    var_by <- base::switch(prop_by, 
+                           'col' = var_y, 
+                           'row' = var_x)
+    
+    tbl2 <- dta %>% 
+      group_by(!!var_y, !!var_x, .drop = drop_levels) %>%
       summarise(
         n = n()) %>% 
+      group_by(!!var_by) %>% 
       mutate(
         N = sum(n), 
         p = n / N) %>% 
-      pivot_wider(names_from = !!var2, values_from = c('n', 'N', 'p')) %>% 
+      group_by(!!var_x) %>% 
+      pivot_wider(names_from = !!var_y, values_from = c('n', 'N', 'p')) %>% 
       full_join(tbl1) %>% 
       rename(n_Total = n, N_Total = N, p_Total = p) %>% 
       ungroup()
+    
   }
   
-  if (is.null(var2)) {
+  
+  if (is.null(var_y)) {
+    
     return(tbl1)
+    
   } else {
+    
     return(tbl2)
+    
   }
   
 }
@@ -647,49 +687,3 @@ tbl_cfr <- function(dta, x_var){
   return(tbl_cfr)
 }
 
-
-tbl_cfr2 <- function(dta, x_var, y_var = NULL, drop_levels = FALSE){
-  
-  x_var <- sym(x_var)
-  
-  dta <- dta %>%
-    filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died'), !is.na(!!x_var))
-  
-  tblx <- dta %>% 
-    select(!!x_var, outcome_status) %>% 
-    group_by(!!x_var, .drop = drop_levels) %>% 
-    summarise(
-      n = sum(outcome_status == 'Died'), 
-      N = n(), 
-      p = mean(outcome_status == 'Died'))
-  
-  
-  if (!is.null(y_var)){
-    
-    y_var <- sym(y_var)
-    
-    tbly <- dta %>% 
-      select(!!y_var, !!x_var, outcome_status) %>% 
-      group_by(!!y_var, !!x_var, .drop = drop_levels) %>% 
-      summarise(
-        n = sum(outcome_status == 'Died'), 
-        N = n(), 
-        p = mean(outcome_status == 'Died')) %>% 
-      pivot_wider(names_from = !!y_var, values_from = c('n', 'N', 'p')) %>% 
-      right_join(tblx) %>% 
-      rename(n_Total = n, N_Total = N, p_Total = p) %>% 
-      ungroup()
-  }
-  
-  
-  if (is.null(y_var)) {
-    
-    return(tblx)
-    
-  } else {
-    
-    return(tbly)
-    
-  }
-  
-}

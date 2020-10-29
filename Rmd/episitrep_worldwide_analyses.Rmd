@@ -69,10 +69,8 @@ caption_world_map <- paste0('Analysis and graphic by Epicentre | Data source: EC
 # === === === === === === === 
 
 # Get ECDC data either from the web or from the saved RDS file
-rds_ecdc <- get_ecdc_data(force = TRUE)
-
-dta_ecdc <- rds_ecdc[[1]] %>% 
-  prepare_ecdc_dta()
+dta_ecdc <- get_ecdc_data() %>% 
+  prepare_ecdc_data()
 
 # ECDC data right censored until date_max
 dta_ecdc_right_censored <- dta_ecdc %>% 
@@ -82,10 +80,6 @@ dta_ecdc_right_censored <- dta_ecdc %>%
 # ECDC split data in a list of countries with iso_a3 as key
 lst_dta_ecdc <- dta_ecdc_right_censored %>% 
   multisplit("iso_a3")
-
-# Date of the last update
-last_update_dta_ecdc <- rds_ecdc[[2]]
-
 
 
 # === === === === === === === 
@@ -147,11 +141,9 @@ trend_models <- get_trend_models(periods_trend = c(12, 30))
 
 model_cnt_cases_linear_short <- trend_models$model_cnt_cases_linear_short
 model_cnt_cases_linear_long  <- trend_models$model_cnt_cases_linear_long
-model_cml_cases_linear_short <- trend_models$model_cml_cases_linear_short
 
 model_cnt_deaths_linear_short <- trend_models$model_cnt_deaths_linear_short
 model_cnt_deaths_linear_long  <- trend_models$model_cnt_deaths_linear_long
-model_cml_deaths_linear_short <- trend_models$model_cml_deaths_linear_short
 
 lst_coeffs_cases  <- trend_models$lst_coeffs_cases
 lst_coeffs_deaths <- trend_models$lst_coeffs_deaths
@@ -314,7 +306,6 @@ tbl_case_trend_30d <- tbl_case_count_30d %>%
 tbl_case_trend <- tbl_case_count %>% 
   select(-brks) %>% 
   left_join(rename(model_cnt_cases_linear_short[[3]] , all_of(attach_prefix(coeff_vars, 'l_cnt_')))) %>% 
-  left_join(rename(model_cml_cases_linear_short[[3]] , all_of(attach_prefix(coeff_vars, 'l_cml_')))) %>% 
   mutate(
     trend_linear = case_when(
       l_cnt_lwr > 0 ~ "Increasing", 
@@ -580,7 +571,6 @@ tbl_death_trend_30d <- tbl_death_count_30d %>%
 tbl_death_trend <- tbl_death_count %>% 
   select(-brks) %>% 
   left_join(rename(model_cnt_deaths_linear_short[[3]] , all_of(attach_prefix(coeff_vars, 'l_cnt_')))) %>% 
-  left_join(rename(model_cml_deaths_linear_short[[3]] , all_of(attach_prefix(coeff_vars, 'l_cml_')))) %>% 
   mutate(
     trend_linear = case_when(
       l_cnt_lwr > 0 ~ "Increasing", 

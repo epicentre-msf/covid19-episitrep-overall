@@ -32,6 +32,9 @@ library(english)
 library(readxl)
 library(ggthemes)
 
+
+library(covidutils)
+
 # Create project paths -----
 path.root  <- here::here()
 path.R     <- file.path(path.root,'R')

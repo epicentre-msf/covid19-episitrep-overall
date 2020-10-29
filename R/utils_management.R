@@ -224,20 +224,20 @@ prepare_msf_dta <- function(dta, shorten_var_names = FALSE){
   # Create variable levels
   levels_covid_status <- c('Confirmed', 'Probable', 'Suspected', 'Not a case', '(Unknown)')
   levels_outcome_status <- c('Cured', 'Died', 'Left against medical advice', 'Transferred', 'Sent back home', 'Other')
-  levels_ynu <- c('Yes', 'No', 'Unknown')
+  levels_ynu <- c('Yes', 'No', '(Unknown)')
   
   
   # Covid status
   dta <- dta %>% 
     mutate(
-      MSF_covid_status = factor(MSF_covid_status, levels = levels_covid_status) %>% forcats::fct_explicit_na(na_level = 'Unknown'))
+      MSF_covid_status = factor(MSF_covid_status, levels = levels_covid_status) %>% forcats::fct_explicit_na(na_level = '(Unknown)'))
   
   
   # Dates (and weeks)
   dta <- dta %>% 
     mutate(
       MSF_date_consultation = as.Date(MSF_date_consultation), 
-      outcome_patcourse_status = factor(outcome_patcourse_status, levels = levels_outcome_status) %>% forcats::fct_explicit_na(na_level = 'Pending/Unknown'),
+      outcome_patcourse_status = factor(outcome_patcourse_status, levels = levels_outcome_status) %>% forcats::fct_explicit_na(na_level = '(Pending/Unknown)'),
       epi_week_report = make_epiweek_date(report_date),
       epi_week_consultation = make_epiweek_date(MSF_date_consultation),
       epi_week_admission = make_epiweek_date(patcourse_presHCF),
@@ -271,13 +271,13 @@ prepare_msf_dta <- function(dta, shorten_var_names = FALSE){
   # Patients' care variables
   dta <- dta %>% 
     mutate(
-      patcourse_admit = factor(patcourse_admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
-      outcome_patcourse_admit = factor(outcome_patcourse_admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = 'Unknown'), 
+      patcourse_admit = factor(patcourse_admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = levels_ynu[3]), 
+      outcome_patcourse_admit = factor(outcome_patcourse_admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = '(Unknown)'), 
       merge_admit = case_when(
-        patcourse_admit == 'Yes' ~ 'Yes', 
-        outcome_patcourse_admit == 'Yes' ~ 'Yes', 
-        is.na(outcome_patcourse_admit) ~ 'Unknown', 
-        TRUE ~ 'No') %>% factor(levels = c('Yes', 'No', 'Unknown')), 
+        patcourse_admit == 'Yes' ~ levels_ynu[1], 
+        outcome_patcourse_admit == 'Yes' ~ levels_ynu[1], 
+        is.na(outcome_patcourse_admit) ~ levels_ynu[3], 
+        TRUE ~ levels_ynu[2]) %>% factor(levels = levels_ynu), 
       merge_oxygen = recode_care(MSF_received_oxygen, MSF_outcome_received_oxygen), 
       merge_icu    = recode_care(patcourse_icu , outcome_patcourse_icu), 
       merge_vent   = recode_care(patcourse_vent, outcome_patcourse_vent), 

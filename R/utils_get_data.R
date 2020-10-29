@@ -35,7 +35,7 @@ get_world_sf <- function(scale = c('small', 'medium', 'large'), proj = c('robins
 #' Download and save shapefiles and geo data locally if not present
 #'
 #' @param path path to local directory to store geo data
-#' @param update if force = FALSE files are downloaded only if they do not exist in the local directory. If force = TRUE the files are downloaded even if they already exist in the local directory
+#' @param force force to estimate new models even if they were already saved in the path
 #'
 #' @export
 get_geo_data <- function(path, force = FALSE) {
@@ -73,41 +73,39 @@ get_geo_data <- function(path, force = FALSE) {
 
 
 #' Import ECDC dataset
-#' 
-#' @export
-get_ecdc_data <- function(local_path = path.local.worldwide.data, file_name = 'dta_ECDC.RDS', force = FALSE) {
-  
-  base_url <- "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv"
-  
-  
-  get_new_dta <- if(!file.exists(file.path(local_path, file_name))) {
-    
-    TRUE
-    
-    } else {
-      
-      last_update <- readRDS(file.path(local_path, file_name))$last_update
-      ifelse(last_update == Sys.Date(), FALSE, TRUE)
-      
-    }
-  
-  
-  
-  if (get_new_dta | force) {
-    
-    dta <- readr::read_csv(base_url)
-    last_update <-  Sys.Date()
-    dta <- list("dta" = dta, "last_update" = last_update)
-    saveRDS(dta, file = file.path(path.local.worldwide.data, file_name))
-    
-    } else {
-      
-      dta <- readRDS(file.path(path.local.worldwide.data, file_name))
-      
-    }
-  
-  return(dta)
-}
+#get_ecdc_data <- function(local_path = path.local.worldwide.data, file_name = 'dta_ECDC.RDS', force = FALSE) {
+#  
+#  base_url <- "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv"
+#  
+#  
+#  get_new_dta <- if(!file.exists(file.path(local_path, file_name))) {
+#    
+#    TRUE
+#    
+#    } else {
+#      
+#      last_update <- readRDS(file.path(local_path, file_name))$last_update
+#      ifelse(last_update == Sys.Date(), FALSE, TRUE)
+#      
+#    }
+#  
+#  
+#  
+#  if (get_new_dta | force) {
+#    
+#    dta <- readr::read_csv(base_url)
+#    last_update <-  Sys.Date()
+#    dta <- list("dta" = dta, "last_update" = last_update)
+#    saveRDS(dta, file = file.path(path.local.worldwide.data, file_name))
+#    
+#    } else {
+#      
+#      dta <- readRDS(file.path(path.local.worldwide.data, file_name))
+#      
+#    }
+#  
+#  return(dta)
+#}
 
 
 
@@ -401,7 +399,7 @@ get_msf_aggregated <- function(path_local = path.local.msf.data, file_name = 'dt
   if (!file.exists(dta_path_local) | force) {
     
     dta <- excel_sheets(path_remote) %>% 
-      setdiff(., c('Feuil1', 'feuil1', 'Sheet1', 'sheet1', 'Sheet4')) %>% 
+      setdiff(., c('Feuil1', 'feuil1', 'Sheet1', 'Sheet2', 'sheet1', 'Sheet4')) %>% 
       map_df(~{
         oc      <- read_excel(path = path_remote, sheet = .x, range = "B1", col_names = FALSE) %>% pull()
         country <- read_excel(path = path_remote, sheet = .x, range = "D1", col_names = FALSE) %>% pull()
@@ -440,7 +438,7 @@ get_msf_aggregated_dates <- function(path_local = path.local.msf.data, file_name
   if (!file.exists(dta_path_local) | force) {
     
     dta <- excel_sheets(path_remote) %>% 
-      setdiff(., c('Feuil1', 'feuil1', 'Sheet1', 'sheet1', 'Sheet4')) %>% 
+      setdiff(., c('Feuil1', 'feuil1', 'Sheet1', 'Sheet2', 'sheet1', 'Sheet4')) %>% 
       map_df(~{
         
         if (is_empty(read_excel(path = path_remote, sheet = .x, range = "I1", col_names = FALSE))) {
