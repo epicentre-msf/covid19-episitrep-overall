@@ -40,7 +40,7 @@ get_world_sf <- function(scale = c('small', 'medium', 'large'), proj = c('robins
 #' @export
 get_geo_data <- function(path, force = FALSE) {
   
-  path_shp <- file.path(path, paste0('sf_world','.RDS'))
+  path_shp <- file.path(path, paste0('sf_world', '.RDS'))
   
   if (!file.exists(path_shp) | force) {
     sf_world <- get_world_sf(scale = 'small', proj = 'robinson')
@@ -54,7 +54,7 @@ get_geo_data <- function(path, force = FALSE) {
   path_iso_a3        <- file.path(path, paste0('iso-a3_for_tests','.csv'))
   
   if (any(!file.exists(c(path_countries, path_pop_country, path_pop_region, path_pop_continent, path_iso_a3))) | force) {
-    df_ecdc <- get_ecdc_data()[[1]] %>% prepare_ecdc_dta()
+    df_ecdc <- get_ecdc_data() %>% prepare_ecdc_dta()
     
     df_countries     <- df_ecdc %>% filter(!is.na(iso_a3)) %>% distinct_at(vars(continent, region, iso_a3, country))
     df_pop_country   <- df_ecdc %>% filter(!is.na(iso_a3)) %>% distinct_at(vars(iso_a3, country, pop = population_2019))
