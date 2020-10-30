@@ -1,5 +1,5 @@
 # === === === === === === === === 
-# --- Prepare environment
+# ---- Prepare environment ----
 # === === === === === === === === 
 source(here::here('R', 'setup.R'), encoding = 'UTF-8')
 source(file.path(path.R, "utils_get_data.R")  , encoding = "UTF-8")
@@ -22,7 +22,7 @@ get_geo_data(path = path.local.data, force = FALSE)
 
 
 # === === === === === === === === 
-# --- Run analyses
+# ---- Run analyses ----
 # === === === === === === === === 
 
 file_out_worldwide <- paste0(week_report, '_', 'episitrep_worldwide_analyses', '.html')
@@ -43,9 +43,9 @@ rmarkdown::render(
 
 
 
-# === === === === === === === ===  
-# --- Edit and save docx file
-# === === === === === === === === 
+# === === === === === === === ===  ===  
+# ---- Edit and save docx file ----
+# === === === === === === === ===  === 
 
 load(file.path(path.local.worldwide.data, paste0('episitrep_worldwide_analyses', '_', week_report, '.RData')))
 load(file.path(path.local.msf.data, paste0('episitrep_msf_level_analyses', '_', week_report, '.RData'))) 
@@ -71,9 +71,9 @@ print(my_doc, target = file.path(path.local.week, glue("draft_EpiSitrep_world_Co
 
 
  
-# === === === === === === === ===  ===  
-# --- Copy outputs to public folder
-# === === === === === === === ===  === 
+# === === === === === === === === === ===
+# ---- Copy outputs to public folder ----
+# === === === === === === === === === === 
 
 # --- Worldwide analysis
 ## Copy to archive

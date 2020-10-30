@@ -109,7 +109,7 @@ dta_aggregated_expanded <- dta_weekly_aggregated %>%
     unnest(cols = c(obs)) %>%
     select(-c(value, obs)) %>% 
     mutate(
-      covid_status = factor(covid_status, levels = c('confirmed', 'probable', 'suspected', 'non_cases', 'unknown'), labels = c('Confirmed', 'Probable', 'Suspected', 'Not a case', 'Unknown'))) %>% 
+      covid_status = factor(covid_status, levels = c('confirmed', 'probable', 'suspected', 'non_cases', 'unknown'), labels = c('Confirmed', 'Probable', 'Suspected', 'Not a case', '(Unknown)'))) %>% 
   rename('OC' = oc, 'site_name' = project) %>% 
   filter(between(date, left = date_min_report, right = date_max_report) | is.na(date))
 
@@ -1095,7 +1095,9 @@ gtbl_comcond_status <- tbl_comcond_status %>%
     row_group.padding = px(2))
 
 gtsave(gtbl_comcond_status,
-       file.path(path.local.msf.tables, paste0('gtbl_comcond_status','_', week_report, '.png'))) %>%
+       file.path(path.local.msf.tables, paste0('gtbl_comcond_status','_', week_report, '.png')), 
+       vwidth = 1500,
+       vheight = 744) %>%
   invisible()
 
 gtsave(gtbl_comcond_status,
@@ -1216,7 +1218,9 @@ gtbl_sympt_all <- tbl_sympt_status %>%
     row_group.padding = px(2))
 
 gtsave(gtbl_sympt_all,
-       file.path(path.local.msf.tables, paste0('gtbl_sympt_all','_', week_report, '.png'))) %>%
+       file.path(path.local.msf.tables, paste0('gtbl_sympt_all','_', week_report, '.png')), 
+       vwidth = 1500,
+       vheight = 744) %>%
   invisible()
 
 gtsave(gtbl_sympt_all,
