@@ -282,6 +282,18 @@
       "Repository": "CRAN",
       "Hash": "c46036853ef73486af84ec5dc5b2443f"
     },
+    "covidutils": {
+      "Package": "covidutils",
+      "Version": "0.0.0.9000",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "covidutils",
+      "RemoteUsername": "epicentre-msf",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "803b1ff63e0bce1e92fe22d91aa7602f9038ec69",
+      "Hash": "8986c159c7e33614ee3bdffb47a68505"
+    },
     "cowplot": {
       "Package": "cowplot",
       "Version": "1.1.0",
@@ -408,13 +420,6 @@
       "Repository": "CRAN",
       "Hash": "83ab58a0518afe3d17e41da01af13b60"
     },
-    "flextable": {
-      "Package": "flextable",
-      "Version": "0.5.11",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "a0c5428da5e33450805302fdac42b68c"
-    },
     "forcats": {
       "Package": "forcats",
       "Version": "0.5.0",
@@ -449,13 +454,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "44594a07a42e5f91fac9f93fda6d0109"
-    },
-    "gdtools": {
-      "Package": "gdtools",
-      "Version": "0.2.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "38f4026c0d09edb3a4474685cef68342"
     },
     "generics": {
       "Package": "generics",
@@ -589,6 +587,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "4e6dabb220b006ccdc3b3b5ff993b205"
+    },
+    "httr": {
+      "Package": "httr",
+      "Version": "1.4.2",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "a525aba14184fec243f9eaec62fbed43"
     },
     "igraph": {
       "Package": "igraph",
@@ -760,10 +765,10 @@
     },
     "officer": {
       "Package": "officer",
-      "Version": "0.3.14",
+      "Version": "0.3.12",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "7b91bed11b7389f71bf8d5a9fc233c2b"
+      "Hash": "24894a0517cba117e9e5bb7b6d22e555"
     },
     "openssl": {
       "Package": "openssl",
@@ -1080,13 +1085,6 @@
       "Repository": "CRAN",
       "Hash": "b227d13e29222b4574486cfcbde077fa"
     },
-    "systemfonts": {
-      "Package": "systemfonts",
-      "Version": "0.3.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "046e821d454edb3722192f588f4d7884"
-    },
     "testthat": {
       "Package": "testthat",
       "Version": "2.3.2",
@@ -1243,10 +1241,10 @@
     },
     "zip": {
       "Package": "zip",
-      "Version": "2.1.1",
+      "Version": "2.0.4",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "3bc8405c637d988801ec5ea88372d0c2"
+      "Hash": "caa73cdca1a87e5f2617915c8809f207"
     },
     "zoo": {
       "Package": "zoo",
