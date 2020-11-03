@@ -93,7 +93,7 @@ for (i in country_list$iso_a3){
 
 
 # --- --- --- --- --- --- --- --- --- --- --- --- 
-# --- Plot case fatality curves by country
+# --- Plot case fatality curve by country
 # --- --- --- --- --- --- --- --- --- --- --- --- 
 
 library(patchwork)
@@ -102,7 +102,6 @@ library(patchwork)
 path.local.worldwide.graphs.country_case_fatality <- file.path(path.local.worldwide.graphs, 'country_case_fatality')
 dir.create(path.local.worldwide.graphs.country_case_fatality, showWarnings = FALSE, recursive = TRUE) 
 
-dta <- lst_dta_ecdc[['USA']]
 
 plot_cfr_ma <- function(dta){
   
@@ -131,8 +130,9 @@ plot_cfr_ma <- function(dta){
   date_min     <- dta_cfr %>% filter(cases != 0) %>% pull(date) %>% min()
   
   n_max <- max(dta_cfr$deaths, na.rm = TRUE)
-  
-  scaling_factor <- 1 / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
+  p_max <- rounder(max(dta_cfr$cfr, na.rm = TRUE), .1)
+  p_max <- ifelse(p_max > 1, 1, p_max)
+  scaling_factor <- p_max / n_max # sets the y limit of the proportion rounded up to nearest 10% above the max
   
   
   p1 <- ggplot(dta_cfr, aes(x = date, y = cases)) + 
@@ -158,6 +158,7 @@ plot_cfr_ma <- function(dta){
   p1 + p2 + plot_layout(ncol = 1)
   
 }
+
 
 for (i in names(lst_dta_ecdc)) {
   

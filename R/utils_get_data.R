@@ -40,7 +40,7 @@ get_world_sf <- function(scale = c('small', 'medium', 'large'), proj = c('robins
 #' @export
 get_geo_data <- function(path, force = FALSE) {
   
-  path_shp <- file.path(path, paste0('sf_world','.RDS'))
+  path_shp <- file.path(path, paste0('sf_world', '.RDS'))
   
   if (!file.exists(path_shp) | force) {
     sf_world <- get_world_sf(scale = 'small', proj = 'robinson')
