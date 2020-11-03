@@ -20,7 +20,6 @@ week_report     <- dates_and_week[[3]]
 get_geo_data(path = path.local.data, force = FALSE)
 
 
-
 # === === === === === === === === 
 # --- Run analyses
 # === === === === === === === === 

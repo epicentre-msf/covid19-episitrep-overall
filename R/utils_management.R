@@ -35,6 +35,14 @@ set_date_frame <- function(date_min = NULL, date_max = NULL, week_suffix = NULL,
   path.local.msf.graphs <<- file.path(path.local.msf, 'graphs')
   path.local.msf.tables <<- file.path(path.local.msf, 'tables')
   
+  
+  path.local.week.oc   <<- file.path(path.local.oc, week_max)
+  
+  path.local.msf.oc        <<- file.path(path.local.week.oc, 'msf')
+  path.local.msf.data.oc   <<- file.path(path.local.msf.oc, 'data')
+  path.local.msf.graphs.oc <<- file.path(path.local.msf.oc, 'graphs')
+  path.local.msf.tables.oc <<- file.path(path.local.msf.oc, 'tables')
+  
   # Create folders based on the paths
   if (create_folders) {
     
@@ -47,6 +55,12 @@ set_date_frame <- function(date_min = NULL, date_max = NULL, week_suffix = NULL,
     dir.create(path.local.msf.data  , showWarnings = FALSE, recursive = TRUE) 
     dir.create(path.local.msf.graphs, showWarnings = FALSE, recursive = TRUE) 
     dir.create(path.local.msf.tables, showWarnings = FALSE, recursive = TRUE) 
+    
+    dir.create(path.local.week.oc,       showWarnings = FALSE, recursive = TRUE) 
+    dir.create(path.local.msf.oc,        showWarnings = FALSE, recursive = TRUE) 
+    dir.create(path.local.msf.data.oc,   showWarnings = FALSE, recursive = TRUE) 
+    dir.create(path.local.msf.graphs.oc, showWarnings = FALSE, recursive = TRUE) 
+    dir.create(path.local.msf.tables.oc, showWarnings = FALSE, recursive = TRUE) 
   }
   
   return(list(date_min = date_min, date_max = date_max, week_max = week_max))
