@@ -81,8 +81,6 @@ knitr::opts_chunk$set(cache = FALSE,
 
 ## Import the list of countries
 df_countries <- readRDS(file.path(path.local.data, 'df_countries.RDS'))
-# No idea where that came from, I found an old file from august in the episitrep country deprecated repo, and copied it in data/local.
-
 
 ## Import MSF linelist --- --- --- 
 path.sharepoint.data <- file.path(path.sharepoint, 'data', 'linelist', 'world')
@@ -167,14 +165,6 @@ tbl_aggregated_expanded_with_dates <- dta_aggregated_expanded %>%
 
 # Overview
 
-<!-- **Information** of completeness of data (number of MSF projects that are active on Covid19 care, reporting individual data (linelist), reporting aggregated data and not reporting data). Number of projects will be listed by continent and region.-->
-```{r completeness, eval = FALSE}
-# This will be a summary table
-# We still not have the necessary information to produce this table
-```
-
-
-<!-- Some figure outputs to be used in the text --> 
 ```{r numbers, include = FALSE}
 nb_msf_sites_linelist   <- length(unique(dta_linelist$site_name))              # Nb of sites using the linelist
 nb_msf_sites_aggregated <- length(unique(dta_aggregated_expanded$site_name))   # Nb of sites using aggregated data
@@ -230,7 +220,6 @@ median_age_confirmed_died <- dta_linelist %>%
   filter(covid_status == 'Confirmed' & outcome_status == 'Died') %>% 
   pull(age_in_years) %>% 
   median(na.rm = TRUE)
-
 ```
 
 
@@ -321,7 +310,6 @@ ggsave(file.path(path.local.msf.graphs.oc, paste0('hist_epicurve_status_continen
        height = 4, 
        scale = 1.1,
        dpi = 320)
-
 
 hist_epicurve_status_continent
 ```
@@ -440,7 +428,6 @@ ggsave(file.path(path.local.msf.graphs.oc, paste0('hist_epicurve_consult_admit_c
        scale = 1.1,
        dpi = 320)
 
-
 hist_epicurve_consult_admit_continent
 ```
 
@@ -476,7 +463,6 @@ gtbl_consultation_continent <- tbl_consultation_continent %>%
     column_labels.font.weight = "bold") %>% 
   tab_header(title = "Number of admissions by continent")
 
-
 gtbl_consultation_continent
 ```
 
@@ -484,10 +470,8 @@ gtbl_consultation_continent
 
 ### Summary tables of patients consulted/admitted to an MSF supported COvid-19 health facility 
 
-<!-- 
- === SUMMARY TABLE BY COUNTRY === 
-Counts of patients consulted/admitted to an MSF supported health facility by Covid status (confirmed, probable, suspected, not a case and unknown) listed by country
--->
+<!-- === SUMMARY TABLE BY COUNTRY === 
+Counts of patients consulted/admitted to an MSF supported health facility by Covid status (confirmed, probable, suspected, not a case and unknown) listed by country-->
 ```{r, tbl-covid-status-country, layout = "l-page"}
 # DONE by Francesco
 tbl_countries_covid_status <- dta_linelist_with_aggregated %>%
@@ -747,10 +731,6 @@ Table by continent (or region)
 - Proportion of suspect cases sent home after screening
 - Proportion of asymptomatic among the tested positive
 -->
-```{r}
-# - To be done (FRANCESCO)
-# - Priority +
-```
 
 
 ## Patients' characteristics
@@ -801,8 +781,7 @@ gtbl_age_distribution_by_sex_all
 
 ```{r gtbl-age-sex-continent}
 dta_age_sex <- dta_linelist %>% 
-  mutate(sex = factor(sex, levels = c('F', 'M'), labels = c('Female', 'Male')) %>% fct_explicit_na()) 
-  
+  mutate(sex = factor(sex, levels = c('F', 'M'), labels = c('Female', 'Male')) %>% fct_explicit_na())
   
 tbl_age_sex <- dta_age_sex %>% 
   group_by(sex) %>% 
@@ -833,7 +812,6 @@ gtbl_age_sex_continent <- tbl_age_sex_continent %>%
     column_labels.font.weight = "bold",
     data_row.padding = px(2),
     row_group.padding = px(2))
-
 
 gtbl_age_sex_continent
 ```
@@ -1111,7 +1089,6 @@ gtsave(gtbl_comcond_status,
 gtbl_comcond_status %>% 
   tab_header(
     title = paste('Frequency and proportion of comorbidities among patients an MSF supported Covid-19 health service by Covid status as of', format(date_max_report, '%d %B %Y')))
-
 ```
 
 
@@ -1336,7 +1313,6 @@ gtsave(gtbl_severity_status,
 gtbl_severity_status %>% 
   tab_header(
     title = paste('Frequency and proportion of level of severity among patients consulted at an MSF supported Covid-19 health service as of', format(date_max_report, '%d %B %Y')))
-
 ```
 
 
@@ -1421,7 +1397,6 @@ gtsave(gtbl_severity_confirmed_continent,
 gtbl_severity_confirmed_continent %>% 
   tab_header(
     title = paste('Frequency and proportion of level of severity among Covid confirmed patients consulted at an MSF supported Covid-19 health service as of', format(date_max_report, '%d %B %Y')))
-
 ```
 
 
@@ -1530,7 +1505,6 @@ cfr_confirmed_probable_suspected <- dta_linelist %>%
   filter(outcome_status %in% c('Cured', 'Died'), ) %>% 
   summarise(cfr = mean(outcome_status == 'Died')) %>% 
   pull()
-
 ```
 
 
@@ -1707,16 +1681,6 @@ pyramid_age_sex_confirmed_continent
 ```
 
 
-<!-- 
-Table by continent (by region, if possible):
-  -	Characteristics: Number and proportion of cases exposed through healthcare facility (healthcare worker + visited)
-  -	Characteristics: Number and proportion of cases with chronic diseases (co-morbidities)
--->
-```{r}
-# To think about
-```
-
-
 
 ### Patients care
 
@@ -1827,14 +1791,6 @@ gtbl_care %>%
 ```
 
 
-<!-- Table Patient’s care 2
-- medication received (under discussion)
--->
-```{r}
-# List of medications to be finalised
-```
-
-
 ### Age and sex of patients by outcome
 
 ```{r tbl-age-sex-outcome}
@@ -1901,7 +1857,6 @@ gtsave(gtbl_age_sex_outcome,
 gtbl_age_sex_outcome %>% 
   tab_header(
     title = 'Age and sex ditribution by type of patient outcome among confirmed, probable and suspected Covid cases')
-
 ```
 
 
@@ -2255,27 +2210,8 @@ gtbl_cfr_type_comcond %>%
   tab_header(
     title = 'Case fatality risk by type of comorbidities among confirmed patients'
   )
-
 ```
 
-
-<!-- Table Outcome 2 - Hospital case fatality risk** by continent (region ??)
-  - overall
-  - by age group
-  - by sex
-  - by co-morbidity
--->
-```{r}
-# DONE????
-```
-
-
-<!-- Table Patients' characteristics
-Frequency and proportion of symptoms, by case severity
--->
-```{r}
-# TO BE DONE as soon as the proper definition of severity is available
-```
 
 <!-- CFR by age-group -->
 ```{r tbl-cfr-agegroup, fig.cap = 'Case fatality risk by age-group among confirmed patients'}
@@ -2326,7 +2262,6 @@ ggsave(file.path(path.local.msf.graphs.oc, paste0('dots_cfr_agegroup', '_', week
 
 
 dots_cfr_agegroup
-
 ```
 
 
@@ -2645,25 +2580,8 @@ gtbl_non_cases_diagt %>%
 ```
 
 
-
-
-<!-- 
-**With all confirmed cases with severe or critical symptoms as denominator: time-series and trends plot** with week as time unit of the following indicator:
-
-  -	Proportion of patients who received oxygen
-  -	Proportion of patients admitted to ICU
-  -	Proportion of patients supported by ventilator
-  -	Proportion of patients supported by ECMO
--->
-```{r}
-# TO BE DONE as soon as patients are properly classified by severity
-```
-
-
-
 <!-- Save results -->
 ```{r save_results}
-
 rm(list = lsf.str())
 save.image(file.path(path.local.msf.data.oc, paste0('episitrep_msf_level_analyses', '_', week_report, '.RData')))
 ```

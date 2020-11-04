@@ -45,7 +45,7 @@ path.local <- file.path(path.root,'local')
 path.local.data  <- file.path(path.local,'data')
 
 path.local.oc    <- file.path(path.local,'oc')
-path.local.oc.data  <- file.path(path.local,'oc','data')
+# path.local.oc.data  <- file.path(path.local,'oc','data')
  
 # Create local folder for all types of outputs -----
 dir.create(path.local, showWarnings = FALSE, recursive = TRUE)
