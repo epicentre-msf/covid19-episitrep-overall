@@ -43,6 +43,7 @@ path.Rmd   <- file.path(path.root,'Rmd')
 path.templates <- file.path(path.root,'templates')
 path.local <- file.path(path.root,'local')
 path.local.data  <- file.path(path.local,'data')
+
 path.local.oc    <- file.path(path.local,'oc')
 path.local.oc.data  <- file.path(path.local,'oc','data')
  
