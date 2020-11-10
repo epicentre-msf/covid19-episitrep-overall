@@ -2577,6 +2577,132 @@ gtbl_non_cases_diagt %>%
 
 ```
 
+
+# Additional analyses asked by OCP
+
+
+```{r}
+dta_cfr_status_hospi_icu <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  filter(outcome_status %in% c('Cured', 'Died')) %>% 
+  # filter(merge_admit != "(Unknown)") %>% 
+  select(covid_status, merge_admit, outcome_status, merge_icu) %>%
+  mutate(merge_admit = recode(merge_admit, "Yes" = "Admitted", "No" = "Not Admitted"))
+
+  group_by(merge_admit, covid_status, merge_icu) %>% 
+  summarise(
+    total = n(),
+    n_died = sum(outcome_status == 'Died'),
+    n_other = sum(outcome_status != "Died")
+  )
+
+
+# Hospi
+dta_cfr_status_hospi <- unique(dta_cfr_status_hospi_icu$merge_admit) %>% 
+  map_df(~{
+    dta_cfr_status_hospi_icu %>% 
+      filter(merge_admit == .x) %>% 
+      tbl_prop('outcome_status', 'covid_status', drop_levels = FALSE) %>% 
+      mutate(
+        merge_admit = .x)
+  })  %>% 
+  filter(outcome_status == 'Died') 
+
+# ICU
+dta_cfr_status_icu <- unique(dta_cfr_status_hospi_icu$merge_icu) %>% 
+  map_df(~{
+    dta_cfr_status_hospi_icu %>% 
+      filter(merge_icu == .x) %>% 
+      tbl_prop('outcome_status', 'covid_status', drop_levels = FALSE) %>% 
+      mutate(
+        merge_icu = .x)
+  })  %>% 
+  filter(outcome_status == 'Died') 
+
+
+tbl_cfr_status_hospi_icu <- dta_cfr_status_hospi %>% 
+  rename(var = merge_admit) %>% 
+  mutate(label_var = 'Admission status') %>% 
+  add_row(dta_cfr_status_icu %>% 
+            rename(var = merge_icu) %>% 
+            mutate(label_var = 'ICU'))
+
+
+gtbl_cfr_status_hospi_icu <- tbl_cfr_status_hospi_icu %>% 
+  gt(rowname_col = "var", 
+     groupname_col = "label_var") %>% 
+  cols_hide(
+    columns = vars('outcome_status', 'n_Not a case', 'n_(Unknown)', 
+                   'N_Not a case', 'N_(Unknown)', 'p_Not a case', 'p_(Unknown)')) %>% 
+  cols_label(
+    n_Confirmed = 'n', 
+    n_Probable  = 'n', 
+    n_Suspected = 'n', 
+    n_Total     = 'n', 
+    
+    N_Confirmed = 'N', 
+    N_Probable  = 'N', 
+    N_Suspected = 'N', 
+    N_Total     = 'N', 
+    
+    p_Confirmed = '(%)', 
+    p_Probable  = '(%)', 
+    p_Suspected = '(%)',
+    p_Total     = '(%)') %>%
+  
+  tab_spanner(
+    label = 'Confirmed',
+    columns = ends_with('_Confirmed')) %>%
+  tab_spanner(
+    label = 'Probable',
+    columns = ends_with('_Probable')) %>%
+  tab_spanner(
+    label = 'Suspected',
+    columns = ends_with('_Suspected')) %>% 
+  tab_spanner(
+    label = 'Total',
+    columns = ends_with('_Total')) %>% 
+  
+  fmt_number(
+    columns = starts_with('p_'),
+    decimals = 1,
+    scale_by = 100,
+    pattern = '({x})') %>%
+  
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  fmt_missing(
+    columns = starts_with('p_'),
+    missing_text = "---") %>%
+  cols_align(
+    align = 'left',
+    columns = vars(var)) %>%
+  cols_align(
+    align = 'right',
+    columns = starts_with('n_')) %>%
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2))
+
+
+
+gtsave(gtbl_cfr_status_hospi_icu, 
+       file.path(path.local.msf.tables.oc, paste0('gtbl_cfr_status_hospi_icu', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtbl_cfr_status_hospi_icu %>% 
+  tab_header(
+    title = 'Case fatality risk by status, admission and ICU ')
+
+
+```
+
+
 <!-- Save results -->
 
 ```{r save_results}
