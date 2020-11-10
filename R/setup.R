@@ -51,7 +51,7 @@ path.local.oc    <- file.path(path.local,'oc')
 dir.create(path.local, showWarnings = FALSE, recursive = TRUE)
 dir.create(path.local.data, showWarnings = FALSE, recursive = TRUE)
 dir.create(path.local.oc, showWarnings = FALSE, recursive = TRUE)
-dir.create(path.local.oc.data, showWarnings = FALSE, recursive = TRUE)
+# dir.create(path.local.oc.data, showWarnings = FALSE, recursive = TRUE)
 
 # Create the path to NCovEpi Sharepoint
 OS <- Sys.info()[['sysname']]
@@ -62,3 +62,4 @@ sharepoint.parent.dir <- dplyr::case_when(
 
 path.sharepoint <- file.path(sharepoint.parent.dir, 'MSF', 'GRP-EPI-COVID-19 - NCoVEpi')
 path.sharepoint.public <- file.path(path.sharepoint, "template", "sitreps", "public")
+path.sharepoint.data <- file.path(path.sharepoint, 'data', 'linelist', 'world')
