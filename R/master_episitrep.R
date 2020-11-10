@@ -28,7 +28,8 @@ file_out_worldwide <- paste0(week_report, '_', 'episitrep_worldwide_analyses', '
 
 rmarkdown::render(
   input = file.path(path.Rmd, 'episitrep_worldwide_analyses.Rmd'), 
-  output_file = file_out_worldwide)
+  output_file = file_out_worldwide, 
+  output_dir  = path.local.week)
 
 
 

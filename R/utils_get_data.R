@@ -34,24 +34,24 @@ get_world_sf <- function(scale = c('small', 'medium', 'large'), proj = c('robins
 
 #' Download and save shapefiles and geo data locally if not present
 #'
-#' @param path path to local directory to store geo data
-#' @param force force to estimate new models even if they were already saved in the path
+#' @param force force to download even if data are already stored in path_local
+#' @param path_local path to local directory to store geo data
 #'
 #' @export
-get_geo_data <- function(path, force = FALSE) {
+get_geo_data <- function(path_local, force = FALSE) {
   
-  path_shp <- file.path(path, paste0('sf_world', '.RDS'))
+  path_local_shp <- file.path(path_local, paste0('sf_world', '.RDS'))
   
-  if (!file.exists(path_shp) | force) {
+  if (!file.exists(path_local_shp) | force) {
     sf_world <- get_world_sf(scale = 'small', proj = 'robinson')
-    saveRDS(sf_world, file = path_shp)
+    saveRDS(sf_world, file = path_local_shp)
   }
   
-  path_countries     <- file.path(path, paste0('df_countries','.RDS'))
-  path_pop_country   <- file.path(path, paste0('df_pop_country','.RDS'))
-  path_pop_region    <- file.path(path, paste0('df_pop_region','.RDS'))
-  path_pop_continent <- file.path(path, paste0('df_pop_continent','.RDS'))
-  path_iso_a3        <- file.path(path, paste0('iso-a3_for_tests','.csv'))
+  path_countries     <- file.path(path_local, paste0('df_countries','.RDS'))
+  path_pop_country   <- file.path(path_local, paste0('df_pop_country','.RDS'))
+  path_pop_region    <- file.path(path_local, paste0('df_pop_region','.RDS'))
+  path_pop_continent <- file.path(path_local, paste0('df_pop_continent','.RDS'))
+  path_iso_a3        <- file.path(path_local, paste0('iso-a3_for_tests','.csv'))
   
   if (any(!file.exists(c(path_countries, path_pop_country, path_pop_region, path_pop_continent, path_iso_a3))) | force) {
     df_ecdc <- get_ecdc_data() %>% prepare_ecdc_dta()
@@ -109,20 +109,24 @@ get_geo_data <- function(path, force = FALSE) {
 
 
 
-#' Import FIND test dataset
+#' Download and save FIND Covid data locally if not present
 #' 
+#' @param file_name
+#' @param force force to download even if data are already stored in path_local
+#' @param path_local force to download even if data are already stored in path_local
+#'
 #' @export
-get_FIND_data <- function(local_path = path.local.worldwide.data, file_name = 'dta_tests.RDS', force = FALSE) {
+get_FIND_data <- function(path_local = path.local.worldwide.data, file_name = 'dta_tests.RDS', force = FALSE) {
   
   base_url <- "https://raw.githubusercontent.com/dsbbfinddx/FINDCov19TrackerData/master/processed/data_all.csv"
   
-  get_dta <- if(!file.exists(file.path(local_path, file_name))) {
+  get_dta <- if(!file.exists(file.path(path_local, file_name))) {
     
     TRUE
     
   } else {
     
-    last_update <- readRDS(file.path(local_path, file_name))$last_update
+    last_update <- readRDS(file.path(path_local, file_name))$last_update
     ifelse(last_update == Sys.Date(), FALSE, TRUE)
     
   }
@@ -134,11 +138,11 @@ get_FIND_data <- function(local_path = path.local.worldwide.data, file_name = 'd
     dta <- readr::read_csv(base_url)
     last_update <-  Sys.Date()
     dta <- list("dta" = dta, "last_update" = last_update)
-    saveRDS(dta, file = file.path(path.local.worldwide.data, file_name))
+    saveRDS(dta, file = file.path(path_local, file_name))
     
   } else {
     
-    dta <- readRDS(file.path(path.local.worldwide.data, file_name))
+    dta <- readRDS(file.path(path_local, file_name))
     
   }
   
@@ -370,7 +374,7 @@ get_msf_linelist <- function(path_local = path.local.msf.data, file_name = 'dta_
   dta_path_local  <- file.path(path_local, file_name) 
   dta_path_remote <- max(fs::dir_ls(path_remote, regexp = "[.]rds$"))
   
-  if (!file.exists(dta_path_local) | force) {
+  if (!file.exists(dta_path_local) || force) {
     
     dta <- readRDS(dta_path_remote)
     saveRDS(dta, file = dta_path_local)
