@@ -2581,20 +2581,14 @@ gtbl_non_cases_diagt %>%
 # Additional analyses asked by OCP
 
 
-```{r}
+```{r tbl-cfr-status-hospi-icu-oxy-venti}
 dta_cfr_status_hospi_icu <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
   filter(outcome_status %in% c('Cured', 'Died')) %>% 
   # filter(merge_admit != "(Unknown)") %>% 
-  select(covid_status, merge_admit, outcome_status, merge_icu) %>%
+  select(covid_status, merge_admit, outcome_status, merge_icu, merge_oxygen,
+         merge_vent) %>%
   mutate(merge_admit = recode(merge_admit, "Yes" = "Admitted", "No" = "Not Admitted"))
-
-  group_by(merge_admit, covid_status, merge_icu) %>% 
-  summarise(
-    total = n(),
-    n_died = sum(outcome_status == 'Died'),
-    n_other = sum(outcome_status != "Died")
-  )
 
 
 # Hospi
@@ -2620,15 +2614,50 @@ dta_cfr_status_icu <- unique(dta_cfr_status_hospi_icu$merge_icu) %>%
   filter(outcome_status == 'Died') 
 
 
-tbl_cfr_status_hospi_icu <- dta_cfr_status_hospi %>% 
+# O2
+dta_cfr_status_o2 <- unique(dta_cfr_status_hospi_icu$merge_oxygen) %>% 
+  map_df(~{
+    dta_cfr_status_hospi_icu %>% 
+      filter(merge_oxygen == .x) %>% 
+      tbl_prop('outcome_status', 'covid_status', drop_levels = FALSE) %>% 
+      mutate(
+        merge_oxygen = .x)
+  })  %>% 
+  filter(outcome_status == 'Died')
+
+
+# Ventilation
+dta_cfr_status_ventilation <- unique(dta_cfr_status_hospi_icu$merge_vent) %>% 
+  map_df(~{
+    dta_cfr_status_hospi_icu %>% 
+      filter(merge_vent == .x) %>% 
+      tbl_prop('outcome_status', 'covid_status', drop_levels = FALSE) %>% 
+      mutate(
+        merge_vent = .x)
+  })  %>% 
+  filter(outcome_status == 'Died')
+
+
+
+tbl_cfr_status_hospi_icu_oxy <- dta_cfr_status_hospi %>% 
   rename(var = merge_admit) %>% 
-  mutate(label_var = 'Admission status') %>% 
+  mutate(label_var = 'Admission status') %>%
+  
   add_row(dta_cfr_status_icu %>% 
             rename(var = merge_icu) %>% 
-            mutate(label_var = 'ICU'))
+            mutate(label_var = 'ICU')) %>% 
+  
+  add_row(dta_cfr_status_o2 %>% 
+            rename(var = merge_oxygen) %>% 
+            mutate(label_var = 'Oxygen')) %>% 
+  
+  add_row(dta_cfr_status_ventilation %>% 
+            rename(var = merge_vent) %>% 
+            mutate(label_var = 'Non invasive ventilation'))
 
 
-gtbl_cfr_status_hospi_icu <- tbl_cfr_status_hospi_icu %>% 
+
+gtbl_cfr_status_hospi_icu_oxy_venti <- tbl_cfr_status_hospi_icu_oxy %>% 
   gt(rowname_col = "var", 
      groupname_col = "label_var") %>% 
   cols_hide(
@@ -2689,18 +2718,78 @@ gtbl_cfr_status_hospi_icu <- tbl_cfr_status_hospi_icu %>%
 
 
 
-gtsave(gtbl_cfr_status_hospi_icu, 
-       file.path(path.local.msf.tables.oc, paste0('gtbl_cfr_status_hospi_icu', '_', week_report, '.html')), 
+gtsave(gtbl_cfr_status_hospi_icu_oxy_venti, 
+       file.path(path.local.msf.tables.oc, paste0('gtbl_cfr_status_hospi_icu_oxy_venti', '_', week_report, '.html')), 
        inline_css = TRUE) %>% 
   invisible()
 
 
-gtbl_cfr_status_hospi_icu %>% 
+gtbl_cfr_status_hospi_icu_oxy_venti %>% 
   tab_header(
     title = 'Case fatality risk by status, admission and ICU ')
 
 
 ```
+
+
+
+```{r gtbl-diff-hospi}
+tbl_diff_hospi <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  select(country, project, sex, age_in_years, merge_admit) %>%
+  drop_na(merge_admit) %>% 
+  group_by(country, project, sex) %>% 
+  summarise(n_nonadmited = sum(merge_admit == "No"),
+            m_nonadmited = mean(merge_admit == "No"),
+            n_admited    = sum(merge_admit == "Yes"),
+            m_admited    = mean(merge_admit == "Yes")) %>% 
+  mutate(sex = recode(sex, "M" = "Male", "F" = "Female")) %>% 
+  group_by(country)
+
+
+gtbl_diff_hospi <- tbl_diff_hospi %>% 
+  gt() %>%
+  cols_label(
+    country      = 'Country',
+    project      = 'Project',
+    sex          = 'Sex',
+    n_nonadmited = 'n', 
+    m_nonadmited = 'Mean age (yrs)', 
+    n_admited    = 'n', 
+    m_admited    = 'Mean age (yrs)') %>%
+  
+  tab_spanner(
+    label = 'Non hospitalized',
+    columns = ends_with('_nonadmited')) %>%
+  tab_spanner(
+    label = 'Hospitalized',
+    columns = ends_with('_Hospitalized')) %>%
+ 
+    fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+
+  cols_align(
+    align = 'right',
+    columns = starts_with('n_')) %>%
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2))
+
+gtsave(gtbl_diff_hospi, 
+       file.path(path.local.msf.tables.oc, paste0('gtbl_diff_hospi', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtbl_diff_hospi %>% 
+  tab_header(
+    title = 'Mean age x gender x hospitalization (for confirmed, probable and suspect)')
+
+```
+
 
 
 <!-- Save results -->
