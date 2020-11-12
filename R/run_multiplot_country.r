@@ -21,8 +21,7 @@ week_report     <- dates_and_week[[3]]
 # Get ECDC data either from the web or from the saved RDS file
 rds_ecdc <- readRDS(file.path(path.local.worldwide.data, 'dta_ECDC.RDS'))
 
-lst_dta_ecdc <- rds_ecdc[[1]] %>% 
-  prepare_ecdc_dta() %>% 
+lst_dta_ecdc <- rds_ecdc %>% 
   tidyr::drop_na(iso_a3) %>% 
   filter(between(date, left = NULL, right = date_max_report)) %>% 
   multisplit("iso_a3")

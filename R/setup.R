@@ -26,14 +26,11 @@ library(officer)
 library(gt)
 library(webshot)
 library(knitr)
-#library(flextable)
-library(distill)
 library(english)
 library(readxl)
 library(ggthemes)
 
-# remotes::install_github("epicentre-msf/covidutils")
-# Note: currently private repo on Github. Ask Francesco Grandesso for access
+remotes::install_github("epicentre-msf/covidutils")
 library(covidutils)
 
 # Create project paths -----

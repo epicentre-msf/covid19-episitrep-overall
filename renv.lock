@@ -291,8 +291,8 @@
       "RemoteRepo": "covidutils",
       "RemoteUsername": "epicentre-msf",
       "RemoteRef": "HEAD",
-      "RemoteSha": "803b1ff63e0bce1e92fe22d91aa7602f9038ec69",
-      "Hash": "8986c159c7e33614ee3bdffb47a68505"
+      "RemoteSha": "638aa037ed398c94cd1d8133720ef469573779d7",
+      "Hash": "5d7b5bdf9c2462195708969047f2e074"
     },
     "cowplot": {
       "Package": "cowplot",
@@ -303,10 +303,10 @@
     },
     "cpp11": {
       "Package": "cpp11",
-      "Version": "0.2.3",
+      "Version": "0.2.4",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "f9df472593124299aef98fba2c96dfd3"
+      "Hash": "ba66e5a750d39067d888aa7af797fed2"
     },
     "crayon": {
       "Package": "crayon",
@@ -931,6 +931,13 @@
       "Repository": "CRAN",
       "Hash": "c66b930d20bb6d858cd18e1cebcfae5c"
     },
+    "remotes": {
+      "Package": "remotes",
+      "Version": "2.2.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "430a0908aee75b1fcba0e62857cab0ce"
+    },
     "renv": {
       "Package": "renv",
       "Version": "0.12.0",
@@ -965,6 +972,13 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "20a0a94af9e8f7040510447763aab3e9"
+    },
+    "rmdformats": {
+      "Package": "rmdformats",
+      "Version": "0.3.7",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "8bfe9a47bab2fd83f6efd1faeed28034"
     },
     "rnaturalearth": {
       "Package": "rnaturalearth",

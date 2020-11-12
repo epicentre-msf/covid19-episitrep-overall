@@ -69,7 +69,7 @@ linear_model_cnt <- function(series, lst_dta, last_date, time_unit_extent = 12, 
   }
   
   # Calculate doubling time
-  tbl_doubling_time <- linear_doubling_time(tbl_coeffs)
+  tbl_doubling_time <- make_doubling_time(tbl_coeffs)
   
   return(list(mdl = lst_mdls, 
               preds = lst_preds, 
@@ -138,7 +138,7 @@ linear_model_cml <- function(series, lst_dta, last_date, time_unit_extent = 12, 
   }
   
   # Calculate doubling time
-  tbl_doubling_time <- linear_doubling_time(tbl_coeffs)
+  tbl_doubling_time <- make_doubling_time(tbl_coeffs)
   
   return(list(mdl = lst_mdls, 
               preds = lst_preds, 
@@ -216,7 +216,7 @@ quasipoisson_model_cnt <- function(series, lst_dta, last_date, time_unit_extent 
   }
   
   # Calculate doubling time
-  tbl_doubling_time <- quasipoisson_doubling_time(tbl_coeffs)
+  tbl_doubling_time <- make_doubling_time(tbl_coeffs)
   
   return(list(mdl = lst_mdls, 
               preds = lst_preds, 
@@ -307,7 +307,7 @@ quasipoisson_model_cml <- function(series, lst_dta, last_date, time_unit_extent 
   }
   
   # Calculate doubling time
-  tbl_doubling_time <- quasipoisson_doubling_time(tbl_coeffs)
+  tbl_doubling_time <- make_doubling_time(tbl_coeffs)
   
   return(list(mdl = lst_mdls, 
               preds = lst_preds, 
@@ -322,40 +322,7 @@ quasipoisson_model_cml <- function(series, lst_dta, last_date, time_unit_extent 
 
 # DOUBLING TIME
 
-# Calculate linear doubling time
-linear_doubling_time <- function(tbl_coeffs) {
-  
-  df_doubling_time <- tibble(iso_a3 = as.character(), 
-                             est    = as.numeric(),
-                             lwr    = as.numeric(),
-                             upr    = as.numeric())
-  
-  for (i in tbl_coeffs$iso_a3) {
-    
-    row_coeffs <- tbl_coeffs %>% filter(iso_a3 == i)
-    
-    if (!is.na(row_coeffs$coeff)) {
-      est <- log(2)/row_coeffs$coeff
-      lwr <- log(2)/row_coeffs$upr
-      upr <- log(2)/row_coeffs$lwr
-    } else {
-      est <- NA_real_
-      lwr <- NA_real_
-      upr <- NA_real_
-    }
-    
-    df_doubling_time <- df_doubling_time %>% 
-      add_row(iso_a3 = i, 
-              est = est,
-              lwr = lwr, 
-              upr = upr)
-  }
-  return(df_doubling_time)
-}
-
-
-# Calculate quasipoisson doubling time
-quasipoisson_doubling_time <- function(tbl_coeffs) {
+make_doubling_time <- function(tbl_coeffs) {
   
   df_doubling_time <- tibble(iso_a3 = character(), 
                              est = numeric(), 
