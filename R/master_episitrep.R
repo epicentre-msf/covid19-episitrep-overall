@@ -85,6 +85,13 @@ print(my_doc, target = file.path(path.local.week, glue("draft_EpiSitrep_world_Co
 # ---- Copy outputs to public folder ----
 # === === === === === === === === === === 
 
+## Copy table of trends to GIS Unit sharepoint
+file.copy(
+  from = file.path(path.local.week, 'worldwide', 'tables', 'epi-case-trends-2020-w45.csv'),
+  to = file.path(sharepoint.parent.dir, 'MSF', 'GIS @ MSF - EPI csv data'), 
+  overwrite = TRUE)
+
+
 # --- Worldwide analysis
 ## Copy to archive
 file.copy(

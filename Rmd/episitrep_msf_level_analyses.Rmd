@@ -1,23 +1,13 @@
 ---
 title: "Covid-19 MSF data analysis"
-description: |
-  This document presents tables, graphs and maps of the MSF Covid-19 linelists analyses (not much text). Most, but not all, of these analyses are presented and commented in the MSF Intersection Covid-19 EpiSitrep edited by Epicentre (for information on the EpiSitrep, please contact Anais.BROBAN@epicentre.msf.org).    
-  
-  The R scripts for both worldwide and MSF linelist analyses are provided on the following Github repository https://github.com/epicentre-msf/covid19-episitrep-overall for epidemiologists in MSF to use (R skills required). The scripts will be updated from week to week as analysis progresses as requested. 
-author:
-  - name: Francesco Grandesso
-    url: mailto:francesco.GRANDESSO@epicentre.msf.org
-    affiliation: Epicentre
-    affiliation_url: https://epicentre.msf.org/
-  - name: Paul Campbell
-    url: mailto:paul.CAMPBELLepicentre.msf.org
-    affiliation: Epicentre
-    affiliation_url: https://epicentre.msf.org/
-date: '`r Sys.Date()`'
+author: Francesco Grandesso (Epicentre) <mailto:francesco.GRANDESSO@epicentre.msf.org>
+date: "`r format(Sys.Date(), '%d %B %Y')`"
 output:
-  distill::distill_article:
-    toc: TRUE
-    toc_depth: 1
+  rmdformats::readthedown:
+    highlight: "tango"
+    lightbox: TRUE
+    gallery: TRUE
+    use_bookdown: TRUE
 editor_options:
   chunk_output_type: console
 ---
@@ -64,16 +54,15 @@ knitr::opts_chunk$set(cache = FALSE,
 <!-- Import and manage data -->
 ```{r get-data, include = FALSE}
 
-## Import the list of countries
+## --- Import the list of countries --- --- ---
 df_countries <- readRDS(file.path(path.local.data, 'df_countries.RDS'))
 
 
-## Import MSF linelist --- --- --- 
+## --- Import MSF linelist --- --- ---
 path.sharepoint.data <- file.path(path.sharepoint, 'data', 'linelist', 'world')
 
 dta_linelist <- get_msf_linelist(force = TRUE) %>% 
-  clean_msf_dta() %>% 
-  prepare_msf_dta(shorten_var_names = TRUE) %>% 
+  covidutils::prepare_msf_dta(shorten_var_names = TRUE) %>% 
   rename(iso_a3 = country) %>% 
   left_join(df_countries %>% select(continent, region, iso_a3, country), by = 'iso_a3') %>% 
   mutate(
@@ -82,18 +71,20 @@ dta_linelist <- get_msf_linelist(force = TRUE) %>%
   filter(between(date_consultation, left = date_min_report, right = date_max_report) | is.na(date_consultation)) # Filter date limits using date of consultation
 
 
-## Import aggregated data --- --- --- 
+## --- Import aggregated data --- --- --- 
 dta_weekly_aggregated <- get_msf_aggregated(force = TRUE)
 dta_project_aggregated_dates <- get_msf_aggregated_dates(force = TRUE)
 
 ### Remove temporarily Quito that grouped the whole activity in a single week
 dta_weekly_aggregated <- dta_weekly_aggregated %>% 
-  filter(project != 'Quito-Fixed & mobile brigades')
+  filter(!project %in% c('Lesvos-Moria',                  # Report linelist
+                         'Lesvos-Moria Ped',              # Report linelist
+                         'Quito-Fixed & mobile brigades', # grouped the whole activity in a single week
+                         'Palong Khali'))                 # Report linelist
 
 
 ### Expand the aggregated
 dta_aggregated_expanded <- dta_weekly_aggregated %>% 
-  filter(!project %in% c('Lesvos-Moria', 'Lesvos-Moria Ped')) %>% 
   select(-week) %>% 
   mutate(
     date = as.Date(date), 
@@ -144,6 +135,11 @@ tbl_aggregated_expanded_with_dates <- dta_aggregated_expanded %>%
 
 ```
 
+
+# About this report
+  This document presents tables, graphs and maps of the MSF Covid-19 linelists analyses (not much text). Most, but not all, of these analyses are presented and commented in the MSF Intersection Covid-19 EpiSitrep edited by Epicentre (for information on the EpiSitrep, please contact Anais.BROBAN@epicentre.msf.org).    
+  
+  The R scripts for both worldwide and MSF linelist analyses are provided on the following Github repository https://github.com/epicentre-msf/covid19-episitrep-overall for epidemiologists in MSF to use (R skills required). The scripts will be updated from week to week as analysis progresses as requested. 
 
 
 # Overview

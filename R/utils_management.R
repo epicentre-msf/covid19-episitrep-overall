@@ -68,6 +68,37 @@ set_date_frame <- function(date_min = NULL, date_max = NULL, week_suffix = NULL,
 }
 
 
+set_paths <- function(path_local, folder_name, create_folders = FALSE) {
+  # Create paths
+  path.local.week   <<- file.path(path_local, folder_name)
+  
+  path.local.worldwide        <<- file.path(path.local.week, 'worldwide')
+  path.local.worldwide.data   <<- file.path(path.local.worldwide, 'data')
+  path.local.worldwide.graphs <<- file.path(path.local.worldwide, 'graphs')
+  path.local.worldwide.tables <<- file.path(path.local.worldwide, 'tables')
+  
+  path.local.msf        <<- file.path(path.local.week, 'msf')
+  path.local.msf.data   <<- file.path(path.local.msf, 'data')
+  path.local.msf.graphs <<- file.path(path.local.msf, 'graphs')
+  path.local.msf.tables <<- file.path(path.local.msf, 'tables')
+  
+  # Create folders based on the paths
+  if (create_folders) {
+    
+    dir.create(path.local.week, showWarnings = FALSE, recursive = TRUE) 
+    
+    dir.create(path.local.worldwide.data  , showWarnings = FALSE, recursive = TRUE) 
+    dir.create(path.local.worldwide.graphs, showWarnings = FALSE, recursive = TRUE) 
+    dir.create(path.local.worldwide.tables, showWarnings = FALSE, recursive = TRUE) 
+    
+    dir.create(path.local.msf.data  , showWarnings = FALSE, recursive = TRUE) 
+    dir.create(path.local.msf.graphs, showWarnings = FALSE, recursive = TRUE) 
+    dir.create(path.local.msf.tables, showWarnings = FALSE, recursive = TRUE) 
+  }
+}
+
+
+
 # set date to the Monday of the ISO week
 make_epiweek_date <- function(date) {
   lubridate::wday(date, week_start = 1) <- 1
@@ -274,7 +305,27 @@ prepare_msf_dta <- function(dta, shorten_var_names = FALSE){
     )
   
   
-  # Comorbidities count and presence by including comorbidities not included by WHO
+  # Recoding Comorbidities as Yes/No
+  dta <- dta %>% 
+    mutate(
+      MSF_malaria = case_when(
+        MSF_malaria == 'Positive' ~ 'Yes', 
+        MSF_malaria == 'Negative' ~ 'No', 
+        MSF_malaria %in% c('Inconclusive', 'Not done') ~ 'Unknown', 
+        TRUE ~ MSF_malaria), 
+      MSF_hiv_status = case_when(
+        MSF_hiv_status %in% c('Positive (no ARV)', 'Positive (on ART)', 'Positive (unknown)') ~ 'Yes', 
+        MSF_hiv_status == 'Negative' ~ 'No', 
+        TRUE ~ MSF_hiv_status), 
+      MSF_tb_active = case_when(
+        MSF_tb_active %in% c('Yes (currently no treatment)', 'Yes (currently on treatment)', 'Yes (unknown)') ~ 'Yes', 
+        TRUE ~ MSF_tb_active), 
+      MSF_smoking = case_when(
+        MSF_smoking %in% c('Yes (current)', 'Yes (former)') ~ 'Yes', 
+        TRUE ~ MSF_smoking))
+  
+  
+  # Recode presence of comorbidities including the MSF ones
   Comcond_count <- rowSums(select(dta, starts_with('Comcond_'), MSF_hiv_status, MSF_hypertension, MSF_tb_active, MSF_malaria, MSF_malnutrition, MSF_smoking) == "Yes", na.rm = TRUE)
   
   Comcond_01 <- ifelse(Comcond_count > 0, 1, 0)
@@ -318,24 +369,6 @@ prepare_msf_dta_comcond <- function(dta){
   dta <- dta %>% 
     select(continent, covid_status, outcome_status, starts_with('Comcond_'), hiv_status, hypertension, tb_active, malaria, malnutrition, smoking) %>% 
     select(-c(Comcond_present, Comcond_pregt))
-  
-  dta <- dta %>% 
-    mutate(
-      malaria = case_when(
-        malaria == 'Positive' ~ 'Yes', 
-        malaria == 'Negative' ~ 'No', 
-        malaria %in% c('Inconclusive', 'Not done') ~ 'Unknown', 
-        TRUE ~ malaria), 
-      hiv_status = case_when(
-        hiv_status %in% c('Positive (no ARV)', 'Positive (on ART)', 'Positive (unknown)') ~ 'Yes', 
-        hiv_status == 'Negative' ~ 'No', 
-        TRUE ~ hiv_status), 
-      tb_active = case_when(
-        tb_active %in% c('Yes (currently no treatment)', 'Yes (currently on treatment)', 'Yes (unknown)') ~ 'Yes', 
-        TRUE ~ tb_active), 
-      smoking = case_when(
-        smoking %in% c('Yes (current)', 'Yes (former)') ~ 'Yes', 
-        TRUE ~ smoking))
   
   return(dta)
 }

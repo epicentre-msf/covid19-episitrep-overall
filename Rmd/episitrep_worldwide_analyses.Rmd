@@ -1,17 +1,10 @@
 ---
-title: 'MSF Covid-19 EpiSitrep worldwide overview'
-description: |
-  This document presents maps, tables and graphs to describe the current Covid-19 pandemic from the MSF perspective (not much text). Most, but not all, of these analyses are presented and commented in the MSF Intersection Covid-19 EpiSitrep edited by Epicentre (for information on the EpiSitrep, please contact Anais.BROBAN@epicentre.msf.org). 
-  
-  The R scripts for both worldwide and MSF linelist analyses are provided on the following Github repository https://github.com/epicentre-msf/covid19-episitrep-overall for epidemiologists in MSF to use (R skills required). The scripts will be updated from week to week as analysis progresses as requested. 
-date: '`r Sys.Date()`'
-author:
-  - name: Francesco Grandesso
-    affiliation: Epicentre (MSF)
+title: "MSF Covid-19 EpiSitrep worldwide overview"
+author: Francesco Grandesso (Epicentre)
+date: "`r format(Sys.Date(), '%d %B %Y')`"
 output: 
-  distill::distill_article:
-    toc: TRUE
-    toc_depth: 1
+  rmdformats::readthedown:
+    use_bookdown: TRUE
 editor_options: 
   chunk_output_type: console
 ---
@@ -69,8 +62,10 @@ caption_world_map <- paste0('Analysis and graphic by Epicentre | Data source: EC
 # === === === === === === === 
 
 # Get ECDC data either from the web or from the saved RDS file
-dta_ecdc <- get_ecdc_data() %>% 
+dta_ecdc <- covidutils::get_ecdc_data() %>% 
   prepare_ecdc_data()
+
+saveRDS(dta_ecdc, file.path(path.local.worldwide.data, 'dta_ECDC.RDS'))
 
 # ECDC data right censored until date_max
 dta_ecdc_right_censored <- dta_ecdc %>% 
@@ -137,7 +132,7 @@ for (i in names(lst_tests)) {
 
 ```{r get-trends}
 
-trend_models <- get_trend_models(periods_trend = c(12, 30))
+trend_models <- get_trend_models(periods_trend = c(12, 30), force = FALSE)
 
 model_cnt_cases_linear_short <- trend_models$model_cnt_cases_linear_short
 model_cnt_cases_linear_long  <- trend_models$model_cnt_cases_linear_long
@@ -158,21 +153,6 @@ model_for_doubling <- 'linear' # for doubling time
 threshold_doubling_time <- 12
 
 ```
-
-
-# Data sources and definitions
-
-This report uses the following data sources: 
-
-  - [ECDC data](https://opendata.ecdc.europa.eu/covid19/casedistribution/csv) last updated `r format(max(dta_ecdc$date, na.rm = TRUE), "%d %b %Y")`.   
-  -	FIND [SARS-COV-2 Test Tracker](https://www.finddx.org/covid-19/test-tracker/) for data on Covid-19 tests
-
-Definitions of increasing, declining and stable trends and the definition of doubling time, as well as detailed information on the analysis methods, can be found [here](https://reports.msf.net/secure/app_direct/covid19-additional-analysis/analysis_methods_2020-08-20.html).
-
-Additional graphics and tables are also available at the [Epicentre COVID-19 Epi Dashboard](https://reports.msf.net/public/covid19/).
-
-**IMPORTANT NOTE:** Data and results presented here are possibly affected by bias related with factors such as the testing strategies used by each country and the performance of their surveillance systems. Results are to be interpreted in the light of this information.
-
 
 <!-- Main data frames used in the analysis -->
 ```{r tbl-count}
@@ -250,6 +230,28 @@ n_deaths_12d <- tbl_death_count_12d %>% select(deaths) %>% sum()
 ```
 
 
+
+<!-- THE REPORT STARTS HERE -->
+
+
+# About this report
+
+This document presents maps, tables and graphs to provide an overview the current Covid-19 pandemic from the MSF perspective (not much text). Most, but not all, of these analyses are presented and commented in the MSF Intersection Covid-19 EpiSitrep edited by Epicentre (for information on the EpiSitrep, please contact Anais.BROBAN@epicentre.msf.org). 
+  
+The R scripts are available at the following Github repository https://github.com/epicentre-msf/covid19-episitrep-overall for epidemiologists in MSF to use (R skills required). The scripts are updated from week to week as analysis progresses as requested. 
+
+This document uses the following data sources: 
+
+  - [ECDC data](https://opendata.ecdc.europa.eu/covid19/casedistribution/csv) last updated `r format(max(dta_ecdc$date, na.rm = TRUE), "%d %b %Y")`.   
+  -	FIND [SARS-COV-2 Test Tracker](https://www.finddx.org/covid-19/test-tracker/) for data on Covid-19 tests
+
+Definitions of increasing, declining and stable trends and the definition of doubling time, as well as detailed information on the analysis methods, can be found [here](https://reports.msf.net/secure/app_direct/covid19-additional-analysis/analysis_methods_2020-08-20.html).
+
+Additional graphics and tables are also available at the [Epicentre COVID-19 Epi Dashboard](https://reports.msf.net/public/covid19/).
+
+**IMPORTANT NOTE:** Data and results presented here are possibly affected by bias related with factors such as the testing strategies used by each country and the performance of their surveillance systems. Results are to be interpreted in the light of this information.
+
+
 # Counts and trends of Covid-19 cases
 
 ## Cases counts 
@@ -288,8 +290,6 @@ map_world_case_count + labs(title = NULL)
 ```{r tbl-case-trend, include = FALSE}
 
 coeff_vars <-  c("coeff", "lwr", "upr")
-
-# This table display trends estimated in the last 30 days (only count linear models)
 
 tbl_case_trend_30d <- tbl_case_count_30d %>% 
   select(-brks) %>% 
@@ -890,10 +890,10 @@ gtsave(gtbl_summary_cases_deaths,
 ```
 
 
-# Cumulative incidences
+# Incidence proportions
 
 <!-- Map of cumulative incidences -->
-```{r tbl-cumulative-incidences}
+```{r, include = FALSE}
 
 # Specific breaks for incidence
 breaks_ar <- c(0, 10, 100, 1000, 10000, Inf)
@@ -909,11 +909,11 @@ tbl_attack_rates <- tbl_summary_cases_deaths %>%
 ```
 
 
-The cumulative number of cases are mapped in Figure \@ref(fig:map-world-cases-cumulative-incidence). The cumulative number of deaths are mapped in Figure \@ref(fig:map-world-deaths-cumulative-incidence). 
+The cumulative number of cases are mapped in Figure \@ref(fig:map-world-cases-incidence-proportion). The cumulative number of deaths are mapped in Figure \@ref(fig:map-world-deaths-incidence-proportion). 
 
-### Cumulative incidences of cases
-<!-- Map of cumulative incidences of cases -->
-```{r map-world-cases-cumulative-incidence, fig.cap = paste0('Cumulative incidence of Covid-19 reported cases since beginning of epidemic per 100,000 population, data until ', format(date_max_report, "%d %B %Y"))}
+## Incidence proportions of cases
+<!-- Map of incidences proportion of cases -->
+```{r map-world-cases-incidence-proportion, fig.cap = paste('Incidence proportion of Covid-19 reported cases since beginning of epidemic per 100,000 population, data until', format(date_max_report, "%d %B %Y"))}
 
 sf_attack_rates <- tbl_attack_rates %>% 
   inner_join(
@@ -925,7 +925,7 @@ sf_attack_rates <- tbl_attack_rates %>%
 map_world_case_attack_rates <- ggplot(sf_attack_rates) + 
   geom_sf(aes(fill = cases_brks), size = .1) + 
   scale_fill_brewer(
-    name = "Cumulative incidence of cases / 100,000 population", palette = "Blues", 
+    name = "Incidence proportion of cases / 100,000 population", palette = "Blues", 
     drop = FALSE, 
     guide = guide_legend(
       keyheight = unit(3, units = "mm"),
@@ -951,15 +951,15 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_case_attack_rate
 ```
 
 
-### Cumulative incidences of Covid associated deaths
+## Incidence proportions of Covid associated deaths
 
-<!-- Map of cumulative incidences of deaths -->
-```{r map-world-deaths-cumulative-incidence, fig.cap = glue('Cumulative incidence of Covid-19 associated since beginning of epidemic, per 100,000 population, data until {format(date_max_report, "%d %B %Y")}')}
+<!-- Map of incidence proportion of deaths -->
+```{r map-world-deaths-incidence-proportion, fig.cap = paste('Incidence proportion of Covid-19 associated deaths since the beginning of epidemic per 100,000 population, data until', format(date_max_report, "%d %B %Y"))}
 
 map_world_death_attack_rates <- ggplot(sf_attack_rates) + 
   geom_sf(aes(fill = deaths_brks), size = .1) + 
   scale_fill_brewer(
-    name = "Cumulative incidence of deaths / 100,000 population", palette = "Reds", 
+    name = "Incidence proportion of deaths / 100,000 population", palette = "Reds", 
     drop = FALSE, 
     guide = guide_legend(
       keyheight = unit(3, units = "mm"),
@@ -985,7 +985,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_death_attack_rat
 ```
 
 
-### Cumulative incidence versus incidence in the last 30 days
+## Cumulative incidence versus incidence in the last 30 days
 
 <!-- Dots plot 30 days cumulative incidence versus 30 days incidence -->
 ```{r cumulative-incidence-versus-incidences-30-days, fig.width = 9, fig.height = 8}
@@ -1028,8 +1028,8 @@ dotsgplot_inc <- function(tbl_inc = tbl_inc_cml, name_continent){
     labs(
       subtitle = name_continent, 
       caption = paste0("Countries with zero count: ",txt_countries_zero_count, ".\n", caption_world_map), 
-      y = "Cumulative incidence of cases in the last 30 days per 100,000 population",
-      x = "Cumulative number of cases in the last 30 days",
+      y = "Incidence proportion of cases in the last 30 days per 100,000 population",
+      x = "Number of cases in the last 30 days",
       color = NULL) + 
     theme_light()
     
@@ -1096,7 +1096,7 @@ dotsgplot_inc_Europe
 
 
 
-### Cumulative incidence versus incidence since the first cases reported
+## Cumulative incidence versus incidence since the first cases reported
 
 <!-- Dots plot cumulative incidences versus incidence -->
 ```{r cumulative-incidence-versus-incidence, fig.width = 9, fig.height = 8}
@@ -1284,7 +1284,7 @@ tbl_doubling_cfr_rank <- tbl_doubling_cfr %>%
 ```
 
 
-### Countries with doubling time in cases less than `r (threshold_doubling_time)` days
+## Countries with doubling time in cases less than `r (threshold_doubling_time)` days
 
 A sharp increasing of cases (doubling time of less than `r threshold_doubling_time` days) (Figure \@ref(fig:map-world-cases-doubling)) is observed in: 
 
@@ -1357,7 +1357,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_doubling_cases',
 ```
 
 
-### Countries with doubling time in deaths less than `r (threshold_doubling_time)` days
+## Countries with doubling time in deaths less than `r (threshold_doubling_time)` days
 
 A sharp increasing of deaths (doubling time of less than `r threshold_doubling_time` days) (Figure \@ref(fig:map-world-deaths-doubling)) is observed in: 
 
@@ -1423,7 +1423,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_doubling_deaths'
 ```
 
 
-### Summary table of countries with doubling time in cases or deaths less than `r threshold_doubling_time` days
+## Summary table of countries with doubling time in cases or deaths less than `r threshold_doubling_time` days
 
 ```{r}
 #  The tbl_cfr_doubling_rank is made above
@@ -1502,7 +1502,7 @@ gtbl_doubling_cfr_rank
 ```
 
 
-### Countries with critical doubling time of cases
+## Countries with critical doubling time of cases
 <!-- Dot plot doubling time over number of days with increasing trend -->
 ```{r dots-hotspot-cases, fig.cap = glue('Distribution of doubling time of Covid-19 cases according to length in days since the first significant increasing trend reported (only countries with doubling time of less than {threshold_doubling_time} days as of {format(date_max_report, "%d %B %Y")} are displayed)')}
 
@@ -1574,7 +1574,7 @@ dots_hotspot_cases
 ```
 
 
-# Number of Covid-19 diagnostic tests performed
+# Number of diagnostic tests performed
 
 ```{r, include = FALSE}
 
