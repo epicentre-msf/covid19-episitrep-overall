@@ -42,13 +42,22 @@ date_max_report <- dates_and_week[[2]]
 week_report     <- dates_and_week[[3]]
 
 
+# If week folder not created already by overall sitrep, create it.
+path.local.week <- file.path(path.local, week_report)
+
+if (!dir.exists(folder)) {
+  dir.create(path.local.week, showWarnings = FALSE, recursive = TRUE)
+}
 
 
-path.local.week.oc   <- file.path(path.local.oc, week_report)
-
+path.local.week.oc   <- file.path(path.local.week, "OC")
 path.local.msf.data.oc   <- file.path(path.local.week.oc, params$OC, 'data')
 path.local.msf.graphs.oc <- file.path(path.local.week.oc, params$OC, 'graphs')
 path.local.msf.tables.oc <- file.path(path.local.week.oc, params$OC, 'tables')
+
+if (!dir.exists(path.local.week.oc)) {
+  dir.create(path.local.week.oc,   showWarnings = FALSE, recursive = TRUE)
+}
 
 if (!dir.exists(path.local.msf.data.oc)) {
   dir.create(path.local.msf.data.oc,   showWarnings = FALSE, recursive = TRUE)
@@ -2578,7 +2587,9 @@ gtbl_non_cases_diagt %>%
 ```
 
 
-# Additional analyses asked by OCP
+# Additional analyses
+
+Work-in progress tables.
 
 
 ```{r tbl-cfr-status-hospi-icu-oxy-venti}
