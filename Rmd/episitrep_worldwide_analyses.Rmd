@@ -249,6 +249,8 @@ Definitions of increasing, declining and stable trends and the definition of dou
 
 Additional graphics and tables are also available at the [Epicentre COVID-19 Epi Dashboard](https://reports.msf.net/public/covid19/).
 
+Reports of previous weeks are available [here](https://reports.msf.net/secure/app_direct/covid19-additional-analysis/addtional_episitrep_outputs_worldwide/archive/).
+
 **IMPORTANT NOTE:** Data and results presented here are possibly affected by bias related with factors such as the testing strategies used by each country and the performance of their surveillance systems. Results are to be interpreted in the light of this information.
 
 

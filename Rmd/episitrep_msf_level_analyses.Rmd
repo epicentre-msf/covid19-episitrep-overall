@@ -142,6 +142,8 @@ tbl_aggregated_expanded_with_dates <- dta_aggregated_expanded %>%
   The R scripts for both worldwide and MSF linelist analyses are provided on the following Github repository https://github.com/epicentre-msf/covid19-episitrep-overall for epidemiologists in MSF to use (R skills required). The scripts will be updated from week to week as analysis progresses as requested. 
 
 
+Reports of previous weeks are available [here](https://reports.msf.net/secure/app_direct/covid19-additional-analysis/additional_episitrep_outputs_msf/archive/).
+
 # Overview
 This section will present **information of completeness of data** (number of MSF projects that are active on Covid-19 care, reporting individual data (linelist), reporting aggregated data and not reporting data). Number of projects will be listed by continent and region. 
 
