@@ -43,14 +43,8 @@ week_report     <- dates_and_week[[3]]
 
 
 # If week folder not created already by overall sitrep, create it.
-path.local.week <- file.path(path.local, week_report)
+path.local.week.oc <- file.path(path.local, week_report, "oc")
 
-if (!dir.exists(folder)) {
-  dir.create(path.local.week, showWarnings = FALSE, recursive = TRUE)
-}
-
-
-path.local.week.oc   <- file.path(path.local.week, "OC")
 path.local.msf.data.oc   <- file.path(path.local.week.oc, params$OC, 'data')
 path.local.msf.graphs.oc <- file.path(path.local.week.oc, params$OC, 'graphs')
 path.local.msf.tables.oc <- file.path(path.local.week.oc, params$OC, 'tables')

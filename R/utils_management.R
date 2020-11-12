@@ -35,8 +35,8 @@ set_date_frame <- function(date_min = NULL, date_max = NULL, week_suffix = NULL,
   path.local.msf.graphs <<- file.path(path.local.msf, 'graphs')
   path.local.msf.tables <<- file.path(path.local.msf, 'tables')
   
-  
-  path.local.week.oc   <<- file.path(path.local.oc, week_max)
+  path.local.week.oc    <<- file.path(path.local.week, "oc")
+
   
   # path.local.msf.oc        <<- file.path(path.local.week.oc, 'msf')
   # path.local.msf.data.oc   <<- file.path(path.local.week.oc, 'data')
