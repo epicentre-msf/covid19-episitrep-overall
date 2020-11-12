@@ -37,18 +37,14 @@ library(covidutils)
 path.root  <- here::here()
 path.R     <- file.path(path.root,'R')
 path.Rmd   <- file.path(path.root,'Rmd')
-path.templates <- file.path(path.root,'templates')
-path.local <- file.path(path.root,'local')
+path.templates   <- file.path(path.root,'templates')
+path.local       <- file.path(path.root,'local')
 path.local.data  <- file.path(path.local,'data')
 
-path.local.oc    <- file.path(path.local,'oc')
-# path.local.oc.data  <- file.path(path.local,'oc','data')
- 
 # Create local folder for all types of outputs -----
 dir.create(path.local, showWarnings = FALSE, recursive = TRUE)
 dir.create(path.local.data, showWarnings = FALSE, recursive = TRUE)
-dir.create(path.local.oc, showWarnings = FALSE, recursive = TRUE)
-# dir.create(path.local.oc.data, showWarnings = FALSE, recursive = TRUE)
+
 
 # Create the path to NCovEpi Sharepoint
 OS <- Sys.info()[['sysname']]
