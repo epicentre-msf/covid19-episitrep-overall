@@ -226,7 +226,6 @@ tbl_death_count_12d <- dta_ecdc_right_censored %>%
 n_cases_12d <- tbl_case_count_12d %>% select(cases) %>% sum()
 n_deaths_12d <- tbl_death_count_12d %>% select(deaths) %>% sum()
 
-
 ```
 
 
@@ -870,8 +869,8 @@ gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>%
   tab_header(title = glue('Worldwide Covid-19 cases and associated deaths, and trends as of {format(date_max_report, "%d %b %Y")}'),
              subtitle = html('<strong>Trends are estimate using data of the previous 12 days</strong><br>
                              Analysis carried out by Epicentre<br>
-                             For information on the analysis methods click
-<a href="https://msfintl-my.sharepoint.com/:u:/g/personal/francesco_grandesso_epicentre_msf_org/EZqExKcP8axMj06voaLlveABpiicCfzkk5OWB-EaJvo9Fw?e=lwU1eM">here</a><br><br>
+                             For information on the analysis methods click <a href="https://reports.msf.net/secure/app_direct/covid19-additional-analysis/analysis_methods_2020-08-20.html">here</a><br>
+                             Tables of previous weeks are available <a href="https://reports.msf.net/secure/app_direct/covid19-additional-analysis/tables_world_summary/archive/">here</a><br><br>
                              <strong>NOTE to interprete the trends</strong><br>
                              A trend with rate greater than 1 indicates an increaasing trend<br>
                              A trend with rate of less than 1 indicates a declining trend')) %>% 
