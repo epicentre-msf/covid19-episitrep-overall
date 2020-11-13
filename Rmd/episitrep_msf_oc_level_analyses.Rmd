@@ -2807,6 +2807,70 @@ gtbl_diff_hospi %>%
 
 
 
+```{r tbl-deaths-hospi-icu}
+tbl_deaths_hospi_icu <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  select(country, project, merge_admit, outcome_status, merge_icu) %>%
+  group_by(country, project) %>% 
+  summarise(n_death = sum(outcome_status == "Died", na.rm = TRUE),
+            n_death_hospi = sum(outcome_status == "Died" & merge_admit == "Yes", na.rm = TRUE),
+            p_death_hospi = n_death_hospi / n_death,
+            n_death_icu   = sum(outcome_status == "Died" & merge_icu == "Yes", na.rm = TRUE),
+            p_death_icu   = n_death_icu / n_death)
+
+
+gtbl_deaths_hospi_icu <- tbl_deaths_hospi_icu %>% 
+  gt() %>%
+  cols_label(
+    country       = 'Country',
+    project       = 'Project',
+    n_death       = 'N',
+    n_death_hospi = 'N',
+    p_death_hospi = '% of deaths', 
+    n_death_icu   = 'N',
+    p_death_icu   = '% of deaths') %>%
+  
+  tab_spanner(
+    label = 'Deaths',
+    columns = vars(n_death, n_death_hospi, p_death_hospi, n_death_icu, p_death_icu)) %>%
+  tab_spanner(
+    label = 'Hospitalized',
+    columns = ends_with('_admited')) %>%
+  
+  fmt_number(
+    columns = starts_with('m_'),
+    decimals = 1) %>%
+  
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  
+  cols_align(
+    align = 'right',
+    columns = starts_with('n_')) %>%
+  cols_align(
+    align = 'center', 
+    columns = starts_with('m_')) %>% 
+  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2),
+    row.striping.include_table_body = TRUE)
+
+gtsave(gtbl_deaths_hospi_icu, 
+       file.path(path.local.msf.tables.oc, paste0('gtbl_deaths_hospi_icu', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtbl_deaths_hospi_icu %>% 
+  tab_header(
+    title = 'Number of deaths, proportion in hospital and ICU')
+```
+
+
 <!-- Save results -->
 
 ```{r save_results}
