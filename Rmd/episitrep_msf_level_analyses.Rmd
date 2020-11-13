@@ -719,7 +719,8 @@ gtsave(gtbl_sites_covid_status %>%
          tab_header(
            title = html(paste('SUMMARY TABLE<br>
            Counts of patients consulted/admitted to an MSF supported COvid-19 health service by Covid status as of', format(date_max_report, "%d %b %Y"))),
-    subtitle = 'Sites with (*) reported aggregated data'),
+    subtitle = html('<strong>Sites with (*) reported aggregated data</strong><br>
+                    Tables of previous weeks are available <a href="https://reports.msf.net/secure/app_direct/covid19-additional-analysis/tables_msf_sites/archive/">here</a>')),
        file.path(path.local.msf.tables, paste0(week_report, '_SUMMARY-TABLE_MSF-sites_by_patients_Covid-status.html'))) %>%
   invisible()
 
