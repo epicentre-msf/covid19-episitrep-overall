@@ -315,10 +315,10 @@ Aggregated data excluded
 # DONE by Paul
 
 tbl_epicurve_consultation <- dta_linelist %>%
-  filter(merge_admit != "Unknown") %>% 
+  filter(merge_admit != 'Unknown') %>% 
   count(epi_week_consultation, merge_admit) %>%
   drop_na() %>%
-  mutate(merge_admit = recode(merge_admit, "Yes" = "Admitted", "No" = "Not Admitted"))
+  mutate(merge_admit = recode(merge_admit, 'Yes' = 'Admitted', 'No' = 'Not Admitted'))
 
 tbl_admit_prop <- dta_linelist %>%
   filter(merge_admit != "Unknown") %>% 
@@ -326,8 +326,8 @@ tbl_admit_prop <- dta_linelist %>%
   group_by(epi_week_consultation) %>%
   summarise(
     n = n(),
-    total = sum(merge_admit %in% c("Yes", "No")),
-    admitted = sum(merge_admit == "Yes"),
+    total = sum(merge_admit %in% c('Yes', 'No')),
+    admitted = sum(merge_admit == 'Yes'),
     admit_prop = admitted / total
   ) %>%
   ungroup()
@@ -338,14 +338,14 @@ cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
 scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
 
 missing_consultation <- sum(is.na(dta_linelist$epi_week_consultation))
-missing_admission    <- sum(dta_linelist$merge_admit == "Unknown")
+missing_admission    <- sum(dta_linelist$merge_admit == 'Unknown')
 
 hist_epicurve_consult_admit <- tbl_epicurve_consultation %>% 
   ggplot(aes(epi_week_consultation, n)) +
   geom_col(aes(fill = merge_admit)) +
   geom_line(data = tbl_admit_prop,
             aes(y = admit_prop / scaling_factor, colour = "Admitted %"),
-            key_glyph = "timeseries", size = 1) +
+            key_glyph = 'timeseries', size = 1) +
   ggthemes::scale_fill_tableau(name = NULL, palette = "Tableau 20") +
   scale_x_date(name = "Week of Consultation", date_breaks = "2 weeks", date_labels = "%V", 
                sec.axis = ggplot2::sec_axis(trans = ~ .), expand = expansion(mult = c(0.01, 0.01))) +
@@ -372,10 +372,10 @@ hist_epicurve_consult_admit
 # DONE by Paul
 
 tbl_epicurve_consultation_continent <- dta_linelist %>%
-  filter(merge_admit != "Unknown") %>% 
+  filter(merge_admit != 'Unknown') %>% 
   count(continent, epi_week_consultation, merge_admit) %>%
   drop_na() %>%
-  mutate(merge_admit = recode(merge_admit, "Yes" = "Admitted", "No" = "Not Admitted"))
+  mutate(merge_admit = recode(merge_admit, 'Yes' = 'Admitted', 'No' = 'Not Admitted'))
 
 tbl_admit_prop_continent <- dta_linelist %>%
   filter(merge_admit != "Unknown") %>% 
@@ -383,8 +383,8 @@ tbl_admit_prop_continent <- dta_linelist %>%
   group_by(continent, epi_week_consultation) %>%
   summarise(
     n = n(),
-    total = sum(merge_admit %in% c("Yes", "No")),
-    admitted = sum(merge_admit == "Yes"),
+    total = sum(merge_admit %in% c('Yes', 'No')),
+    admitted = sum(merge_admit == 'Yes'),
     admit_prop = admitted / total
   ) %>%
   ungroup()
@@ -395,7 +395,7 @@ cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
 scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
 
 missing_consultation <- sum(is.na(dta_linelist$epi_week_consultation))
-missing_admission    <- sum(dta_linelist$merge_admit == "Unknown")
+missing_admission    <- sum(dta_linelist$merge_admit == 'Unknown')
 
 hist_epicurve_consult_admit_continent <- tbl_epicurve_consultation_continent %>% 
   ggplot(aes(epi_week_consultation, n)) +
@@ -403,7 +403,7 @@ hist_epicurve_consult_admit_continent <- tbl_epicurve_consultation_continent %>%
   geom_col(aes(fill = merge_admit)) +
   geom_line(data = tbl_admit_prop_continent,
             aes(y = admit_prop / scaling_factor, colour = "Admitted %"),
-            key_glyph = "timeseries", size = 0.5) +
+            key_glyph = 'timeseries', size = 0.5) +
   ggthemes::scale_fill_tableau(name = NULL, palette = "Tableau 20") +
   scale_x_date(name = "Week of Consultation", date_breaks = "3 week", date_labels = "%V", 
                sec.axis = ggplot2::sec_axis(trans = ~ .), expand = expansion(mult = c(0.01, 0.01))) +
@@ -411,7 +411,7 @@ hist_epicurve_consult_admit_continent <- tbl_epicurve_consultation_continent %>%
                      expand = expansion(mult = c(0, 0.02))) +
   labs(y = "Patients", colour = NULL, caption = glue::glue("Missing data: Consultation Date {missing_consultation}, Admission: {missing_admission}")) + 
     theme_light() + 
-  theme(legend.position = "top", panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank())
+  theme(legend.position = 'top', panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank())
 
 ggsave(file.path(path.local.msf.graphs, paste0('hist_epicurve_consult_admit_continent', '_', week_report, '.png')),
        plot = hist_epicurve_consult_admit_continent,
@@ -430,18 +430,18 @@ hist_epicurve_consult_admit_continent
 ```{r gtbl-consultation-continent, layout = "l-body-outset"}
 
 tbl_consultation_continent <- dta_linelist %>%
-  filter(merge_admit != "Unknown") %>% 
-  mutate(merge_admit = recode(merge_admit, "Yes" = "Admitted", "No" = "Not Admitted")) %>% 
+  filter(merge_admit != 'Unknown') %>% 
+  mutate(merge_admit = recode(merge_admit, 'Yes' = 'Admitted', 'No' = 'Not Admitted')) %>% 
   count(continent, merge_admit) %>% 
   pivot_wider(names_from = merge_admit, values_from = n) %>% 
   adorn_totals(c('col', 'row')) %>% 
   mutate(
-    admitted_percent = Admitted / Total* 100)
+    admitted_percent = Admitted / Total * 100)
 
 gtbl_consultation_continent <- tbl_consultation_continent %>% 
-  gt(rowname_col = "continent") %>% 
+  gt(rowname_col = 'continent') %>% 
   cols_label(
-    admitted_percent = "Admitted (%)") %>% 
+    admitted_percent = 'Admitted (%)') %>% 
   fmt_number(
     columns = vars(Admitted, `Not Admitted`, Total), 
     decimals = 0) %>% 
@@ -455,7 +455,7 @@ gtbl_consultation_continent <- tbl_consultation_continent %>%
     vars(Admitted, `Not Admitted`, Total) ~ px(120), 
     everything() ~ px(100)) %>% 
   tab_options(
-    column_labels.font.weight = "bold") %>% 
+    column_labels.font.weight = 'bold') %>% 
   tab_header(title = "Number of admissions by continent")
 
 
@@ -538,16 +538,19 @@ gtbl_countries_covid_status <- tbl_countries_covid_status %>%
     label = html('(Unknown)'),
     columns = ends_with('_unknown')) %>%
   fmt_number(
+    columns = starts_with(c('total', 'n_')),
+    decimals = 0) %>%
+  fmt_number(
     columns = starts_with('p_'),
     decimals = 1,
     scale_by = 100,
     pattern = "({x})") %>%
   fmt_missing(
     columns = starts_with('date_adm_'),
-    missing_text = "Unknown") %>%
+    missing_text = '(Unknown)') %>%
   cols_align(
     align = 'right',
-    columns = vars(total)) %>%
+    columns = starts_with(c('total', 'n_'))) %>%
   cols_align(
     align = 'left',
     columns = starts_with('p_')) %>%
@@ -556,7 +559,11 @@ gtbl_countries_covid_status <- tbl_countries_covid_status %>%
     columns = starts_with('date_adm_')) %>%
   tab_style(
     style = list(
-      cell_text(align = "left")),
+      cell_text(align = 'right')),
+    locations = cells_column_labels(columns = starts_with(c('total', 'n_')))) %>%
+  tab_style(
+    style = list(
+      cell_text(align = 'left')),
     locations = cells_column_labels(columns = starts_with('p_'))) %>%
   summary_rows(
     groups = TRUE,
@@ -574,7 +581,7 @@ gtbl_countries_covid_status <- tbl_countries_covid_status %>%
   tab_source_note(
     source_note = "(*) These data were reported as aggregated only and are not included in further analysis below") %>% 
   tab_options(
-    column_labels.font.weight = "bold",
+    column_labels.font.weight = 'bold',
     row_group.font.weight = 'bold',
     grand_summary_row.text_transform = 'uppercase',
     data_row.padding = px(1),
@@ -667,7 +674,10 @@ gtbl_sites_covid_status <- tbl_sites_covid_status %>%
     columns = ends_with('_not_case')) %>%
   tab_spanner(
     label = html('(Unknown)'),
-    columns = ends_with('_unknown')) %>%
+    columns = ends_with('_unknown')) %>% 
+  fmt_number(
+    columns = starts_with(c('total', 'n_')),
+    decimals = 0) %>%   
   fmt_number(
     columns = starts_with('p_'),
     decimals = 1,
@@ -678,7 +688,7 @@ gtbl_sites_covid_status <- tbl_sites_covid_status %>%
     missing_text = "Unknown") %>%
   cols_align(
     align = 'right',
-    columns = vars(total)) %>%
+    columns = starts_with(c('total', 'n_'))) %>%
   cols_align(
     align = 'left',
     columns = starts_with('p_')) %>%
@@ -687,8 +697,12 @@ gtbl_sites_covid_status <- tbl_sites_covid_status %>%
     columns = starts_with('date_adm_')) %>%
   tab_style(
     style = list(
-      cell_text(align = "left")),
-    locations = cells_column_labels(columns = starts_with('p_'))) %>%
+      cell_text(align = 'left')),
+    locations = cells_column_labels(columns = starts_with('p_'))) %>% 
+  tab_style(
+    style = list(
+      cell_text(align = 'right')),
+    locations = cells_column_labels(columns = starts_with('n_'))) %>% 
   summary_rows(
     groups = TRUE,
     columns = vars(total, n_confirmed, n_probable, n_suspected, n_not_case, n_unknown),
@@ -703,7 +717,7 @@ gtbl_sites_covid_status <- tbl_sites_covid_status %>%
     formatter = fmt_number,
     decimals = 0) %>% 
   tab_options(
-    column_labels.font.weight = "bold",
+    column_labels.font.weight = 'bold',
     row_group.font.weight = 'bold',
     grand_summary_row.text_transform = 'uppercase',
     data_row.padding = px(1),
@@ -718,7 +732,7 @@ gtsave(gtbl_sites_covid_status,
 gtsave(gtbl_sites_covid_status %>% 
          tab_header(
            title = html(paste('SUMMARY TABLE<br>
-           Counts of patients consulted/admitted to an MSF supported COvid-19 health service by Covid status as of', format(date_max_report, "%d %b %Y"))),
+           Counts of patients consulted/admitted to an MSF supported Covid-19 health service by Covid status as of', format(date_max_report, "%d %b %Y"))),
     subtitle = html('<strong>Sites with (*) reported aggregated data</strong><br>
                     Tables of previous weeks are available <a href="https://reports.msf.net/secure/app_direct/covid19-additional-analysis/tables_msf_sites/archive/">here</a>')),
        file.path(path.local.msf.tables, paste0(week_report, '_SUMMARY-TABLE_MSF-sites_by_patients_Covid-status.html'))) %>%
@@ -776,7 +790,7 @@ gtbl_age_distribution_by_sex_all <- tbl_age_distribution_by_sex_all %>%
   tab_header(
     title = 'Age distribution of all patients consulted/admitted') %>% 
   tab_options(
-    column_labels.font.weight = "bold",
+    column_labels.font.weight = 'bold',
     data_row.padding = px(1),
     row_group.padding = px(1))
 
@@ -791,7 +805,7 @@ gtbl_age_distribution_by_sex_all
 ```{r gtbl-age-sex-continent}
 
 dta_age_sex <- dta_linelist %>% 
-  mutate(sex = factor(sex, levels = c('F', 'M'), labels = c('Female', 'Male')) %>% fct_explicit_na()) 
+  mutate(sex = factor(sex, levels = c('F', 'M'), labels = c('Female', 'Male')) %>% fct_explicit_na(na_level = "(Unknown)")) 
   
   
 tbl_age_sex <- dta_age_sex %>% 
@@ -818,9 +832,9 @@ gtbl_age_sex_continent <- tbl_age_sex_continent %>%
     columns = 2:4, 
     decimals = 0) %>% 
   tab_header(
-    title = 'Median age (years) of patients by continent, all patients consulted/admitted') %>% 
+    title = 'Median age (years) of all patients consulted/admitted by continent') %>% 
   tab_options(
-    column_labels.font.weight = "bold",
+    column_labels.font.weight = 'bold',
     data_row.padding = px(2),
     row_group.padding = px(2))
 
@@ -835,7 +849,7 @@ gtbl_age_sex_continent
 
 tbl_sex_ratio <- dta_linelist %>% 
   select(continent, sex) %>% 
-  transform(sex = factor(sex, levels = c('M', 'F'), labels = c('Male', 'Female')) %>% fct_explicit_na()) %>% 
+  transform(sex = factor(sex, levels = c('M', 'F'), labels = c('Male', 'Female')) %>% fct_explicit_na(na_level = "(Unknown)")) %>% 
   group_by(continent) %>% 
   count(sex) %>% 
   pivot_wider(names_from = sex, values_from = n) %>% 
@@ -846,11 +860,17 @@ tbl_sex_ratio <- dta_linelist %>%
 gtbl_sex_ratio <- tbl_sex_ratio %>% 
   gt(rowname_col = 'continent') %>% 
   cols_label(
-    ratio_mf = 'Male/Female ratio') %>% 
+    ratio_mf = html('Male/Female<br>ratio')) %>% 
+  fmt_number(
+    columns = vars('Male', 'Female', '(Unknown)'),
+    decimals = 0) %>% 
+  cols_align(
+    align = 'right', 
+    columns = TRUE) %>% 
   tab_header(
     title = 'Sex ratio of all patients consulted/admitted by continent') %>% 
   tab_options(
-    column_labels.font.weight = "bold",
+    column_labels.font.weight = 'bold',
     data_row.padding = px(2),
     row_group.padding = px(2))
 
@@ -943,7 +963,7 @@ gtbl_general <- tbl_general %>%
     align = 'center',
     columns = vars(Confirmed, Probable, Suspected, `Not a case`, `(Unknown)`)) %>% 
   tab_options(
-    column_labels.font.weight = "bold",
+    column_labels.font.weight = 'bold',
     row_group.font.weight = 'bold',
     data_row.padding = px(2),
     row_group.padding = px(2))
@@ -1059,6 +1079,9 @@ gtbl_comcond_status <- tbl_comcond_status %>%
     align = 'right',
     columns = starts_with(c('n_', '.p_'))) %>%
   fmt_number(
+    columns = starts_with('n_'), 
+    decimals = 0) %>% 
+  fmt_number(
     columns = starts_with('p_'), 
     decimals = 1, 
     scale_by = 100, 
@@ -1086,10 +1109,10 @@ gtbl_comcond_status <- tbl_comcond_status %>%
     columns = ends_with('Total')) %>% 
   tab_style(
     style = list(
-      cell_text(align = "right")),
+      cell_text(align = 'right')),
     locations = cells_column_labels(columns = starts_with(c('n_', 'p_')))) %>%
   tab_options(
-    column_labels.font.weight = "bold",
+    column_labels.font.weight = 'bold',
     data_row.padding = px(2),
     row_group.padding = px(2))
 
@@ -1187,7 +1210,10 @@ gtbl_sympt_all <- tbl_sympt_status %>%
     columns = ends_with('_(Unknown)')) %>%
   tab_spanner(
     label = "Total",
-    columns = ends_with('_Total')) %>%
+    columns = ends_with('_Total')) %>% 
+  fmt_number(
+    columns = starts_with('n_'), 
+    decimals = 0) %>% 
   fmt_number(
     columns = starts_with('p_'),
     decimals = 1,
@@ -1204,14 +1230,14 @@ gtbl_sympt_all <- tbl_sympt_status %>%
     columns = starts_with(c('n_', 'p_'))) %>%
   tab_style(
     style = list(
-      cell_text(align = "right")),
+      cell_text(align = 'right')),
     locations = cells_column_labels(columns = starts_with(c('n_', 'p_')))) %>%
   cols_width(
     vars(type_symptom) ~ px(140),
     starts_with('n_') ~ px(55),
     starts_with("p_") ~ px(50)) %>%
   tab_options(
-    column_labels.font.weight = "bold",
+    column_labels.font.weight = 'bold',
     row_group.font.weight = 'bold',
     data_row.padding = px(2),
     row_group.padding = px(2))
@@ -1274,7 +1300,10 @@ gtbl_severity_status <- tbl_severity_status %>%
    columns = vars(severity)) %>% 
   cols_align(
     align = 'right',
-    columns = starts_with(c('n_', 'p_'))) %>%
+    columns = starts_with(c('n_', 'p_'))) %>% 
+  fmt_number(
+    columns = starts_with('n_'), 
+    decimals = 0) %>% 
   fmt_number(
     columns = starts_with('p_'), 
     decimals = 1, 
@@ -1308,18 +1337,12 @@ gtbl_severity_status <- tbl_severity_status %>%
     missing_text = "",
     formatter = fmt_number,
     decimals = 0) %>% 
-#  tab_footnote(
-#    footnote = paste0("Missing values = ", sum(is.na(dta_severity$severity))),
-#    locations = cells_summary(
-#      groups = NULL, 
-#      columns = vars(severity), 
-#      rows = 1)) %>% 
   tab_style(
     style = list(
-      cell_text(align = "right")),
+      cell_text(align = 'right')),
     locations = cells_column_labels(columns = starts_with(c('n_', 'p_')))) %>%
   tab_options(
-    column_labels.font.weight = "bold",
+    column_labels.font.weight = 'bold',
     data_row.padding = px(2),
     row_group.padding = px(2))
 
@@ -1371,6 +1394,9 @@ gtbl_severity_confirmed_continent <- tbl_severity_confirmed_continent %>%
     p_Europe   = '(%)', 
     p_Total    = '(%)') %>% 
   fmt_number(
+    columns = starts_with('n_'), 
+    decimals = 0) %>% 
+  fmt_number(
     columns = starts_with('p_'), 
     decimals = 1, 
     scale_by = 100, 
@@ -1403,8 +1429,12 @@ gtbl_severity_confirmed_continent <- tbl_severity_confirmed_continent %>%
     missing_text = "",
     formatter = fmt_number,
     decimals = 0) %>% 
+  tab_style(
+    style = list(
+      cell_text(align = 'right')),
+    locations = cells_column_labels(columns = starts_with(c('n_', 'p_')))) %>%
   tab_options(
-    column_labels.font.weight = "bold",
+    column_labels.font.weight = 'bold',
     row_group.font.weight = 'bold',
     data_row.padding = px(2),
     row_group.padding = px(2))
@@ -1484,7 +1514,10 @@ gtbl_cfr_status_continent <- tbl_cfr_status_continent %>%
     columns = ends_with('_Europe')) %>%
   tab_spanner(
     label = 'Total',
-    columns = ends_with('_Total')) %>%
+    columns = ends_with('_Total')) %>% 
+  fmt_number(
+    columns = starts_with('n_'),
+    decimals = 0) %>%
   fmt_number(
     columns = starts_with('p_'),
     decimals = 1,
@@ -1501,7 +1534,11 @@ gtbl_cfr_status_continent <- tbl_cfr_status_continent %>%
     columns = vars(covid_status)) %>%
   cols_align(
     align = 'right',
-    columns = starts_with('n_')) %>%
+    columns = starts_with('n_')) %>% 
+  tab_style(
+    style = list(
+      cell_text(align = "right")),
+    locations = cells_column_labels(columns = starts_with(c('n_', 'p_')))) %>%
   tab_options(
     column_labels.font.weight = "bold",
     data_row.padding = px(2),
@@ -1790,10 +1827,16 @@ gtbl_care <- tbl_care %>%
     p_Europe   = '(%)', 
     p_Total    = '(%)') %>% 
   fmt_number(
+    columns = starts_with('n_'),
+    decimals = 0) %>%
+  fmt_number(
     columns = starts_with('p_'), 
     decimals = 1, 
     scale_by = 100, 
     pattern = "({x})") %>% 
+  cols_align(
+    align = 'right', 
+    columns = TRUE) %>% 
   tab_spanner(
     label = 'Africa',
     columns = ends_with('_Africa')) %>% 
@@ -1809,6 +1852,10 @@ gtbl_care <- tbl_care %>%
   tab_spanner(
     label = 'Total',
     columns = ends_with('_Total')) %>% 
+  tab_style(
+    style = list(
+      cell_text(align = "right")),
+    locations = cells_column_labels(columns = starts_with(c('n_', 'p_')))) %>%
   tab_options(
     column_labels.font.weight = "bold",
     row_group.font.weight = 'bold',
@@ -1852,25 +1899,26 @@ dta_age_sex_outcome <- dta_linelist %>%
 tbl_age_sex_outcome <- dta_age_sex_outcome %>% 
   group_by(outcome_status) %>% 
   summarise(
+    N = n(), 
     age_median = median(age_in_years, na.rm = TRUE), 
     age__prcl  = glue('[{quantile(age_in_years, na.rm = TRUE)[[2]]} - {quantile(age_in_years, na.rm = TRUE)[[4]]}]'), 
-    age_range  = glue('[{min(age_in_years, na.rm = TRUE)} - {max(age_in_years, na.rm = TRUE)}]'), 
-    sex_males   = sum(sex == 'M', na.rm = TRUE),
-    sex_females = sum(sex == 'F', na.rm = TRUE), 
-    sex_ratio   = sex_males/sex_females)
-
-tbl_age_sex_outcome$sex_ratio[is.infinite(tbl_age_sex_outcome$sex_ratio)] <- NA
+    sex_ratio = sum(sex == 'M', na.rm = TRUE)/sum(sex == 'F', na.rm = TRUE)) %>% 
+  mutate(
+    sex_ratio = case_when(
+      is.infinite(sex_ratio) ~ NA_real_, 
+      TRUE ~ sex_ratio))
 
 gtbl_age_sex_outcome <- tbl_age_sex_outcome %>% 
   gt() %>% 
   cols_label(
+    N = 'N', 
     outcome_status = 'Status',
     age_median = 'Median', 
     age__prcl = '[25% - 75%]', 
-    age_range = '[min - max]', 
-    sex_males = 'Males', 
-    sex_females = 'Females', 
-    sex_ratio = 'M/F ratio') %>% 
+    sex_ratio = html('Male/Female<br>ratio')) %>% 
+  fmt_number(
+    columns = vars(N), 
+    decimals = 0) %>% 
   fmt_number(
     columns = vars(sex_ratio), 
     decimals = 1) %>% 
@@ -1880,17 +1928,22 @@ gtbl_age_sex_outcome <- tbl_age_sex_outcome %>%
   tab_spanner(
     label = 'Age (years)', 
     columns = starts_with('age_')) %>% 
-  tab_spanner(
-    label = 'Sex', 
-    columns = starts_with('sex_')) %>% 
   cols_align(
     align = 'left', 
-    columns = vars(outcome_status)) %>% 
+    columns = vars(outcome_status, age__prcl)) %>% 
   cols_align(
     align = 'right', 
-    columns = starts_with('sex_')) %>% 
+    columns = vars(N, age_median, sex_ratio)) %>% 
+  tab_style(
+    style = list(
+      cell_text(align = 'right')),
+    locations = cells_column_labels(columns = vars(N, age_median, sex_ratio))) %>% 
+  tab_style(
+    style = list(
+      cell_text(align = 'left')),
+    locations = cells_column_labels(columns = vars(outcome_status, age__prcl))) %>%
   tab_options(
-    column_labels.font.weight = "bold", 
+    column_labels.font.weight = 'bold', 
     data_row.padding = px(2))
 
 gtsave(gtbl_age_sex_outcome, 
@@ -2009,6 +2062,9 @@ gtbl_cfr_age_sex_comorbidities <- tbl_cfr_age_sex_comorbidities %>%
     label = 'Total',
     columns = ends_with('_Total')) %>%
   fmt_number(
+    columns = starts_with('n_'),
+    decimals = 0) %>% 
+  fmt_number(
     columns = starts_with('p_'),
     decimals = 1,
     scale_by = 100,
@@ -2024,10 +2080,14 @@ gtbl_cfr_age_sex_comorbidities <- tbl_cfr_age_sex_comorbidities %>%
     columns = vars(var)) %>%
   cols_align(
     align = 'right',
-    columns = starts_with('n_')) %>%
+    columns = starts_with('n_')) %>% 
+  tab_style(
+    style = list(
+      cell_text(align = 'right')),
+    locations = cells_column_labels(columns = starts_with(c('n_', 'p_')))) %>%
   tab_options(
-    column_labels.font.weight = "bold", 
-    row_group.font.weight = "bold", 
+    column_labels.font.weight = 'bold', 
+    row_group.font.weight = 'bold', 
     data_row.padding = px(2), 
     row_group.padding = px(2))
 
@@ -2224,6 +2284,9 @@ gtbl_cfr_type_comcond <- tbl_cfr_type_comcond %>%
     label = 'Total',
     columns = ends_with('_Total')) %>%
   fmt_number(
+    columns = starts_with('n_'),
+    decimals = 0) %>% 
+  fmt_number(
     columns = starts_with('p_'),
     decimals = 1,
     scale_by = 100,
@@ -2239,7 +2302,11 @@ gtbl_cfr_type_comcond <- tbl_cfr_type_comcond %>%
     columns = vars(type_comorbidity)) %>%
   cols_align(
     align = 'right',
-    columns = starts_with('n_')) %>%
+    columns = starts_with('n_')) %>% 
+  tab_style(
+    style = list(
+      cell_text(align = 'right')),
+    locations = cells_column_labels(columns = starts_with(c('n_', 'p_')))) %>% 
   tab_options(
     column_labels.font.weight = "bold", 
     data_row.padding = px(2),
@@ -2599,10 +2666,13 @@ gtbl_non_cases_diagt <- tbl_non_cases_diagt %>%
     columns = ends_with('_Other')) %>% 
   tab_spanner(
     label = html('Pending/<br>Unknown'), 
-    columns = ends_with('_Pending/Unknown')) %>% 
+    columns = ends_with('_(Pending/Unknown)')) %>% 
   tab_spanner(
     label = 'Total', 
     columns = ends_with('_Total')) %>% 
+  fmt_number(
+    columns = starts_with('n_'), 
+    decimals = 0) %>% 
   fmt_number(
     columns = starts_with('p_'), 
     decimals = 1, 
@@ -2619,7 +2689,7 @@ gtbl_non_cases_diagt <- tbl_non_cases_diagt %>%
     columns = vars(main_diagnosis)) %>% 
   tab_style(
     style = list(
-      cell_text(align = "right")),
+      cell_text(align = 'right')),
     locations = cells_column_labels(starts_with('n_'))) %>% 
   tab_style(
     style = list(
