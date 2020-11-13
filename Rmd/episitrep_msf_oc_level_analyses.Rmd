@@ -1,7 +1,7 @@
 ---
 title: "Covid-19 MSF data analysis - OC level"
 params:
-  OC: OCA
+  OC: OCP
 author:
   - name: Francesco Grandesso
     url: mailto:francesco.GRANDESSO@epicentre.msf.org
@@ -2731,6 +2731,79 @@ gtbl_non_cases_diagt %>%
 
 ```
 
+
+# Additional tables (to place)
+
+```{r gtbl-diff-hospi}
+tbl_diff_hospi <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  select(country, project, sex, age_in_years, merge_admit) %>%
+  drop_na(merge_admit) %>% 
+  group_by(country, project, sex) %>% 
+  summarise(n_nonadmited = sum(merge_admit == "No"),
+            m_nonadmited = mean(age_in_years [merge_admit == "No"], 
+                                na.rm = TRUE),
+            n_admited    = sum(merge_admit == "Yes"),
+            m_admited    = mean(age_in_years [merge_admit == "Yes"], 
+                                na.rm = TRUE)) %>% 
+  mutate(sex = recode(sex, "M" = "Male", "F" = "Female")) %>% 
+  group_by(country)
+
+
+
+
+gtbl_diff_hospi <- tbl_diff_hospi %>% 
+  gt() %>%
+
+  cols_label(
+    country      = 'Country',
+    project      = 'Project',
+    sex          = 'Sex',
+    n_nonadmited = 'n', 
+    m_nonadmited = 'Mean age (yrs)', 
+    n_admited    = 'n', 
+    m_admited    = 'Mean age (yrs)') %>%
+  
+  tab_spanner(
+    label = 'Non hospitalized',
+    columns = ends_with('_nonadmited')) %>%
+  tab_spanner(
+    label = 'Hospitalized',
+    columns = ends_with('_admited')) %>%
+  
+  fmt_number(
+    columns = starts_with('m_'),
+    decimals = 1) %>%
+  
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  
+  cols_align(
+    align = 'right',
+    columns = starts_with('n_')) %>%
+  cols_align(
+    align = 'center', 
+    columns = starts_with('m_')) %>% 
+  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2),
+    row.striping.include_table_body = TRUE)
+
+gtsave(gtbl_diff_hospi, 
+       file.path(path.local.msf.tables.oc, paste0('gtbl_diff_hospi', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtbl_diff_hospi %>% 
+  tab_header(
+    title = 'Gender and age of hospitalized and non-hospitalized patients')
+
+```
 
 
 
