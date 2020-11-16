@@ -2744,6 +2744,59 @@ gtbl_non_cases_diagt %>%
 
 Inclusion criteria: patients were included in the study if COVID suspected or probable or confirmed case independently of level of care provided in the project.
 
+## Figure 1 – Weekly positivity rates by project
+
+EN COURS 
+```{r Fig1, fig.cap = 'Weekly number of consultations (including admission) by Covid status'}
+
+plot_epicurve_project <- function(data, 
+                                  ncols_facet = 3,
+                                  continent = "",
+                                  path_save = "") {
+  
+  fig_data <- data %>% 
+    ggplot(aes(x = epi_week_consultation, 
+               y = n, 
+               fill = covid_status)) +
+    geom_col() +
+    facet_wrap(~ site_name, ncol = ncols_facet, scales = "free_y") +
+    ggthemes::scale_fill_tableau(name = "Status", palette = "Tableau 20") +
+    scale_x_date(name = "Week of Consultation", 
+                 date_breaks = "2 week", date_labels = "%V", 
+                 expand = expansion(mult = c(0.01, 0.01)),
+                 sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.))) + #labels = function(x) format(x, "%b-%Y")
+    scale_y_continuous(name = "Patients", expand = expansion(mult = c(0, 0.02))) +
+    theme_light() + 
+    theme(legend.position = 'top', panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank())
+  
+  
+  ggsave(filename = paste0('hist_epicurve_status', '_', week_report, '_', continent, '.png'),
+         path = path.local.msf.graphs.oc,
+         plot = fig_data, 
+         # width = 6, 
+         # height = 4, 
+         scale = 1.1,
+         dpi = 320
+         )
+  
+  return(fig_data)
+}
+
+
+tbl_epicurve_status_p <- dta_linelist_with_aggregated %>%
+  count(continent, country, site_name, covid_status, epi_week_consultation) %>% 
+  group_by(continent) %>% 
+  nest() %>% 
+  mutate(plot = map2(.x = data, 
+                     .y = continent,
+                     ~plot_epicurve_project(data = .x,
+                                            ncols_facet = 3,
+                                            continent = .y,
+                                            path_save = path.local.msf.graphs.oc))) 
+
+print(tbl_epicurve_status_p$plot) 
+```
+
 
 ## Table 1 – Number of patient visits and hospitalisation status at admission and over course of disease, by project (includes confirmed, suspect, probable cases only)
 
@@ -2828,7 +2881,10 @@ gtble1 %>%
 ```
 
 
-## Table 2 – Median length of stay according to severity
+## Table 2 – Number of patient visits and hospitalisation by project and severity (includes confirmed, suspect, probable cases only)
+
+Table 3 – Median length of stay according to severity
+
 
 ```{r tble2}
 tble2 <- dta_linelist %>%
@@ -2936,16 +2992,20 @@ gtble2 %>%
 
 ```
 
-## Table 3 – Median age stratified by gender, project and hospitalisation status
 
 
-## Figure 2 – Median [IQR] of age per project, stratified by gender
+
+## Table 4 – Median age stratified by gender, project and hospitalisation status
 
 
-## Table 4 – Total number of patient visits by ICU admission status, by project (includes confirmed, suspect, probable cases only)
 
-```{r tble4}
-tble4 <- dta_linelist %>%
+## Table 5 – Total number of patient visits by case status, ICU admission status, by project (includes confirmed, suspect, probable cases only)
+
+```{r tble5}
+
+### UNFINISHED? THEY ADDED MORE LEVELS ###
+
+tble5 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
   select(country, project, merge_admit, icu, merge_icu) %>%
   group_by(country, project) %>% 
@@ -2960,8 +3020,8 @@ tble4 <- dta_linelist %>%
             p_icu_total = n_icu_total / n_admited)
 
 
-gtble4 <- 
-  tble4 %>% 
+gtble5 <- 
+  tble5 %>% 
   gt() %>%
   cols_label(
     country          = 'Country',
@@ -3012,34 +3072,20 @@ gtble4 <-
     decimals = 0)
 
 
-gtsave(gtble4, 
-       file.path(path.local.msf.tables.oc, paste0('gtble4', '_', week_report, '.html')), 
+gtsave(gtble5, 
+       file.path(path.local.msf.tables.oc, paste0('gtble5', '_', week_report, '.html')), 
        inline_css = TRUE) %>% 
   invisible()
 
 
-gtble4 %>% 
+gtble5 %>% 
   tab_header(
     title = 'Total number of patient visits by ICU admission status, by project (includes confirmed, suspect, probable cases only)')
 
 ```
 
 
-## Table 5 – Total number of patient visits by case status, ICU admission status, by project (includes confirmed, suspect, probable cases only)
 
-## Table 6 – Total number of patient visits patients admitted and patients given oxygen on admission and over course of disease (confirmed, suspect, probable cases only)
-
-## Table 7 – Total number of patient visits patients admitted and patients given oxygen on admission and over course of disease, by case status 
-
-## Table 8 – Total number of patient visits by Oxygen requirement, when applicable
-
-## Table 9 – Total number of patient visits, patients admitted and patients mechanically ventilated at admission and over course of disease (confirmed, suspect, probable cases only)
-
-## Table 10 – Case severity per project
-
-## Table 11 – Mortality
-
-## Table 12 – Number of patients with comorbidities and proportion of hospitalizations
 
 
 ## Other
