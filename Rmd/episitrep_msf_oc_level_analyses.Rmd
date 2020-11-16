@@ -2881,9 +2881,9 @@ gtble1 %>%
 ```
 
 
-## Table 2 – Number of patient visits and hospitalisation by project and severity (includes confirmed, suspect, probable cases only)
+## Table 2
 
-Table 3 – Median length of stay according to severity
+Number of patient visits and hospitalisation by project and severity (includes confirmed, suspect, probable cases only)
 
 
 ```{r tble2}
@@ -2892,23 +2892,24 @@ tble2 <- dta_linelist %>%
   select(country, project, admit, merge_admit, severity, length_stay) %>%
   group_by(country, project) %>% 
   summarise(n_patients = n(),
+            n_admis    = sum(merge_admit == "Yes", na.rm = TRUE),
             
-            n_mild     = sum(severity == "Mild", na.rm = TRUE),
-            p_mild     = n_mild / n_patients,
-            m_mild     = median(length_stay[severity == "Mild"], na.rm = TRUE),
-            
-            n_moderate = sum(severity == "Moderate", na.rm = TRUE),
-            p_moderate = n_moderate / n_patients,
-            m_moderate = median(length_stay[severity == "Moderate"], na.rm = TRUE),
-            
-            n_severe   = sum(severity == "Severe", na.rm = TRUE),
-            p_severe   = n_severe / n_patients,
-            m_severe   = median(length_stay[severity == "Severe"], na.rm = TRUE),
-            
-            n_critical = sum(severity == "Critical", na.rm = TRUE),
-            p_critical = n_critical / n_patients,
-            m_critical = median(length_stay[severity == "Critical"], na.rm = TRUE),
-            
+            n_mild       = sum(severity == "Mild", na.rm = TRUE),
+            n_mild_admis = sum(severity == "Mild" & merge_admit == "Yes"),
+            p_mild_admis = n_mild_admis / n_mild,
+           
+            n_moderate       = sum(severity == "Moderate", na.rm = TRUE),
+            n_moderate_admis = sum(severity == "Moderate" & merge_admit == "Yes", na.rm = TRUE),
+            p_moderate_admis = n_moderate_admis / n_moderate,
+           
+            n_severe       = sum(severity == "Severe", na.rm = TRUE),
+            n_severe_admis  = sum(severity == "Severe" & merge_admit == "Yes", na.rm = TRUE),
+            p_severe_admis = n_severe_admis / n_severe,
+           
+            n_critical        = sum(severity == "Critical", na.rm = TRUE),
+            n_critical_admis  = sum(severity == "Critical" & merge_admit == "Yes", na.rm = TRUE),
+            p_critical_admis  = n_critical_admis / n_critical,
+           
             n_na       = sum(is.na(severity)),
             p_na       = n_na / n_patients)
 
@@ -2919,42 +2920,46 @@ gtble2 <- tble2 %>%
     country    = 'Country',
     project    = 'Project',
     n_patients = 'Visits',
+    n_admis    = 'Admissions',
     
-    n_mild     = 'N',
-    p_mild     = "%",
-    m_mild     = 'Median (days)',
+    n_mild       = 'N visits',
+    n_mild_admis = 'N admissions',
+    p_mild_admis = "% admitted",
     
-    n_moderate = 'N',
-    p_moderate = "%",
-    m_moderate = 'Median (days)',
+    n_moderate       = 'N visits',
+    n_moderate_admis = 'N admissions',
+    p_moderate_admis = "% admitted",
     
-    n_severe   = 'N',
-    p_severe   = 'Median (days)',
-    m_severe   = "%",
-    
-    n_critical = 'N',
-    p_critical = "%",
-    m_critical = 'Median (days)',
-    
-    n_na       = 'Severity non-available',
-    p_na       = "%") %>% 
+    n_severe       = 'N visits',
+    n_severe_admis = 'N admissions',
+    p_severe_admis = "% admitted",
+   
+    n_critical       = 'N visits',
+    n_critical_admis = 'N admissions',
+    p_critical_admis = "% admitted",
+  
+    n_na = 'Severity',
+    p_na = "% non-available") %>% 
   
   tab_spanner(
+    label = 'All severity',
+    columns = vars(n_patients, n_admis)) %>%
+  tab_spanner(
     label = 'Mild',
-    columns = ends_with('_mild')) %>%
+    columns = contains('_mild')) %>%
   tab_spanner(
     label = 'Moderate',
-    columns = ends_with('_moderate')) %>%
+    columns = contains('_moderate')) %>%
   tab_spanner(
     label = 'Severe',
-    columns = ends_with('_severe')) %>%
+    columns = contains('_severe')) %>%
   tab_spanner(
     label = 'Critical',
-    columns = ends_with('_critical')) %>%
+    columns = contains('_critical')) %>%
   tab_spanner(
     label = 'Missing data',
     columns = ends_with('_na')) %>% 
-
+  
   fmt_missing(
     columns = starts_with('n_'),
     missing_text = "0") %>%
@@ -2970,14 +2975,13 @@ gtble2 <- tble2 %>%
   tab_options(
     column_labels.font.weight = "bold", 
     row_group.font.weight = "bold", 
-    data_row.padding = px(2), 
+    data_row.padding  = px(2), 
     row_group.padding = px(2),
-    row.striping.include_table_body = TRUE)  %>% 
-  
-  summary_rows(
-    columns = vars(n_patients, n_mild, n_moderate, n_critical, n_na),
-    fns = list(Total = "sum"),
-    decimals = 0)
+    row.striping.include_table_body = TRUE)
+  # summary_rows(
+  #   columns = starts_with('n_'),
+  #   fns = list(Total = "sum"),
+  #   decimals = 0)
 
 
 gtsave(gtble2, 
@@ -2986,24 +2990,127 @@ gtsave(gtble2,
   invisible()
 
 
-gtble2 %>% 
-  tab_header(
-    title = 'Median length of stay according to severity')
-
+# gtble2 %>% 
+#   tab_header(
+#     title = 'Patient visits and hospitalisation by project and severity')
 ```
 
 
 
+## Table 3
 
-## Table 4 – Median age stratified by gender, project and hospitalisation status
+Median length of stay according to severity 
 
+```{r tble3}
+tble3 <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  select(country, project, merge_admit, severity, length_stay) %>%
+  group_by(country, project) %>% 
+  summarise(
+    n_patients = n(),
+    n_admis    = sum(merge_admit == "Yes", na.rm = TRUE),
+    
+    q_mild_25 = quantile(length_stay[merge_admit == "Yes" & severity == "Mild"], c(0.25), na.rm = TRUE),
+    q_mild_50 = quantile(length_stay[merge_admit == "Yes" & severity == "Mild"], c(0.5), na.rm = TRUE),
+    q_mild_75 = quantile(length_stay[merge_admit == "Yes" & severity == "Mild"], c(0.75), na.rm = TRUE),
+    
+    q_moderate_25 = quantile(length_stay[merge_admit == "Yes" & severity == "Moderate"], c(0.25), na.rm = TRUE),
+    q_moderate_50 = quantile(length_stay[merge_admit == "Yes" & severity == "Moderate"], c(0.5), na.rm = TRUE),
+    q_moderate_75 = quantile(length_stay[merge_admit == "Yes" & severity == "Moderate"], c(0.75), na.rm = TRUE),
+    
+    q_critical_25 = quantile(length_stay[merge_admit == "Yes" & severity == "Critical"], c(0.25), na.rm = TRUE),
+    q_critical_50 = quantile(length_stay[merge_admit == "Yes" & severity == "Critical"], c(0.5), na.rm = TRUE),
+    q_critical_75 = quantile(length_stay[merge_admit == "Yes" & severity == "Critical"], c(0.75), na.rm = TRUE),
+    
+    q_severe_25 = quantile(length_stay[merge_admit == "Yes" & severity == "Severe"], c(0.25), na.rm = TRUE),
+    q_severe_50 = quantile(length_stay[merge_admit == "Yes" & severity == "Severe"], c(0.5), na.rm = TRUE),
+    q_severe_75 = quantile(length_stay[merge_admit == "Yes" & severity == "Severe"], c(0.75), na.rm = TRUE),
+    
+    na_severity = sum(is.na(severity)),
+    na_length_of_stay = sum(is.na(length_stay)),
+    na_both = sum(is.na(severity) & is.na(length_stay))
+  ) %>% 
+  
+  mutate(iqr_mild     = glue("{q_mild_50} [{q_mild_25} - {q_mild_75}]"),
+         iqr_moderate = glue("{q_moderate_50} [{q_moderate_25} - {q_moderate_75}]"),
+         iqr_severe   = glue("{q_critical_50} [{q_critical_25} - {q_critical_75}]"),
+         iqr_critical = glue("{q_severe_50} [{q_severe_25} - {q_severe_75}]")) %>% 
+  select(-starts_with("q_")) %>% 
+  relocate(country, project,
+           starts_with("n_"), 
+           starts_with("iqr_"), 
+           starts_with("na_"))  %>% 
+  group_by(country)
+
+
+gtble3 <- tble3 %>% 
+  gt() %>%
+  cols_label(
+    country    = 'Country',
+    project    = 'Project',
+    
+    n_patients = 'Visits',
+    n_admis    = 'Admissions',
+    
+    iqr_mild     = 'Mild',
+    iqr_moderate = 'Moderate',
+    iqr_severe   = 'Severe',
+    iqr_critical = 'Critical',
+    
+    na_severity       = "Severity",
+    na_length_of_stay = "Length of stay",
+    na_both           = "Both") %>% 
+  
+  tab_spanner(
+    label = 'Length  of Stay (Median [IQR])',
+    columns = starts_with('iqr_')) %>% 
+  tab_spanner(
+    label = 'Missing data',
+    columns = starts_with('na')) %>% 
+  
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  
+  cols_align(
+    align = 'center') %>%
+  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2),
+    row.striping.include_table_body = TRUE)  %>% 
+  
+  summary_rows(
+    columns = starts_with("n_"),
+    fns = list(Total = "sum"),
+    decimals = 0)
+
+
+gtsave(gtble3, 
+       file.path(path.local.msf.tables.oc, paste0('gtble3', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtble3 %>%
+  tab_header(
+    title = 'Length of stay according to severity')
+```
+
+
+
+## Figure 3 – Median [IQR] length of stay, per project, stratified by severity
 
 
 ## Table 5 – Total number of patient visits by case status, ICU admission status, by project (includes confirmed, suspect, probable cases only)
 
+TO REDO
+
 ```{r tble5}
 
-### UNFINISHED? THEY ADDED MORE LEVELS ###
+### UNFINISHED ADDED MORE LEVELS ###
 
 tble5 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
