@@ -1,7 +1,10 @@
+---
+title: "How we estimated the trends and the doubling time in MSF EpiSitrep on Covid-19 epidemic"
+author: "Francesco Grandesso"
+date: "20 August 2020"
+output: rmdformats::html_clean
+---
 
-# How we estimated the trends and the doubling time in MSF EpiSitrep on Covid-19 epidemic
-### Prepared by Francesco Grandesso
-20 August 2020
 
 *For any clarification, please contact Francesco.GRANDESSO@epicentre.msf.org.*
 

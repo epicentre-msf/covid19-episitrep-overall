@@ -467,6 +467,9 @@ gtbl_countries_increasing_cases <- tbl_countries_increasing_cases %>%
     label = 'Trend (12 days)', 
     columns = vars(coeff, coeff_ci)) %>% 
   fmt_number(
+    columns = starts_with('cases'), 
+    decimals = 0) %>% 
+  fmt_number(
     columns = vars(coeff, coeff_30d), 
     decimals = 2) %>% 
   fmt_missing(
@@ -717,6 +720,9 @@ gtbl_countries_increasing_deaths <- tbl_countries_increasing_deaths %>%
     label = 'Trend (12 days)', 
     columns = vars(coeff, coeff_ci)) %>% 
   fmt_number(
+    columns = starts_with('deaths'), 
+    decimals = 0) %>% 
+  fmt_number(
     columns = vars(coeff, coeff_30d), 
     decimals = 2) %>% 
   fmt_missing(
@@ -778,27 +784,25 @@ gtbl_countries_increasing_deaths %>%
 ```{r tbl-summary-cases-and-deaths, include = FALSE}
 
 tbl_summary_cases_deaths <- df_countries %>% 
-  left_join(tbl_case_count %>% select(iso_a3, cases)) %>% 
-  left_join(tbl_death_count %>% select(iso_a3, deaths)) %>% 
-  left_join(tbl_case_trend %>% 
-              select(iso_a3, all_of(vars_trends(model_for_trend)))) %>% 
+  left_join(select(tbl_case_count, iso_a3, cases)) %>% 
+  left_join(select(tbl_death_count, iso_a3, deaths)) %>% 
+  left_join(select(tbl_case_trend, iso_a3, all_of(vars_trends(model_for_trend)))) %>% 
   mutate(
     trend_cases_coeff = round(exp(coeff), digits = 2), 
     trend_cases_ci = case_when(
       is.na(coeff) ~ NA_character_, 
       TRUE ~ combine_ci(exp(lwr), exp(upr), digits = 2))) %>% 
   select(-one_of('coeff','lwr', 'upr', 'trend')) %>% 
-  left_join(tbl_death_trend %>% 
-              select(iso_a3, all_of(vars_trends(model_for_trend)))) %>% 
+  left_join(select(tbl_death_trend, iso_a3, all_of(vars_trends(model_for_trend)))) %>% 
   mutate(
     trend_deaths_coeff = round(exp(coeff), digits = 2), 
     trend_deaths_ci = case_when(
       is.na(coeff) ~ NA_character_, 
-      TRUE ~ combine_ci(exp(lwr), exp(upr)))) %>% 
+      TRUE ~ combine_ci(exp(lwr), exp(upr), digits = 2))) %>% 
   select(-one_of('coeff','lwr', 'upr', 'trend')) %>% 
   mutate(
     cfr = round(deaths / cases * 100, digits = 1)) %>% 
-  left_join(df_pop_country %>% select(iso_a3, pop)) %>% 
+  left_join(select(df_pop_country, iso_a3, pop)) %>% 
   mutate(
     cases_ar  = cases  / pop * 100000, 
     deaths_ar = deaths / pop * 100000) %>% 
@@ -806,8 +810,8 @@ tbl_summary_cases_deaths <- df_countries %>%
          cases, deaths, cfr, 
          cases_ar, deaths_ar, 
          starts_with('trend_cases_'), starts_with('trend_deaths_')) %>% 
-  left_join(tbl_case_count_12d %>% select(iso_a3, cases_12d = cases)) %>% 
-  left_join(tbl_death_count_12d %>% select(iso_a3, deaths_12d = deaths)) %>%
+  left_join(select(tbl_case_count_12d, iso_a3, cases_12d = cases)) %>% 
+  left_join(select(tbl_death_count_12d, iso_a3, deaths_12d = deaths)) %>%
   group_by(continent, region) %>% 
   arrange(country, .by_group = TRUE) %>% 
   ungroup()
@@ -821,7 +825,7 @@ gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>%
     country = 'Country', 
     cases = 'Cases', 
     deaths = 'Deaths', 
-    cfr = 'naïve CFR',
+    cfr = html('naïve<br>CFR'),
     cases_ar = 'cases',
     deaths_ar ='deaths', 
     cases_12d = 'Cases', 
@@ -834,19 +838,16 @@ gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>%
     columns = vars(cases_12d), 
     after = vars(deaths_ar)) %>% 
   fmt_number(
-    columns = vars(cases, deaths, cases_12d), 
+    columns = starts_with(c('cases', 'deaths')), 
     decimals = 0) %>% 
-  fmt_number(
-    columns = vars(cases_ar, deaths_ar), 
-    decimals = 2) %>% 
   fmt_missing(
-    columns = vars(trend_cases_ci, trend_deaths_ci), 
+    columns = starts_with(c('trend_cases', 'trend_deaths')), 
     missing_text = "---") %>% 
   tab_spanner(
     label = "Totals", 
     columns = vars(cases, deaths)) %>% 
   tab_spanner(
-    label = html("Coumulative incidence<br>per 100,000 people"), 
+    label = html("Incidence proportion<br>per 100,000 people"), 
     columns = ends_with('_ar')) %>% 
   tab_spanner(
     label = 'In the last 12 days', 
@@ -866,6 +867,14 @@ gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>%
     columns = vars(cases, deaths, cases_12d, deaths_12d), 
     fns = list('Grand total' = ~sum(., na.rm = TRUE)), 
     decimals = 0) %>% 
+  tab_style(
+    style = list(
+      cell_text(align = "right")),
+    locations = cells_column_labels(columns = starts_with(c('cases','deaths')))) %>% 
+  tab_style(
+    style = list(
+      cell_text(align = "left")),
+    locations = cells_column_labels(columns = ends_with('_ci'))) %>%   
   tab_header(title = glue('Worldwide Covid-19 cases and associated deaths, and trends as of {format(date_max_report, "%d %b %Y")}'),
              subtitle = html('<strong>Trends are estimate using data of the previous 12 days</strong><br>
                              Analysis carried out by Epicentre<br>
