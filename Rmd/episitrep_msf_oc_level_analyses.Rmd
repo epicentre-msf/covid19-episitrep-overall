@@ -2745,10 +2745,14 @@ tble1 <- dta_linelist %>%
   select(country, project, admit, outcome_admit, merge_admit) %>%
   group_by(country, project) %>% 
   summarise(n_patients           = n(),
+            
             n_admitted_admission = sum(admit == "Yes", na.rm = TRUE),
             p_admitted_admission = n_admitted_admission / n_patients,
-            n_admited_post       = sum(outcome_admit == "Yes", na.rm = TRUE),
+            
+            n_admited_post       = sum(outcome_admit == "Yes" & admit == "No",
+                                       na.rm = TRUE),
             p_admited_post       = n_admited_post / n_patients,
+            
             n_admit_all          = sum(merge_admit == "Yes", na.rm = TRUE),
             p_admit_all          = n_admit_all / n_patients)
 
@@ -2771,11 +2775,11 @@ gtble1 <- tble1 %>%
     columns = ends_with('_admitted_admission')) %>%
   
   tab_spanner(
-    label = 'Hospitalised during course',
+    label = 'Hospitalised during course of disease',
     columns = ends_with('_admited_post')) %>%
   
   tab_spanner(
-    label = 'Hospitalised',
+    label = 'Hospitalised (at any time)',
     columns = ends_with('_admit_all')) %>%
   
   fmt_missing(
