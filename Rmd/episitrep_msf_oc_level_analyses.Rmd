@@ -134,7 +134,11 @@ dta_aggregated_expanded <- dta_weekly_aggregated %>%
     unnest(cols = c(obs)) %>%
     select(-c(value, obs)) %>% 
     mutate(
-      covid_status = factor(covid_status, levels = c('confirmed', 'probable', 'suspected', 'non_cases', 'unknown'), labels = c('Confirmed', 'Probable', 'Suspected', 'Not a case', 'Unknown'))) %>% 
+      covid_status = factor(covid_status, 
+                            levels = c('confirmed', 'probable', 'suspected',
+                                       'non_cases', 'unknown'), 
+                            labels = c('Confirmed', 'Probable', 'Suspected',
+                                       'Not a case', 'Unknown'))) %>% 
   rename('OC' = oc, 'site_name' = project) %>% 
   filter(between(date, left = date_min_report, right = date_max_report) | is.na(date)) %>% 
   filter(OC == params$OC)
@@ -142,12 +146,16 @@ dta_aggregated_expanded <- dta_weekly_aggregated %>%
 
 # The dataset with linelist and the expanded aggregated data together
 dta_linelist_with_aggregated <- dta_linelist %>% 
-  select(continent, region, country, site_name, iso_a3, OC, epi_week_consultation, covid_status) %>% 
+  select(continent, region, country, site_name, iso_a3, OC, epi_week_consultation, covid_status, project) %>% 
   add_row(dta_aggregated_expanded %>% 
             select(continent, region, country, site_name, iso_a3, OC, epi_week_consultation, covid_status) %>% 
             mutate(
               country = paste(country, '(*)'), 
-              site_name = paste(site_name, '(*)')))
+              site_name = paste(site_name, '(*)'))) %>% 
+  mutate(project = case_when(
+    is.na(project) ~ site_name,
+    TRUE           ~ project
+  ))
 
 
 tbl_aggregated_expanded_with_dates <- dta_aggregated_expanded %>% 
@@ -2843,7 +2851,10 @@ tble2 <- dta_linelist %>%
             
             n_critical = sum(severity == "Critical", na.rm = TRUE),
             p_critical = n_critical / n_patients,
-            m_critical = median(length_stay[severity == "Critical"], na.rm = TRUE))
+            m_critical = median(length_stay[severity == "Critical"], na.rm = TRUE),
+            
+            n_na       = sum(is.na(severity)),
+            p_na       = n_na / n_patients)
 
 
 gtble2 <- tble2 %>% 
@@ -2852,18 +2863,25 @@ gtble2 <- tble2 %>%
     country    = 'Country',
     project    = 'Project',
     n_patients = 'Visits',
+    
     n_mild     = 'N',
     p_mild     = "%",
     m_mild     = 'Median (days)',
+    
     n_moderate = 'N',
     p_moderate = "%",
     m_moderate = 'Median (days)',
+    
     n_severe   = 'N',
+    p_severe   = 'Median (days)',
     m_severe   = "%",
-    m_severe   = 'Median (days)',
+    
     n_critical = 'N',
     p_critical = "%",
-    m_critical = 'Median (days)') %>% 
+    m_critical = 'Median (days)',
+    
+    n_na       = 'Severity non-available',
+    p_na       = "%") %>% 
   
   tab_spanner(
     label = 'Mild',
@@ -2877,6 +2895,9 @@ gtble2 <- tble2 %>%
   tab_spanner(
     label = 'Critical',
     columns = ends_with('_critical')) %>%
+  tab_spanner(
+    label = 'Missing data',
+    columns = ends_with('_na')) %>% 
 
   fmt_missing(
     columns = starts_with('n_'),
@@ -2888,8 +2909,7 @@ gtble2 <- tble2 %>%
     scale_by = 100) %>%
   
   cols_align(
-    align = 'right',
-    columns = starts_with('n_')) %>%
+    align = 'center') %>%
   
   tab_options(
     column_labels.font.weight = "bold", 
@@ -2899,7 +2919,7 @@ gtble2 <- tble2 %>%
     row.striping.include_table_body = TRUE)  %>% 
   
   summary_rows(
-    columns = vars(n_patients, n_mild, n_moderate, n_critical),
+    columns = vars(n_patients, n_mild, n_moderate, n_critical, n_na),
     fns = list(Total = "sum"),
     decimals = 0)
 
