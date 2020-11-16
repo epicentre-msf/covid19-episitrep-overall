@@ -2732,7 +2732,294 @@ gtbl_non_cases_diagt %>%
 ```
 
 
-# Additional tables (to place)
+# Additional analyses by project
+
+Inclusion criteria: patients were included in the study if COVID suspected or probable or confirmed case independently of level of care provided in the project.
+
+
+## Table 1 – Number of patient visits and hospitalisation status at admission and over course of disease, by project (includes confirmed, suspect, probable cases only)
+
+```{r tble1}
+tble1 <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  select(country, project, admit, outcome_admit, merge_admit) %>%
+  group_by(country, project) %>% 
+  summarise(n_patients           = n(),
+            n_admitted_admission = sum(admit == "Yes", na.rm = TRUE),
+            p_admitted_admission = n_admitted_admission / n_patients,
+            n_admited_post       = sum(outcome_admit == "Yes", na.rm = TRUE),
+            p_admited_post       = n_admited_post / n_patients,
+            n_admit_all          = sum(merge_admit == "Yes", na.rm = TRUE),
+            p_admit_all          = n_admit_all / n_patients)
+
+
+gtble1 <- tble1 %>% 
+  gt() %>%
+  cols_label(
+    country              = 'Country',
+    project              = 'Project',
+    n_patients           = 'Visits',
+    n_admitted_admission = 'N',
+    p_admitted_admission = "%",
+    n_admited_post       = 'N',
+    p_admited_post       = "%",
+    n_admit_all          = 'N',
+    p_admit_all          = "%") %>% 
+  
+  tab_spanner(
+    label = 'Hospitalised on admission',
+    columns = ends_with('_admitted_admission')) %>%
+  
+  tab_spanner(
+    label = 'Hospitalised during course',
+    columns = ends_with('_admited_post')) %>%
+  
+  tab_spanner(
+    label = 'Hospitalised',
+    columns = ends_with('_admit_all')) %>%
+  
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  
+  fmt_number(
+    columns = starts_with('p_'),
+    decimals = 1,
+    scale_by = 100) %>%
+  
+  # cols_align(
+  #   align = 'right',
+  #   columns = starts_with('n_')) %>%
+  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2),
+    row.striping.include_table_body = TRUE)  %>% 
+  
+  summary_rows(
+    columns = vars(n_patients, n_admitted_admission, n_admited_post, n_admit_all),
+    fns = list(Total = "sum"),
+    decimals = 0)
+
+
+gtsave(gtble1, 
+       file.path(path.local.msf.tables.oc, paste0('gtble1', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtble1 %>% 
+  tab_header(
+    title = 'Number of patients hospitalised at admission or over the course of the disease')
+```
+
+
+## Table 2 – Median length of stay according to severity
+
+```{r tble2}
+tble2 <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  select(country, project, admit, merge_admit, severity, length_stay) %>%
+  group_by(country, project) %>% 
+  summarise(n_patients = n(),
+            
+            n_mild     = sum(severity == "Mild", na.rm = TRUE),
+            p_mild     = n_mild / n_patients,
+            m_mild     = median(length_stay[severity == "Mild"], na.rm = TRUE),
+            
+            n_moderate = sum(severity == "Moderate", na.rm = TRUE),
+            p_moderate = n_moderate / n_patients,
+            m_moderate = median(length_stay[severity == "Moderate"], na.rm = TRUE),
+            
+            n_severe   = sum(severity == "Severe", na.rm = TRUE),
+            p_severe   = n_severe / n_patients,
+            m_severe   = median(length_stay[severity == "Severe"], na.rm = TRUE),
+            
+            n_critical = sum(severity == "Critical", na.rm = TRUE),
+            p_critical = n_critical / n_patients,
+            m_critical = median(length_stay[severity == "Critical"], na.rm = TRUE))
+
+
+gtble2 <- tble2 %>% 
+  gt() %>%
+  cols_label(
+    country    = 'Country',
+    project    = 'Project',
+    n_patients = 'Visits',
+    n_mild     = 'N',
+    p_mild     = "%",
+    m_mild     = 'Median (days)',
+    n_moderate = 'N',
+    p_moderate = "%",
+    m_moderate = 'Median (days)',
+    n_severe   = 'N',
+    m_severe   = "%",
+    m_severe   = 'Median (days)',
+    n_critical = 'N',
+    p_critical = "%",
+    m_critical = 'Median (days)') %>% 
+  
+  tab_spanner(
+    label = 'Mild',
+    columns = ends_with('_mild')) %>%
+  tab_spanner(
+    label = 'Moderate',
+    columns = ends_with('_moderate')) %>%
+  tab_spanner(
+    label = 'Severe',
+    columns = ends_with('_severe')) %>%
+  tab_spanner(
+    label = 'Critical',
+    columns = ends_with('_critical')) %>%
+
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  
+  fmt_number(
+    columns = starts_with('p_'),
+    decimals = 1,
+    scale_by = 100) %>%
+  
+  cols_align(
+    align = 'right',
+    columns = starts_with('n_')) %>%
+  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2),
+    row.striping.include_table_body = TRUE)  %>% 
+  
+  summary_rows(
+    columns = vars(n_patients, n_mild, n_moderate, n_critical),
+    fns = list(Total = "sum"),
+    decimals = 0)
+
+
+gtsave(gtble2, 
+       file.path(path.local.msf.tables.oc, paste0('gtble2', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtble2 %>% 
+  tab_header(
+    title = 'Median length of stay according to severity')
+
+```
+
+## Table 3 – Median age stratified by gender, project and hospitalisation status
+
+
+## Figure 2 – Median [IQR] of age per project, stratified by gender
+
+
+## Table 4 – Total number of patient visits by ICU admission status, by project (includes confirmed, suspect, probable cases only)
+
+```{r tble4}
+tble4 <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  select(country, project, merge_admit, icu, merge_icu) %>%
+  group_by(country, project) %>% 
+  summarise(n_patients           = n(),
+            n_admited      = sum(merge_admit == "Yes", na.rm = TRUE),
+            p_admited      = n_admited / n_patients,
+            
+            n_icu_admission = sum(icu == "Yes", na.rm = TRUE),
+            p_icu_admission = n_icu_admission / n_admited,
+            
+            n_icu_total = sum(merge_icu == "Yes", na.rm = TRUE),
+            p_icu_total = n_icu_total / n_admited)
+
+
+gtble4 <- 
+  tble4 %>% 
+  gt() %>%
+  cols_label(
+    country          = 'Country',
+    project          = 'Project',
+    n_patients       = 'Visits',
+    n_admited        = 'N',
+    p_admited        = "%",
+    n_icu_admission  = 'N',
+    p_icu_admission  = "%",
+    n_icu_total      = 'N',
+    p_icu_total      = "%") %>% 
+  
+  tab_spanner(
+    label = 'Hospitalised',
+    columns = ends_with('admited')) %>%
+  
+  tab_spanner(
+    label = 'ICU at admission',
+    columns = ends_with('_icu_admission')) %>%
+  
+  tab_spanner(
+    label = 'ICU at any time',
+    columns = ends_with('_icu_total')) %>%
+  
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  
+  fmt_number(
+    columns = starts_with('p_'),
+    decimals = 1,
+    scale_by = 100) %>%
+  
+  cols_align(
+    align = 'right',
+    columns = starts_with('n_')) %>%
+  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2),
+    row.striping.include_table_body = TRUE)  %>% 
+  
+  summary_rows(
+    columns = vars(n_patients, n_admited, n_icu_admission, n_icu_total),
+    fns = list(Total = "sum"),
+    decimals = 0)
+
+
+gtsave(gtble4, 
+       file.path(path.local.msf.tables.oc, paste0('gtble4', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtble4 %>% 
+  tab_header(
+    title = 'Total number of patient visits by ICU admission status, by project (includes confirmed, suspect, probable cases only)')
+
+```
+
+
+## Table 5 – Total number of patient visits by case status, ICU admission status, by project (includes confirmed, suspect, probable cases only)
+
+## Table 6 – Total number of patient visits patients admitted and patients given oxygen on admission and over course of disease (confirmed, suspect, probable cases only)
+
+## Table 7 – Total number of patient visits patients admitted and patients given oxygen on admission and over course of disease, by case status 
+
+## Table 8 – Total number of patient visits by Oxygen requirement, when applicable
+
+## Table 9 – Total number of patient visits, patients admitted and patients mechanically ventilated at admission and over course of disease (confirmed, suspect, probable cases only)
+
+## Table 10 – Case severity per project
+
+## Table 11 – Mortality
+
+## Table 12 – Number of patients with comorbidities and proportion of hospitalizations
+
+
+## Other
+
 
 ```{r gtbl-diff-hospi}
 tbl_diff_hospi <- dta_linelist %>%
@@ -2750,18 +3037,16 @@ tbl_diff_hospi <- dta_linelist %>%
   group_by(country)
 
 
-
-
 gtbl_diff_hospi <- tbl_diff_hospi %>% 
   gt() %>%
-
+  
   cols_label(
     country      = 'Country',
     project      = 'Project',
     sex          = 'Sex',
-    n_nonadmited = 'n', 
+    n_nonadmited = 'N', 
     m_nonadmited = 'Mean age (yrs)', 
-    n_admited    = 'n', 
+    n_admited    = 'N', 
     m_admited    = 'Mean age (yrs)') %>%
   
   tab_spanner(
@@ -2793,6 +3078,7 @@ gtbl_diff_hospi <- tbl_diff_hospi %>%
     row_group.padding = px(2),
     row.striping.include_table_body = TRUE)
 
+
 gtsave(gtbl_diff_hospi, 
        file.path(path.local.msf.tables.oc, paste0('gtbl_diff_hospi', '_', week_report, '.html')), 
        inline_css = TRUE) %>% 
@@ -2802,7 +3088,6 @@ gtsave(gtbl_diff_hospi,
 gtbl_diff_hospi %>% 
   tab_header(
     title = 'Gender and age of hospitalized and non-hospitalized patients')
-
 ```
 
 
@@ -2824,18 +3109,18 @@ gtbl_deaths_hospi_icu <- tbl_deaths_hospi_icu %>%
   cols_label(
     country       = 'Country',
     project       = 'Project',
-    n_death       = 'N',
+    n_death       = 'N deaths',
     n_death_hospi = 'N',
     p_death_hospi = '% of deaths', 
     n_death_icu   = 'N',
     p_death_icu   = '% of deaths') %>%
   
   tab_spanner(
-    label = 'Deaths',
-    columns = vars(n_death, n_death_hospi, p_death_hospi, n_death_icu, p_death_icu)) %>%
-  tab_spanner(
     label = 'Hospitalized',
-    columns = ends_with('_admited')) %>%
+    columns = ends_with('_hospi')) %>%
+  tab_spanner(
+    label = 'ICU',
+    columns = ends_with('_icu')) %>%
   
   fmt_number(
     columns = starts_with('m_'),
@@ -2860,14 +3145,72 @@ gtbl_deaths_hospi_icu <- tbl_deaths_hospi_icu %>%
     row.striping.include_table_body = TRUE)
 
 gtsave(gtbl_deaths_hospi_icu, 
-       file.path(path.local.msf.tables.oc, paste0('gtbl_deaths_hospi_icu', '_', week_report, '.html')), 
+       file.path(path.local.msf.tables.oc, paste0('gtbl_deaths_hospi_icu', '_',
+                                                  week_report, '.html')), 
        inline_css = TRUE) %>% 
   invisible()
 
 
 gtbl_deaths_hospi_icu %>% 
   tab_header(
-    title = 'Number of deaths, proportion in hospital and ICU')
+    title = 'Number of deaths (total, in hospital and in ICU)')
+```
+
+
+```{r tbl-patients-o2-vent}
+tbl_patients_o2_vent <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  select(country, project, merge_admit, merge_vent, merge_oxygen) %>%
+  group_by(country, project) %>% 
+  # filter(merge_admit == "Yes") %>% 
+  summarise(n_patients    = n(),
+            n_patients_admis = sum(merge_admit == "Yes", na.rm = TRUE),
+            n_oxygen         = sum(merge_oxygen == "Yes", na.rm = TRUE),
+            p_oxygen         = n_oxygen / n_patients_admis,
+            n_ventilation    = sum(merge_vent == "Yes", na.rm = TRUE),
+            p_ventilation    = n_ventilation / n_patients_admis)
+
+
+gtbl_patients_o2_vent <- tbl_patients_o2_vent %>% 
+  gt() %>%
+  cols_label(
+    country          = 'Country',
+    project          = 'Project',
+    n_patients       = 'Total patients',
+    n_patients_admis = 'N hospitalized',
+    n_oxygen         = 'N under oxygen',
+    p_oxygen         = '% O2',
+    n_ventilation    = 'N ventilated',
+    p_ventilation    = '% ventilated') %>%
+  
+  fmt_number(
+    columns = starts_with('p_'),
+    decimals = 1) %>%
+  
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  
+  cols_align(
+    align = 'right',
+    columns = starts_with('n_')) %>%
+  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2),
+    row.striping.include_table_body = TRUE)
+
+gtsave(gtbl_patients_o2_vent, 
+       file.path(path.local.msf.tables.oc, paste0('gtbl_patients_o2_vent', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtbl_patients_o2_vent %>% 
+  tab_header(
+    title = 'Number of confirmed, probable and suspected patients hospitalized, with type of care')
 ```
 
 
