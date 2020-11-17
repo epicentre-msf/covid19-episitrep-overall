@@ -63,7 +63,7 @@ if (!dir.exists(path.local.msf.tables.oc)) {
   dir.create(path.local.msf.tables.oc, showWarnings = FALSE, recursive = TRUE)
 }
 
-    
+
 
 caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF linelists as of {format(date_max_report, "%d %b %Y")}')
 
@@ -130,15 +130,15 @@ dta_aggregated_expanded <- dta_weekly_aggregated %>%
   left_join(df_countries, by = 'country') %>% 
   pivot_longer(cols = c('confirmed', 'probable', 'suspected', 'non_cases', 'unknown'), names_to = 'covid_status') %>% 
   filter(!is.na(value)) %>% 
-    mutate(obs = purrr::map(value, ~rep_len(1, .x))) %>%
-    unnest(cols = c(obs)) %>%
-    select(-c(value, obs)) %>% 
-    mutate(
-      covid_status = factor(covid_status, 
-                            levels = c('confirmed', 'probable', 'suspected',
-                                       'non_cases', 'unknown'), 
-                            labels = c('Confirmed', 'Probable', 'Suspected',
-                                       'Not a case', 'Unknown'))) %>% 
+  mutate(obs = purrr::map(value, ~rep_len(1, .x))) %>%
+  unnest(cols = c(obs)) %>%
+  select(-c(value, obs)) %>% 
+  mutate(
+    covid_status = factor(covid_status, 
+                          levels = c('confirmed', 'probable', 'suspected',
+                                     'non_cases', 'unknown'), 
+                          labels = c('Confirmed', 'Probable', 'Suspected',
+                                     'Not a case', 'Unknown'))) %>% 
   rename('OC' = oc, 'site_name' = project) %>% 
   filter(between(date, left = date_min_report, right = date_max_report) | is.na(date)) %>% 
   filter(OC == params$OC)
@@ -161,7 +161,7 @@ dta_linelist_with_aggregated <- dta_linelist %>%
 tbl_aggregated_expanded_with_dates <- dta_aggregated_expanded %>% 
   distinct(sheet, OC, country, site_name) %>% 
   full_join(dta_project_aggregated_dates, by = 'sheet') %>% 
-    mutate(
+  mutate(
     country = case_when(
       country == 'DRC' ~ 'Democratic Republic of the Congo', 
       country == "Côte d'Ivoire" ~ 'Côte d’Ivoire', 
@@ -171,9 +171,9 @@ tbl_aggregated_expanded_with_dates <- dta_aggregated_expanded %>%
     names_to = "type_date", 
     values_to = "date_consultation") %>% 
   left_join(df_countries, by = 'country') %>% 
-    mutate(
-      country = paste(country, '(*)'),
-      site_name = paste(site_name, '(*)'))
+  mutate(
+    country = paste(country, '(*)'),
+    site_name = paste(site_name, '(*)'))
 ```
 
 
@@ -437,7 +437,7 @@ hist_epicurve_consult_admit_continent <- tbl_epicurve_consultation_continent %>%
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1)),
                      expand = expansion(mult = c(0, 0.02))) +
   labs(y = "Patients", colour = NULL, caption = glue::glue("Missing data: Consultation Date {missing_consultation}, Admission: {missing_admission}")) + 
-    theme_light() + 
+  theme_light() + 
   theme(legend.position = "top", panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank()) 
 
 
@@ -546,10 +546,10 @@ gtbl_countries_covid_status <- tbl_countries_covid_status %>%
   tab_spanner(
     label = html('Probable'),
     columns = ends_with('_probable')) %>%
-    tab_spanner(
+  tab_spanner(
     label = html('Suspected'),
     columns = ends_with('_suspected')) %>%
-    tab_spanner(
+  tab_spanner(
     label = html('Not a case'),
     columns = ends_with('_not_case')) %>%
   tab_spanner(
@@ -617,7 +617,7 @@ gtbl_countries_covid_status %>%
 
 ```{=html}
 <!-- 
- === SUMMARY TABLE BY SITE === 
+=== SUMMARY TABLE BY SITE === 
 Not in the EpiSitrep -- Too long
 Output in html file that will be available through a link
 -->
@@ -678,10 +678,10 @@ gtbl_sites_covid_status <- tbl_sites_covid_status %>%
   tab_spanner(
     label = html('Probable'),
     columns = ends_with('_probable')) %>%
-    tab_spanner(
+  tab_spanner(
     label = html('Suspected'),
     columns = ends_with('_suspected')) %>%
-    tab_spanner(
+  tab_spanner(
     label = html('Not a case'),
     columns = ends_with('_not_case')) %>%
   tab_spanner(
@@ -738,7 +738,7 @@ gtsave(gtbl_sites_covid_status %>%
          tab_header(
            title = html(paste('SUMMARY TABLE<br>
            Counts of patients consulted/admitted to an MSF supported COvid-19 health service by Covid status as of', format(date_max_report, "%d %b %Y"))),
-    subtitle = 'Sites with (*) reported aggregated data'),
+           subtitle = 'Sites with (*) reported aggregated data'),
        file.path(path.local.msf.tables.oc, paste0(week_report, '_SUMMARY-TABLE_MSF-sites_by_patients_Covid-status.html'))) %>%
   invisible()
 ```
@@ -801,7 +801,7 @@ gtbl_age_distribution_by_sex_all
 ```{r gtbl-age-sex-continent}
 dta_age_sex <- dta_linelist %>% 
   mutate(sex = factor(sex, levels = c('F', 'M'), labels = c('Female', 'Male')) %>% fct_explicit_na())
-  
+
 tbl_age_sex <- dta_age_sex %>% 
   group_by(sex) %>% 
   summarise(
@@ -1024,7 +1024,7 @@ tbl_comcond_status <- names(dta_comcond)[4:ncol(dta_comcond)] %>%
       rename('value'= .x) %>% 
       mutate(
         type_comorbidity = .x)
-    }) %>% 
+  }) %>% 
   filter(value == 'Yes') %>% 
   mutate(
     type_comorbidity = factor(type_comorbidity, levels = df_labels_comcond$levels, labels = df_labels_comcond$labels))
@@ -1055,8 +1055,8 @@ gtbl_comcond_status <- tbl_comcond_status %>%
     `p_(Unknown)`  = '(%)', 
     p_Total        = '(%)') %>% 
   cols_align(
-   align = 'left', 
-   columns = vars(type_comorbidity)) %>% 
+    align = 'left', 
+    columns = vars(type_comorbidity)) %>% 
   cols_align(
     align = 'right',
     columns = starts_with(c('n_', '.p_'))) %>%
@@ -1141,7 +1141,7 @@ tbl_sympt_status <- names(dta_sympt)[2:ncol(dta_sympt)] %>%
       rename('value'= .x) %>% 
       mutate(
         type_symptom = .x)
-    }) %>% 
+  }) %>% 
   filter(value == 'Yes')
 
 
@@ -1245,7 +1245,7 @@ dta_severity <- dta_linelist %>%
 
 tbl_severity_status <- dta_severity %>% 
   drop_na(severity) %>% 
-      tbl_prop('severity', 'covid_status', drop_levels = FALSE)
+  tbl_prop('severity', 'covid_status', drop_levels = FALSE)
 
 
 gtbl_severity_status <- tbl_severity_status %>% 
@@ -1267,8 +1267,8 @@ gtbl_severity_status <- tbl_severity_status %>%
     `p_(Unknown)`  = '(%)', 
     p_Total        = '(%)') %>% 
   cols_align(
-   align = 'left', 
-   columns = vars(severity)) %>% 
+    align = 'left', 
+    columns = vars(severity)) %>% 
   cols_align(
     align = 'right',
     columns = starts_with(c('n_', 'p_'))) %>%
@@ -1305,12 +1305,12 @@ gtbl_severity_status <- tbl_severity_status %>%
     missing_text = "",
     formatter = fmt_number,
     decimals = 0) %>% 
-#  tab_footnote(
-#    footnote = paste0("Missing values = ", sum(is.na(dta_severity$severity))),
-#    locations = cells_summary(
-#      groups = NULL, 
-#      columns = vars(severity), 
-#      rows = 1)) %>% 
+  #  tab_footnote(
+  #    footnote = paste0("Missing values = ", sum(is.na(dta_severity$severity))),
+  #    locations = cells_summary(
+  #      groups = NULL, 
+  #      columns = vars(severity), 
+  #      rows = 1)) %>% 
   tab_style(
     style = list(
       cell_text(align = "right")),
@@ -1348,7 +1348,7 @@ dta_severity_confirmed_continent <- dta_linelist %>%
 
 tbl_severity_confirmed_continent <- dta_severity_confirmed_continent %>% 
   drop_na(severity) %>% 
-      tbl_prop('severity', 'continent', drop_levels = FALSE)
+  tbl_prop('severity', 'continent', drop_levels = FALSE)
 
 gtbl_severity_confirmed_continent <- tbl_severity_confirmed_continent %>% 
   gt(rowname_col = "severity") %>% 
@@ -1432,12 +1432,12 @@ dta_cfr_status <- dta_linelist %>%
 
 tbl_cfr_status_continent <- levels(dta_cfr_status$covid_status) %>% 
   map_df(~{
-      dta_cfr_status %>% 
+    dta_cfr_status %>% 
       filter(covid_status == .x) %>% 
       tbl_prop('outcome_status', 'continent', drop_levels = FALSE) %>% 
       mutate(
         covid_status = .x)
-    }) %>% 
+  }) %>% 
   filter(outcome_status == 'Died') 
 
 
@@ -1575,7 +1575,7 @@ hist_epicurve_consult_admit_confirmed_continent <- tbl_epicurve_consultation_con
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1)),
                      expand = expansion(mult = c(0, 0.02))) +
   labs(y = "Patients", colour = NULL, caption = glue::glue("Missing data: Consultation Date {missing_consultation}, Admission: {missing_admission}")) + 
-    theme_light() + 
+  theme_light() + 
   theme(legend.position = "top", panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank())
 
 ggsave(file.path(path.local.msf.graphs.oc, paste0('hist_epicurve_consult_admit_confirmed_continent', '_', week_report, '.png')),
@@ -1701,11 +1701,11 @@ pyramid_age_sex_confirmed_continent
 ```{=html}
 <!-- 
 Table Patient’s care 1
-  - Admitted to a hospital/inpatient department,
-  - received oxygen,
-  - admitted to ICU,
-  - supported with ventilator,
-  - supported with ECMO
+- Admitted to a hospital/inpatient department,
+- received oxygen,
+- admitted to ICU,
+- supported with ventilator,
+- supported with ECMO
 -->
 ```
 ```{r tbl-care-procedures}
@@ -1730,13 +1730,13 @@ tbl_care_admitted <- tbl_prop(dta_care, 'merge_admit', 'continent') %>%
 
 tbl_care_oxygen <- tbl_prop(dta_care, 'merge_oxygen', 'continent') %>% 
   mutate(name_var = 'Received oxygen')
-  
+
 tbl_care_icu <- tbl_prop(dta_care, 'merge_icu', 'continent') %>% 
   mutate(name_var = 'Admitted to the Intensive Care Unit')
-  
+
 tbl_care_vent <- tbl_prop(dta_care, 'merge_vent', 'continent') %>% 
   mutate(name_var = 'Supported by a ventilator')
-  
+
 #tbl_care_ecmo <- tbl_prop(dta_care, 'merge_ecmo', 'continent') %>% 
 #  drop_na(merge_ecmo) %>% 
 #  mutate(name_var = 'Supported by extracorporeal membrane oxygenation (ECMO)')
@@ -1747,7 +1747,7 @@ tbl_care <- tbl_care_admitted %>% rename(values_var = merge_admit) %>%
   add_row(tbl_care_icu %>% rename(values_var = merge_icu)) %>%
   add_row(tbl_care_vent %>% rename(values_var = merge_vent))
 #  add_row(tbl_care_ecmo %>% rename(values_var = merge_ecmo))
-  
+
 
 gtbl_care <- tbl_care %>% 
   gt(rowname_col = "values_var",
@@ -1887,12 +1887,12 @@ dta_cfr_age <- dta_linelist %>%
 
 tbl_cfr_age <- levels(dta_cfr_age$age_5gp) %>% 
   map_df(~{
-      dta_cfr_age %>% 
+    dta_cfr_age %>% 
       filter(age_5gp == .x) %>% 
       tbl_prop('outcome_status', 'continent', drop_levels = FALSE) %>% 
       mutate(
         age_5gp = .x)
-    }) %>% 
+  }) %>% 
   filter(outcome_status == 'Died') 
 
 
@@ -1902,12 +1902,12 @@ dta_cfr_sex <- dta_linelist %>%
 
 tbl_cfr_sex <- levels(dta_cfr_sex$sex) %>% 
   map_df(~{
-      dta_cfr_sex %>% 
+    dta_cfr_sex %>% 
       filter(sex == .x) %>% 
       tbl_prop('outcome_status', 'continent', drop_levels = FALSE) %>% 
       mutate(
         sex = .x)
-    }) %>% 
+  }) %>% 
   filter(outcome_status == 'Died') 
 
 dta_cfr_comorbidities <- dta_linelist %>% 
@@ -1916,12 +1916,12 @@ dta_cfr_comorbidities <- dta_linelist %>%
 
 tbl_cfr_comorbidities <- levels(dta_cfr_comorbidities$Comcond_count) %>% 
   map_df(~{
-      dta_cfr_comorbidities %>% 
+    dta_cfr_comorbidities %>% 
       filter(Comcond_count == .x) %>% 
       tbl_prop('outcome_status', 'continent', drop_levels = FALSE) %>% 
       mutate(
         Comcond_count = .x)
-    }) %>% 
+  }) %>% 
   filter(outcome_status == 'Died') %>% 
   arrange(Comcond_count)
 
@@ -1995,7 +1995,7 @@ gtbl_cfr_age_sex_comorbidities <- tbl_cfr_age_sex_comorbidities %>%
     data_row.padding = px(2), 
     row_group.padding = px(2))
 
-  gtsave(gtbl_cfr_age_sex_comorbidities, 
+gtsave(gtbl_cfr_age_sex_comorbidities, 
        file.path(path.local.msf.tables.oc, paste0('gtbl_cfr_age_sex_comorbidities', '_', week_report, '.png'))) %>% 
   invisible()
 
@@ -2072,18 +2072,18 @@ gtbl_outcome_admission <- tbl_outcome_admission %>%
     columns = vars(Total, prct_tot)) %>%
   fmt_missing(
     columns = starts_with('prct_'),
-   missing_text = "--") %>%
+    missing_text = "--") %>%
   text_transform(
     locations = cells_body(
       columns = starts_with('prct_')),
     fn = function(x) {
-        x = paste0('(',x,')')}) %>%
+      x = paste0('(',x,')')}) %>%
   text_transform(
     locations = cells_body(
       columns = starts_with('prct_'),
       rows = outcome_status == 'Total'),
     fn = function(x) {
-        x = '---'}) %>%
+      x = '---'}) %>%
   cols_align(
     align = 'right',
     columns = vars(Yes, No, `(Unknown)`, Total)) %>%
@@ -2295,10 +2295,10 @@ dta_cfr_comcond <- prepare_msf_dta_comcond(dta_linelist) %>%
 tbl_cfr_type_comcond <- levels(dta_cfr_comcond$type_comorbidity) %>% 
   map_df(~{
     dta_cfr_comcond %>% 
-    filter(type_comorbidity == .x) %>% 
-    tbl_prop('outcome_status', 'continent', drop_levels = FALSE) %>% 
-    mutate(
-      type_comorbidity = .x)
+      filter(type_comorbidity == .x) %>% 
+      tbl_prop('outcome_status', 'continent', drop_levels = FALSE) %>% 
+      mutate(
+        type_comorbidity = .x)
   }) %>% 
   filter(outcome_status == 'Died') %>% 
   arrange(desc(p_Total))
@@ -2441,11 +2441,11 @@ dots_cfr_agegroup
 **With all confirmed cases as denominator: time-series and trends plot** with week as time unit of the following indicator:
 
 Time-series plot:
-  - Proportion of admitted over the confirmed - line
-  - Proportion of patients with severe symptoms - line
-  - Delay from symptoms onset to consultation/admission - boxplot
-  - Length of staying for patients hospitalised - boxplot
-  - Case fatality risk for patients hospitalised - line
+- Proportion of admitted over the confirmed - line
+- Proportion of patients with severe symptoms - line
+- Delay from symptoms onset to consultation/admission - boxplot
+- Length of staying for patients hospitalised - boxplot
+- Case fatality risk for patients hospitalised - line
 -->
 ```
 <!-- CFR by week overall -->
@@ -2777,7 +2777,7 @@ plot_epicurve_project <- function(data,
          # height = 4, 
          scale = 1.1,
          dpi = 320
-         )
+  )
   
   return(fig_data)
 }
@@ -2897,19 +2897,19 @@ tble2 <- dta_linelist %>%
             n_mild       = sum(severity == "Mild", na.rm = TRUE),
             n_mild_admis = sum(severity == "Mild" & merge_admit == "Yes"),
             p_mild_admis = n_mild_admis / n_mild,
-           
+            
             n_moderate       = sum(severity == "Moderate", na.rm = TRUE),
             n_moderate_admis = sum(severity == "Moderate" & merge_admit == "Yes", na.rm = TRUE),
             p_moderate_admis = n_moderate_admis / n_moderate,
-           
+            
             n_severe       = sum(severity == "Severe", na.rm = TRUE),
             n_severe_admis  = sum(severity == "Severe" & merge_admit == "Yes", na.rm = TRUE),
             p_severe_admis = n_severe_admis / n_severe,
-           
+            
             n_critical        = sum(severity == "Critical", na.rm = TRUE),
             n_critical_admis  = sum(severity == "Critical" & merge_admit == "Yes", na.rm = TRUE),
             p_critical_admis  = n_critical_admis / n_critical,
-           
+            
             n_na       = sum(is.na(severity)),
             p_na       = n_na / n_patients)
 
@@ -2933,11 +2933,11 @@ gtble2 <- tble2 %>%
     n_severe       = 'N visits',
     n_severe_admis = 'N admissions',
     p_severe_admis = "% admitted",
-   
+    
     n_critical       = 'N visits',
     n_critical_admis = 'N admissions',
     p_critical_admis = "% admitted",
-  
+    
     n_na = 'Severity',
     p_na = "% non-available") %>% 
   
@@ -2978,10 +2978,10 @@ gtble2 <- tble2 %>%
     data_row.padding  = px(2), 
     row_group.padding = px(2),
     row.striping.include_table_body = TRUE)
-  # summary_rows(
-  #   columns = starts_with('n_'),
-  #   fns = list(Total = "sum"),
-  #   decimals = 0)
+# summary_rows(
+#   columns = starts_with('n_'),
+#   fns = list(Total = "sum"),
+#   decimals = 0)
 
 
 gtsave(gtble2, 
@@ -3102,6 +3102,10 @@ gtble3 %>%
 
 
 ## Figure 3 – Median [IQR] length of stay, per project, stratified by severity
+TODO
+
+## Table 4
+TODO
 
 
 ## Table 5 – Total number of patient visits by case status, ICU admission status, by project (includes confirmed, suspect, probable cases only)
@@ -3110,61 +3114,103 @@ TO REDO
 
 ```{r tble5}
 
-### UNFINISHED ADDED MORE LEVELS ###
-
 tble5 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
-  select(country, project, merge_admit, icu, merge_icu) %>%
+  select(country, project, covid_status, merge_admit, icu, merge_icu) %>%
   group_by(country, project) %>% 
-  summarise(n_patients           = n(),
-            n_admited      = sum(merge_admit == "Yes", na.rm = TRUE),
-            p_admited      = n_admited / n_patients,
-            
-            n_icu_admission = sum(icu == "Yes", na.rm = TRUE),
-            p_icu_admission = n_icu_admission / n_admited,
-            
-            n_icu_total = sum(merge_icu == "Yes", na.rm = TRUE),
-            p_icu_total = n_icu_total / n_admited)
+  summarise(
+    n_patients = n(),
+    n_admis    = sum(merge_admit == "Yes", na.rm = TRUE),
+    
+    n_probable            = sum(covid_status == "Probable", na.rm = TRUE),
+    n_probable_admis      = sum(covid_status == "Probable" & merge_admit == "Yes", na.rm = TRUE),
+    p_probable_admis      =  n_probable_admis / n_probable,
+     m_probable_admis         = glue("{n_probable_admis} ({round(100 * p_probable_admis, 1)}%)"),
+    n_probable_icu_admis  = sum(covid_status == "Probable" & merge_admit == "Yes" & icu == "Yes", na.rm = TRUE),
+    p_probable_icu_admis  = n_probable_icu_admis / n_probable_admis,
+     m_probable_icu_admis  = glue("{n_probable_icu_admis} ({round(100 * p_probable_icu_admis, 1)}%)"),
+    n_probable_icu_later  = sum(covid_status == "Probable" & merge_admit == "Yes" & icu == "No" & merge_icu == "Yes", na.rm = TRUE),
+    p_probable_icu_later  = n_probable_icu_later / n_probable_admis,
+      m_probable_icu_later  = glue("{n_probable_icu_later} ({round(100 * p_probable_icu_later, 1)}%)"),
+    na_merge_icu_probable = sum(is.na(merge_icu)),
+    
+    n_suspected            = sum(covid_status == "Suspected", na.rm = TRUE),
+    n_suspected_admis      = sum(covid_status == "Suspected" & merge_admit == "Yes", na.rm = TRUE),
+    p_suspected_admis      = n_suspected_admis / n_suspected,
+    m_suspected_admis      = glue("{n_suspected_admis} ({round(100 * p_suspected_admis, 1)}%)"),
+    n_suspected_icu_admis  = sum(covid_status == "Suspected" & merge_admit == "Yes" & icu == "Yes", na.rm = TRUE),
+    p_suspected_icu_admis  = n_suspected_icu_admis / n_suspected_admis,
+      m_suspected_icu_admis  = glue("{n_suspected_icu_admis} ({round(100 * p_suspected_icu_admis, 1)}%)"),
+    n_suspected_icu_later  = sum(covid_status == "Suspected" & merge_admit == "Yes" & icu == "No" & merge_icu == "Yes", na.rm = TRUE),
+    p_suspected_icu_later  = n_suspected_icu_later / n_suspected_admis,
+    m_suspected_icu_later  = glue("{n_suspected_icu_later} ({round(100 * p_suspected_icu_later, 1)}%)"),
+    na_merge_icu_suspected = sum(is.na(merge_icu)),
+    
+    
+    n_confirmed            = sum(covid_status == "Confirmed", na.rm = TRUE),
+    n_confirmed_admis      = sum(covid_status == "Confirmed" & merge_admit == "Yes", na.rm = TRUE),
+    p_confirmed_admis      = n_confirmed_admis / n_confirmed,
+    m_confirmed_admis      = glue("{n_confirmed_admis} ({round(100 * p_confirmed_admis, 1)}%)"),
+    n_confirmed_icu_admis  = sum(covid_status == "Confirmed" & merge_admit == "Yes" & icu == "Yes", na.rm = TRUE),
+    p_confirmed_icu_admis  = n_confirmed_icu_admis / n_confirmed_admis,
+     m_confirmed_icu_admis  = glue("{n_confirmed_icu_admis} ({round(100 * p_confirmed_icu_admis, 1)}%)"),
+    n_confirmed_icu_later  = sum(covid_status == "Confirmed" & merge_admit == "Yes" & icu == "No" & merge_icu == "Yes", na.rm = TRUE),
+    p_confirmed_icu_later  = n_confirmed_icu_later / n_confirmed_admis,
+     m_confirmed_icu_later  = glue("{n_confirmed_icu_later} ({round(100 * p_confirmed_icu_later, 1)}%)"),
+    na_merge_icu_confirmed = sum(is.na(merge_icu))
+  ) %>% 
+  select(country, project, n_patients,
+         # n_admis, 
+         n_probable,  m_probable_admis,  m_probable_icu_admis,  m_probable_icu_later,  na_merge_icu_probable,
+         n_suspected, m_suspected_admis, m_suspected_icu_admis, m_suspected_icu_later, na_merge_icu_suspected,
+         n_confirmed, m_confirmed_admis, m_confirmed_icu_admis, m_confirmed_icu_later, na_merge_icu_confirmed)
 
 
-gtble5 <- 
-  tble5 %>% 
+
+
+gtble5 <-  tble5 %>% 
   gt() %>%
   cols_label(
     country          = 'Country',
     project          = 'Project',
     n_patients       = 'Visits',
-    n_admited        = 'N',
-    p_admited        = "%",
-    n_icu_admission  = 'N',
-    p_icu_admission  = "%",
-    n_icu_total      = 'N',
-    p_icu_total      = "%") %>% 
+    # n_admited        = 'Admissions',
+    
+    n_probable            = 'Visits',
+    m_probable_admis      = 'Admissions',
+    m_probable_icu_admis  = 'ICU at admission',
+    m_probable_icu_later  = 'ICU after admission',
+    na_merge_icu_probable = 'ICU data non available',
+    
+    n_suspected            = 'Visits',
+    m_suspected_admis      = 'Admissions',
+    m_suspected_icu_admis  = 'ICU at admission',
+    m_suspected_icu_later  = 'ICU after admission',
+    na_merge_icu_suspected = 'ICU data non available',
+    
+    n_confirmed            = 'Visits',
+    m_confirmed_admis      = 'Admissions',
+    m_confirmed_icu_admis  = 'ICU at admission',
+    m_confirmed_icu_later  = 'ICU after admission',
+    na_merge_icu_confirmed = 'ICU data non available') %>% 
   
   tab_spanner(
-    label = 'Hospitalised',
-    columns = ends_with('admited')) %>%
-  
+    label = 'Probable',
+    columns = contains("_probable")) %>%  
   tab_spanner(
-    label = 'ICU at admission',
-    columns = ends_with('_icu_admission')) %>%
-  
+    label = 'Suspected',
+    columns = contains('_suspected')) %>%
   tab_spanner(
-    label = 'ICU at any time',
-    columns = ends_with('_icu_total')) %>%
+    label = 'Confirmed',
+    columns = contains('_confirmed')) %>%
   
   fmt_missing(
     columns = starts_with('n_'),
     missing_text = "0") %>%
   
-  fmt_number(
-    columns = starts_with('p_'),
-    decimals = 1,
-    scale_by = 100) %>%
-  
   cols_align(
-    align = 'right',
-    columns = starts_with('n_')) %>%
+    align = 'center',
+    columns = everything()) %>%
   
   tab_options(
     column_labels.font.weight = "bold", 
@@ -3174,10 +3220,9 @@ gtble5 <-
     row.striping.include_table_body = TRUE)  %>% 
   
   summary_rows(
-    columns = vars(n_patients, n_admited, n_icu_admission, n_icu_total),
+    columns = starts_with("n_"),
     fns = list(Total = "sum"),
-    decimals = 0)
-
+    decimals = 0) 
 
 gtsave(gtble5, 
        file.path(path.local.msf.tables.oc, paste0('gtble5', '_', week_report, '.html')), 
@@ -3187,8 +3232,7 @@ gtsave(gtble5,
 
 gtble5 %>% 
   tab_header(
-    title = 'Total number of patient visits by ICU admission status, by project (includes confirmed, suspect, probable cases only)')
-
+    title = 'Total number of patient visits by case status and ICU admission status')
 ```
 
 
