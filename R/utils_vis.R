@@ -687,3 +687,13 @@ tbl_cfr <- function(dta, x_var){
   return(tbl_cfr)
 }
 
+
+
+format_nbp <- function(my_N, my_p) {
+  
+  my_p <- round(100 * my_p, 1)
+  
+  my_string <- ifelse(my_N == 0,
+                      "-",
+                      glue::glue("{my_N} ({my_p}%)"))
+}
