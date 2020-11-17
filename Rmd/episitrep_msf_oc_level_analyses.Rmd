@@ -3110,8 +3110,6 @@ TODO
 
 ## Table 5 – Total number of patient visits by case status, ICU admission status, by project (includes confirmed, suspect, probable cases only)
 
-TO REDO
-
 ```{r tble5}
 
 tble5 <- dta_linelist %>%
@@ -3124,46 +3122,42 @@ tble5 <- dta_linelist %>%
     
     n_probable            = sum(covid_status == "Probable", na.rm = TRUE),
     n_probable_admis      = sum(covid_status == "Probable" & merge_admit == "Yes", na.rm = TRUE),
-    p_probable_admis      =  n_probable_admis / n_probable,
-     m_probable_admis         = glue("{n_probable_admis} ({round(100 * p_probable_admis, 1)}%)"),
+    p_probable_admis      = n_probable_admis / n_probable,
+    m_probable_admis      = format_nbp(n_probable_admis, p_probable_admis),
     n_probable_icu_admis  = sum(covid_status == "Probable" & merge_admit == "Yes" & icu == "Yes", na.rm = TRUE),
     p_probable_icu_admis  = n_probable_icu_admis / n_probable_admis,
-     m_probable_icu_admis  = glue("{n_probable_icu_admis} ({round(100 * p_probable_icu_admis, 1)}%)"),
+    m_probable_icu_admis  = format_nbp(n_probable_icu_admis, p_probable_icu_admis),
     n_probable_icu_later  = sum(covid_status == "Probable" & merge_admit == "Yes" & icu == "No" & merge_icu == "Yes", na.rm = TRUE),
     p_probable_icu_later  = n_probable_icu_later / n_probable_admis,
-      m_probable_icu_later  = glue("{n_probable_icu_later} ({round(100 * p_probable_icu_later, 1)}%)"),
-    na_merge_icu_probable = sum(is.na(merge_icu)),
+    m_probable_icu_later  = format_nbp(n_probable_icu_later, p_probable_icu_later),
     
     n_suspected            = sum(covid_status == "Suspected", na.rm = TRUE),
     n_suspected_admis      = sum(covid_status == "Suspected" & merge_admit == "Yes", na.rm = TRUE),
     p_suspected_admis      = n_suspected_admis / n_suspected,
-    m_suspected_admis      = glue("{n_suspected_admis} ({round(100 * p_suspected_admis, 1)}%)"),
+    m_suspected_admis      = format_nbp(n_suspected_admis, p_suspected_admis),
     n_suspected_icu_admis  = sum(covid_status == "Suspected" & merge_admit == "Yes" & icu == "Yes", na.rm = TRUE),
     p_suspected_icu_admis  = n_suspected_icu_admis / n_suspected_admis,
-      m_suspected_icu_admis  = glue("{n_suspected_icu_admis} ({round(100 * p_suspected_icu_admis, 1)}%)"),
+    m_suspected_icu_admis  = format_nbp(n_suspected_icu_admis, p_suspected_icu_admis),
     n_suspected_icu_later  = sum(covid_status == "Suspected" & merge_admit == "Yes" & icu == "No" & merge_icu == "Yes", na.rm = TRUE),
     p_suspected_icu_later  = n_suspected_icu_later / n_suspected_admis,
-    m_suspected_icu_later  = glue("{n_suspected_icu_later} ({round(100 * p_suspected_icu_later, 1)}%)"),
-    na_merge_icu_suspected = sum(is.na(merge_icu)),
-    
+    m_suspected_icu_later  = format_nbp(n_suspected_icu_later, p_suspected_icu_later),
     
     n_confirmed            = sum(covid_status == "Confirmed", na.rm = TRUE),
     n_confirmed_admis      = sum(covid_status == "Confirmed" & merge_admit == "Yes", na.rm = TRUE),
     p_confirmed_admis      = n_confirmed_admis / n_confirmed,
-    m_confirmed_admis      = glue("{n_confirmed_admis} ({round(100 * p_confirmed_admis, 1)}%)"),
+    m_confirmed_admis      = format_nbp(n_confirmed_admis, p_confirmed_admis),
     n_confirmed_icu_admis  = sum(covid_status == "Confirmed" & merge_admit == "Yes" & icu == "Yes", na.rm = TRUE),
     p_confirmed_icu_admis  = n_confirmed_icu_admis / n_confirmed_admis,
-     m_confirmed_icu_admis  = glue("{n_confirmed_icu_admis} ({round(100 * p_confirmed_icu_admis, 1)}%)"),
+    m_confirmed_icu_admis  = format_nbp(n_confirmed_icu_admis, p_confirmed_icu_admis),
     n_confirmed_icu_later  = sum(covid_status == "Confirmed" & merge_admit == "Yes" & icu == "No" & merge_icu == "Yes", na.rm = TRUE),
     p_confirmed_icu_later  = n_confirmed_icu_later / n_confirmed_admis,
-     m_confirmed_icu_later  = glue("{n_confirmed_icu_later} ({round(100 * p_confirmed_icu_later, 1)}%)"),
-    na_merge_icu_confirmed = sum(is.na(merge_icu))
+    m_confirmed_icu_later  = format_nbp(n_confirmed_icu_later, p_confirmed_icu_later),
   ) %>% 
   select(country, project, n_patients,
          # n_admis, 
-         n_probable,  m_probable_admis,  m_probable_icu_admis,  m_probable_icu_later,  na_merge_icu_probable,
-         n_suspected, m_suspected_admis, m_suspected_icu_admis, m_suspected_icu_later, na_merge_icu_suspected,
-         n_confirmed, m_confirmed_admis, m_confirmed_icu_admis, m_confirmed_icu_later, na_merge_icu_confirmed)
+         n_probable,  m_probable_admis,  m_probable_icu_admis,  m_probable_icu_later,  
+         n_suspected, m_suspected_admis, m_suspected_icu_admis, m_suspected_icu_later, 
+         n_confirmed, m_confirmed_admis, m_confirmed_icu_admis, m_confirmed_icu_later)
 
 
 
@@ -3177,22 +3171,19 @@ gtble5 <-  tble5 %>%
     # n_admited        = 'Admissions',
     
     n_probable            = 'Visits',
-    m_probable_admis      = 'Admissions',
-    m_probable_icu_admis  = 'ICU at admission',
-    m_probable_icu_later  = 'ICU after admission',
-    na_merge_icu_probable = 'ICU data non available',
+    m_probable_admis      = 'Hospit.',
+    m_probable_icu_admis  = 'ICU at adm.',
+    m_probable_icu_later  = 'ICU after adm.',
     
     n_suspected            = 'Visits',
-    m_suspected_admis      = 'Admissions',
-    m_suspected_icu_admis  = 'ICU at admission',
-    m_suspected_icu_later  = 'ICU after admission',
-    na_merge_icu_suspected = 'ICU data non available',
+    m_suspected_admis      = 'Hospit.',
+    m_suspected_icu_admis  = 'ICU at adm.',
+    m_suspected_icu_later  = 'ICU after adm.',
     
     n_confirmed            = 'Visits',
-    m_confirmed_admis      = 'Admissions',
-    m_confirmed_icu_admis  = 'ICU at admission',
-    m_confirmed_icu_later  = 'ICU after admission',
-    na_merge_icu_confirmed = 'ICU data non available') %>% 
+    m_confirmed_admis      = 'Hospit.',
+    m_confirmed_icu_admis  = 'ICU at adm.',
+    m_confirmed_icu_later  = 'ICU after adm.') %>% 
   
   tab_spanner(
     label = 'Probable',
@@ -3233,11 +3224,258 @@ gtsave(gtble5,
 gtble5 %>% 
   tab_header(
     title = 'Total number of patient visits by case status and ICU admission status')
+
 ```
 
 
+## Table 7
 
 
+```{r tble7}
+
+tble7 <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  select(country, project, covid_status, merge_admit, received_oxygen, merge_oxygen) %>%
+  group_by(country, project) %>% 
+  summarise(
+    n_patients = n(),
+    n_admis    = sum(merge_admit == "Yes", na.rm = TRUE),
+    
+    n_probable            = sum(covid_status == "Probable", na.rm = TRUE),
+    n_probable_admis      = sum(covid_status == "Probable" & merge_admit == "Yes", na.rm = TRUE),
+    p_probable_admis      =  n_probable_admis / n_probable,
+    m_probable_admis         = format_nbp(n_probable_admis, p_probable_admis),
+    
+    n_probable_oxygen_admis  = sum(covid_status == "Probable" & merge_admit == "Yes" & received_oxygen == "Yes", na.rm = TRUE),
+    p_probable_oxygen_admis  = n_probable_oxygen_admis / n_probable_admis,
+    m_probable_oxygen_admis  = format_nbp(n_probable_oxygen_admis, p_probable_oxygen_admis),
+    
+    n_probable_oxygen_later  = sum(covid_status == "Probable" & merge_admit == "Yes" & received_oxygen == "No" & merge_oxygen == "Yes", na.rm = TRUE),
+    p_probable_oxygen_later  = n_probable_oxygen_later / n_probable_admis,
+    m_probable_oxygen_later  = format_nbp(n_probable_oxygen_later, p_probable_oxygen_later),
+    
+    n_suspected            = sum(covid_status == "Suspected", na.rm = TRUE),
+    n_suspected_admis      = sum(covid_status == "Suspected" & merge_admit == "Yes", na.rm = TRUE),
+    p_suspected_admis      = n_suspected_admis / n_suspected,
+    m_suspected_admis      = format_nbp(n_suspected_admis, p_suspected_admis),
+    
+    n_suspected_oxygen_admis  = sum(covid_status == "Suspected" & merge_admit == "Yes" & received_oxygen == "Yes", na.rm = TRUE),
+    p_suspected_oxygen_admis  = n_suspected_oxygen_admis / n_suspected_admis,
+    m_suspected_oxygen_admis  = format_nbp(n_suspected_oxygen_admis, p_suspected_oxygen_admis),
+    
+    n_suspected_oxygen_later  = sum(covid_status == "Suspected" & merge_admit == "Yes" & received_oxygen == "No" & merge_oxygen == "Yes", na.rm = TRUE),
+    p_suspected_oxygen_later  = n_suspected_oxygen_later / n_suspected_admis,
+    m_suspected_oxygen_later  = format_nbp(n_suspected_oxygen_later, p_suspected_oxygen_later),
+    
+    
+    n_confirmed            = sum(covid_status == "Confirmed", na.rm = TRUE),
+    n_confirmed_admis      = sum(covid_status == "Confirmed" & merge_admit == "Yes", na.rm = TRUE),
+    p_confirmed_admis      = n_confirmed_admis / n_confirmed,
+    m_confirmed_admis      = format_nbp(n_confirmed_admis, p_confirmed_admis),
+    
+    n_confirmed_oxygen_admis  = sum(covid_status == "Confirmed" & merge_admit == "Yes" & received_oxygen == "Yes", na.rm = TRUE),
+    p_confirmed_oxygen_admis  = n_confirmed_oxygen_admis / n_confirmed_admis,
+    m_confirmed_oxygen_admis  = format_nbp(n_confirmed_oxygen_admis, p_confirmed_oxygen_admis),
+    
+    n_confirmed_oxygen_later  = sum(covid_status == "Confirmed" & merge_admit == "Yes" & received_oxygen == "No" & merge_oxygen == "Yes", na.rm = TRUE),
+    p_confirmed_oxygen_later  = n_confirmed_oxygen_later / n_confirmed_admis,
+    m_confirmed_oxygen_later  = format_nbp(n_confirmed_oxygen_later, p_confirmed_oxygen_later),
+  ) %>% 
+  select(country, project, n_patients,
+         n_probable,  m_probable_admis,  m_probable_oxygen_admis,  m_probable_oxygen_later,
+         n_suspected, m_suspected_admis, m_suspected_oxygen_admis, m_suspected_oxygen_later,
+         n_confirmed, m_confirmed_admis, m_confirmed_oxygen_admis, m_confirmed_oxygen_later)
+
+
+
+gtble7 <- tble7 %>% 
+  gt() %>%
+  cols_label(
+    country          = 'Country',
+    project          = 'Project',
+    n_patients       = 'Visits',
+    
+    n_probable               = 'Visits',
+    m_probable_admis         = 'Hospit.',
+    m_probable_oxygen_admis  = 'Oxygen at adm.',
+    m_probable_oxygen_later  = 'Oxygen after adm.',
+    
+    n_suspected               = 'Visits',
+    m_suspected_admis         = 'Hospit.',
+    m_suspected_oxygen_admis  = 'Oxygen at adm.',
+    m_suspected_oxygen_later  = 'Oxygen after adm.',
+    
+    n_confirmed               = 'Visits',
+    m_confirmed_admis         = 'Hospit.',
+    m_confirmed_oxygen_admis  = 'Oxygen at adm.',
+    m_confirmed_oxygen_later  = 'Oxygen after adm.') %>% 
+  
+  tab_spanner(
+    label = 'Probable',
+    columns = contains("_probable")) %>%  
+  tab_spanner(
+    label = 'Suspected',
+    columns = contains('_suspected')) %>%
+  tab_spanner(
+    label = 'Confirmed',
+    columns = contains('_confirmed')) %>%
+  
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  
+  cols_align(
+    align = 'center',
+    columns = everything()) %>%
+  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2),
+    row.striping.include_table_body = TRUE)  %>% 
+  
+  summary_rows(
+    columns = starts_with("n_"),
+    fns = list(Total = "sum"),
+    decimals = 0) 
+
+
+gtsave(gtble7, 
+       file.path(path.local.msf.tables.oc, paste0('gtble7', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtble7 %>% 
+  tab_header(
+    title = 'Total number of patient visits by case status and received_oxygen admission status')
+```
+
+
+## Table 9
+
+
+```{r tble9}
+
+tble9 <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  select(country, project, covid_status, merge_admit, vent, merge_vent) %>%
+  group_by(country, project) %>% 
+  summarise(
+    n_patients = n(),
+    n_admis    = sum(merge_admit == "Yes", na.rm = TRUE),
+    
+    n_probable            = sum(covid_status == "Probable", na.rm = TRUE),
+    n_probable_admis      = sum(covid_status == "Probable" & merge_admit == "Yes", na.rm = TRUE),
+    p_probable_admis      =  n_probable_admis / n_probable,
+    m_probable_admis      = format_nbp(n_probable_admis, p_probable_admis),
+    
+    n_probable_vent_admis  = sum(covid_status == "Probable" & merge_admit == "Yes" & vent == "Yes", na.rm = TRUE),
+    p_probable_vent_admis  = n_probable_vent_admis / n_probable_admis,
+    m_probable_vent_admis  = format_nbp(n_probable_vent_admis, p_probable_vent_admis),
+    
+    n_probable_vent_later  = sum(covid_status == "Probable" & merge_admit == "Yes" & vent == "No" & merge_vent == "Yes", na.rm = TRUE),
+    p_probable_vent_later  = n_probable_vent_later / n_probable_admis,
+    m_probable_vent_later  = format_nbp(n_probable_vent_later, p_probable_vent_later),
+    
+    n_suspected            = sum(covid_status == "Suspected", na.rm = TRUE),
+    n_suspected_admis      = sum(covid_status == "Suspected" & merge_admit == "Yes", na.rm = TRUE),
+    p_suspected_admis      = n_suspected_admis / n_suspected,
+    m_suspected_admis      = format_nbp(n_suspected_admis, p_suspected_admis),
+    
+    n_suspected_vent_admis  = sum(covid_status == "Suspected" & merge_admit == "Yes" & vent == "Yes", na.rm = TRUE),
+    p_suspected_vent_admis  = n_suspected_vent_admis / n_suspected_admis,
+    m_suspected_vent_admis  = format_nbp(n_suspected_vent_admis, p_suspected_vent_admis),
+    
+    n_suspected_vent_later  = sum(covid_status == "Suspected" & merge_admit == "Yes" & vent == "No" & merge_vent == "Yes", na.rm = TRUE),
+    p_suspected_vent_later  = n_suspected_vent_later / n_suspected_admis,
+    m_suspected_vent_later  = format_nbp(n_suspected_vent_later, p_suspected_vent_later),
+    
+    
+    n_confirmed            = sum(covid_status == "Confirmed", na.rm = TRUE),
+    n_confirmed_admis      = sum(covid_status == "Confirmed" & merge_admit == "Yes", na.rm = TRUE),
+    p_confirmed_admis      = n_confirmed_admis / n_confirmed,
+    m_confirmed_admis      = format_nbp(n_confirmed_admis, p_confirmed_admis),
+    
+    n_confirmed_vent_admis  = sum(covid_status == "Confirmed" & merge_admit == "Yes" & vent == "Yes", na.rm = TRUE),
+    p_confirmed_vent_admis  = n_confirmed_vent_admis / n_confirmed_admis,
+    m_confirmed_vent_admis  = format_nbp(n_confirmed_vent_admis, p_confirmed_vent_admis),
+    
+    n_confirmed_vent_later  = sum(covid_status == "Confirmed" & merge_admit == "Yes" & vent == "No" & merge_vent == "Yes", na.rm = TRUE),
+    p_confirmed_vent_later  = n_confirmed_vent_later / n_confirmed_admis,
+    m_confirmed_vent_later  = format_nbp(n_confirmed_vent_later, p_confirmed_vent_later),
+  ) %>% 
+  select(country, project, n_patients,
+         n_probable,  m_probable_admis,  m_probable_vent_admis,  m_probable_vent_later,
+         n_suspected, m_suspected_admis, m_suspected_vent_admis, m_suspected_vent_later,
+         n_confirmed, m_confirmed_admis, m_confirmed_vent_admis, m_confirmed_vent_later)
+
+
+
+gtble9 <- tble9 %>% 
+  gt() %>%
+  cols_label(
+    country    = 'Country',
+    project    = 'Project',
+    n_patients = 'Visits',
+    
+    n_probable             = 'Visits',
+    m_probable_admis       = 'Hospit.',
+    m_probable_vent_admis  = 'Ventilation at adm.',
+    m_probable_vent_later  = 'Ventilation after adm.',
+    
+    n_suspected             = 'Visits',
+    m_suspected_admis       = 'Hospit.',
+    m_suspected_vent_admis  = 'Ventilation at adm.',
+    m_suspected_vent_later  = 'Ventilation after adm.',
+    
+    n_confirmed             = 'Visits',
+    m_confirmed_admis       = 'Hospit.',
+    m_confirmed_vent_admis  = 'Ventilation at adm.',
+    m_confirmed_vent_later  = 'Ventilation after adm.') %>% 
+  
+  tab_spanner(
+    label = 'Probable',
+    columns = contains("_probable")) %>%  
+  tab_spanner(
+    label = 'Suspected',
+    columns = contains('_suspected')) %>%
+  tab_spanner(
+    label = 'Confirmed',
+    columns = contains('_confirmed')) %>%
+  
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  
+  cols_align(
+    align = 'center',
+    columns = everything()) %>%
+  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2),
+    row.striping.include_table_body = TRUE)  %>% 
+  
+  summary_rows(
+    columns = starts_with("n_"),
+    fns = list(Total = "sum"),
+    decimals = 0) 
+
+
+gtsave(gtble9, 
+       file.path(path.local.msf.tables.oc, paste0('gtble9', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtble9 %>% 
+  tab_header(
+    title = 'Total number of patient visits by case status and vent admission status')
+```
 
 ## Other
 
