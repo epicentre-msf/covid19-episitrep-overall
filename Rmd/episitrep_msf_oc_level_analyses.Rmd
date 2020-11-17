@@ -3358,7 +3358,7 @@ gtsave(gtble6,
 
 gtble6 %>% 
   tab_header(
-    title = 'Total number of patient visits by case status and oxygen status')
+    title = 'Total number of patient visits and oxygen status')
 
 ```
 
@@ -3489,6 +3489,74 @@ gtble7 %>%
 
 
 ## Table 9
+
+
+```{r tble9_bis}
+tble9_bis <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  select(country, project, merge_admit, vent, merge_vent) %>%
+  group_by(country, project) %>% 
+  summarise(
+    n_patients = n(),
+    n_admis    = sum(merge_admit == "Yes", na.rm = TRUE),
+    
+    n_vent_admission = sum(merge_admit == "Yes" & vent == "Yes", na.rm = TRUE),
+    p_vent_admission = n_vent_admission / n_admis,
+    m_vent_admission = format_nbp(n_vent_admission, p_vent_admission),
+    
+    n_vent_later  = sum(merge_admit == "Yes" & vent == "No" & merge_vent == "Yes", na.rm = TRUE),
+    p_vent_later  = n_vent_later / n_admis,
+    m_vent_later  = format_nbp(n_vent_later, p_vent_later)
+    ) %>% 
+  select(country, project, n_patients, n_admis, 
+          m_vent_admission,  m_vent_later)
+
+
+
+
+gtble9_bis <-  tble9_bis %>% 
+  gt() %>%
+  cols_label(
+    country    = 'Country',
+    project    = 'Project',
+    n_patients = 'Visits',
+    n_admis    = 'Admissions',
+    
+    m_vent_admission = 'Oxygen at adm.',
+    m_vent_later     = 'Oxygen later',
+    ) %>% 
+  
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  
+  cols_align(
+    align = 'center',
+    columns = everything()) %>%
+  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2),
+    row.striping.include_table_body = TRUE)  %>% 
+  
+  summary_rows(
+    columns = starts_with("n_"),
+    fns = list(Total = "sum"),
+    decimals = 0) 
+
+gtsave(gtble9_bis, 
+       file.path(path.local.msf.tables.oc, paste0('gtble9_bis', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtble9_bis %>% 
+  tab_header(
+    title = 'Total number of patient visits and ventilation status')
+
+```
 
 
 ```{r tble9}
