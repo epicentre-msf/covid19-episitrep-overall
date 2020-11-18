@@ -1,6 +1,6 @@
 ---
 title: "Descritption of the Covid-19 epidemic in Europe and Western and Central Asia"
-date: '`r Sys.Date()`'
+date: "`r format(Sys.Date(), '%d %B %Y')`"
 author: Francesco Grandesso Epicentre (MSF)
 output: 
   rmdformats::readthedown:
@@ -25,6 +25,7 @@ knitr::opts_chunk$set(cache = FALSE,
 source(here::here('R', 'setup.R'), encoding = 'UTF-8')
 
 library(treemap)
+library(patchwork)
 
 source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
 source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
@@ -32,7 +33,7 @@ source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
 
 date_min <- NULL
 date_max <- as.Date('2020-11-08')
-week_report     <- ISOweek::ISOweek(date_max) %>% gsub("W","w", .)
+week_report <- ISOweek::ISOweek(date_max) %>% gsub("W","w", .)
 
 set_paths(path.local, week_report)
 
@@ -47,7 +48,7 @@ dta_ecdc <- get_ecdc_data() %>%
   filter(between(date, left = NULL, right = date_max) & (continent == 'Europe' | region %in% c('Western Asia', 'Central Asia')))
 
 
-## ---  List of countries with population
+## ---  Population data
 df_countries <- readRDS(file.path(path.local.data, paste0('df_countries','.RDS'))) %>% 
   filter(continent == 'Europe' | region %in% c('Western Asia', 'Central Asia')) %>% 
   left_join(readRDS(file.path(path.local.data, paste0('df_pop_country','.RDS'))))
@@ -67,8 +68,7 @@ sf_mercator <- rnaturalearth::ne_countries(type = "countries", returnclass = "sf
   ) %>% 
   dplyr::filter(stringr::str_detect(country, "Antarctic", negate = TRUE)) %>% 
   cbind(sf::st_coordinates(suppressWarnings(sf::st_centroid(., of_largest_polygon = TRUE)))) %>% 
-  dplyr::rename(lon = X, lat = Y) %>% 
-  filter(continent == 'Europe' | region %in% c('Western Asia', 'Central Asia'))
+  dplyr::rename(lon = X, lat = Y) 
 
 
 # Specific path for outputs of this analysis
@@ -77,229 +77,313 @@ dir.create(path.local.Europe, showWarnings = FALSE, recursive = TRUE)
 
 ```
 
+```{r prepare-data, include = FALSE}
 
-```{r}
-grp_region_EuropeNSW <- c('Northern Europe', 'Southern Europe', 'Western Europe')
+## Grouping regions
 
+grp_region_EuropeNSW      <- c('Northern Europe', 'Southern Europe', 'Western Europe')
 grp_region_EuropeE_AsiaWC <- c('Eastern Europe', 'Western Asia', 'Central Asia')
 
 
-dta_cases_prop <- dta_ecdc %>% 
+## CASES Incidence proportion
+
+tbl_cases_prop <- dta_ecdc %>% 
   group_by(country) %>% 
   summarise(
-    n = sum(cases)
-  ) %>% 
+    n = sum(cases)) %>% 
   left_join(df_countries) %>% 
   mutate(
-   p = n/pop * 100
-  )
+   p = n/pop * 100)
 
-dta_deaths_prop <- dta_ecdc %>% 
-  group_by(country) %>% 
-  summarise(
-    n = sum(deaths)
-  ) %>% 
-  left_join(df_countries) %>% 
-  mutate(
-   p = n/pop * 100
-  )
-
-
-dta_cases_2w <- dta_ecdc %>% 
+tbl_cases_prop_2w <- dta_ecdc %>% 
   filter(between(date, left = date_max - 13, right = date_max)) %>%
   group_by(country) %>% 
   summarise(
-    n_2w = sum(cases)
-  ) %>% 
-  left_join(dta_cases_prop) %>% 
-  select(region, country, n_2w, n)
+    n_2w = sum(cases)) %>% 
+    left_join(df_countries) %>% 
+  mutate(
+   p_2w = n_2w/pop * 100) %>% 
+  left_join(tbl_cases_prop) %>% 
+  select(region, country, n, p, n_2w, p_2w)
 
-dta_deaths_2w <- dta_ecdc %>% 
+
+## DEATHS Incidence proportion
+
+tbl_deaths_prop <- dta_ecdc %>% 
+  group_by(country) %>% 
+  summarise(
+    n = sum(deaths)) %>% 
+  left_join(df_countries) %>% 
+  mutate(
+   p = n/pop * 100)
+
+tbl_deaths_prop_2w <- dta_ecdc %>% 
   filter(between(date, left = date_max - 13, right = date_max)) %>%
   group_by(country) %>% 
   summarise(
-    n_2w = sum(deaths)
-  ) %>% 
-  left_join(dta_deaths_prop) %>% 
-  select(region, country, n_2w, n)
-
+    n_2w = sum(deaths)) %>% 
+    left_join(df_countries) %>% 
+  mutate(
+   p_2w = n_2w/pop * 100) %>% 
+  left_join(tbl_deaths_prop) %>% 
+  select(region, country, n, p, n_2w, p_2w)
 
 ```
 
 
 Data source: [ECDC data](https://opendata.ecdc.europa.eu/covid19/casedistribution/csv) updated until `r format(date_max, '%d %B %Y')`
 
+**How to read the treemaps**
 
-# Overview of the burden of cases and deaths
+**Treemapping** is a method to display a set of tiled rectangles whose area is proportional to a specified dimension of the data. The rectangles are filled with a sequential colour scheme representing a second dimension of the data. When the size and colour dimensions are correlated, one can often easily see patterns that would be difficult to spot in other ways.
 
-## Cumulative number of confirmed cases per country 
+The **treemaps presented in this report** display the size of the rectangles proportional to the total number of cases (or deaths) in each country, and the colour of the rectangles representing a second variable whose definition and colour scheme is displayed in the legend. 
 
-```{r, fig.cap = paste("Cumulative number of confirmed cases per country in", combine_words(grp_region_EuropeNSW))}
+The relation of the the two variables are also presented in scatter plots.
 
-dta_cases_prop %>% 
+
+# Overview
+
+## Total number and incidence proportion of confirmed cases
+
+### `r combine_words(grp_region_EuropeNSW)`
+
+```{r, fig.cap = paste("TREEMAP: Total number and incidence proportion of confirmed cases per country in", combine_words(grp_region_EuropeNSW))}
+
+tbl_cases_prop %>% 
   filter(region %in% grp_region_EuropeNSW) %>% 
   treemap(index = c('region', 'country'), 
           vSize = 'n', 
           vColor = 'p',
           type = 'dens', 
           palette = 'YlGn', 
-          range = c(0, max(dta_cases_prop$p)), 
+          range = c(0, max(tbl_cases_prop$p)), 
           title = 'Total cases', 
           title.legend = 'Incidence proportion of cases (%)')
 
 ```
 
-```{r, fig.cap = paste("Cumulative number of confirmed cases per country in", combine_words(grp_region_EuropeE_AsiaWC))}
+```{r, fig.cap = paste("SCATTER PLOT: Total number and incidence proportion of confirmed cases per country in", combine_words(grp_region_EuropeNSW))}
 
-dta_cases_prop %>% 
+countries_zero_count <- tbl_cases_prop %>% 
+  filter(n == 0, region %in% grp_region_EuropeNSW) %>% 
+  pull(country)
+
+txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
+
+ggplot(tbl_cases_prop %>% filter(n != 0, region %in% grp_region_EuropeNSW)) + 
+  geom_point(aes(n, p, col = region)) + 
+  ggrepel::geom_text_repel(aes(n, p, label = country, colour = region), size = 3, show.legend = FALSE) + 
+  scale_x_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0), n = 5), 
+                     labels = scales::label_number_si()) + 
+  scale_y_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0), n = 10), 
+                     labels = scales::label_percent(scale = 1)) + 
+  labs(
+    colour = 'Region', 
+    caption = paste0("Countries with zero count: \n", txt_countries_zero_count), 
+    x = "Total count of cases (log scale)",
+    y = "Incidence proportion % (log scale)") + 
+  theme_light() + 
+  theme(
+    plot.caption = element_text(hjust = 0, face = "italic"), 
+    plot.caption.position =  "panel")
+
+```
+
+### `r combine_words(grp_region_EuropeE_AsiaWC)`
+
+```{r, fig.cap = paste("TREEMAP: Total number and incidence proportion of confirmed cases per country in", combine_words(grp_region_EuropeE_AsiaWC))}
+
+tbl_cases_prop %>% 
   filter(region %in% grp_region_EuropeE_AsiaWC) %>% 
   treemap(index = c('region', 'country'), 
           vSize = 'n', 
           vColor = 'p',
           type = 'dens', 
           palette = 'YlGn', 
-          range = c(0, max(dta_cases_prop$p)), 
+          range = c(0, max(tbl_cases_prop$p)), 
           title = 'Total cases', 
           title.legend = 'Incidence proportion of cases (%)')
 
 ```
 
-## Cumulative number of associated deaths per country  
+```{r, fig.cap = paste("SCATTER PLOT: Total number and incidence proportion of confirmed cases per country in", combine_words(grp_region_EuropeE_AsiaWC))}
 
-```{r, fig.cap = paste("Cumulative number of confirmed associated deaths per country in", combine_words(grp_region_EuropeNSW))}
+countries_zero_count <- tbl_cases_prop %>% 
+  filter(n == 0, region %in% grp_region_EuropeE_AsiaWC) %>% 
+  pull(country)
 
-dta_deaths_prop %>% 
+txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
+
+ggplot(tbl_cases_prop %>% filter(n != 0, region %in% grp_region_EuropeE_AsiaWC)) + 
+  geom_point(aes(n, p, col = region)) + 
+  ggrepel::geom_text_repel(aes(n, p, label = country, colour = region), size = 3, show.legend = FALSE) + 
+  scale_x_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0), n = 5), 
+                     labels = scales::label_number_si()) + 
+  scale_y_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0), n = 10), 
+                     labels = scales::label_percent(scale = 1)) + 
+  labs(
+    colour = 'Region', 
+    caption = paste0("Countries with zero count: \n", txt_countries_zero_count), 
+    x = "Total count of cases (log scale)",
+    y = "Incidence proportion % (log scale)") + 
+  theme_light() + 
+  theme(
+    plot.caption = element_text(hjust = 0, face = "italic"), 
+    plot.caption.position =  "panel")
+
+```
+
+
+## Total number and incidence proportion of associated deaths
+
+### `r combine_words(grp_region_EuropeNSW)`
+
+```{r, fig.cap = paste("TREEMAP: Total number and incidence proportion of associated deaths per country in", combine_words(grp_region_EuropeNSW))}
+
+tbl_deaths_prop %>% 
   filter(region %in% grp_region_EuropeNSW) %>% 
   treemap(index = c('region', 'country'), 
           vSize = 'n', 
           vColor = 'p',
           type = 'dens', 
           palette = 'OrRd', 
-          range = c(0, max(dta_deaths_prop$p)), 
+          range = c(0, max(tbl_deaths_prop$p)), 
           title = 'Total deaths', 
           title.legend = 'Incidence proportion of deaths (%)')
 
 ```
 
-```{r, fig.cap = paste("Cumulative number of confirmed associated deaths per country in", combine_words(grp_region_EuropeE_AsiaWC))}
+### `r combine_words(grp_region_EuropeE_AsiaWC)`
 
-dta_deaths_prop %>% 
+```{r, fig.cap = paste("TREEMAP: Total number and incidence proportion of associated deaths per country in", combine_words(grp_region_EuropeE_AsiaWC))}
+
+tbl_deaths_prop %>% 
   filter(region %in% grp_region_EuropeE_AsiaWC) %>% 
   treemap(index = c('region', 'country'), 
           vSize = 'n', 
           vColor = 'p',
           type = 'dens', 
           palette = 'OrRd', 
-          range = c(0, max(dta_deaths_prop$p)), 
+          range = c(0, max(tbl_deaths_prop$p)), 
           title = 'Total deaths', 
           title.legend = 'Incidence proportion of deaths (%)')
 
 ```
 
+
+# During the last two weeks
 
 ## Number of confirmed cases in the last 14 days
 
+### `r combine_words(grp_region_EuropeNSW)`
+
 ```{r, fig.cap = paste("Number of confirmed cases since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_EuropeNSW))}
 
-dta_cases_2w %>% 
+tbl_cases_prop_2w %>% 
   filter(region %in% grp_region_EuropeNSW) %>% 
   treemap(index = c('region', 'country'), 
           vSize = 'n', 
           vColor = 'n_2w',
           type = 'dens', 
           palette = 'YlGn', 
-          range = c(0, max(dta_cases_2w$n_2w)), 
-          title = 'Cases', 
+          range = c(0, max(tbl_cases_prop_2w$n_2w)), 
+          title = 'Total cases', 
           title.legend = 'Cases in the last 14 days')
 
 ```
+
+### `r combine_words(grp_region_EuropeE_AsiaWC)`
 
 ```{r, fig.cap = paste("Number of confirmed cases since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_EuropeE_AsiaWC))}
 
-dta_cases_2w %>% 
+tbl_cases_prop_2w %>% 
   filter(region %in% grp_region_EuropeE_AsiaWC) %>% 
   treemap(index = c('region', 'country'), 
           vSize = 'n', 
           vColor = 'n_2w',
           type = 'dens', 
           palette = 'YlGn', 
-          range = c(0, max(dta_cases_2w$n_2w)), 
-          title = 'Cases', 
+          range = c(0, max(tbl_cases_prop_2w$n_2w)), 
+          title = 'Total cases', 
           title.legend = 'Cases in the last 14 days')
 
 ```
 
+
 ## Number of associated deaths in the last 14 days
+
+### `r combine_words(grp_region_EuropeNSW)`
 
 ```{r, fig.cap = paste("Number of confirmed associated deaths since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_EuropeNSW))}
 
-dta_deaths_2w %>% 
+tbl_deaths_prop_2w %>% 
   filter(region %in% grp_region_EuropeNSW) %>% 
   treemap(index = c('region', 'country'), 
           vSize = 'n', 
           vColor = 'n_2w',
           type = 'dens', 
-          palette = 'YlGn', 
-          range = c(0, max(dta_deaths_2w$n_2w)), 
-          title = 'Deaths', 
-          title.legend = 'Cases in the last 14 days')
+          palette = 'OrRd', 
+          range = c(0, max(tbl_deaths_prop_2w$n_2w)), 
+          title = 'Total deaths', 
+          title.legend = 'Deaths in the last 14 days')
 
 ```
 
+### `r combine_words(grp_region_EuropeE_AsiaWC)`
+
 ```{r, fig.cap = paste("Number of confirmed associated deaths since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_EuropeE_AsiaWC))}
 
-dta_deaths_2w %>% 
+tbl_deaths_prop_2w %>% 
   filter(region %in% grp_region_EuropeE_AsiaWC) %>% 
   treemap(index = c('region', 'country'), 
           vSize = 'n', 
           vColor = 'n_2w',
           type = 'dens', 
-          palette = 'YlGn', 
-          range = c(0, max(dta_deaths_2w$n_2w)), 
-          title = 'Deaths', 
-          title.legend = 'Cases in the last 14 days')
+          palette = 'OrRd', 
+          range = c(0, max(tbl_deaths_prop_2w$n_2w)), 
+          title = 'Total deaths', 
+          title.legend = 'Deaths in the last 14 days')
 
 ```
 
 
-# Incidence of all confirmed cases versus recent cases (last 14 days)
+## Overall incidence proportions _versus_ incidence proportions in the last 14 days
 
-## Map of overall cumulative incidence + map of recent incidence
+### Maps
 
-<!-- Map of cumulative incidences -->
-```{r cumulative-incidences}
+<!-- Map of overall incidence proportion -->
+```{r maps-incidence-proportions, fig.cap = "MAP: Overall incidence proportion of cases and recent incidence proportions of cases (last 14 days)"}
 
-# Cumulative count cases
-tbl_case_count <- dta_ecdc %>% 
-  group_by(iso_a3, region, country) %>% 
-  summarise(cases = sum(cases, na.rm = TRUE)) %>% 
-  ungroup()
-
-# Breaks for incidence
+## Breaks for incidence
 breaks_inc <- c(0, 0.01, 0.1, 1, Inf)
 labels_inc <- c("0 - 0.01%", "0.01 - 0.1%", "0.1 - 1%", "1%+")
 
 
-# Cumulative incidence cases
-tbl_case_inc <- df_countries %>% 
-  left_join(tbl_case_count) %>% 
+## --- OVERALL ---
+
+## Put incidence table in to sf
+sf_case_inc <- df_countries %>% 
+  left_join(tbl_cases_prop) %>% 
   mutate(
-    inc = cases / pop * 100, 
-    inc_brks = cut(inc, breaks_inc, labels = labels_inc, include.lowest = TRUE, right = FALSE))
-
-
-sf_case_inc <- tbl_case_inc %>% 
-  inner_join(
+    inc_brks = cut(p, breaks_inc, labels = labels_inc, include.lowest = TRUE, right = FALSE)) %>% 
+  full_join(
     select(sf_mercator, iso_a3),
     by = "iso_a3"
   ) %>% 
   st_as_sf()
 
+## Map 
 map_case_inc <- ggplot(sf_case_inc) + 
   geom_sf(aes(fill = inc_brks), size = .1) + 
   scale_fill_brewer(
-    name = 'Cumulative incidence rate', 
+    name = 'Incidence proportion', 
     palette = "Blues", 
+    na.value = "lightgrey", 
     drop = FALSE, 
     guide = guide_legend(
       keyheight = unit(3, units = "mm"),
@@ -313,46 +397,33 @@ map_case_inc <- ggplot(sf_case_inc) +
     ylim = c(28, 73), 
     expand = FALSE) + 
   labs(title = 'Overall') + 
-  theme_minimal() +
+  theme_light() +
   theme(plot.title = element_text(hjust = 0.5), 
+        axis.text.x = element_blank(), 
+        axis.text.y = element_blank(), 
         legend.position = "bottom")
 
-```
 
-```{r tbl-cumulative-incidences-2weeks}
+## --- LAST TWO WEEKS ---
 
-# Cumulative count cases
-tbl_case_count_2weeks <- dta_ecdc %>% 
-  filter(between(date, left = date_max - 13, right = date_max)) %>% 
-  group_by(iso_a3, region, country) %>% 
-  summarise(cases = sum(cases, na.rm = TRUE)) %>% 
-  ungroup()
-
-# Breaks for incidence
-breaks_inc <- c(0, 0.01, 0.1, 1, Inf)
-labels_inc <- c("0 - 0.01%", "0.01 - 0.1%", "0.1 - 1%", "1%+")
-
-
-# Cumulative incidence cases
-tbl_case_inc_2weeks <- df_countries %>% 
-  left_join(tbl_case_count_2weeks) %>% 
+## Put incdence table (last 2 weks) in to sf
+sf_case_inc_2weeks <- df_countries %>% 
+  left_join(tbl_cases_prop_2w) %>% 
   mutate(
-    inc = cases / pop * 100, 
-    inc_brks = cut(inc, breaks_inc, labels = labels_inc, include.lowest = TRUE, right = FALSE))
-
-
-sf_case_inc_2weeks <- tbl_case_inc_2weeks %>% 
-  inner_join(
+    inc_brks = cut(p_2w, breaks_inc, labels = labels_inc, include.lowest = TRUE, right = FALSE)) %>% 
+  full_join(
     select(sf_mercator, iso_a3),
     by = "iso_a3"
   ) %>% 
   st_as_sf()
 
+## Map
 map_case_inc_2weeks <- ggplot(sf_case_inc_2weeks) + 
   geom_sf(aes(fill = inc_brks), size = .1) + 
   scale_fill_brewer(
-    name = 'Cumulative incidence rate', 
+    name = 'Incidence proportion', 
     palette = "Blues", 
+    na.value = "lightgrey", 
     drop = FALSE, 
     guide = guide_legend(
       keyheight = unit(3, units = "mm"),
@@ -366,33 +437,67 @@ map_case_inc_2weeks <- ggplot(sf_case_inc_2weeks) +
     ylim = c(28, 73), 
     expand = FALSE) + 
   labs(title = 'Last 14 days') + 
-  theme_minimal() +
+  theme_light() +
   theme(plot.title = element_text(hjust = 0.5), 
+        axis.text.x = element_blank(), 
+        axis.text.y = element_blank(), 
         legend.position = "bottom")
 
-```
 
-```{r}
-
-library(patchwork)
+## Combine maps
 map_case_inc + 
   map_case_inc_2weeks + 
   plot_layout(ncol = 2, guides = 'collect') & theme(legend.position = 'bottom')
 
 ```
 
+### Scatter plots
 
-##	Table: Cumulative incidence vs recent incidence
+```{r, fig.cap = paste("SCATTER PLOT: Overall incidence proportion of cases and recent incidence proportions of cases (last 14 days), in", combine_words(grp_region_EuropeNSW))}
 
-```{r}
+tbl_case_inc_vs_inc_2weeks <- tbl_cases_prop_2w %>% 
+  filter(region %in% grp_region_EuropeNSW) %>% 
+  select(region, country, overall = p, last2weeks = p_2w)
 
-tbl_case_inc_vs_inc_2weeks <- tbl_case_inc %>% 
-  select(region, country, overall = inc) %>% 
-  filter(region %in% c('Northern Europe', 'Southern Europe', 'Western Europe')) %>% 
-  left_join(tbl_case_inc_2weeks %>% 
-              select(region, country, last2weeks = inc))
+countries_zero_count <- tbl_case_inc_vs_inc_2weeks %>% 
+  filter(last2weeks == 0) %>% 
+  pull(country)
 
-countries_zero_count <- tbl_case_inc_vs_inc_2weeks %>% filter(last2weeks == 0) %>% pull(country)
+txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
+
+
+# The dots plot
+ggplot(tbl_case_inc_vs_inc_2weeks %>% filter(last2weeks != 0)) + 
+  geom_point(aes(overall, last2weeks, col = region)) + 
+  ggrepel::geom_text_repel(aes(overall, last2weeks, label = country, colour = region), size = 3, show.legend = FALSE) + 
+  scale_y_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0), n = 10), 
+                     labels = scales::label_percent(scale = 1)) + 
+  scale_x_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0), n = 10), 
+                     labels = scales::label_percent(scale = 1)) + 
+  labs(
+    colour = 'Region', 
+    caption = paste0("Countries with zero count in the last 14 days: \n", txt_countries_zero_count), 
+    x = "Incidence proportion since the beginning of the epidemic % (log scale)",
+    y = "Incidence proportion in the last 14 days % (log scale)") + 
+  theme_light() + 
+  theme(
+    plot.caption = element_text(hjust = 0, face = "italic"), 
+    plot.caption.position =  "panel")
+
+```
+
+```{r, fig.cap = paste("SCATTER PLOT: Overall incidence proportion of cases and recent incidence proportions of cases (last 14 days), in", combine_words(grp_region_EuropeE_AsiaWC))}
+
+tbl_case_inc_vs_inc_2weeks <- tbl_cases_prop_2w %>% 
+  filter(region %in% grp_region_EuropeE_AsiaWC) %>% 
+  select(region, country, overall = p, last2weeks = p_2w)
+
+countries_zero_count <- tbl_case_inc_vs_inc_2weeks %>% 
+  filter(last2weeks == 0) %>% 
+  pull(country)
+
 txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
 
 
@@ -401,15 +506,16 @@ dotsgplot <- ggplot(tbl_case_inc_vs_inc_2weeks %>% filter(last2weeks != 0)) +
   geom_point(aes(overall, last2weeks, col = region)) + 
   ggrepel::geom_text_repel(aes(overall, last2weeks, label = country, colour = region), size = 3, show.legend = FALSE) + 
   scale_y_continuous(trans = 'log10', 
-                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0), n = 10), 
                      labels = scales::label_percent(scale = 1)) + 
   scale_x_continuous(trans = 'log10', 
-                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0), n = 10), 
                      labels = scales::label_percent(scale = 1)) + 
   labs(
+    colour = 'Region', 
     caption = paste0("Countries with zero count in the last 14 days: \n", txt_countries_zero_count), 
-    x = "Overall cumulative incidence rate (log scale %)",
-    y = "Cumulative incidence rate in the last 14 days (log scale %)") + 
+    x = "Incidence proportion since the beginning of the epidemic % (log scale)",
+    y = "Incidence proportion in the last 14 days % (log scale)") + 
   theme_light() + 
   theme(
     plot.caption = element_text(hjust = 0, face = "italic"), 
@@ -418,117 +524,6 @@ dotsgplot <- ggplot(tbl_case_inc_vs_inc_2weeks %>% filter(last2weeks != 0)) +
 dotsgplot
 
 ```
-
-
-```{r}
-
-tbl_case_inc_vs_inc_2weeks <- tbl_case_inc %>% 
-  select(region, country, overall = inc) %>% 
-  filter(region %in% c('Eastern Europe', 'Western Asia', 'Central Asia')) %>% 
-  left_join(tbl_case_inc_2weeks %>% 
-              select(region, country, last2weeks = inc))
-
-countries_zero_count <- tbl_case_inc_vs_inc_2weeks %>% filter(last2weeks == 0) %>% pull(country)
-txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
-
-
-# The dots plot
-dotsgplot <- ggplot(tbl_case_inc_vs_inc_2weeks %>% filter(last2weeks != 0)) + 
-  geom_point(aes(overall, last2weeks, col = region)) + 
-  ggrepel::geom_text_repel(aes(overall, last2weeks, label = country, colour = region), size = 3, show.legend = FALSE) + 
-  scale_y_continuous(trans = 'log10', 
-                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
-                     labels = scales::label_percent(scale = 1)) + 
-  scale_x_continuous(trans = 'log10', 
-                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
-                     labels = scales::label_percent(scale = 1)) + 
-  labs(
-    caption = paste0("Countries with zero count in the last 14 days: \n", txt_countries_zero_count), 
-    x = "Overall cumulative incidence rate (log scale %)",
-    y = "Cumulative incidence rate in the last 14 days (log scale %)") + 
-  theme_light() + 
-  theme(
-    plot.caption = element_text(hjust = 0, face = "italic"), 
-    plot.caption.position =  "panel")
-
-dotsgplot
-
-```
-
-
-## Cumulative incidence vs total number of cases reported
-
-```{r}
-
-tbl_case_count_vs_case_inc <- tbl_case_count %>% 
-  select(region, country, cases) %>% 
-  filter(region %in% c('Northern Europe', 'Southern Europe', 'Western Europe')) %>% 
-  left_join(tbl_case_inc %>% 
-              select(region, country, inc))
-
-countries_zero_count <- tbl_case_count_vs_case_inc %>% filter(cases == 0) %>% pull(country)
-txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
-
-
-# The dots plot
-dotsgplot <- ggplot(tbl_case_count_vs_case_inc %>% filter(cases != 0)) + 
-  geom_point(aes(cases, inc, col = region)) + 
-  ggrepel::geom_text_repel(aes(cases, inc, label = country, colour = region), size = 3, show.legend = FALSE) + 
-  scale_x_continuous(trans = 'log10', 
-                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
-                     labels = scales::label_number_si()) + 
-  scale_y_continuous(trans = 'log10', 
-                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
-                     labels = scales::label_percent(scale = 1)) + 
-  labs(
-    caption = paste0("Countries with zero count: \n", txt_countries_zero_count), 
-    x = "Overall cumulative count of cases (log scale)",
-    y = "Overall cumulative incidence rate (log scale %)") + 
-  theme_light() + 
-  theme(
-    plot.caption = element_text(hjust = 0, face = "italic"), 
-    plot.caption.position =  "panel")
-
-dotsgplot
-
-```
-
-
-```{r}
-
-tbl_case_count_vs_case_inc <- tbl_case_count %>% 
-  select(region, country, cases) %>% 
-  filter(region %in% c('Eastern Europe', 'Western Asia', 'Central Asia')) %>% 
-  left_join(tbl_case_inc %>% 
-              select(region, country, inc))
-
-countries_zero_count <- tbl_case_count_vs_case_inc %>% filter(cases == 0) %>% pull(country)
-txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
-
-
-# The dots plot
-dotsgplot <- ggplot(tbl_case_count_vs_case_inc %>% filter(cases != 0)) + 
-  geom_point(aes(cases, inc, col = region)) + 
-  ggrepel::geom_text_repel(aes(cases, inc, label = country, colour = region), size = 3, show.legend = FALSE) + 
-  scale_x_continuous(trans = 'log10', 
-                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
-                     labels = scales::label_number_si()) + 
-  scale_y_continuous(trans = 'log10', 
-                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
-                     labels = scales::label_percent(scale = 1)) + 
-  labs(
-    caption = paste0("Countries with zero count: \n", txt_countries_zero_count), 
-    x = "Overall cumulative count of cases (log scale)",
-    y = "Overall cumulative incidence rate (log scale %)") + 
-  theme_light() + 
-  theme(
-    plot.caption = element_text(hjust = 0, face = "italic"), 
-    plot.caption.position =  "panel")
-
-dotsgplot
-
-```
-
 
 
 
@@ -601,8 +596,21 @@ linear_trend <- function(dta, series, last_date, n_days = 12, ma_window = 3, min
   
   return(list(mdl = mdl, preds = tbl_preds, coeffs = mdl_coeffs))
 }
+```
+
+```{r}
+dta_ecdc$date
+
+i <- incidence::incidence(dates = dta_ecdc$date, groups  = dta_ecdc$country)
+i
+
+plot(i) + theme_bw()
+
+```
 
 
+
+```{r}
 lst_dta_ecdc <- dta_ecdc %>% 
   multisplit("iso_a3")
 
