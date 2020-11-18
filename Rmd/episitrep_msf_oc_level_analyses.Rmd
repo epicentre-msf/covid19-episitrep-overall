@@ -2746,7 +2746,6 @@ Inclusion criteria: patients were included in the study if COVID suspected or pr
 
 ## Figure 1 – Weekly positivity rates by project
 
-EN COURS 
 ```{r Fig1, fig.cap = 'Weekly number of consultations (including admission) by Covid status'}
 
 plot_epicurve_project <- function(data, 
@@ -2798,7 +2797,9 @@ print(tbl_epicurve_status_p$plot)
 ```
 
 
-## Table 1 – Number of patient visits and hospitalisation status at admission and over course of disease, by project (includes confirmed, suspect, probable cases only)
+## Table 1
+
+Number of patient visits and hospitalisation status at admission and over course of disease, by project (includes confirmed, suspect, probable cases only).
 
 ```{r tble1}
 tble1 <- dta_linelist %>%
@@ -3101,14 +3102,18 @@ gtble3 %>%
 
 
 
-## Figure 3 – Median [IQR] length of stay, per project, stratified by severity
+## Figure 3
+
+Median [IQR] length of stay, per project, stratified by severity
 TODO
 
 ## Table 4
 TODO
 
 
-## Table 5 – Total number of patient visits by case status, ICU admission status, by project (includes confirmed, suspect, probable cases only)
+## Table 5
+
+Total number of patient visits by case status, ICU admission status, by project (includes confirmed, suspect, probable cases only)
 
 ```{r tble5}
 
@@ -3367,7 +3372,6 @@ gtble6 %>%
 
 
 ```{r tble7}
-
 tble7 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
   select(country, project, covid_status, merge_admit, received_oxygen, merge_oxygen) %>%
@@ -3679,6 +3683,7 @@ gtble9 %>%
   tab_header(
     title = 'Total number of patient visits by case status and vent admission status')
 ```
+
 
 ## Other
 
