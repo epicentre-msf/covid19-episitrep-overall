@@ -2833,7 +2833,7 @@ gtble1 <- tble1 %>%
     p_admit_all          = "%") %>% 
   
   tab_spanner(
-    label = 'Hospitalised on admission',
+    label = 'Hospitalised at presentation',
     columns = ends_with('_admitted_admission')) %>%
   
   tab_spanner(
