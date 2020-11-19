@@ -690,10 +690,14 @@ tbl_cfr <- function(dta, x_var){
 
 
 format_nbp <- function(my_N, my_p) {
-  
   my_p <- round(100 * my_p, 1)
-  
   my_string <- ifelse(my_N == 0,
                       "-",
                       glue::glue("{my_N} ({my_p}%)"))
+}
+
+format_med <- function(med, low, high) {
+  rounded <- map_dbl(c("median" = med, "low" = low, "high" = high),
+      ~ round(., 0))
+  formatted <- glue::glue("{rounded['median']} [{rounded['low']}-{rounded['high']}]")
 }
