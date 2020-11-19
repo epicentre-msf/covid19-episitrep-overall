@@ -697,7 +697,12 @@ format_nbp <- function(my_N, my_p) {
 }
 
 format_med <- function(med, low, high) {
-  rounded <- map_dbl(c("median" = med, "low" = low, "high" = high),
-      ~ round(., 0))
-  formatted <- glue::glue("{rounded['median']} [{rounded['low']}-{rounded['high']}]")
+  med  <- round(med,  0)
+  low  <- round(low,  0)
+  high <- round(high, 0)
+  
+  formatted <- ifelse(is.na(med),
+                      "-",
+                      glue::glue("{med} [{low}-{high}]")
+  )
 }
