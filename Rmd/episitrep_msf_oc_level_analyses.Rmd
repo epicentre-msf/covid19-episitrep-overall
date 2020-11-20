@@ -3107,7 +3107,102 @@ Median [IQR] length of stay, per project, stratified by severity
 TODO
 
 ## Table 4
-TODO
+
+```{r tble4}
+tble4 <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  select(country, project, covid_status, merge_admit, sex, age_in_years) %>%
+  group_by(country, project, sex) %>% 
+  summarise(
+    n_patients = n(),
+    n_admis    = sum(merge_admit == "Yes", na.rm = TRUE),
+    
+    n_probable_admis    = sum(covid_status == "Probable" & merge_admit == "Yes", na.rm = TRUE),
+    q_probable_25_admis = quantile(age_in_years[covid_status == "Probable" & merge_admit == "Yes"], c(0.25), na.rm = TRUE),
+    q_probable_05_admis = quantile(age_in_years[covid_status == "Probable" & merge_admit == "Yes"], c(0.5), na.rm = TRUE),
+    q_probable_75_admis = quantile(age_in_years[covid_status == "Probable" & merge_admit == "Yes"], c(0.75), na.rm = TRUE),
+    f_probable_admis    = format_med(q_probable_05_admis, q_probable_25_admis, q_probable_75_admis),
+    
+    n_confirmed_admis    = sum(covid_status == "Confirmed" & merge_admit == "Yes", na.rm = TRUE),
+    q_confirmed_25_admis = quantile(age_in_years[covid_status == "Confirmed" & merge_admit == "Yes"], c(0.25), na.rm = TRUE),
+    q_confirmed_05_admis = quantile(age_in_years[covid_status == "Confirmed" & merge_admit == "Yes"], c(0.5), na.rm = TRUE),
+    q_confirmed_75_admis = quantile(age_in_years[covid_status == "Confirmed" & merge_admit == "Yes"], c(0.75), na.rm = TRUE),
+    f_confirmed_admis = format_med(q_confirmed_05_admis, q_confirmed_25_admis, q_confirmed_75_admis),
+    
+    n_probable_out    = sum(covid_status == "Probable" & merge_admit == "No", na.rm = TRUE),
+    q_probable_25_out = quantile(age_in_years[covid_status == "Probable" & merge_admit == "No"], c(0.25), na.rm = TRUE),
+    q_probable_05_out = quantile(age_in_years[covid_status == "Probable" & merge_admit == "No"], c(0.5), na.rm = TRUE),
+    q_probable_75_out = quantile(age_in_years[covid_status == "Probable" & merge_admit == "No"], c(0.75), na.rm = TRUE),
+    f_probable_out    = format_med(q_probable_05_out, q_probable_25_out, q_probable_75_out),
+    
+    n_confirmed_out    = sum(covid_status == "Confirmed" & merge_admit == "No", na.rm = TRUE),
+    q_confirmed_25_out = quantile(age_in_years[covid_status == "Confirmed" & merge_admit == "No"], c(0.25), na.rm = TRUE),
+    q_confirmed_05_out = quantile(age_in_years[covid_status == "Confirmed" & merge_admit == "No"], c(0.5), na.rm = TRUE),
+    q_confirmed_75_out = quantile(age_in_years[covid_status == "Confirmed" & merge_admit == "No"], c(0.75), na.rm = TRUE),
+    f_confirmed_out    = format_med(q_confirmed_05_out, q_confirmed_25_out, q_confirmed_75_out)
+    ) %>% 
+  select(-starts_with("q_"))
+
+
+gtble4 <- tble4 %>% 
+  gt() %>%
+  cols_label(
+    country    = 'Country',
+    project    = 'Project',
+    n_patients = 'Visits',
+    n_admis    = 'Admissions',
+    
+    n_probable_admis = 'N probable',
+    f_probable_admis = 'Median age probable [IQR]',
+    
+    n_confirmed_admis = 'N confirmed',
+    f_confirmed_admis = 'Median age confirmed [IQR]',
+    
+    n_probable_out = 'N probable',
+    f_probable_out = 'Median age probable [IQR]',
+    
+    n_confirmed_out = 'N confirmed',
+    f_confirmed_out = 'Median age confirmed [IQR]',
+  ) %>% 
+  
+  tab_spanner(
+    label = 'Hospitalised',
+    columns = ends_with("_admis")) %>%  
+  tab_spanner(
+    label = 'Never hospitalised',
+    columns = ends_with('_out')) %>%
+  
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  
+  cols_align(
+    align = 'center',
+    columns = everything()) %>%
+  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2),
+    row.striping.include_table_body = TRUE)  %>% 
+  
+  summary_rows(
+    columns = starts_with("n_"),
+    fns = list(Total = "sum"),
+    decimals = 0) 
+
+gtsave(gtble4, 
+       file.path(path.local.msf.tables.oc, paste0('gtble4', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtble4 %>% 
+  tab_header(
+    title = 'Median age stratified by gender, project and hospitalisation status')
+
+```
 
 
 ## Table 5
