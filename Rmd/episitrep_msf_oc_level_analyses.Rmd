@@ -93,7 +93,6 @@ df_countries <- readRDS(file.path(path.local.data, 'df_countries.RDS'))
 
 
 dta_linelist <- get_msf_linelist(force = TRUE) %>% 
-  clean_msf_dta() %>% 
   prepare_msf_dta(shorten_var_names = TRUE) %>% 
   rename(iso_a3 = country) %>% 
   left_join(df_countries %>% select(continent, region, iso_a3, country), by = 'iso_a3') %>% 

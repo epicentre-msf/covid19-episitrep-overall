@@ -28,20 +28,20 @@ add_brks <- function(x, n = 5, style = "jenks") {
 }
 
 
-label_breaks <- function(breaks, exclusive = FALSE, replace_Inf = TRUE) {
-  
-  if (exclusive){
-    labs <- sprintf("%s-%s", breaks[-length(breaks)], breaks[-1] - 1)
-  } else {
-    labs <- sprintf("%s-%s", frmt_num(breaks[1:length(breaks) - 1]), frmt_num(breaks[2:length(breaks)]))
-  }
-  
-  if(replace_Inf){
-    labs <- gsub("-Inf", "+", labs)
-  }
-  
-  return(labs)
-}
+#label_breaks <- function(breaks, exclusive = FALSE, replace_Inf = TRUE) {
+#  
+#  if (exclusive){
+#    labs <- sprintf("%s-%s", breaks[-length(breaks)], breaks[-1] - 1)
+#  } else {
+#    labs <- sprintf("%s-%s", frmt_num(breaks[1:length(breaks) - 1]), frmt_num(breaks[2:length(breaks)]))
+#  }
+#  
+#  if(replace_Inf){
+#    labs <- gsub("-Inf", "+", labs)
+#  }
+#  
+#  return(labs)
+#}
 
 
 

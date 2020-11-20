@@ -191,51 +191,51 @@ attach_prefix <- function(var_in, suffix_var_out) {
 # Specific functions for worldwide ECDC dataset
 # --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
 
-prepare_ecdc_dta <- function(dta){
-  
-  dta <- dta %>% 
-    dplyr::mutate(date = lubridate::make_date(year, month, day)-1) %>% 
-    dplyr::rename(geoid = geoId, country_ecdc = countriesAndTerritories, iso_a3 = countryterritoryCode, population_2019 = popData2019) %>% 
-    dplyr::arrange(date) %>%
-    dplyr::mutate_at(dplyr::vars(cases, deaths), ~ifelse(. < 0, 0L, .)) %>% 
-    dplyr::mutate(
-      country = countrycode::countrycode(iso_a3, origin = "iso3c", destination = "country.name"),
-      # Complete missing infos
-      country = dplyr::case_when(
-        country == "Congo - Kinshasa" ~ "Democratic Republic of the Congo", 
-        country == "Congo - Brazzaville" ~ "Republic of Congo", 
-        country_ecdc == 'Cases_on_an_international_conveyance_Japan' ~ 'Cruise Ship', 
-        is.na(country) ~ gsub('_', ' ', country_ecdc), 
-        TRUE ~ country), 
-      iso_a3 = dplyr::case_when(
-        country == 'Kosovo' ~ 'XKX', 
-        country == 'Anguilla' ~ 'AIA', 
-        country == 'Bonaire, Saint Eustatius and Saba' ~ 'BES', 
-        country == 'Falkland Islands (Malvinas)' ~ 'FLK', 
-        country == 'Montserrat' ~ 'MSR',  
-        country == 'Taiwan' ~ 'TWN', 
-        country == 'Western Sahara' ~ 'ESH', 
-        country == 'Cruise Ship' ~ NA_character_, 
-        TRUE ~ iso_a3), 
-      continent = countrycode::countrycode(iso_a3, origin = 'iso3c', destination = 'continent'), 
-      continent = dplyr::case_when(
-        country == 'Kosovo' ~ 'Europe', 
-        country == 'Cruise Ship' ~ 'Undefined', 
-        is.na(country) ~ "Unknown", 
-        TRUE ~ continent), 
-      region = countrycode::countrycode(iso_a3, origin = "iso3c", destination = "region23"), 
-      region = dplyr::case_when(
-        country == 'Kosovo' ~ 'Southern Europe', 
-        country == 'Cruise Ship' ~ 'Undefined', 
-        is.na(country) ~ "Unknown", 
-        TRUE ~ region), 
-      source = "ECDC"
-    ) %>% 
-    dplyr::select(dateRep, date, country_ecdc:geoid, country:region, iso_a3, cases, deaths, population_2019, source)
-  
-  return(dta)
-  
-}
+#prepare_ecdc_dta <- function(dta){
+#  
+#  dta <- dta %>% 
+#    dplyr::mutate(date = lubridate::make_date(year, month, day)-1) %>% 
+#    dplyr::rename(geoid = geoId, country_ecdc = countriesAndTerritories, iso_a3 = countryterritoryCode, population_2019 = popData2019) %>% 
+#    dplyr::arrange(date) %>%
+#    dplyr::mutate_at(dplyr::vars(cases, deaths), ~ifelse(. < 0, 0L, .)) %>% 
+#    dplyr::mutate(
+#      country = countrycode::countrycode(iso_a3, origin = "iso3c", destination = "country.name"),
+#      # Complete missing infos
+#      country = dplyr::case_when(
+#        country == "Congo - Kinshasa" ~ "Democratic Republic of the Congo", 
+#        country == "Congo - Brazzaville" ~ "Republic of Congo", 
+#        country_ecdc == 'Cases_on_an_international_conveyance_Japan' ~ 'Cruise Ship', 
+#        is.na(country) ~ gsub('_', ' ', country_ecdc), 
+#        TRUE ~ country), 
+#      iso_a3 = dplyr::case_when(
+#        country == 'Kosovo' ~ 'XKX', 
+#        country == 'Anguilla' ~ 'AIA', 
+#        country == 'Bonaire, Saint Eustatius and Saba' ~ 'BES', 
+#        country == 'Falkland Islands (Malvinas)' ~ 'FLK', 
+#        country == 'Montserrat' ~ 'MSR',  
+#        country == 'Taiwan' ~ 'TWN', 
+#        country == 'Western Sahara' ~ 'ESH', 
+#        country == 'Cruise Ship' ~ NA_character_, 
+#        TRUE ~ iso_a3), 
+#      continent = countrycode::countrycode(iso_a3, origin = 'iso3c', destination = 'continent'), 
+#      continent = dplyr::case_when(
+#        country == 'Kosovo' ~ 'Europe', 
+#        country == 'Cruise Ship' ~ 'Undefined', 
+#        is.na(country) ~ "Unknown", 
+#        TRUE ~ continent), 
+#      region = countrycode::countrycode(iso_a3, origin = "iso3c", destination = "region23"), 
+#      region = dplyr::case_when(
+#        country == 'Kosovo' ~ 'Southern Europe', 
+#        country == 'Cruise Ship' ~ 'Undefined', 
+#        is.na(country) ~ "Unknown", 
+#        TRUE ~ region), 
+#      source = "ECDC"
+#    ) %>% 
+#    dplyr::select(dateRep, date, country_ecdc:geoid, country:region, iso_a3, cases, deaths, population_2019, source)
+#  
+#  return(dta)
+#  
+#}
 
 
 
@@ -245,123 +245,123 @@ prepare_ecdc_dta <- function(dta){
 # Specific functions for MSF linelist dataset
 # --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
 
-clean_msf_dta <- function(dta) {
-  
-  dta <- dta %>% 
-    mutate(
-        age_in_years = case_when(
-          age_in_years > 110 ~ NA_real_, 
-          TRUE ~ age_in_years), 
-      Comcond_immuno = case_when(
-        grepl('Positive', MSF_hiv_status) ~ 'Yes', 
-        TRUE ~ Comcond_immuno), 
-      Comcond_cardi = case_when(
-        MSF_hypertension == 'Yes' ~ 'Yes', 
-        TRUE ~ Comcond_cardi))
-  
-  return(dta)
-  
-}
+#clean_msf_dta <- function(dta) {
+#  
+#  dta <- dta %>% 
+#    mutate(
+#        age_in_years = case_when(
+#          age_in_years > 110 ~ NA_real_, 
+#          TRUE ~ age_in_years), 
+#      Comcond_immuno = case_when(
+#        grepl('Positive', MSF_hiv_status) ~ 'Yes', 
+#        TRUE ~ Comcond_immuno), 
+#      Comcond_cardi = case_when(
+#        MSF_hypertension == 'Yes' ~ 'Yes', 
+#        TRUE ~ Comcond_cardi))
+#  
+#  return(dta)
+#  
+#}
 
 
-prepare_msf_dta <- function(dta, shorten_var_names = FALSE){
-  
-  # Create variable levels
-  levels_covid_status <- c('Confirmed', 'Probable', 'Suspected', 'Not a case', '(Unknown)')
-  levels_outcome_status <- c('Cured', 'Died', 'Left against medical advice', 'Transferred', 'Sent back home', 'Other')
-  levels_ynu <- c('Yes', 'No', '(Unknown)')
-  
-  
-  # Covid status
-  dta <- dta %>% 
-    mutate(
-      MSF_covid_status = factor(MSF_covid_status, levels = levels_covid_status) %>% forcats::fct_explicit_na(na_level = '(Unknown)'))
+#prepare_msf_dta <- function(dta, shorten_var_names = FALSE){
+#  
+#  # Create variable levels
+#  levels_covid_status <- c('Confirmed', 'Probable', 'Suspected', 'Not a case', '(Unknown)')
+#  levels_outcome_status <- c('Cured', 'Died', 'Left against medical advice', 'Transferred', 'Sent back home', 'Other')
+#  levels_ynu <- c('Yes', 'No', '(Unknown)')
   
   
-  # Dates (and weeks)
-  dta <- dta %>% 
-    mutate(
-      MSF_date_consultation = as.Date(MSF_date_consultation), 
-      outcome_patcourse_status = factor(outcome_patcourse_status, levels = levels_outcome_status) %>% forcats::fct_explicit_na(na_level = '(Pending/Unknown)'),
-      epi_week_report = make_epiweek_date(report_date),
-      epi_week_consultation = make_epiweek_date(MSF_date_consultation),
-      epi_week_admission = make_epiweek_date(patcourse_presHCF),
-      epi_week_onset = make_epiweek_date(patcourse_dateonset)
-    )
+#  # Covid status
+#  dta <- dta %>% 
+#    mutate(
+#      MSF_covid_status = factor(MSF_covid_status, levels = levels_covid_status) %>% forcats::fct_explicit_na(na_level = '(Unknown)'))
+#  
+#  
+#  # Dates (and weeks)
+#  dta <- dta %>% 
+#    mutate(
+#      MSF_date_consultation = as.Date(MSF_date_consultation), 
+#      outcome_patcourse_status = factor(outcome_patcourse_status, levels = levels_outcome_status) %>% forcats::fct_explicit_na(na_level = '(Pending/Unknown)'),
+#      epi_week_report = make_epiweek_date(report_date),
+#      epi_week_consultation = make_epiweek_date(MSF_date_consultation),
+#      epi_week_admission = make_epiweek_date(patcourse_presHCF),
+#      epi_week_onset = make_epiweek_date(patcourse_dateonset)
+#    )
   
   
-  # Age
-  age_breaks_5 <- c(0, 5, 15, 45, 65, Inf)
-  age_labels_5 <- label_breaks(age_breaks_5, exclusive = TRUE)
-  
-  age_breaks_9 <- c(seq(0, 80, 10), Inf)
-  age_labels_9 <- label_breaks(age_breaks_9, exclusive = TRUE)
-  
-  dta <- dta %>% 
-    mutate(
-      age_in_years = floor(age_in_years), 
-      age_5gp = cut(age_in_years, breaks = age_breaks_5, labels = age_labels_5, include.lowest = TRUE, right = FALSE),
-      age_9gp = cut(age_in_years, breaks = age_breaks_9, labels = age_labels_9, include.lowest = TRUE, right = FALSE)
-    )
-  
-  
-  # Recoding Comorbidities as Yes/No
-  dta <- dta %>% 
-    mutate(
-      MSF_malaria = case_when(
-        MSF_malaria == 'Positive' ~ 'Yes', 
-        MSF_malaria == 'Negative' ~ 'No', 
-        MSF_malaria %in% c('Inconclusive', 'Not done') ~ 'Unknown', 
-        TRUE ~ MSF_malaria), 
-      MSF_hiv_status = case_when(
-        MSF_hiv_status %in% c('Positive (no ARV)', 'Positive (on ART)', 'Positive (unknown)') ~ 'Yes', 
-        MSF_hiv_status == 'Negative' ~ 'No', 
-        TRUE ~ MSF_hiv_status), 
-      MSF_tb_active = case_when(
-        MSF_tb_active %in% c('Yes (currently no treatment)', 'Yes (currently on treatment)', 'Yes (unknown)') ~ 'Yes', 
-        TRUE ~ MSF_tb_active), 
-      MSF_smoking = case_when(
-        MSF_smoking %in% c('Yes (current)', 'Yes (former)') ~ 'Yes', 
-        TRUE ~ MSF_smoking))
-  
-  
-  # Recode presence of comorbidities including the MSF ones
-  Comcond_count <- rowSums(select(dta, starts_with('Comcond_'), MSF_hiv_status, MSF_hypertension, MSF_tb_active, MSF_malaria, MSF_malnutrition, MSF_smoking) == "Yes", na.rm = TRUE)
-  
-  Comcond_01 <- ifelse(Comcond_count > 0, 1, 0)
-  
-  dta <- cbind(dta, Comcond_count, Comcond_01)
-  
-  
-  # Patients' care variables
-  dta <- dta %>% 
-    mutate(
-      patcourse_admit = factor(patcourse_admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = levels_ynu[3]), 
-      outcome_patcourse_admit = factor(outcome_patcourse_admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = '(Unknown)'), 
-      merge_admit = case_when(
-        patcourse_admit == 'Yes' ~ levels_ynu[1], 
-        outcome_patcourse_admit == 'Yes' ~ levels_ynu[1], 
-        is.na(outcome_patcourse_admit) ~ levels_ynu[3], 
-        TRUE ~ levels_ynu[2]) %>% factor(levels = levels_ynu), 
-      merge_oxygen = recode_care(MSF_received_oxygen, MSF_outcome_received_oxygen), 
-      merge_icu    = recode_care(patcourse_icu , outcome_patcourse_icu), 
-      merge_vent   = recode_care(patcourse_vent, outcome_patcourse_vent), 
-      merge_ecmo   = recode_care(patcourse_ecmo, outcome_patcourse_ecmo)) 
-  
-
-  # Shorten variables names to make easy to handle them
-  if (shorten_var_names) {
-    
-    var_names_stub <- c('^patinfo_', '^patcourse_', '^MSF_', '_patcourse')
-    
-    for (i in var_names_stub) {
-      names(dta) <- gsub(i, '', names(dta))
-    }
-    
-  }
-  
-  return(as_tibble(dta))
-}
+#  # Age
+#  age_breaks_5 <- c(0, 5, 15, 45, 65, Inf)
+#  age_labels_5 <- label_breaks(age_breaks_5, exclusive = TRUE)
+#  
+#  age_breaks_9 <- c(seq(0, 80, 10), Inf)
+#  age_labels_9 <- label_breaks(age_breaks_9, exclusive = TRUE)
+#  
+#  dta <- dta %>% 
+#    mutate(
+#      age_in_years = floor(age_in_years), 
+#      age_5gp = cut(age_in_years, breaks = age_breaks_5, labels = age_labels_5, include.lowest = TRUE, right = FALSE),
+#      age_9gp = cut(age_in_years, breaks = age_breaks_9, labels = age_labels_9, include.lowest = TRUE, right = FALSE)
+#    )
+#  
+#  
+#  # Recoding Comorbidities as Yes/No
+#  dta <- dta %>% 
+#    mutate(
+#      MSF_malaria = case_when(
+#        MSF_malaria == 'Positive' ~ 'Yes', 
+#        MSF_malaria == 'Negative' ~ 'No', 
+#        MSF_malaria %in% c('Inconclusive', 'Not done') ~ 'Unknown', 
+#        TRUE ~ MSF_malaria), 
+#      MSF_hiv_status = case_when(
+#        MSF_hiv_status %in% c('Positive (no ARV)', 'Positive (on ART)', 'Positive (unknown)') ~ 'Yes', 
+#        MSF_hiv_status == 'Negative' ~ 'No', 
+#        TRUE ~ MSF_hiv_status), 
+#      MSF_tb_active = case_when(
+#        MSF_tb_active %in% c('Yes (currently no treatment)', 'Yes (currently on treatment)', 'Yes (unknown)') ~ 'Yes', 
+#       TRUE ~ MSF_tb_active), 
+#     MSF_smoking = case_when(
+#        MSF_smoking %in% c('Yes (current)', 'Yes (former)') ~ 'Yes', 
+#        TRUE ~ MSF_smoking))
+#  
+#  
+#  # Recode presence of comorbidities including the MSF ones
+#  Comcond_count <- rowSums(select(dta, starts_with('Comcond_'), MSF_hiv_status, MSF_hypertension, MSF_tb_active, MSF_malaria, MSF_malnutrition, MSF_smoking) == "Yes", na.rm = TRUE)
+#  
+#  Comcond_01 <- ifelse(Comcond_count > 0, 1, 0)
+#  
+#  dta <- cbind(dta, Comcond_count, Comcond_01)
+#  
+#  
+#  # Patients' care variables
+#  dta <- dta %>% 
+#    mutate(
+#      patcourse_admit = factor(patcourse_admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = levels_ynu[3]), 
+#      outcome_patcourse_admit = factor(outcome_patcourse_admit, levels = levels_ynu) %>% forcats::fct_explicit_na(na_level = '(Unknown)'), 
+#      merge_admit = case_when(
+#        patcourse_admit == 'Yes' ~ levels_ynu[1], 
+#        outcome_patcourse_admit == 'Yes' ~ levels_ynu[1], 
+#        is.na(outcome_patcourse_admit) ~ levels_ynu[3], 
+#        TRUE ~ levels_ynu[2]) %>% factor(levels = levels_ynu), 
+#      merge_oxygen = recode_care(MSF_received_oxygen, MSF_outcome_received_oxygen), 
+#      merge_icu    = recode_care(patcourse_icu , outcome_patcourse_icu), 
+#      merge_vent   = recode_care(patcourse_vent, outcome_patcourse_vent), 
+#      merge_ecmo   = recode_care(patcourse_ecmo, outcome_patcourse_ecmo)) 
+#  
+#
+#  # Shorten variables names to make easy to handle them
+#  if (shorten_var_names) {
+#    
+#    var_names_stub <- c('^patinfo_', '^patcourse_', '^MSF_', '_patcourse')
+#    
+#    for (i in var_names_stub) {
+#      names(dta) <- gsub(i, '', names(dta))
+#    }
+#    
+#  }
+#  
+#  return(as_tibble(dta))
+#}
 
 
 prepare_msf_dta_comcond <- function(dta){
@@ -381,15 +381,15 @@ df_labels_comcond <- data.frame(
 
 
 
-recode_care <- function(var1, var2){
-  case_when(
-    var1 == 'Yes' ~ 'Yes', 
-    var2 == 'Yes' ~ 'Yes', 
-    var1 == 'No' & (var2 == 'Unknown' | is.na(var2)) ~ 'No at admission then not reported', 
-    (var1 == 'No' | is.na(var1)) & var2 == 'No' ~ 'No at any time', 
-    TRUE ~ 'Not reported') %>% 
-    factor(levels = c('Yes', 'No at admission then not reported', 'No at any time', 'Not reported'))
-}
+#recode_care <- function(var1, var2){
+#  case_when(
+#    var1 == 'Yes' ~ 'Yes', 
+#    var2 == 'Yes' ~ 'Yes', 
+#    var1 == 'No' & (var2 == 'Unknown' | is.na(var2)) ~ 'No at admission then not reported', 
+#    (var1 == 'No' | is.na(var1)) & var2 == 'No' ~ 'No at any time', 
+#    TRUE ~ 'Not reported') %>% 
+#    factor(levels = c('Yes', 'No at admission then not reported', 'No at any time', 'Not reported'))
+#}
 
 
 
