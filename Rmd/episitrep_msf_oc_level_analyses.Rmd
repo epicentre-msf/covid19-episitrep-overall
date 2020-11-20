@@ -2840,7 +2840,7 @@ gtble1 <- tble1 %>%
     columns = ends_with('_admited_post')) %>%
   
   tab_spanner(
-    label = 'Hospitalised (at any time)',
+    label = 'Hospitalised (any time)',
     columns = ends_with('_admit_all')) %>%
   
   fmt_missing(
@@ -3209,8 +3209,8 @@ gtble4 %>%
 
 Total number of patient visits by case status, ICU admission status, by project (includes confirmed, suspect, probable cases only)
 
-```{r tble5_bis}
-tble5_bis <- dta_linelist %>%
+```{r tble5}
+tble5 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
   select(country, project, merge_admit, icu, merge_icu) %>%
   group_by(country, project) %>% 
@@ -3231,7 +3231,7 @@ tble5_bis <- dta_linelist %>%
 
 
 
-gtble5_bis <-  tble5_bis %>% 
+gtble5 <-  tble5 %>% 
   gt() %>%
   cols_label(
     country    = 'Country',
@@ -3263,20 +3263,22 @@ gtble5_bis <-  tble5_bis %>%
     fns = list(Total = "sum"),
     decimals = 0) 
 
-gtsave(gtble5_bis, 
-       file.path(path.local.msf.tables.oc, paste0('gtble5_bis', '_', week_report, '.html')), 
+gtsave(gtble5, 
+       file.path(path.local.msf.tables.oc, paste0('gtble5', '_', week_report, '.html')), 
        inline_css = TRUE) %>% 
   invisible()
 
 
-gtble5_bis %>% 
+gtble5 %>% 
   tab_header(
     title = 'Total number of patient visits, admitted, and admitted in ICU')
 ```
 
-```{r tble5}
 
-tble5 <- dta_linelist %>%
+## Table 6
+
+```{r tble6}
+tble6 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
   select(country, project, covid_status, merge_admit, icu, merge_icu) %>%
   group_by(country, project) %>% 
@@ -3332,7 +3334,7 @@ tble5 <- dta_linelist %>%
 
 
 
-gtble5 <-  tble5 %>% 
+gtble6 <-  tble6 %>% 
   gt() %>%
   cols_label(
     country          = 'Country',
@@ -3385,23 +3387,23 @@ gtble5 <-  tble5 %>%
     fns = list(Total = "sum"),
     decimals = 0) 
 
-gtsave(gtble5, 
-       file.path(path.local.msf.tables.oc, paste0('gtble5', '_', week_report, '.html')), 
+gtsave(gtble6, 
+       file.path(path.local.msf.tables.oc, paste0('gtble6', '_', week_report, '.html')), 
        inline_css = TRUE) %>% 
   invisible()
 
 
-gtble5 %>% 
+gtble6 %>% 
   tab_header(
     title = 'Total number of patient visits by case status and ICU admission status')
 
 ```
 
 
-## Table 6
+## Table 7
 
-```{r tble6}
-tble6 <- dta_linelist %>%
+```{r tble7}
+tble7 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
   select(country, project, merge_admit, received_oxygen, merge_oxygen) %>%
   group_by(country, project) %>% 
@@ -3423,7 +3425,7 @@ tble6 <- dta_linelist %>%
 
 
 
-gtble6 <-  tble6 %>% 
+gtble7 <-  tble7 %>% 
   gt() %>%
   cols_label(
     country    = 'Country',
@@ -3455,24 +3457,24 @@ gtble6 <-  tble6 %>%
     fns = list(Total = "sum"),
     decimals = 0) 
 
-gtsave(gtble6, 
-       file.path(path.local.msf.tables.oc, paste0('gtble6', '_', week_report, '.html')), 
+gtsave(gtble7, 
+       file.path(path.local.msf.tables.oc, paste0('gtble7', '_', week_report, '.html')), 
        inline_css = TRUE) %>% 
   invisible()
 
 
-gtble6 %>% 
+gtble7 %>% 
   tab_header(
     title = 'Total number of patient visits and oxygen status')
 
 ```
 
 
-## Table 7
+## Table 8
 
 
-```{r tble7}
-tble7 <- dta_linelist %>%
+```{r tble8}
+tble8 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
   select(country, project, covid_status, merge_admit, received_oxygen, merge_oxygen) %>%
   group_by(country, project) %>% 
@@ -3527,7 +3529,7 @@ tble7 <- dta_linelist %>%
 
 
 
-gtble7 <- tble7 %>% 
+gtble8 <- tble8 %>% 
   gt() %>%
   cols_label(
     country          = 'Country',
@@ -3580,13 +3582,13 @@ gtble7 <- tble7 %>%
     decimals = 0) 
 
 
-gtsave(gtble7, 
-       file.path(path.local.msf.tables.oc, paste0('gtble7', '_', week_report, '.html')), 
+gtsave(gtble8, 
+       file.path(path.local.msf.tables.oc, paste0('gtble8', '_', week_report, '.html')), 
        inline_css = TRUE) %>% 
   invisible()
 
 
-gtble7 %>% 
+gtble8 %>% 
   tab_header(
     title = 'Total number of patient visits by case status and received_oxygen admission status')
 ```
@@ -3594,9 +3596,12 @@ gtble7 %>%
 
 ## Table 9
 
+No data for that
 
-```{r tble9_bis}
-tble9_bis <- dta_linelist %>%
+## Table 10
+
+```{r tble10}
+tble10 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
   select(country, project, merge_admit, vent, merge_vent) %>%
   group_by(country, project) %>% 
@@ -3616,9 +3621,7 @@ tble9_bis <- dta_linelist %>%
           m_vent_admission,  m_vent_later)
 
 
-
-
-gtble9_bis <-  tble9_bis %>% 
+gtble10 <-  tble10 %>% 
   gt() %>%
   cols_label(
     country    = 'Country',
@@ -3650,22 +3653,28 @@ gtble9_bis <-  tble9_bis %>%
     fns = list(Total = "sum"),
     decimals = 0) 
 
-gtsave(gtble9_bis, 
-       file.path(path.local.msf.tables.oc, paste0('gtble9_bis', '_', week_report, '.html')), 
+gtsave(gtble10, 
+       file.path(path.local.msf.tables.oc, paste0('gtble10', '_', week_report, '.html')), 
        inline_css = TRUE) %>% 
   invisible()
 
 
-gtble9_bis %>% 
+gtble10 %>% 
   tab_header(
     title = 'Total number of patient visits and ventilation status')
 
 ```
 
 
-```{r tble9}
 
-tble9 <- dta_linelist %>%
+## Table 11 
+TODO
+
+
+## Table 12
+
+```{r tble12}
+tble12 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
   select(country, project, covid_status, merge_admit, vent, merge_vent) %>%
   group_by(country, project) %>% 
@@ -3720,7 +3729,7 @@ tble9 <- dta_linelist %>%
 
 
 
-gtble9 <- tble9 %>% 
+gtble12 <- tble12 %>% 
   gt() %>%
   cols_label(
     country    = 'Country',
@@ -3773,16 +3782,185 @@ gtble9 <- tble9 %>%
     decimals = 0) 
 
 
-gtsave(gtble9, 
-       file.path(path.local.msf.tables.oc, paste0('gtble9', '_', week_report, '.html')), 
+gtsave(gtble12, 
+       file.path(path.local.msf.tables.oc, paste0('gtble12', '_', week_report, '.html')), 
        inline_css = TRUE) %>% 
   invisible()
 
 
-gtble9 %>% 
+gtble12 %>% 
   tab_header(
     title = 'Total number of patient visits by case status and vent admission status')
 ```
+
+
+## Table 13
+
+```{r tble13}
+tble13 <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  select(country, project, merge_admit, covid_status, severity) %>%
+  group_by(country, project) %>% 
+  summarise(
+    n_suspected = sum(covid_status == "Suspected", na.rm = TRUE),
+    n_probable  = sum(covid_status == "Probable", na.rm = TRUE),
+    n_confirmed = sum(covid_status == "Confirmed", na.rm = TRUE),
+    
+    n_admis = sum(merge_admit == "Yes", na.rm = TRUE),
+    
+    n_mild     = sum(severity == "Mild", na.rm = TRUE),
+    n_moderate = sum(severity == "Moderate", na.rm = TRUE),
+    n_severe   = sum(severity == "Severe", na.rm = TRUE),
+    n_critical = sum(severity == "Critical", na.rm = TRUE),
+    
+    n_missing_severity = sum(is.na(severity)),
+    
+    n_patients = n())
+    
+
+gtble13
+tble13 %>% 
+  gt() %>%
+  cols_label(
+    country    = 'Country',
+    project    = 'Project',
+ 
+    n_suspected = "Suspected",
+    n_probable  = "Probable",
+    n_confirmed = "Confirmed",
+    
+    n_admis = "Hospitalised",
+    
+    n_mild     = "Mild",
+    n_moderate = "Moderate",
+    n_severe   = "Severe",
+    n_critical = "Critical",
+    
+    n_missing_severity = "Missing data severity",
+    n_patients = "Total visits") %>% 
+  
+  tab_spanner(
+    label = 'Total presentation',
+    columns = vars(n_suspected, n_probable, n_confirmed)) %>%  
+  tab_spanner(
+    label = 'Severity',
+    columns = vars(n_mild, n_moderate, n_severe, n_critical)) %>%
+  
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  
+  cols_align(
+    align = 'center',
+    columns = everything()) %>%
+  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2),
+    row.striping.include_table_body = TRUE)  %>% 
+  
+  summary_rows(
+    columns = starts_with("n_"),
+    fns = list(Total = "sum"),
+    decimals = 0) 
+
+gtsave(gtble13, 
+       file.path(path.local.msf.tables.oc, paste0('gtble13', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtble13 %>% 
+  tab_header(
+    title = 'Case severity per project')
+
+```
+
+
+## Table 14
+
+```{r tble14}
+tble14 <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  select(country, project, merge_admit, covid_status, severity, outcome_status, merge_icu) %>%
+  group_by(country, project) %>% 
+  summarise(
+    n_suspected = sum(covid_status == "Suspected" & outcome_status == "Died", na.rm = TRUE),
+    n_probable  = sum(covid_status == "Probable"  & outcome_status == "Died", na.rm = TRUE),
+    n_confirmed = sum(covid_status == "Confirmed" & outcome_status == "Died", na.rm = TRUE),
+    
+    n_admis = sum(merge_admit == "Yes", na.rm = TRUE),
+    
+    n_mild     = sum(severity == "Mild", na.rm = TRUE),
+    n_moderate = sum(severity == "Moderate", na.rm = TRUE),
+    n_severe   = sum(severity == "Severe", na.rm = TRUE),
+    n_critical = sum(severity == "Critical", na.rm = TRUE),
+    
+    n_deaths_icu = sum(outcome_status == "Died" & merge_icu == "Yes", na.rm = TRUE),
+    
+    n_patients = n())
+    
+
+gtble14 <- tble14 %>% 
+  gt() %>%
+  cols_label(
+    country    = 'Country',
+    project    = 'Project',
+ 
+    n_suspected = "Suspected",
+    n_probable  = "Probable",
+    n_confirmed = "Confirmed",
+    
+    n_admis = "Hospitalised",
+    
+    n_mild     = "Mild",
+    n_moderate = "Moderate",
+    n_severe   = "Severe",
+    n_critical = "Critical",
+    
+    n_deaths_icu = "Death amond ICU patients",
+    n_patients = "Total visits") %>% 
+  
+  tab_spanner(
+    label = 'Total presentation',
+    columns = vars(n_suspected, n_probable, n_confirmed)) %>%  
+  tab_spanner(
+    label = 'Death by severity',
+    columns = vars(n_mild, n_moderate, n_severe, n_critical)) %>%
+  
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  
+  cols_align(
+    align = 'center',
+    columns = everything()) %>%
+  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2),
+    row.striping.include_table_body = TRUE)  %>% 
+  
+  summary_rows(
+    columns = starts_with("n_"),
+    fns = list(Total = "sum"),
+    decimals = 0) 
+
+gtsave(gtble14, 
+       file.path(path.local.msf.tables.oc, paste0('gtble14', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtble14 %>% 
+  tab_header(
+    title = 'Mortality by severity')
+```
+
 
 
 ## Other
