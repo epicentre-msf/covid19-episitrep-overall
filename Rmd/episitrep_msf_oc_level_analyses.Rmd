@@ -3818,8 +3818,7 @@ tble13 <- dta_linelist %>%
     n_patients = n())
     
 
-gtble13
-tble13 %>% 
+gtble13 <- tble13 %>% 
   gt() %>%
   cols_label(
     country    = 'Country',
@@ -3961,6 +3960,133 @@ gtble14 %>%
     title = 'Mortality by severity')
 ```
 
+
+## Table 15
+
+```{r tble15}
+list_comorb <- c("Comcond_diabetes", "hypertension", "Comcond_renal")
+
+
+tble15 <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  select(country, project, merge_admit, Comcond_01, Comcond_diabetes, hypertension,
+         Comcond_renal, outcome_status) %>%
+  group_by(country, project) %>% 
+  summarise(n_comorb = sum(Comcond_01 == 1, na.rm = TRUE),
+            p_comorb = n_comorb / n(),
+            a_comorb = format_nbp(n_comorb, p_comorb),
+            
+            n_comorb_hospi = sum(Comcond_01 == 1 & merge_admit == "Yes", na.rm = TRUE), 
+            p_comorb_hospi = n_comorb_hospi / n_comorb,
+            a_comorb_hospi = format_nbp(n_comorb_hospi, p_comorb_hospi),
+            
+            n_comorb_death = sum(Comcond_01 == 1 & outcome_status == "Died", na.rm = TRUE), 
+            p_comorb_death = n_comorb_death / n_comorb,
+            a_comorb_death = format_nbp(n_comorb_death, p_comorb_death),
+            
+            
+            n_diabetes = sum(Comcond_diabetes == "Yes", na.rm = TRUE),
+            p_diabetes = n_diabetes / n_comorb,
+            a_diabetes = format_nbp(n_diabetes, p_diabetes),
+            
+            n_diabetes_hospi = sum(Comcond_diabetes == "Yes" & merge_admit == "Yes", na.rm = TRUE),
+            p_diabetes_hospi = n_diabetes_hospi / n_diabetes,
+            a_diabetes_hospi = format_nbp(n_diabetes_hospi, p_diabetes),
+            
+            n_diabetes_death = sum(Comcond_diabetes == "Yes" & outcome_status == "Died", na.rm = TRUE),
+            p_diabetes_death = n_diabetes_death / n_diabetes,
+            a_diabetes_death = format_nbp(n_diabetes_death, p_diabetes),
+            
+            
+            n_hypertension  = sum(hypertension == "Yes", na.rm = TRUE),
+            p_hypertension  = n_hypertension / n_comorb,
+            a_hypertension  = format_nbp(n_hypertension, p_hypertension),
+            
+            n_hypertension_hospi  = sum(hypertension == "Yes" & merge_admit == "Yes", na.rm = TRUE),
+            p_hypertension_hospi  = n_hypertension_hospi / n_hypertension,
+            a_hypertension_hospi  = format_nbp(n_hypertension_hospi, p_hypertension),
+            
+            n_hypertension_death  = sum(hypertension == "Yes" & outcome_status == "Died", na.rm = TRUE),
+            p_hypertension_death  = n_hypertension_death / n_hypertension,
+            a_hypertension_death  = format_nbp(n_hypertension_death, p_hypertension),
+            
+            
+            n_chronic_renal = sum(Comcond_renal == "Yes", na.rm = TRUE),
+            p_chronic_renal = n_chronic_renal / n_comorb,
+            a_chronic_renal = format_nbp(n_chronic_renal, p_chronic_renal),
+            
+            n_chronic_renal_hospi = sum(Comcond_renal == "Yes" & merge_admit == "Yes", na.rm = TRUE),
+            p_chronic_renal_hospi = n_chronic_renal_hospi / n_chronic_renal,
+            a_chronic_renal_hospi = format_nbp(n_chronic_renal_hospi, p_chronic_renal),
+            
+            n_chronic_renal_death = sum(Comcond_renal == "Yes" & outcome_status == "Died", na.rm = TRUE),
+            p_chronic_renal_death = n_chronic_renal_death / n_chronic_renal,
+            a_chronic_renal_death = format_nbp(n_chronic_renal_death, p_chronic_renal)
+            ) %>% 
+  select(country, project, starts_with("a_")) 
+
+            
+            
+gtble15 <- tble15 %>% 
+  gt() %>%
+  cols_label(
+    country    = 'Country',
+    project    = 'Project',
+    
+    a_comorb       = 'N' ,
+    a_comorb_hospi = 'Hospitalised',
+    a_comorb_death = 'Deceased',
+    
+    a_diabetes       = 'N' ,
+    a_diabetes_hospi = 'Hospitalised',
+    a_diabetes_death = 'Deceased',
+    
+    a_hypertension       = 'N' ,
+    a_hypertension_hospi = 'Hospitalised',
+    a_hypertension_death = 'Deceased',
+    
+    a_chronic_renal       = 'N' ,
+    a_chronic_renal_hospi = 'Hospitalised',
+    a_chronic_renal_death = 'Deceased') %>% 
+  
+  tab_spanner(
+    label = 'At least one documented comorbidity',
+    columns = vars(a_comorb, a_comorb_hospi, a_comorb_death)) %>%  
+  tab_spanner(
+    label = 'Diabete',
+    columns = contains("_diabetes")) %>%
+  tab_spanner(
+    label = 'Hypertension',
+    columns = contains("_hypertension")) %>%
+  tab_spanner(
+    label = 'Chronic renal',
+    columns = contains("_chronic_renal")) %>%
+  
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  
+  cols_align(
+    align = 'center',
+    columns = everything()) %>%
+  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2),
+    row.striping.include_table_body = TRUE)
+
+gtsave(gtble15, 
+       file.path(path.local.msf.tables.oc, paste0('gtble15', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtble15 %>% 
+  tab_header(
+    title = 'Number of patients with comorbidities and proportion of hospitalizations and deaths')
+```
 
 
 ## Other
