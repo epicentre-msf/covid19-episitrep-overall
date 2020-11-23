@@ -4089,6 +4089,136 @@ gtble15 %>%
 ```
 
 
+
+## Table 16
+```{r tble16}
+
+list_coinf <- c("malaria", "hiv_status", "tb_active")
+
+
+tble16 <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  select(country, project, merge_admit, outcome_status, malaria, hiv_status, tb_active) %>%
+  group_by(country, project) %>% 
+  mutate(coinf = ifelse(malaria == "Yes" | hiv_status == "Yes" | tb_active == "Yes",
+                        1, 0)) %>% 
+  summarise(n_coinf = sum(coinf == 1, na.rm = TRUE),
+            p_coinf = n_coinf / n(),
+            a_coinf = format_nbp(n_coinf, p_coinf),
+            
+            n_coinf_hospi = sum(coinf == 1 & merge_admit == "Yes", na.rm = TRUE), 
+            p_coinf_hospi = n_coinf_hospi / n_coinf,
+            a_coinf_hospi = format_nbp(n_coinf_hospi, p_coinf_hospi),
+            
+            n_coinf_death = sum(coinf == 1 & outcome_status == "Died", na.rm = TRUE), 
+            p_coinf_death = n_coinf_death / n_coinf,
+            a_coinf_death = format_nbp(n_coinf_death, p_coinf_death),
+            
+            
+            n_malaria = sum(malaria == "Yes", na.rm = TRUE),
+            p_malaria = n_malaria / n_coinf,
+            a_malaria = format_nbp(n_malaria, p_malaria),
+            
+            n_malaria_hospi = sum(malaria == "Yes" & merge_admit == "Yes", na.rm = TRUE),
+            p_malaria_hospi = n_malaria_hospi / n_malaria,
+            a_malaria_hospi = format_nbp(n_malaria_hospi, p_malaria_hospi),
+            
+            n_malaria_death = sum(malaria == "Yes" & outcome_status == "Died", na.rm = TRUE),
+            p_malaria_death = n_malaria_death / n_malaria,
+            a_malaria_death = format_nbp(n_malaria_death, p_malaria_death),
+            
+            
+            n_hiv = sum(hiv_status == "Yes", na.rm = TRUE),
+            p_hiv = n_hiv / n_coinf,
+            a_hiv = format_nbp(n_hiv, p_hiv),
+            
+            n_hiv_hospi = sum(hiv_status == "Yes" & merge_admit == "Yes", na.rm = TRUE),
+            p_hiv_hospi = n_hiv_hospi / n_hiv,
+            a_hiv_hospi = format_nbp(n_hiv_hospi, p_hiv_hospi),
+            
+            n_hiv_death = sum(hiv_status == "Yes" & outcome_status == "Died", na.rm = TRUE),
+            p_hiv_death = n_hiv_death / n_hiv,
+            a_hiv_death = format_nbp(n_hiv_death, p_hiv_death),
+            
+            
+            n_tb = sum(tb_active == "Yes", na.rm = TRUE),
+            p_tb = n_tb / n_coinf,
+            a_tb = format_nbp(n_tb, p_tb),
+            
+            n_tb_hospi = sum(tb_active == "Yes" & merge_admit == "Yes", na.rm = TRUE),
+            p_tb_hospi = n_tb_hospi / n_tb,
+            a_tb_hospi = format_nbp(n_tb_hospi, p_tb_hospi),
+            
+            n_tb_death = sum(tb_active == "Yes" & outcome_status == "Died", na.rm = TRUE),
+            p_tb_death = n_tb_death / n_tb,
+            a_tb_death = format_nbp(n_tb_death, p_tb_death)
+           
+            ) %>% 
+  select(country, project, starts_with("a_")) 
+
+            
+            
+gtble16 <- tble16 %>% 
+  gt() %>%
+  cols_label(
+    country    = 'Country',
+    project    = 'Project',
+    
+    a_coinf       = 'N' ,
+    a_coinf_hospi = 'Hospitalised',
+    a_coinf_death = 'Deceased',
+    
+    a_malaria       = 'N' ,
+    a_malaria_hospi = 'Hospitalised',
+    a_malaria_death = 'Deceased',
+    
+    a_hiv       = 'N' ,
+    a_hiv_hospi = 'Hospitalised',
+    a_hiv_death = 'Deceased',
+    
+    a_tb       = 'N' ,
+    a_tb_hospi = 'Hospitalised',
+    a_tb_death = 'Deceased') %>% 
+  
+  tab_spanner(
+    label = 'At least one documented co-infection',
+    columns = vars(a_coinf, a_coinf_hospi, a_coinf_death)) %>%  
+  tab_spanner(
+    label = 'Malaria',
+    columns = contains("_malaria")) %>%
+  tab_spanner(
+    label = 'HIV',
+    columns = contains("_hiv")) %>%
+  tab_spanner(
+    label = 'Tuberculosis',
+    columns = contains("_tb")) %>%
+  
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  
+  cols_align(
+    align = 'center',
+    columns = everything()) %>%
+  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2),
+    row.striping.include_table_body = TRUE)
+
+gtsave(gtble16, 
+       file.path(path.local.msf.tables.oc, paste0('gtble16', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtble16 %>% 
+  tab_header(
+    title = 'Number of patients with coinfections and proportion of hospitalizations and death')
+```
+
 ## Other
 
 
