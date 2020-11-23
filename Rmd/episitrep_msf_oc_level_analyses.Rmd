@@ -3140,7 +3140,7 @@ tble4 <- dta_linelist %>%
     q_confirmed_05_out = quantile(age_in_years[covid_status == "Confirmed" & merge_admit == "No"], c(0.5), na.rm = TRUE),
     q_confirmed_75_out = quantile(age_in_years[covid_status == "Confirmed" & merge_admit == "No"], c(0.75), na.rm = TRUE),
     f_confirmed_out    = format_med(q_confirmed_05_out, q_confirmed_25_out, q_confirmed_75_out)
-    ) %>% 
+  ) %>% 
   select(-starts_with("q_"))
 
 
@@ -3225,9 +3225,9 @@ tble5 <- dta_linelist %>%
     n_icu_later  = sum(merge_admit == "Yes" & icu != "Yes" & merge_icu == "Yes", na.rm = TRUE),
     p_icu_later = n_icu_later / n_admis,
     m_icu_later = format_nbp(n_icu_later, p_icu_later)
-    ) %>% 
+  ) %>% 
   select(country, project, n_patients, n_admis, 
-          m_icu_admission,  m_icu_later)
+         m_icu_admission,  m_icu_later)
 
 
 
@@ -3241,7 +3241,7 @@ gtble5 <-  tble5 %>%
     
     m_icu_admission = 'ICU at adm.',
     m_icu_later     = 'ICU later',
-    ) %>% 
+  ) %>% 
   
   fmt_missing(
     columns = starts_with('n_'),
@@ -3418,9 +3418,9 @@ tble7 <- dta_linelist %>%
     n_oxygen_later  = sum(merge_admit == "Yes" & received_oxygen != "Yes" & merge_oxygen == "Yes", na.rm = TRUE),
     p_oxygen_later  = n_oxygen_later / n_admis,
     m_oxygen_later  = format_nbp(n_oxygen_later, p_oxygen_later)
-    ) %>% 
+  ) %>% 
   select(country, project, n_patients, n_admis, 
-          m_oxygen_admission,  m_oxygen_later)
+         m_oxygen_admission,  m_oxygen_later)
 
 
 
@@ -3435,7 +3435,7 @@ gtble7 <-  tble7 %>%
     
     m_oxygen_admission = 'Oxygen at adm.',
     m_oxygen_later     = 'Oxygen later',
-    ) %>% 
+  ) %>% 
   
   fmt_missing(
     columns = starts_with('n_'),
@@ -3616,9 +3616,9 @@ tble10 <- dta_linelist %>%
     n_vent_later  = sum(merge_admit == "Yes" & vent != "Yes" & merge_vent == "Yes", na.rm = TRUE),
     p_vent_later  = n_vent_later / n_admis,
     m_vent_later  = format_nbp(n_vent_later, p_vent_later)
-    ) %>% 
+  ) %>% 
   select(country, project, n_patients, n_admis, 
-          m_vent_admission,  m_vent_later)
+         m_vent_admission,  m_vent_later)
 
 
 gtble10 <-  tble10 %>% 
@@ -3631,7 +3631,7 @@ gtble10 <-  tble10 %>%
     
     m_vent_admission = 'Oxygen at adm.',
     m_vent_later     = 'Oxygen later',
-    ) %>% 
+  ) %>% 
   
   fmt_missing(
     columns = starts_with('n_'),
@@ -3816,14 +3816,14 @@ tble13 <- dta_linelist %>%
     n_missing_severity = sum(is.na(severity)),
     
     n_patients = n())
-    
+
 
 gtble13 <- tble13 %>% 
   gt() %>%
   cols_label(
     country    = 'Country',
     project    = 'Project',
- 
+    
     n_suspected = "Suspected",
     n_probable  = "Probable",
     n_confirmed = "Confirmed",
@@ -3900,14 +3900,14 @@ tble14 <- dta_linelist %>%
     n_deaths_icu = sum(outcome_status == "Died" & merge_icu == "Yes", na.rm = TRUE),
     
     n_patients = n())
-    
+
 
 gtble14 <- tble14 %>% 
   gt() %>%
   cols_label(
     country    = 'Country',
     project    = 'Project',
- 
+    
     n_suspected = "Suspected",
     n_probable  = "Probable",
     n_confirmed = "Confirmed",
@@ -4022,11 +4022,11 @@ tble15 <- dta_linelist %>%
             n_chronic_renal_death = sum(Comcond_renal == "Yes" & outcome_status == "Died", na.rm = TRUE),
             p_chronic_renal_death = n_chronic_renal_death / n_chronic_renal,
             a_chronic_renal_death = format_nbp(n_chronic_renal_death, p_chronic_renal)
-            ) %>% 
+  ) %>% 
   select(country, project, starts_with("a_")) 
 
-            
-            
+
+
 gtble15 <- tble15 %>% 
   gt() %>%
   cols_label(
@@ -4093,14 +4093,14 @@ gtble15 %>%
 ## Table 16
 ```{r tble16}
 
-list_coinf <- c("malaria", "hiv_status", "tb_active")
+list_coinf <- c("malaria", "hiv_status", "tb_active", "tb_treatment_past")
 
 
 tble16 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
-  select(country, project, merge_admit, outcome_status, malaria, hiv_status, tb_active) %>%
+  select(country, project, merge_admit, outcome_status, malaria, hiv_status, tb_active, tb_treatment_past) %>%
   group_by(country, project) %>% 
-  mutate(coinf = ifelse(malaria == "Yes" | hiv_status == "Yes" | tb_active == "Yes",
+  mutate(coinf = ifelse(malaria == "Yes" | hiv_status == "Yes" | tb_active == "Yes" | tb_treatment_past == "Yes",
                         1, 0)) %>% 
   summarise(n_coinf = sum(coinf == 1, na.rm = TRUE),
             p_coinf = n_coinf / n(),
@@ -4141,23 +4141,36 @@ tble16 <- dta_linelist %>%
             a_hiv_death = format_nbp(n_hiv_death, p_hiv_death),
             
             
-            n_tb = sum(tb_active == "Yes", na.rm = TRUE),
-            p_tb = n_tb / n_coinf,
-            a_tb = format_nbp(n_tb, p_tb),
+            n_tb_active = sum(tb_active == "Yes", na.rm = TRUE),
+            p_tb_active = n_tb_active / n_coinf,
+            a_tb_active = format_nbp(n_tb_active, p_tb_active),
             
-            n_tb_hospi = sum(tb_active == "Yes" & merge_admit == "Yes", na.rm = TRUE),
-            p_tb_hospi = n_tb_hospi / n_tb,
-            a_tb_hospi = format_nbp(n_tb_hospi, p_tb_hospi),
+            n_tb_active_hospi = sum(tb_active == "Yes" & merge_admit == "Yes", na.rm = TRUE),
+            p_tb_active_hospi = n_tb_active_hospi / n_tb_active,
+            a_tb_active_hospi = format_nbp(n_tb_active_hospi, p_tb_active_hospi),
             
-            n_tb_death = sum(tb_active == "Yes" & outcome_status == "Died", na.rm = TRUE),
-            p_tb_death = n_tb_death / n_tb,
-            a_tb_death = format_nbp(n_tb_death, p_tb_death)
-           
-            ) %>% 
+            n_tb_active_death = sum(tb_active == "Yes" & outcome_status == "Died", na.rm = TRUE),
+            p_tb_active_death = n_tb_active_death / n_tb_active,
+            a_tb_active_death = format_nbp(n_tb_active_death, p_tb_active_death),
+            
+            
+            n_tb_past = sum(tb_treatment_past == "Yes", na.rm = TRUE),
+            p_tb_past = n_tb_past / n_coinf,
+            a_tb_past = format_nbp(n_tb_past, p_tb_past),
+            
+            n_tb_past_hospi = sum(tb_treatment_past == "Yes" & merge_admit == "Yes", na.rm = TRUE),
+            p_tb_past_hospi = n_tb_past_hospi / n_tb_past,
+            a_tb_past_hospi = format_nbp(n_tb_past_hospi, p_tb_past_hospi),
+            
+            n_tb_past_death = sum(tb_treatment_past == "Yes" & outcome_status == "Died", na.rm = TRUE),
+            p_tb_past_death = n_tb_past_death / n_tb_past,
+            a_tb_past_death = format_nbp(n_tb_past_death, p_tb_past_death)
+            
+  ) %>% 
   select(country, project, starts_with("a_")) 
 
-            
-            
+
+
 gtble16 <- tble16 %>% 
   gt() %>%
   cols_label(
@@ -4172,13 +4185,17 @@ gtble16 <- tble16 %>%
     a_malaria_hospi = 'Hospitalised',
     a_malaria_death = 'Deceased',
     
-    a_hiv       = 'N' ,
+    a_hiv       = 'N',
     a_hiv_hospi = 'Hospitalised',
     a_hiv_death = 'Deceased',
     
-    a_tb       = 'N' ,
-    a_tb_hospi = 'Hospitalised',
-    a_tb_death = 'Deceased') %>% 
+    a_tb_active       = 'N',
+    a_tb_active_hospi = 'Hospitalised',
+    a_tb_active_death = 'Deceased',
+    
+    a_tb_past        = 'N',
+    a_tb_past_hospi  = 'Hospitalised',
+    a_tb_past_death = 'Deceased') %>% 
   
   tab_spanner(
     label = 'At least one documented co-infection',
@@ -4190,8 +4207,11 @@ gtble16 <- tble16 %>%
     label = 'HIV',
     columns = contains("_hiv")) %>%
   tab_spanner(
-    label = 'Tuberculosis',
-    columns = contains("_tb")) %>%
+    label = 'Tuberculosis active',
+    columns = contains("_tb_active")) %>%
+  tab_spanner(
+    label = 'Tuberculosis treatment in the past',
+    columns = contains("_tb_past")) %>%
   
   fmt_missing(
     columns = starts_with('n_'),
