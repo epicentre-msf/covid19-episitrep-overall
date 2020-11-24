@@ -128,7 +128,8 @@ dta_aggregated_expanded <- dta_weekly_aggregated %>%
       country == "Côte d'Ivoire" ~ 'Côte d’Ivoire', 
       TRUE ~ country)) %>% 
   left_join(df_countries, by = 'country') %>% 
-  pivot_longer(cols = c('confirmed', 'probable', 'suspected', 'non_cases', 'unknown'), names_to = 'covid_status') %>% 
+  pivot_longer(cols = c('confirmed', 'probable', 'suspected', 'non_cases', 'unknown'), 
+               names_to = 'covid_status') %>% 
   filter(!is.na(value)) %>% 
   mutate(obs = purrr::map(value, ~rep_len(1, .x))) %>%
   unnest(cols = c(obs)) %>%
@@ -148,7 +149,8 @@ dta_aggregated_expanded <- dta_weekly_aggregated %>%
 dta_linelist_with_aggregated <- dta_linelist %>% 
   select(continent, region, country, site_name, iso_a3, OC, epi_week_consultation, covid_status, project) %>% 
   add_row(dta_aggregated_expanded %>% 
-            select(continent, region, country, site_name, iso_a3, OC, epi_week_consultation, covid_status) %>% 
+            select(continent, region, country, site_name, iso_a3, 
+                   OC, epi_week_consultation, covid_status) %>% 
             mutate(
               country = paste(country, '(*)'), 
               site_name = paste(site_name, '(*)'))) %>% 
@@ -3103,10 +3105,50 @@ gtble3 %>%
 
 
 
-## Figure 3
+## Figure 4
 
-Median [IQR] length of stay, per project, stratified by severity
-TODO
+```{r fig4, fig.cap="Median [IQR] time between onset of symptoms and presentations}
+fig4 <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  mutate(delay_before_consultation = as.numeric(date_consultation - dateonset)) %>% 
+  filter(between(delay_before_consultation, left = 0, right = 50)) %>% 
+  # select(country, project, merge_admit, severity, length_stay) %>%
+  group_by(continent, country, site_name) %>%
+  summarise(x = quantile(delay_before_consultation, c(0.25, 0.5, 0.75), na.rm = TRUE),
+            q = c(0.25, 0.5, 0.75),
+            n = n()) %>%
+  pivot_wider(names_from = q, 
+              values_from =x,
+              names_prefix = "q_") %>% 
+  ggplot(aes(x = fct_reorder(site_name, desc(q_0.5)),
+             y = q_0.5,
+             colour = continent)) +
+  geom_point(aes(size = n),
+             shape = 19) +
+  geom_errorbar(aes(ymin = q_0.25, 
+                    ymax = q_0.75),
+                width = 0) +
+  coord_flip() +
+  labs(x = "",
+       y = "Median time",
+       title = "Median time between symptom onset\nand presentation",
+       subtitle = "Median and interquartile range") +
+  ggthemes::scale_colour_tableau(name = "Continent", palette = "Red-Blue-Brown") +
+  theme_light() + 
+  theme(legend.position = 'right', 
+        panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank())
+
+ggsave(file.path(path.local.msf.graphs.oc, paste0('fig4', '_', week_report, '.png')),
+       plot = fig4, 
+       width = 6, 
+       height = 4, 
+       scale = 1.1,
+       dpi = 320)
+
+fig4
+```
+
 
 ## Table 4
 
@@ -3631,8 +3673,8 @@ gtble10 <-  tble10 %>%
     n_patients = 'Visits',
     n_admis    = 'Admissions',
     
-    m_vent_admission = 'Oxygen at adm.',
-    m_vent_later     = 'Oxygen later',
+    m_vent_admission = 'Ventilation at adm.',
+    m_vent_later     = 'Ventilation later',
   ) %>% 
   
   fmt_missing(
