@@ -152,10 +152,12 @@ dta_linelist_with_aggregated <- dta_linelist %>%
             mutate(
               country = paste(country, '(*)'), 
               site_name = paste(site_name, '(*)'))) %>% 
-  mutate(project = case_when(
+  mutate(
+    project = case_when(
     is.na(project) ~ site_name,
-    TRUE           ~ project
-  ))
+    TRUE           ~ project),
+    covid_status = recode(covid_status, "(Unknown)" = "Unknown")
+    )
 
 
 tbl_aggregated_expanded_with_dates <- dta_aggregated_expanded %>% 
@@ -4091,6 +4093,7 @@ gtble15 %>%
 
 
 ## Table 16
+
 ```{r tble16}
 
 list_coinf <- c("malaria", "hiv_status", "tb_active", "tb_treatment_past")
