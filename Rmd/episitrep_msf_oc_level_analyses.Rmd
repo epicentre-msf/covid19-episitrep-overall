@@ -3107,7 +3107,7 @@ gtble3 %>%
 
 ## Figure 4
 
-```{r fig4, fig.cap="Median [IQR] time between onset of symptoms and presentations"}
+```{r fig4}
 fig4 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
   mutate(delay_before_consultation = as.numeric(date_consultation - dateonset)) %>% 
@@ -4007,7 +4007,7 @@ gtble14 %>%
 
 ## Figure 5
 
-```{r fig5, fig.cap = 'Median and interquartile range of patient age by sex and project'}
+```{r fig5}
 fig5 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
   drop_na(sex) %>% 
@@ -4055,8 +4055,8 @@ fig5 <- dta_linelist %>%
 
 ggsave(file.path(path.local.msf.graphs.oc, paste0('fig5', '_', week_report, '.png')),
        plot = fig5, 
-       width = 6, 
-       height = 4, 
+       width = 8, 
+       height = 6, 
        scale = 1.1,
        dpi = 320)
 
@@ -4347,8 +4347,7 @@ gtble16 %>%
 
 ## Fig6
 
-```{r fig6, fig.cap = 'Mortality by therapy received, by project'}
-fig6
+```{r fig6}
 dta_fig6 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected'),
      merge_admit == "Yes") %>% 
@@ -4376,9 +4375,6 @@ dta_fig6 <- dta_linelist %>%
     p = round(100 * n_death/n_admit, 1)
   ) 
   
-
-
-
 
 fig6 <- dta_fig6 %>% 
   ggplot(aes(x = reorder(project, desc(country)),
@@ -4412,8 +4408,6 @@ ggsave(file.path(path.local.msf.graphs.oc, paste0('fig6', '_', week_report, '.pn
        dpi = 320)
 
 fig6
-
-
 ```
 
 
