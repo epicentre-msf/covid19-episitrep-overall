@@ -1719,14 +1719,14 @@ dta_care <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed')) %>%
   select(continent, country, starts_with('merge_'))
 
-# Correct error on ECMO
-dta_care <- dta_care %>%
-  mutate(
-    merge_ecmo = as.character(merge_ecmo),
-    merge_ecmo = case_when(
-      merge_ecmo == "Yes" ~ "No at any time",
-      TRUE ~ merge_ecmo)) %>% 
-  mutate(merge_ecmo = factor(merge_ecmo, levels = c('Yes', 'No at admission then not reported', 'No at any time', 'Not reported')))
+# # Correct error on ECMO
+# dta_care <- dta_care %>%
+#   mutate(
+#     merge_ecmo = as.character(merge_ecmo),
+#     merge_ecmo = case_when(
+#       merge_ecmo == "Yes" ~ "No at any time",
+#       TRUE ~ merge_ecmo)) %>% 
+#   mutate(merge_ecmo = factor(merge_ecmo, levels = c('Yes', 'No at admission then not reported', 'No at any time', 'Not reported')))
 
 
 tbl_care_admitted <- tbl_prop(dta_care, 'merge_admit', 'continent') %>% 
@@ -3107,7 +3107,7 @@ gtble3 %>%
 
 ## Figure 4
 
-```{r fig4, fig.cap="Median [IQR] time between onset of symptoms and presentations}
+```{r fig4, fig.cap="Median [IQR] time between onset of symptoms and presentations"}
 fig4 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
   mutate(delay_before_consultation = as.numeric(date_consultation - dateonset)) %>% 
@@ -4344,6 +4344,80 @@ gtble16 %>%
   tab_header(
     title = 'Number of patients with coinfections and proportion of hospitalizations and death')
 ```
+
+## Fig6
+
+```{r fig6, fig.cap = 'Mortality by therapy received, by project'}
+fig6
+dta_fig6 <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected'),
+     merge_admit == "Yes") %>% 
+  mutate(therapy = case_when(
+    merge_oxygen == "Yes" & merge_icu != "Yes" & merge_vent != "Yes" ~ "Oxygen",
+    merge_oxygen != "Yes" & merge_icu == "Yes" & merge_vent != "Yes" ~ "ICU",
+    merge_oxygen != "Yes" & merge_icu != "Yes" & merge_vent == "Yes" ~ "Ventilation",
+    merge_oxygen == "Yes" & merge_icu == "Yes" & merge_vent != "Yes" ~ "Oxygen-ICU",
+    merge_oxygen == "Yes" & merge_icu != "Yes" & merge_vent == "Yes" ~ "Oxygen-Ventilation",
+    merge_oxygen != "Yes" & merge_icu == "Yes" & merge_vent == "Yes" ~ "ICU-Ventilation",
+    merge_oxygen == "Yes" & merge_icu == "Yes" & merge_vent == "Yes" ~ "Oxygen-ICU-Ventilation",
+    merge_oxygen == "No at any time" & merge_icu == "No at any time" & merge_vent == "No at any time" ~ "Not at any time",
+    TRUE ~ "Unknown"),
+    
+    therapy = factor(x = therapy,
+                        level = c("Oxygen", "ICU", "Ventilation", "Oxygen-ICU", 
+                                   "Oxygen-Ventilation", "ICU-Ventilation", 
+                                   "Oxygen-ICU-Ventilation","Not at any time", 
+                                  "Unknown"))
+    ) %>% 
+  group_by(continent, country, project, therapy) %>%
+  summarise(
+    n_death = sum(outcome_status == "Died", na.rm = TRUE),
+    n_admit = n(),
+    p = round(100 * n_death/n_admit, 1)
+  ) 
+  
+
+
+
+
+fig6 <- dta_fig6 %>% 
+  ggplot(aes(x = reorder(project, desc(country)),
+             y = p,
+             size = n_admit,
+             colour = therapy)) +
+  geom_point(alpha = 0.8,
+             position = position_dodge2(0.2)) +
+  coord_flip() +
+  labs(x = "",
+       y = "Mortality (% of deceased among cases)",
+       title = "Mortality and therapy") +
+  
+  ggthemes::scale_colour_tableau(name = "Therapy received", palette = "Tableau 20") +
+  
+  scale_size_continuous(name = "Number of hosp. cases\nin therapy received",
+                        # breaks = c(10, 100, 1000, 4000, 6000)
+  ) +
+  
+  theme_light() + 
+  theme(legend.position = 'right', 
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank())
+
+
+ggsave(file.path(path.local.msf.graphs.oc, paste0('fig6', '_', week_report, '.png')),
+       plot = fig6, 
+       width = 6, 
+       height = 5, 
+       scale = 1.1,
+       dpi = 320)
+
+fig6
+
+
+```
+
+
+
 
 ## Other
 
