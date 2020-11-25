@@ -3134,6 +3134,7 @@ fig4 <- dta_linelist %>%
        title = "Median time between symptom onset\nand presentation",
        subtitle = "Median and interquartile range") +
   ggthemes::scale_colour_tableau(name = "Continent", palette = "Red-Blue-Brown") +
+  scale_size_continuous(name = "Number of presentations") +
   theme_light() + 
   theme(legend.position = 'right', 
         panel.grid.major.y = element_blank(), 
@@ -4003,6 +4004,66 @@ gtble14 %>%
   tab_header(
     title = 'Mortality by severity')
 ```
+
+## Figure 5
+
+```{r fig5, fig.cap = 'Median and interquartile range of patient age by sex and project'}
+fig5 <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  drop_na(sex) %>% 
+  mutate(Sex = factor(sex, 
+                      levels = c('M', 'F'), 
+                      labels = c('Male', 'Female'))) %>% 
+  group_by(continent, country, site_name, Sex) %>%
+  summarise(x = quantile(age_in_years, c(0.25, 0.5, 0.75), na.rm = TRUE),
+            q = c(0.25, 0.5, 0.75),
+            n = n()) %>%
+  pivot_wider(names_from = q, 
+              values_from =x,
+              names_prefix = "q_") %>% 
+  
+  ggplot(aes(x = fct_reorder(site_name, desc(q_0.5)),
+             y = q_0.5,
+             colour = Sex,
+             shape = Sex
+             )) +
+  geom_point(aes(size = n),
+             position = position_dodge(width=0.9)) +
+  geom_errorbar(aes(ymin = q_0.25, 
+                    ymax = q_0.75),
+                width = 0,
+                position=position_dodge(width=0.9)) +
+  coord_flip() +
+  labs(x = "",
+       y = "Median time",
+       title = "Median age (in years)",
+       subtitle = "Median and interquartile range") +
+  
+  scale_colour_manual(name = "Sex", 
+                      values = c("#4E79A7FF", "#A0CBE8FF"), 
+                      breaks = c("Male", "Female"), 
+                      labels = c("Male", "Female")) +
+    
+  scale_size_continuous(name = "Visits",
+                        breaks = c(10, 100, 1000, 4000, 6000)) +
+  
+  theme_light() + 
+  theme(legend.position = 'right', 
+        panel.grid.major.y = element_blank(), 
+        panel.grid.minor.y = element_blank())
+
+
+ggsave(file.path(path.local.msf.graphs.oc, paste0('fig5', '_', week_report, '.png')),
+       plot = fig5, 
+       width = 6, 
+       height = 4, 
+       scale = 1.1,
+       dpi = 320)
+
+fig5
+```
+
+
 
 
 ## Table 15
