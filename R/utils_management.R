@@ -346,7 +346,8 @@ prepare_msf_dta <- function(dta, shorten_var_names = FALSE){
       merge_oxygen = recode_care(MSF_received_oxygen, MSF_outcome_received_oxygen), 
       merge_icu    = recode_care(patcourse_icu , outcome_patcourse_icu), 
       merge_vent   = recode_care(patcourse_vent, outcome_patcourse_vent), 
-      merge_ecmo   = recode_care(patcourse_ecmo, outcome_patcourse_ecmo)) 
+      # merge_ecmo   = recode_care(patcourse_ecmo, outcome_patcourse_ecmo)
+      ) 
   
 
   # Shorten variables names to make easy to handle them
