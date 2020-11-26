@@ -2756,7 +2756,7 @@ Inclusion criteria: patients were included in the study if COVID suspected or pr
 
 Figures will be generated automatically for each project and stored online with the supplementary analyses (link to come).
 
-```{r Fig1, include=FALSE}
+```{r Fig1, eval=FALSE, include=FALSE}
 
 plot_epicurve_project <- function(data, 
                                   ncols_facet = 3,
@@ -2999,11 +2999,6 @@ gtble2 <- tble2 %>%
     data_row.padding  = px(2), 
     row_group.padding = px(2),
     row.striping.include_table_body = TRUE)
-# summary_rows(
-#   columns = starts_with('n_'),
-#   fns = list(Total = "sum"),
-#   decimals = 0)
-
 
 gtsave(gtble2, 
        file.path(path.local.msf.tables.oc, paste0('gtble2', '_', week_report, '.html')), 
@@ -3011,9 +3006,9 @@ gtsave(gtble2,
   invisible()
 
 
-# gtble2 %>% 
-#   tab_header(
-#     title = 'Patient visits and hospitalisation by project and severity')
+gtble2 %>%
+  tab_header(
+    title = 'Patient visits and hospitalisation by project and severity')
 ```
 
 
