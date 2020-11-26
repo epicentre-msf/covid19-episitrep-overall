@@ -160,10 +160,10 @@ dta_linelist_with_aggregated <- dta_linelist %>%
               site_name = paste(site_name, '(*)'))) %>% 
   mutate(
     project = case_when(
-    is.na(project) ~ site_name,
-    TRUE           ~ project),
+      is.na(project) ~ site_name,
+      TRUE           ~ project),
     covid_status = recode(covid_status, "(Unknown)" = "Unknown")
-    )
+  )
 
 
 tbl_aggregated_expanded_with_dates <- dta_aggregated_expanded %>% 
@@ -2810,9 +2810,9 @@ tbl_epicurve_status_p <- dta_linelist_with_aggregated %>%
   mutate(plot = map2(.x = data, 
                      .y = site_name,
                      ~ plot_epicurve_project(data = .x,
-                                            # ncols_facet = 3,
-                                            project = .y,
-                                            path_save = path.local.msf.graphs.oc))) 
+                                             # ncols_facet = 3,
+                                             project = .y,
+                                             path_save = path.local.msf.graphs.oc))) 
 
 print(tbl_epicurve_status_p$plot) 
 ```
@@ -4045,7 +4045,7 @@ fig5 <- dta_linelist %>%
              y = q_0.5,
              colour = Sex,
              shape = Sex
-             )) +
+  )) +
   geom_point(aes(size = n),
              position = position_dodge(width=0.9)) +
   geom_errorbar(aes(ymin = q_0.25, 
@@ -4062,7 +4062,7 @@ fig5 <- dta_linelist %>%
                       values = c("#4E79A7FF", "#A0CBE8FF"), 
                       breaks = c("Male", "Female"), 
                       labels = c("Male", "Female")) +
-    
+  
   scale_size_continuous(name = "Visits",
                         breaks = c(10, 100, 1000, 5000)) +
   
@@ -4223,9 +4223,11 @@ list_coinf <- c("malaria", "hiv_status", "tb_active", "tb_treatment_past", "maln
 
 tble16 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
-  select(country, project, merge_admit, outcome_status, malaria, hiv_status, tb_active, tb_treatment_past) %>%
+  select(country, project, merge_admit, outcome_status, malaria, hiv_status, 
+         tb_active, tb_treatment_past, malnutrition) %>%
   group_by(country, project) %>% 
-  mutate(coinf = ifelse(malaria == "Yes" | hiv_status == "Yes" | tb_active == "Yes" | tb_treatment_past == "Yes",
+  mutate(coinf = ifelse(malaria == "Yes" | hiv_status == "Yes" | tb_active == "Yes" |
+                          tb_treatment_past == "Yes" | malnutrition == "Yes",
                         1, 0)) %>% 
   summarise(n_coinf = sum(coinf == 1, na.rm = TRUE),
             p_coinf = n_coinf / n(),
@@ -4289,7 +4291,19 @@ tble16 <- dta_linelist %>%
             
             n_tb_past_death = sum(tb_treatment_past == "Yes" & outcome_status == "Died", na.rm = TRUE),
             p_tb_past_death = n_tb_past_death / n_tb_past,
-            a_tb_past_death = format_nbp(n_tb_past_death, p_tb_past_death)
+            a_tb_past_death = format_nbp(n_tb_past_death, p_tb_past_death),
+            
+            n_malnutrition = sum(malnutrition == "Yes", na.rm = TRUE),
+            p_malnutrition = n_malnutrition / n_coinf,
+            a_malnutrition = format_nbp(n_malnutrition, p_malnutrition),
+            
+            n_malnutrition_hospi = sum(malnutrition == "Yes" & merge_admit == "Yes", na.rm = TRUE),
+            p_malnutrition_hospi = n_malnutrition_hospi / n_malnutrition,
+            a_malnutrition_hospi = format_nbp(n_malnutrition_hospi, p_malnutrition_hospi),
+            
+            n_malnutrition_death = sum(malnutrition == "Yes" & outcome_status == "Died", na.rm = TRUE),
+            p_malnutrition_death = n_malnutrition_death / n_malnutrition,
+            a_malnutrition_death = format_nbp(n_malnutrition_death, p_malnutrition_death),
             
   ) %>% 
   select(country, project, starts_with("a_")) 
@@ -4320,7 +4334,11 @@ gtble16 <- tble16 %>%
     
     a_tb_past        = 'N',
     a_tb_past_hospi  = 'Hospitalised',
-    a_tb_past_death = 'Deceased') %>% 
+    a_tb_past_death = 'Deceased',
+    
+    a_malnutrition       = 'N',
+    a_malaria_hospi      = 'Hospitalised',
+    a_malnutrition_death = 'Deceased') %>% 
   
   tab_spanner(
     label = 'At least one documented co-infection',
@@ -4337,6 +4355,9 @@ gtble16 <- tble16 %>%
   tab_spanner(
     label = 'Tuberculosis treatment in the past',
     columns = contains("_tb_past")) %>%
+  tab_spanner(
+    label = 'Malnutrition',
+    columns = contains("_malnutrition")) %>%
   
   fmt_missing(
     columns = starts_with('n_'),
@@ -4369,7 +4390,7 @@ gtble16 %>%
 ```{r fig6}
 dta_fig6 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected'),
-     merge_admit == "Yes") %>% 
+         merge_admit == "Yes") %>% 
   mutate(therapy = case_when(
     merge_oxygen == "Yes" & merge_icu != "Yes" & merge_vent != "Yes" ~ "Oxygen",
     merge_oxygen != "Yes" & merge_icu == "Yes" & merge_vent != "Yes" ~ "ICU",
@@ -4382,18 +4403,18 @@ dta_fig6 <- dta_linelist %>%
     TRUE ~ "Unknown"),
     
     therapy = factor(x = therapy,
-                        level = c("Oxygen", "ICU", "Ventilation", "Oxygen-ICU", 
-                                   "Oxygen-Ventilation", "ICU-Ventilation", 
-                                   "Oxygen-ICU-Ventilation","Not at any time", 
-                                  "Unknown"))
-    ) %>% 
+                     level = c("Oxygen", "ICU", "Ventilation", "Oxygen-ICU", 
+                               "Oxygen-Ventilation", "ICU-Ventilation", 
+                               "Oxygen-ICU-Ventilation","Not at any time", 
+                               "Unknown"))
+  ) %>% 
   group_by(continent, country, project, therapy) %>%
   summarise(
     n_death = sum(outcome_status == "Died", na.rm = TRUE),
     n_admit = n(),
     p = round(100 * n_death/n_admit, 1)
   ) 
-  
+
 
 fig6 <- dta_fig6 %>% 
   ggplot(aes(x = reorder(project, desc(country)),
