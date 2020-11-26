@@ -4054,7 +4054,7 @@ fig5 <- dta_linelist %>%
                 position=position_dodge(width=0.9)) +
   coord_flip() +
   labs(x = "",
-       y = "Median time",
+       y = "Median age",
        title = "Median age (in years) of all presentations",
        subtitle = "Median and interquartile range") +
   
