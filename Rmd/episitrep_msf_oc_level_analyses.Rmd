@@ -8,7 +8,11 @@ author:
     affiliation: Epicentre
     affiliation_url: https://epicentre.msf.org/
   - name: Paul Campbell
-    url: mailto:paul.CAMPBELLepicentre.msf.org
+    url: mailto:paul.CAMPBELL@epicentre.msf.org
+    affiliation: Epicentre
+    affiliation_url: https://epicentre.msf.org/
+  - name: Mathilde Mousset
+    url: mailto:mathilde.MOUSSET@epicentre.msf.org
     affiliation: Epicentre
     affiliation_url: https://epicentre.msf.org/
 date: '`r Sys.Date()`'
