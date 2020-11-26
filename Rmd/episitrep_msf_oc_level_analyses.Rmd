@@ -4088,13 +4088,13 @@ fig5
 ## Table 15
 
 ```{r tble15}
-list_comorb <- c("Comcond_diabetes", "hypertension", "Comcond_renal")
+list_comorb <- c("obesity", "Comcond_diabetes", "hypertension", "Comcond_renal")
 
 
 tble15 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
   select(country, project, merge_admit, Comcond_01, Comcond_diabetes, hypertension,
-         Comcond_renal, outcome_status) %>%
+         Comcond_renal, outcome_status, obesity) %>%
   group_by(country, project) %>% 
   summarise(n_comorb = sum(Comcond_01 == 1, na.rm = TRUE),
             p_comorb = n_comorb / n(),
@@ -4107,6 +4107,19 @@ tble15 <- dta_linelist %>%
             n_comorb_death = sum(Comcond_01 == 1 & outcome_status == "Died", na.rm = TRUE), 
             p_comorb_death = n_comorb_death / n_comorb,
             a_comorb_death = format_nbp(n_comorb_death, p_comorb_death),
+            
+            
+            n_obesity = sum(obesity == "Yes", na.rm = TRUE),
+            p_obesity = n_obesity / n_comorb,
+            a_obesity = format_nbp(n_obesity, p_obesity),
+            
+            n_obesity_hospi = sum(obesity == "Yes" & merge_admit == "Yes", na.rm = TRUE),
+            p_obesity_hospi = n_obesity_hospi / n_obesity,
+            a_obesity_hospi = format_nbp(n_obesity_hospi, p_obesity),
+            
+            n_obesity_death = sum(obesity == "Yes" & outcome_status == "Died", na.rm = TRUE),
+            p_obesity_death = n_obesity_death / n_obesity,
+            a_obesity_death = format_nbp(n_obesity_death, p_obesity),
             
             
             n_diabetes = sum(Comcond_diabetes == "Yes", na.rm = TRUE),
@@ -4157,25 +4170,32 @@ gtble15 <- tble15 %>%
     country    = 'Country',
     project    = 'Project',
     
-    a_comorb       = 'N' ,
+    a_comorb       = 'N',
     a_comorb_hospi = 'Hospitalised',
     a_comorb_death = 'Deceased',
     
-    a_diabetes       = 'N' ,
+    a_obesity       = 'N',
+    a_obesity_hospi = 'Hospitalised',
+    a_obesity_death = 'Deceased',
+    
+    a_diabetes       = 'N',
     a_diabetes_hospi = 'Hospitalised',
     a_diabetes_death = 'Deceased',
     
-    a_hypertension       = 'N' ,
+    a_hypertension       = 'N',
     a_hypertension_hospi = 'Hospitalised',
     a_hypertension_death = 'Deceased',
     
-    a_chronic_renal       = 'N' ,
+    a_chronic_renal       = 'N',
     a_chronic_renal_hospi = 'Hospitalised',
     a_chronic_renal_death = 'Deceased') %>% 
   
   tab_spanner(
     label = 'At least one documented comorbidity',
     columns = vars(a_comorb, a_comorb_hospi, a_comorb_death)) %>%  
+   tab_spanner(
+    label = 'Obesity',
+    columns = contains("_obesity")) %>%
   tab_spanner(
     label = 'Diabete',
     columns = contains("_diabetes")) %>%
