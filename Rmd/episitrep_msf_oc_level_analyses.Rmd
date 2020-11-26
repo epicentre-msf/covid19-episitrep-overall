@@ -3655,7 +3655,8 @@ gtble8 %>%
 
 ## Table 9
 
-No data for that
+Data currently non available.
+
 
 ## Table 10
 
@@ -3727,7 +3728,8 @@ gtble10 %>%
 
 
 ## Table 11 
-TODO
+
+Data currently unavailable.
 
 
 ## Table 12
@@ -4019,6 +4021,7 @@ gtble14 %>%
     title = 'Mortality by severity')
 ```
 
+
 ## Figure 5
 
 ```{r fig5}
@@ -4059,7 +4062,7 @@ fig5 <- dta_linelist %>%
                       labels = c("Male", "Female")) +
     
   scale_size_continuous(name = "Visits",
-                        breaks = c(10, 100, 1000, 4000, 6000)) +
+                        breaks = c(10, 100, 1000, 5000)) +
   
   theme_light() + 
   theme(legend.position = 'right', 
