@@ -3131,7 +3131,8 @@ fig4 <- dta_linelist %>%
             n = n()) %>%
   pivot_wider(names_from = q, 
               values_from =x,
-              names_prefix = "q_") %>% 
+              names_prefix = "q_") %>%
+  
   ggplot(aes(x = fct_reorder(site_name, desc(q_0.5)),
              y = q_0.5,
              colour = continent)) +
@@ -3146,7 +3147,8 @@ fig4 <- dta_linelist %>%
        title = "Median time between symptom onset\nand presentation",
        subtitle = "Median and interquartile range") +
   ggthemes::scale_colour_tableau(name = "Continent", palette = "Red-Blue-Brown") +
-  scale_size_continuous(name = "Number of presentations") +
+  scale_size_continuous(name = "Number of\npresentations",
+                        breaks = c(10, 100, 1000, 5000)) +
   theme_light() + 
   theme(legend.position = 'right', 
         panel.grid.major.y = element_blank(), 
