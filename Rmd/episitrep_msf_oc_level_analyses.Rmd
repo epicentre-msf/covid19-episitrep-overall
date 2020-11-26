@@ -4022,7 +4022,9 @@ gtble14 %>%
 ```
 
 
-## Figure 5
+## Figure 5 
+
+Median [IQR] of age per project, stratified by gender
 
 ```{r fig5}
 fig5 <- dta_linelist %>%
@@ -4053,7 +4055,7 @@ fig5 <- dta_linelist %>%
   coord_flip() +
   labs(x = "",
        y = "Median time",
-       title = "Median age (in years)",
+       title = "Median age (in years) of all presentations",
        subtitle = "Median and interquartile range") +
   
   scale_colour_manual(name = "Sex", 
