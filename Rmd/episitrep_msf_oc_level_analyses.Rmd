@@ -3150,7 +3150,7 @@ fig4 <- dta_linelist %>%
   mutate(delay_before_consultation = as.numeric(date_consultation - dateonset)) %>% 
   filter(between(delay_before_consultation, left = 0, right = 50)) %>% 
   # select(country, project, merge_admit, severity, length_stay) %>%
-  group_by(continent, country, site_name) %>%
+  group_by(continent, country, project) %>%
   summarise(x = quantile(delay_before_consultation, c(0.25, 0.5, 0.75), na.rm = TRUE),
             q = c(0.25, 0.5, 0.75),
             n = n()) %>%
@@ -3158,7 +3158,7 @@ fig4 <- dta_linelist %>%
               values_from =x,
               names_prefix = "q_") %>%
   
-  ggplot(aes(x = fct_reorder(site_name, desc(q_0.5)),
+  ggplot(aes(x = fct_reorder(project, desc(q_0.5)),
              y = q_0.5,
              colour = continent)) +
   geom_point(aes(size = n),
@@ -4059,7 +4059,7 @@ fig5 <- dta_linelist %>%
   mutate(Sex = factor(sex, 
                       levels = c('M', 'F'), 
                       labels = c('Male', 'Female'))) %>% 
-  group_by(continent, country, site_name, Sex) %>%
+  group_by(continent, country, project, Sex) %>%
   summarise(x = quantile(age_in_years, c(0.25, 0.5, 0.75), na.rm = TRUE),
             q = c(0.25, 0.5, 0.75),
             n = n()) %>%
@@ -4067,7 +4067,7 @@ fig5 <- dta_linelist %>%
               values_from =x,
               names_prefix = "q_") %>% 
   
-  ggplot(aes(x = fct_reorder(site_name, desc(q_0.5)),
+  ggplot(aes(x = fct_reorder(project, desc(q_0.5)),
              y = q_0.5,
              colour = Sex,
              shape = Sex
@@ -4077,7 +4077,7 @@ fig5 <- dta_linelist %>%
   geom_errorbar(aes(ymin = q_0.25, 
                     ymax = q_0.75),
                 width = 0,
-                position=position_dodge(width=0.9)) +
+                position = position_dodge(width=0.9)) +
   coord_flip() +
   labs(x = "",
        y = "Median age",
@@ -4459,7 +4459,8 @@ dta_fig6 <- dta_linelist %>%
     n_death = sum(outcome_status == "Died", na.rm = TRUE),
     n_admit = n(),
     p = round(100 * n_death/n_admit, 1)
-  ) 
+  ) %>% 
+  mutate(project = paste(country, project, sep = " - "))
 
 
 fig6 <- dta_fig6 %>% 
@@ -4470,6 +4471,7 @@ fig6 <- dta_fig6 %>%
   geom_point(alpha = 0.8,
              position = position_dodge2(0.2)) +
   coord_flip() +
+  facet_wrap(~country, ncol = 1, scales = "free") +
   labs(x = "",
        y = "Mortality (% of deceased among cases)",
        title = "Mortality and therapy") +
