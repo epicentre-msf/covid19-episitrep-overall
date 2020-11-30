@@ -3157,6 +3157,7 @@ fig4 <- dta_linelist %>%
   pivot_wider(names_from = q, 
               values_from =x,
               names_prefix = "q_") %>%
+   mutate(project = paste(country, project, sep = " - ")) %>% 
   
   ggplot(aes(x = fct_reorder(project, desc(q_0.5)),
              y = q_0.5,
@@ -4066,6 +4067,7 @@ fig5 <- dta_linelist %>%
   pivot_wider(names_from = q, 
               values_from =x,
               names_prefix = "q_") %>% 
+   mutate(project = paste(country, project, sep = " - ")) %>% 
   
   ggplot(aes(x = fct_reorder(project, desc(q_0.5)),
              y = q_0.5,
@@ -4434,7 +4436,7 @@ gtble16 %>%
 ## Fig6
 
 ```{r fig6}
-dta_fig6 <- dta_linelist %>%
+fig6 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected'),
          merge_admit == "Yes") %>% 
  
@@ -4461,12 +4463,8 @@ dta_fig6 <- dta_linelist %>%
                names_prefix = "p_",
                values_to = "mortality") %>% 
   mutate(therapy = factor(therapy, 
-                          levels = c("Oxygen", "Ventilated", "ICU")))
-    
+                          levels = c("Oxygen", "Ventilated", "ICU")))  %>% 
 
-
-
-fig6 <- dta_fig6 %>% 
   ggplot(aes(x = reorder(project, desc(country)),
              y = mortality,
              size = n_admit,
