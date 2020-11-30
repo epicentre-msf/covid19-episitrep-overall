@@ -3878,7 +3878,7 @@ gtsave(gtble12,
 
 gtble12 %>% 
   tab_header(
-    title = 'Total number of patient visits by case status and vent admission status')
+    title = 'Total number of patient visits by case status and ventilation status')
 ```
 
 
@@ -4124,17 +4124,20 @@ tble15 <- dta_linelist %>%
   select(country, project, merge_admit, Comcond_01, Comcond_diabetes, hypertension,
          Comcond_renal, outcome_status, obesity) %>%
   group_by(country, project) %>% 
-  summarise(n_comorb = sum(Comcond_01 == 1, na.rm = TRUE),
-            p_comorb = n_comorb / n(),
-            a_comorb = format_nbp(n_comorb, p_comorb),
+  summarise(
+    n_all = n(), # Visits (cases) at project level
+    
+    n_comorb = sum(Comcond_01 == 1, na.rm = TRUE), # at least one comorb (cases)
+    p_comorb = n_comorb / n_all,
+    a_comorb = format_nbp(n_comorb, p_comorb),
             
-            n_comorb_hospi = sum(Comcond_01 == 1 & merge_admit == "Yes", na.rm = TRUE), 
-            p_comorb_hospi = n_comorb_hospi / n_comorb,
-            a_comorb_hospi = format_nbp(n_comorb_hospi, p_comorb_hospi),
+    n_comorb_hospi = sum(Comcond_01 == 1 & merge_admit == "Yes", na.rm = TRUE), #hospitalised, at least one comorb
+    p_comorb_hospi = n_comorb_hospi / n_comorb,
+    a_comorb_hospi = format_nbp(n_comorb_hospi, p_comorb_hospi),
             
-            n_comorb_death = sum(Comcond_01 == 1 & outcome_status == "Died", na.rm = TRUE), 
-            p_comorb_death = n_comorb_death / n_comorb,
-            a_comorb_death = format_nbp(n_comorb_death, p_comorb_death),
+    n_comorb_death = sum(Comcond_01 == 1 & outcome_status == "Died", na.rm = TRUE), 
+    p_comorb_death = n_comorb_death / n_comorb_hospi,
+    a_comorb_death = format_nbp(n_comorb_death, p_comorb_death),
             
             
             n_obesity = sum(obesity == "Yes", na.rm = TRUE),
@@ -4143,11 +4146,11 @@ tble15 <- dta_linelist %>%
             
             n_obesity_hospi = sum(obesity == "Yes" & merge_admit == "Yes", na.rm = TRUE),
             p_obesity_hospi = n_obesity_hospi / n_obesity,
-            a_obesity_hospi = format_nbp(n_obesity_hospi, p_obesity),
+            a_obesity_hospi = format_nbp(n_obesity_hospi, p_obesity_hospi),
             
             n_obesity_death = sum(obesity == "Yes" & outcome_status == "Died", na.rm = TRUE),
-            p_obesity_death = n_obesity_death / n_obesity,
-            a_obesity_death = format_nbp(n_obesity_death, p_obesity),
+            p_obesity_death = n_obesity_death / n_obesity_hospi,
+            a_obesity_death = format_nbp(n_obesity_death, p_obesity_death),
             
             
             n_diabetes = sum(Comcond_diabetes == "Yes", na.rm = TRUE),
@@ -4156,11 +4159,11 @@ tble15 <- dta_linelist %>%
             
             n_diabetes_hospi = sum(Comcond_diabetes == "Yes" & merge_admit == "Yes", na.rm = TRUE),
             p_diabetes_hospi = n_diabetes_hospi / n_diabetes,
-            a_diabetes_hospi = format_nbp(n_diabetes_hospi, p_diabetes),
+            a_diabetes_hospi = format_nbp(n_diabetes_hospi, p_diabetes_hospi),
             
             n_diabetes_death = sum(Comcond_diabetes == "Yes" & outcome_status == "Died", na.rm = TRUE),
-            p_diabetes_death = n_diabetes_death / n_diabetes,
-            a_diabetes_death = format_nbp(n_diabetes_death, p_diabetes),
+            p_diabetes_death = n_diabetes_death / n_diabetes_hospi,
+            a_diabetes_death = format_nbp(n_diabetes_death, p_diabetes_death),
             
             
             n_hypertension  = sum(hypertension == "Yes", na.rm = TRUE),
@@ -4169,11 +4172,11 @@ tble15 <- dta_linelist %>%
             
             n_hypertension_hospi  = sum(hypertension == "Yes" & merge_admit == "Yes", na.rm = TRUE),
             p_hypertension_hospi  = n_hypertension_hospi / n_hypertension,
-            a_hypertension_hospi  = format_nbp(n_hypertension_hospi, p_hypertension),
+            a_hypertension_hospi  = format_nbp(n_hypertension_hospi, p_hypertension_hospi),
             
             n_hypertension_death  = sum(hypertension == "Yes" & outcome_status == "Died", na.rm = TRUE),
-            p_hypertension_death  = n_hypertension_death / n_hypertension,
-            a_hypertension_death  = format_nbp(n_hypertension_death, p_hypertension),
+            p_hypertension_death  = n_hypertension_death / n_hypertension_hospi,
+            a_hypertension_death  = format_nbp(n_hypertension_death, p_hypertension_death),
             
             
             n_chronic_renal = sum(Comcond_renal == "Yes", na.rm = TRUE),
@@ -4182,11 +4185,11 @@ tble15 <- dta_linelist %>%
             
             n_chronic_renal_hospi = sum(Comcond_renal == "Yes" & merge_admit == "Yes", na.rm = TRUE),
             p_chronic_renal_hospi = n_chronic_renal_hospi / n_chronic_renal,
-            a_chronic_renal_hospi = format_nbp(n_chronic_renal_hospi, p_chronic_renal),
+            a_chronic_renal_hospi = format_nbp(n_chronic_renal_hospi, p_chronic_renal_hospi),
             
             n_chronic_renal_death = sum(Comcond_renal == "Yes" & outcome_status == "Died", na.rm = TRUE),
-            p_chronic_renal_death = n_chronic_renal_death / n_chronic_renal,
-            a_chronic_renal_death = format_nbp(n_chronic_renal_death, p_chronic_renal)
+            p_chronic_renal_death = n_chronic_renal_death / n_chronic_renal_hospi,
+            a_chronic_renal_death = format_nbp(n_chronic_renal_death, p_chronic_renal_death)
   ) %>% 
   select(country, project, starts_with("a_")) 
 
