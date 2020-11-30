@@ -4437,48 +4437,51 @@ gtble16 %>%
 dta_fig6 <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected'),
          merge_admit == "Yes") %>% 
-  mutate(therapy = case_when(
-    merge_oxygen == "Yes" & merge_icu != "Yes" & merge_vent != "Yes" ~ "Oxygen",
-    merge_oxygen != "Yes" & merge_icu == "Yes" & merge_vent != "Yes" ~ "ICU",
-    merge_oxygen != "Yes" & merge_icu != "Yes" & merge_vent == "Yes" ~ "Ventilation",
-    merge_oxygen == "Yes" & merge_icu == "Yes" & merge_vent != "Yes" ~ "Oxygen-ICU",
-    merge_oxygen == "Yes" & merge_icu != "Yes" & merge_vent == "Yes" ~ "Oxygen-Ventilation",
-    merge_oxygen != "Yes" & merge_icu == "Yes" & merge_vent == "Yes" ~ "ICU-Ventilation",
-    merge_oxygen == "Yes" & merge_icu == "Yes" & merge_vent == "Yes" ~ "Oxygen-ICU-Ventilation",
-    merge_oxygen == "No at any time" & merge_icu == "No at any time" & merge_vent == "No at any time" ~ "Not at any time",
-    TRUE ~ "Unknown"),
-    
-    therapy = factor(x = therapy,
-                     level = c("Oxygen", "ICU", "Ventilation", "Oxygen-ICU", 
-                               "Oxygen-Ventilation", "ICU-Ventilation", 
-                               "Oxygen-ICU-Ventilation","Not at any time", 
-                               "Unknown"))
-  ) %>% 
-  group_by(continent, country, project, therapy) %>%
+ 
+  group_by(continent, country, project) %>%
+  
   summarise(
-    n_death = sum(outcome_status == "Died", na.rm = TRUE),
     n_admit = n(),
-    p = round(100 * n_death/n_admit, 1)
-  ) %>% 
-  mutate(project = paste(country, project, sep = " - "))
+    
+    n_oxy       = sum(merge_oxygen == "Yes", na.rm = TRUE),
+    n_death_oxy = sum(merge_oxygen == "Yes" & outcome_status == "Died", na.rm = TRUE),
+    p_Oxygen    = round(100 * n_death_oxy / n_oxy, 1),
+    
+    n_vent        = sum(merge_vent == "Yes", na.rm = TRUE),
+    n_death_vent  = sum(merge_vent == "Yes" & outcome_status == "Died", na.rm = TRUE),
+    p_Ventilated = round(100 * n_death_vent / n_vent, 1),
+    
+    n_icu       = sum(merge_icu == "Yes", na.rm = TRUE),
+    n_death_icu = sum(merge_icu == "Yes" & outcome_status == "Died", na.rm = TRUE),
+    p_ICU       = round(100 * n_death_icu / n_icu, 1)
+    ) %>% 
+  mutate(project = paste(country, project, sep = " - ")) %>% 
+  pivot_longer(cols = c(p_Oxygen, p_Ventilated, p_ICU),
+               names_to = "therapy",
+               names_prefix = "p_",
+               values_to = "mortality") %>% 
+  mutate(therapy = factor(therapy, 
+                          levels = c("Oxygen", "Ventilated", "ICU")))
+    
+
 
 
 fig6 <- dta_fig6 %>% 
   ggplot(aes(x = reorder(project, desc(country)),
-             y = p,
+             y = mortality,
              size = n_admit,
              colour = therapy)) +
   geom_point(alpha = 0.8,
              position = position_dodge2(0.2)) +
   coord_flip() +
-  facet_wrap(~country, ncol = 1, scales = "free") +
+  facet_wrap(~therapy, ncol = 1, scales = "free") +
   labs(x = "",
        y = "Mortality (% of deceased among cases)",
        title = "Mortality and therapy") +
   
   ggthemes::scale_colour_tableau(name = "Therapy received", palette = "Tableau 20") +
   
-  scale_size_continuous(name = "Number of hosp. cases\nin therapy received",
+  scale_size_continuous(name = "Number of hosp. cases\nin project",
                         # breaks = c(10, 100, 1000, 4000, 6000)
   ) +
   
@@ -4490,8 +4493,8 @@ fig6 <- dta_fig6 %>%
 
 ggsave(file.path(path.local.msf.graphs.oc, paste0('fig6', '_', week_report, '.png')),
        plot = fig6, 
-       width = 6, 
-       height = 5, 
+       width = 8, 
+       height = 10, 
        scale = 1.1,
        dpi = 320)
 
