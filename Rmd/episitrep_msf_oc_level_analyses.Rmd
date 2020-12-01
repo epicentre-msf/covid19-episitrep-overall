@@ -1696,7 +1696,7 @@ Table Patient’s care 1
   - received oxygen,
   - admitted to ICU,
   - supported with ventilator,
-  - supported with ECMO
+  - supported with ECMO # removed on 25 November 2020
 -->
 ```
 ```{r tbl-care-procedures}
@@ -1705,15 +1705,6 @@ Table Patient’s care 1
 dta_care <- dta_linelist %>% 
   filter(covid_status %in% c('Confirmed')) %>%
   select(continent, country, starts_with('merge_'))
-
-# Correct error on ECMO
-dta_care <- dta_care %>%
-  mutate(
-    merge_ecmo = as.character(merge_ecmo),
-    merge_ecmo = case_when(
-      merge_ecmo == "Yes" ~ "No at any time",
-      TRUE ~ merge_ecmo)) %>% 
-  mutate(merge_ecmo = factor(merge_ecmo, levels = c('Yes', 'No at admission then not reported', 'No at any time', 'Not reported')))
 
 
 tbl_care_admitted <- tbl_prop(dta_care, 'merge_admit', 'continent') %>% 
@@ -1728,16 +1719,11 @@ tbl_care_icu <- tbl_prop(dta_care, 'merge_icu', 'continent') %>%
 tbl_care_vent <- tbl_prop(dta_care, 'merge_vent', 'continent') %>% 
   mutate(name_var = 'Supported by a ventilator')
   
-#tbl_care_ecmo <- tbl_prop(dta_care, 'merge_ecmo', 'continent') %>% 
-#  drop_na(merge_ecmo) %>% 
-#  mutate(name_var = 'Supported by extracorporeal membrane oxygenation (ECMO)')
-
 
 tbl_care <- tbl_care_admitted %>% rename(values_var = merge_admit) %>% 
   add_row(tbl_care_oxygen %>% rename(values_var = merge_oxygen)) %>% 
   add_row(tbl_care_icu %>% rename(values_var = merge_icu)) %>%
   add_row(tbl_care_vent %>% rename(values_var = merge_vent))
-#  add_row(tbl_care_ecmo %>% rename(values_var = merge_ecmo))
   
 
 gtbl_care <- tbl_care %>% 

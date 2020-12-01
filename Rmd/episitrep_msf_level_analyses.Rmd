@@ -314,20 +314,30 @@ Aggregated data excluded
 ```{r hist-consultations-sdmissions, fig.cap = paste('Weekly number of consultations and admissions in an MSF supported COvid-19 health service as of', format(date_max_report, "%d %B %Y"))}
 # DONE by Paul
 
-tbl_epicurve_consultation <- dta_linelist %>%
-  filter(merge_admit != 'Unknown') %>% 
-  count(epi_week_consultation, merge_admit) %>%
-  drop_na() %>%
-  mutate(merge_admit = recode(merge_admit, 'Yes' = 'Admitted', 'No' = 'Not Admitted'))
+dta_consultations <- dta_linelist %>% 
+  mutate(
+    merge_admit = as.character(merge_admit)
+  ) %>% 
+  mutate(
+    merge_admit = case_when(
+      triage_site == 'Yes' ~ 'No', 
+      TRUE ~ merge_admit
+    )
+  ) %>% 
+  mutate(
+    merge_admit = factor(merge_admit, levels = c('Yes', 'No', '(Unknown)'), labels = c('Admitted', 'Not Admitted', '(Unknown)')))
 
-tbl_admit_prop <- dta_linelist %>%
-  filter(merge_admit != "Unknown") %>% 
+tbl_epicurve_consultation <- dta_consultations %>%
+  count(epi_week_consultation, merge_admit) %>%
+  drop_na()
+
+tbl_admit_prop <- dta_consultations %>%
   drop_na(epi_week_consultation) %>%
   group_by(epi_week_consultation) %>%
   summarise(
     n = n(),
-    total = sum(merge_admit %in% c('Yes', 'No')),
-    admitted = sum(merge_admit == 'Yes'),
+    total = sum(merge_admit %in% c('Admitted', 'Not Admitted')),
+    admitted = sum(merge_admit == 'Admitted'),
     admit_prop = admitted / total
   ) %>%
   ungroup()
@@ -338,7 +348,7 @@ cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
 scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
 
 missing_consultation <- sum(is.na(dta_linelist$epi_week_consultation))
-missing_admission    <- sum(dta_linelist$merge_admit == 'Unknown')
+missing_admission    <- sum(dta_linelist$merge_admit == '(Unknown)')
 
 hist_epicurve_consult_admit <- tbl_epicurve_consultation %>% 
   ggplot(aes(epi_week_consultation, n)) +
@@ -371,20 +381,30 @@ hist_epicurve_consult_admit
 ```{r hist-consultations-admissions-facet-continent, fig.cap = paste('Weekly number of consultations and admissions in an MSF supported COvid-19 health service by continent as of', format(date_max_report, "%d %B %Y"))}
 # DONE by Paul
 
-tbl_epicurve_consultation_continent <- dta_linelist %>%
-  filter(merge_admit != 'Unknown') %>% 
-  count(continent, epi_week_consultation, merge_admit) %>%
-  drop_na() %>%
-  mutate(merge_admit = recode(merge_admit, 'Yes' = 'Admitted', 'No' = 'Not Admitted'))
+dta_consultations <- dta_linelist %>% 
+  mutate(
+    merge_admit = as.character(merge_admit)
+  ) %>% 
+  mutate(
+    merge_admit = case_when(
+      triage_site == 'Yes' ~ 'No', 
+      TRUE ~ merge_admit
+    )
+  ) %>% 
+  mutate(
+    merge_admit = factor(merge_admit, levels = c('Yes', 'No', '(Unknown)'), labels = c('Admitted', 'Not Admitted', '(Unknown)')))
 
-tbl_admit_prop_continent <- dta_linelist %>%
-  filter(merge_admit != "Unknown") %>% 
+tbl_epicurve_consultation_continent <- dta_consultations %>%
+  count(continent, epi_week_consultation, merge_admit) %>%
+  drop_na()
+
+tbl_admit_prop_continent <- dta_consultations %>%
   drop_na(epi_week_consultation) %>%
   group_by(continent, epi_week_consultation) %>%
   summarise(
     n = n(),
-    total = sum(merge_admit %in% c('Yes', 'No')),
-    admitted = sum(merge_admit == 'Yes'),
+    total = sum(merge_admit %in% c('Admitted', 'Not Admitted')),
+    admitted = sum(merge_admit == 'Admitted'),
     admit_prop = admitted / total
   ) %>%
   ungroup()
@@ -395,7 +415,7 @@ cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
 scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
 
 missing_consultation <- sum(is.na(dta_linelist$epi_week_consultation))
-missing_admission    <- sum(dta_linelist$merge_admit == 'Unknown')
+missing_admission    <- sum(dta_linelist$merge_admit == '(Unknown)')
 
 hist_epicurve_consult_admit_continent <- tbl_epicurve_consultation_continent %>% 
   ggplot(aes(epi_week_consultation, n)) +
@@ -429,9 +449,7 @@ hist_epicurve_consult_admit_continent
 
 ```{r gtbl-consultation-continent, layout = "l-body-outset"}
 
-tbl_consultation_continent <- dta_linelist %>%
-  filter(merge_admit != 'Unknown') %>% 
-  mutate(merge_admit = recode(merge_admit, 'Yes' = 'Admitted', 'No' = 'Not Admitted')) %>% 
+tbl_consultation_continent <- dta_consultations %>%
   count(continent, merge_admit) %>% 
   pivot_wider(names_from = merge_admit, values_from = n) %>% 
   adorn_totals(c('col', 'row')) %>% 
@@ -1776,15 +1794,6 @@ dta_care <- dta_linelist %>%
   filter(covid_status %in% c('Confirmed')) %>%
   select(continent, country, starts_with('merge_'))
 
-# Correct error on ECMO
-dta_care <- dta_care %>%
-  mutate(
-    merge_ecmo = as.character(merge_ecmo),
-    merge_ecmo = case_when(
-      merge_ecmo == "Yes" ~ "No at any time",
-      TRUE ~ merge_ecmo)) %>% 
-  mutate(merge_ecmo = factor(merge_ecmo, levels = c('Yes', 'No at admission then not reported', 'No at any time', 'Not reported')))
-
 
 tbl_care_admitted <- tbl_prop(dta_care, 'merge_admit', 'continent') %>% 
   mutate(name_var = 'Admitted')
@@ -1798,17 +1807,12 @@ tbl_care_icu <- tbl_prop(dta_care, 'merge_icu', 'continent') %>%
 tbl_care_vent <- tbl_prop(dta_care, 'merge_vent', 'continent') %>% 
   mutate(name_var = 'Supported by a ventilator')
   
-#tbl_care_ecmo <- tbl_prop(dta_care, 'merge_ecmo', 'continent') %>% 
-#  drop_na(merge_ecmo) %>% 
-#  mutate(name_var = 'Supported by extracorporeal membrane oxygenation (ECMO)')
-
 
 tbl_care <- tbl_care_admitted %>% rename(values_var = merge_admit) %>% 
   add_row(tbl_care_oxygen %>% rename(values_var = merge_oxygen)) %>% 
   add_row(tbl_care_icu %>% rename(values_var = merge_icu)) %>%
   add_row(tbl_care_vent %>% rename(values_var = merge_vent))
-#  add_row(tbl_care_ecmo %>% rename(values_var = merge_ecmo))
-  
+
 
 gtbl_care <- tbl_care %>% 
   gt(rowname_col = "values_var",

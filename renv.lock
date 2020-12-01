@@ -1,6 +1,6 @@
 {
   "R": {
-    "Version": "3.6.3",
+    "Version": "4.0.3",
     "Repositories": [
       {
         "Name": "CRAN",
@@ -235,10 +235,10 @@
     },
     "cli": {
       "Package": "cli",
-      "Version": "2.1.0",
+      "Version": "2.2.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "0b316487b21d21f99ebf98abe179b1ea"
+      "Hash": "3ef298932294b775fa0a3eeaa3a645b0"
     },
     "clipr": {
       "Package": "clipr",
@@ -298,8 +298,8 @@
       "RemoteRepo": "covidutils",
       "RemoteUsername": "epicentre-msf",
       "RemoteRef": "HEAD",
-      "RemoteSha": "7180a618b91c59469e6346c580efc5c354416b38",
-      "Hash": "d64f5d27d4838626d89f889b0db4d64f"
+      "RemoteSha": "79e35949990fd0e41cb2c2320ccdacf0f62a1b57",
+      "Hash": "ee4992b9fa41ee011210f08cdd9bb41d"
     },
     "cowplot": {
       "Package": "cowplot",
@@ -450,10 +450,10 @@
     },
     "foreign": {
       "Package": "foreign",
-      "Version": "0.8-76",
+      "Version": "0.8-80",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "649b9c7a979d50d869578c73fed072cd"
+      "Hash": "ae1b1e15cc6ccb2bc61c0ac33e86d35f"
     },
     "fracdiff": {
       "Package": "fracdiff",
@@ -730,10 +730,10 @@
     },
     "mgcv": {
       "Package": "mgcv",
-      "Version": "1.8-31",
+      "Version": "1.8-33",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "4bb7e0c4f3557583e1e8d3c9ffb8ba5c"
+      "Hash": "eb7b6439bc6d812eed2cddba5edc6be3"
     },
     "mime": {
       "Package": "mime",
@@ -821,10 +821,10 @@
     },
     "pillar": {
       "Package": "pillar",
-      "Version": "1.4.6",
+      "Version": "1.4.7",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "bdf26e55ccb7df3e49a490150277f002"
+      "Hash": "3b3dd89b2ee115a8b54e93a34cd546b4"
     },
     "pkgbuild": {
       "Package": "pkgbuild",
@@ -1003,10 +1003,10 @@
     },
     "rmdformats": {
       "Package": "rmdformats",
-      "Version": "0.3.7",
+      "Version": "1.0.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "8bfe9a47bab2fd83f6efd1faeed28034"
+      "Hash": "d0a3617d260818a7fcb687d3178ba06d"
     },
     "rnaturalearth": {
       "Package": "rnaturalearth",
