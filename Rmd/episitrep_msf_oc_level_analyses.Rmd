@@ -4408,7 +4408,7 @@ fig7 <- dta_linelist %>%
   
   labs(x = "",
        y = "Percentage of hospitalised patients",
-       title = "Comorbidities and hospitalisation and project")
+       title = "Mortality and comorbidities")
 
 ggsave(file.path(path.local.msf.graphs.oc, paste0('fig7', '_', week_report, '.png')),
        plot = fig7, 
@@ -4623,7 +4623,8 @@ fig8 <- dta_linelist %>%
                names_to = "Coinfection",
                values_to = "percent_of_hospi",
                names_prefix = "p_") %>% 
-   filter(percent_of_hospi > 0) %>% 
+  filter(percent_of_hospi > 0) %>% 
+  
   
   ggplot(aes(x = project,
              y = percent_of_hospi,
@@ -4647,7 +4648,7 @@ fig8 <- dta_linelist %>%
         panel.grid.minor.y = element_blank()) +
   labs(x = "",
        y = "Percentage of hospitalised patients",
-       title = "Coinfections and hospitalisation per project")
+       title = "Mortality and coinfections")
 
 
 
