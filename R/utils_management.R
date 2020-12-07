@@ -275,7 +275,8 @@ prepare_msf_dta <- function(dta, shorten_var_names = FALSE){
   # Covid status
   dta <- dta %>% 
     mutate(
-      MSF_covid_status = factor(MSF_covid_status, levels = levels_covid_status) %>% forcats::fct_explicit_na(na_level = '(Unknown)'))
+      MSF_covid_status = factor(MSF_covid_status, levels = levels_covid_status) %>% 
+        forcats::fct_explicit_na(na_level = '(Unknown)'))
   
   
   # Dates (and weeks)
@@ -326,11 +327,11 @@ prepare_msf_dta <- function(dta, shorten_var_names = FALSE){
   
   
   # Recode presence of comorbidities including the MSF ones
-  Comcond_count <- rowSums(select(dta, starts_with('Comcond_'), MSF_hiv_status, MSF_hypertension, MSF_tb_active, MSF_malaria, MSF_malnutrition, MSF_smoking) == "Yes", na.rm = TRUE)
+  # Comcond_count <- rowSums(select(dta, starts_with('Comcond_'), MSF_hiv_status, MSF_hypertension, MSF_tb_active, MSF_malaria, MSF_malnutrition, MSF_smoking) == "Yes", na.rm = TRUE)
   
-  Comcond_01 <- ifelse(Comcond_count > 0, 1, 0)
+  # Comcond_01 <- ifelse(Comcond_count > 0, 1, 0)
   
-  dta <- cbind(dta, Comcond_count, Comcond_01)
+  # dta <- cbind(dta, Comcond_count, Comcond_01)
   
   
   # Patients' care variables
