@@ -4669,6 +4669,144 @@ Number of patients with complications, by project
 
 Data non available
 
+
+## PCR tests
+
+```{r}
+dta_testing <- dta_linelist %>%
+  select(country, project, epi_week_consultation, merge_admit, matches("test|lab|sample")) %>%
+  rowwise %>%
+  mutate(
+    test_1_10 = ifelse(test_type   == "PCR", 1, 0),
+    test_2_10 = ifelse(test_type_2 == "PCR", 1, 0),
+    test_3_10 = ifelse(test_type_3 == "PCR", 1, 0),
+    test_4_10 = ifelse(test_type_4 == "PCR", 1, 0),
+    n_test_PCR = sum(test_1_10, test_2_10, test_3_10, test_4_10, na.rm = TRUE),
+    merge_test_PCR = ifelse(n_test_PCR >= 1, "Yes", "No"),
+    
+    test_result_1 = ifelse(test_type   == "PCR" & test_results       == "Positive", 1, 0),
+    test_result_2 = ifelse(test_type_2 == "PCR" & test_results_2     == "Positive", 1, 0),
+    test_result_3 = ifelse(test_type_3 == "PCR" & outcome_lab_result == "Positive", 1, 0),
+    test_result_4 = ifelse(test_type_4 == "PCR" & test_results_4     == "Positive", 1, 0),
+    n_test_PCR_positive = sum(test_result_1, test_result_2, 
+                              test_result_3, test_result_4, na.rm = TRUE),
+    merge_test_PCR_positive = ifelse(n_test_PCR_positive >= 1, "Yes", "No")
+  )
+
+
+  
+
+# Graph
+dta_testing %>% 
+group_by(epi_week_consultation) %>% 
+  summarise(n_patients_PCR = sum(merge_test_PCR == "Yes", na.rm = TRUE),
+            n_patients_PCR_positive = sum(merge_test_PCR_positive == "Yes", na.rm = TRUE),
+            perct_patient_pos = ifelse(n_patients_PCR == 0,
+                               NA_integer_,
+                               100 * n_patients_PCR_positive / n_patients_PCR),
+            
+            nb_test_PCR = sum(n_test_PCR, na.rm = TRUE),
+            nb_tests_PCR_positive =sum(n_test_PCR_positive, na.rm = TRUE),
+            perct_test_pos = ifelse(nb_test_PCR == 0,
+                                    NA_integer_,
+                                    100 * nb_tests_PCR_positive / nb_test_PCR)) %>% 
+  
+  ggplot(aes(x = epi_week_consultation)) +
+  geom_col(aes(y = n_patients_PCR),
+           fill = "#A0CBE8") +
+  geom_line(aes(y = perct_patient_pos),
+            colour = "red") +
+  labs(x = "Week of consultation",
+       y = "Number of patients tested",
+       title = "Number of patient tested and positivity rates") +
+  scale_x_date(name = "Week of Consultation", 
+               date_breaks = "2 weeks", 
+               date_labels = "%V", 
+               sec.axis = ggplot2::sec_axis(trans = ~ .), 
+               expand = expansion(mult = c(0.01, 0.01))) +
+  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, 
+                                                  name = "Positivity rate", 
+                                                  labels = scales::percent_format(accuracy = 1)),
+                     expand = expansion(mult = c(0, 0.02)))
+
+
+
+
+
+
+tble19 <- dta_testing %>% 
+  group_by(country, project) %>% 
+  summarise(n_patient_PCR = sum(merge_test_PCR == "Yes", na.rm = TRUE),
+            n_patient_PCR_positive = sum(merge_test_PCR_positive == "Yes", na.rm = TRUE),
+            perct_patient_pos = ifelse(n_patient_PCR == 0,
+                                       NA_integer_,
+                                       n_patient_PCR_positive / n_patient_PCR),
+            a_patient_positive = format_nbp(n_patient_PCR_positive, perct_patient_pos),
+            
+            n_test_PCR = sum(n_test_PCR, na.rm = TRUE),
+            n_test_PCR_positive =sum(n_test_PCR_positive, na.rm = TRUE),
+            perct_test_pos = ifelse(n_test_PCR == 0,
+                                    NA_integer_,
+                                    n_test_PCR_positive / n_test_PCR),
+            a_test_positive = format_nbp(n_test_PCR_positive, perct_test_pos)
+  ) %>% 
+  select(-c(n_patient_PCR_positive, perct_patient_pos,  n_test_PCR_positive, perct_test_pos))
+
+
+
+
+gtble19 <- tble19 %>% 
+  gt() %>%
+  cols_label(
+    country          = 'Country',
+    project          = 'Project',
+    
+    n_test_PCR     = 'Total',
+    a_test_positive = "Positive",
+    
+    n_patient_PCR     = "Total",
+    a_patient_positive = "Positive") %>% 
+  
+  tab_spanner(
+    label = 'Number of tests',
+    columns = contains("_test_")) %>%  
+  tab_spanner(
+    label = 'Number of patients',
+    columns = contains('_patient_')) %>%
+  
+  fmt_missing(
+    columns = starts_with('n_'),
+    missing_text = "0") %>%
+  
+  cols_align(
+    align = 'center',
+    columns = everything()) %>%
+  
+  tab_options(
+    column_labels.font.weight = "bold", 
+    row_group.font.weight = "bold", 
+    data_row.padding = px(2), 
+    row_group.padding = px(2),
+    row.striping.include_table_body = TRUE)  %>% 
+  
+  summary_rows(
+    columns = starts_with("n_"),
+    fns = list(Total = "sum"),
+    decimals = 0) 
+
+
+gtsave(gtble19, 
+       file.path(path.local.msf.tables.oc, paste0('gtble19', '_', week_report, '.html')), 
+       inline_css = TRUE) %>% 
+  invisible()
+
+
+gtble19 %>% 
+  tab_header(
+    title = 'Number of tests and patient tested')
+
+```
+
 ## ???
 
 ```{r}
