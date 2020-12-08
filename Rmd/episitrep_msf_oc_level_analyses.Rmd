@@ -4767,3 +4767,62 @@ tbl_mortality_severity_p <- dta_linelist %>%
 # print(tbl_epicurve_status_p$plot) 
 ```
 
+
+## ??
+
+```{r include=FALSE}
+plot_mortality_admission_project <- function(data, 
+                                   ncols_facet = 3,
+                                   country = "",
+                                   path_save = "") {
+  
+  fig_data <- data %>% 
+    ggplot(aes(x = epi_week_admission,
+               y = n)) +
+    geom_line() +
+    geom_point(alpha = 0.8,
+               size = 2) +
+    
+    facet_wrap(~ project) +
+    
+    labs(x = "Week of admission",
+         y = "Nb of death",
+         title = glue::glue("Mortality for hospitalized patients"))
+    # ggthemes::scale_colour_tableau(name = "Severity", 
+    #                                palette = "Tableau 20")
+  
+  ggsave(filename = paste0(country, '_', 'mortality_admission', '_', week_report, '.png'),
+         path = path_save,
+         plot = fig_data, 
+         width = 6,
+         height = 4,
+         scale = 1.1,
+         dpi = 320
+  )
+  
+  return(fig_data)
+}
+
+
+tbl_mortality_admission_p <- dta_linelist %>%
+  filter(country %in% c("Afghanistan", "Bangladesh", "Haiti", "Iraq", "Yemen"),
+         covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>% 
+  filter(outcome_status == "Died") %>%
+  filter(merge_admit == "Yes") %>% 
+  
+  group_by(country, project, epi_week_admission) %>% 
+  summarise(n = n()) %>% 
+  drop_na(epi_week_admission) %>% 
+  
+  group_by(country) %>% 
+  nest() %>% 
+  mutate(plot = map2(.x = data, 
+                     .y = country,
+                     ~ plot_mortality_admission_project(data = .x,
+                                              # ncols_facet = 3,
+                                              country = .y,
+                                              path_save = path.local.msf.graphs.oc.per.project))) 
+
+# print(tbl_mortality_admission_p$plot) 
+```
+
