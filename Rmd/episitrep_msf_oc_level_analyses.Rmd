@@ -24,24 +24,38 @@ editor_options:
   chunk_output_type: console
 ---
 
-<!-- Setup environment and upload functions -->
+<!-- Setup and uploading functions -->
 
 ```{r setup, warning = FALSE, message = FALSE, include = FALSE}
 
-Sys.setlocale(category = "LC_TIME", locale="en_GB.UTF-8") 
-
+# Sys.setlocale(category = "LC_TIME", locale="en_GB.UTF-8") 
 
 if (!exists('path.root')) {
   source(here::here('R', 'setup.r'), encoding = 'UTF-8')
 }
 
+
+knitr::opts_chunk$set(cache = FALSE,
+                      echo  = FALSE,
+                      tidy  = TRUE,
+                      collapse = TRUE,
+                      dpi = 150,
+                      fig.width  = 8,
+                      fig.height = 5,
+                      fig.align  = "center",
+                      warning  = FALSE,
+                      message  = FALSE,
+                      encoding = "UTF-8")
+
+
+# Upload functions
 source(file.path(path.R, 'utils_management.R'), encoding = 'UTF-8')
 source(file.path(path.R, 'utils_get_data.R')  , encoding = 'UTF-8')
 source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
 
 
 # Set the left and right censoring for date of consultation. 
-# The right-censoring create also the week value and the folders where to save the outputs
+# The right-censoring create also the week value and the folders where to save outputs
 dates_and_week <- set_date_frame(create_folders = TRUE)
 
 date_min_report <- dates_and_week[[1]]
@@ -49,18 +63,18 @@ date_max_report <- dates_and_week[[2]]
 week_report     <- dates_and_week[[3]]
 
 
-# If week folder not created already by overall sitrep, create it.
-path.local.week.oc <- file.path(path.local, week_report, "oc")
 
+### SETUP PATHS ###
+# If week folder not created already by overall sitrep, create it.
+path.local.week.oc       <- file.path(path.local, week_report, "oc")
 path.local.msf.data.oc   <- file.path(path.local.week.oc, params$OC, 'data')
+path.local.msf.tables.oc <- file.path(path.local.week.oc, params$OC, 'tables')
 path.local.msf.graphs.oc <- file.path(path.local.week.oc, params$OC, 'graphs')
 path.local.msf.graphs.oc.per.project <- file.path(path.local.week.oc, params$OC, 'graphs', 'per_project')
-path.local.msf.tables.oc <- file.path(path.local.week.oc, params$OC, 'tables')
 
 if (!dir.exists(path.local.week.oc)) {
   dir.create(path.local.week.oc,   showWarnings = FALSE, recursive = TRUE)
 }
-
 if (!dir.exists(path.local.msf.data.oc)) {
   dir.create(path.local.msf.data.oc,   showWarnings = FALSE, recursive = TRUE)
 }
@@ -75,33 +89,25 @@ if (!dir.exists(path.local.msf.tables.oc)) {
 }
 
 
-
+### GRAPHICAL PARAMETERS ###
 caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF linelists as of {format(date_max_report, "%d %b %Y")}')
-
-
-knitr::opts_chunk$set(cache = FALSE,
-                      echo = FALSE,
-                      tidy = TRUE,
-                      collapse = TRUE,
-                      dpi = 150,
-                      fig.width = 8,
-                      fig.height = 5,
-                      fig.align = "center",
-                      warning = FALSE,
-                      message = FALSE,
-                      encoding = "UTF-8")
-
 ```
 
 <!-- Import and manage data -->
 
 ```{r get-data, include = FALSE}
 
-## Import the list of countries
+# === === === === === === === 
+# Geo and population data
+# === === === === === === === 
+
 df_countries <- readRDS(file.path(path.local.data, 'df_countries.RDS'))
 
-## Import MSF linelist --- --- --- 
 
+
+# === === === === === === === 
+# Linelist data
+# === === === === === === === 
 
 dta_linelist <- get_msf_linelist(force = TRUE) %>% 
   clean_msf_dta() %>% 
@@ -110,7 +116,8 @@ dta_linelist <- get_msf_linelist(force = TRUE) %>%
   left_join(df_countries %>% select(continent, region, iso_a3, country), by = 'iso_a3') %>% 
   mutate(
     country   = as.factor(country), 
-    continent = as.factor(continent)) %>% 
+    continent = as.factor(continent),
+    delay_before_consultation = as.numeric(date_consultation - dateonset)) %>% 
   filter(between(date_consultation, 
                  left = date_min_report, right = date_max_report) | is.na(date_consultation)) %>%  # Filter date limits using date of consultation
   filter(across(
@@ -118,8 +125,22 @@ dta_linelist <- get_msf_linelist(force = TRUE) %>%
     .fns  = ~ .x == TRUE))
 
 
-## Import aggregated data --- --- --- 
-dta_weekly_aggregated <- get_msf_aggregated(force = TRUE)
+# Data for per project analysis: only the confirmed, probable and suspects
+dta_linelist_project <- dta_linelist %>%
+  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  mutate(severity = ifelse(is.na(severity), "Non available", severity),
+         severity = factor(severity, 
+                           levels = c("Mild", "Moderate", "Severe", "Critical", 
+                                      "Non available")))
+   
+
+
+
+# === === === === === === === 
+# Aggregated data
+# === === === === === === === 
+
+dta_weekly_aggregated        <- get_msf_aggregated(force = TRUE)
 dta_project_aggregated_dates <- get_msf_aggregated_dates(force = TRUE)
 
 ### Remove temporarily Quito that grouped the whole activity in a single week
@@ -157,10 +178,14 @@ dta_aggregated_expanded <- dta_weekly_aggregated %>%
   filter(OC == params$OC)
 
 
+# === === === === === === === 
+# Merge datasets
+# === === === === === === === 
+
 # The dataset with linelist and the expanded aggregated data together
 dta_linelist_with_aggregated <- dta_linelist %>% 
-  select(continent, region, country, site_name, iso_a3, OC, epi_week_consultation, 
-         covid_status, project) %>% 
+  select(continent, region, country, site_name, iso_a3, OC, 
+         epi_week_consultation, covid_status, project) %>% 
   add_row(dta_aggregated_expanded %>% 
             select(continent, region, country, site_name, iso_a3, 
                    OC, epi_week_consultation, covid_status) %>% 
@@ -194,21 +219,24 @@ tbl_aggregated_expanded_with_dates <- dta_aggregated_expanded %>%
 ```
 
 
+
 # Overview `r params$OC`
 
 This section will present **information of completeness of data** (number of MSF projects that are active on Covid-19 care, reporting individual data (linelist), reporting aggregated data and not reporting data). Number of projects will be listed by continent and region. 
 
 At the date the required data are not yet available. And this section will be updated as soon as they will be available.
 
+<!-- Some figure outputs to be used in the text --> 
 ```{r numbers, include = FALSE}
 nb_msf_sites_linelist   <- length(unique(dta_linelist$site_name))              # Nb of sites using the linelist
 nb_msf_sites_aggregated <- length(unique(dta_aggregated_expanded$site_name))   # Nb of sites using aggregated data
 nb_msf_sites            <- nb_msf_sites_linelist + nb_msf_sites_aggregated     # Sum of the two above
 
 
-call_msf_countries <- unique(c(as.character(dta_linelist$country), as.character(dta_aggregated_expanded$country))) %>% 
+call_msf_countries <- unique(c(as.character(dta_linelist$country), 
+                               as.character(dta_aggregated_expanded$country))) %>% 
   sort() # List of countries reporting data
-nb_msf_countries <- length(call_msf_countries)
+nb_msf_countries   <- length(call_msf_countries)
 
 nb_msf_obs_linelist   <- dta_linelist %>% count() %>% pull(n)         # Nb of observations in the linelist
 nb_msf_obs_aggregated <- dta_aggregated_expanded %>% count() %>% pull(n)  # Nb of observations in aggreagated data
@@ -221,29 +249,39 @@ nb_msf_suspected <- sum(dta_linelist_with_aggregated$covid_status == 'Suspected'
 
 nb_msf_confirmed_linelist <- sum(dta_linelist$covid_status == 'Confirmed', na.rm = TRUE)
 
-nb_msf_confirmed_with_comorbidity <- with(dta_linelist, sum(covid_status == 'Confirmed' & Comcond_count > 0, na.rm = TRUE))
+nb_msf_confirmed_with_comorbidity <- with(dta_linelist, 
+                                          sum(covid_status == 'Confirmed' & Comcond_count > 0, 
+                                              na.rm = TRUE))
 
-nb_msf_conf_prob_susp <- with(dta_linelist, sum(covid_status %in% c('Confirmed', 'Probable', 'Suspected') & outcome_status %in% c('Cured', 'Died'), na.rm = TRUE))
+nb_msf_conf_prob_susp <- with(dta_linelist, 
+                              sum(covid_status %in% c('Confirmed', 'Probable', 'Suspected') & outcome_status %in% c('Cured', 'Died'), na.rm = TRUE))
 
-nb_msf_conf_prob_susp_who_died <- with(dta_linelist, sum(covid_status %in% c('Confirmed', 'Probable', 'Suspected') & outcome_status == 'Died', na.rm = TRUE))
+nb_msf_conf_prob_susp_who_died <- with(dta_linelist, 
+                                       sum(covid_status %in% c('Confirmed', 'Probable', 'Suspected') & outcome_status == 'Died', na.rm = TRUE))
 
-nb_msf_conf_above65 <- with(dta_linelist, sum(covid_status == 'Confirmed' & age_in_years >=65 & outcome_status %in% c('Cured', 'Died'), na.rm = TRUE))
+nb_msf_conf_above65 <- with(dta_linelist, 
+                            sum(covid_status == 'Confirmed' & age_in_years >= 65 & outcome_status %in% c('Cured', 'Died'), na.rm = TRUE))
 
-nb_msf_conf_above65_who_died <- with(dta_linelist, sum(covid_status == 'Confirmed' & age_in_years >=65 & outcome_status == 'Died', na.rm = TRUE))
+nb_msf_conf_above65_who_died <- with(dta_linelist, 
+                                     sum(covid_status == 'Confirmed' & age_in_years >= 65 & outcome_status == 'Died', na.rm = TRUE))
+
 
 median_age_all <- dta_linelist %>% 
   pull(age_in_years) %>% 
   median(na.rm = TRUE)
+
 
 median_age_all_by_sex <- dta_linelist %>% 
   group_by(sex) %>% 
   summarise(
     age_median = median(age_in_years, na.rm = TRUE))
 
+
 median_age_confirmed <- dta_linelist %>% 
   filter(covid_status == 'Confirmed') %>% 
   pull(age_in_years) %>% 
   median(na.rm = TRUE)
+
 
 median_age_confirmed_by_sex <- dta_linelist %>% 
   filter(covid_status == 'Confirmed') %>% 
@@ -251,11 +289,13 @@ median_age_confirmed_by_sex <- dta_linelist %>%
   summarise(
     age_median = median(age_in_years, na.rm = TRUE))
 
+
 median_age_confirmed_died <- dta_linelist %>% 
   filter(covid_status == 'Confirmed' & outcome_status == 'Died') %>% 
   pull(age_in_years) %>% 
   median(na.rm = TRUE)
 ```
+
 
 **Number of MSF sites**: `r nb_msf_sites` (`r nb_msf_sites_linelist` sites with linelist data and `r nb_msf_sites_aggregated` with aggregated data).
 
@@ -286,7 +326,6 @@ Other results are presented by Covid status (confirmed, probable, suspected, not
 Aggregated data included
 
 <!-- Histograms of patients Covid status -->
-
 ```{r hist-covid-status, fig.cap = 'Weekly number of consultations (including admission) by Covid status'}
 # DONE by Paul
 
@@ -317,8 +356,8 @@ ggsave(filename = paste0('hist_epicurve_status', '_', week_report, '.png'),
 hist_epicurve_status
 ```
 
-<!-- Histograms BY CONTINENT of patients Covid status -->
 
+<!-- Histograms BY CONTINENT of patients Covid status -->
 ```{r hist-covid-status-facet-continent, fig.cap = 'Weekly number of consultations (including admission) by Covid status, in each continent where MSF is operating'}
 # DONE by Francesco (copied from the Paul graph just above)
 
@@ -353,7 +392,6 @@ hist_epicurve_status_continent
 Aggregated data excluded
 
 <!-- Histogram OVERALL of number of consultation/admissions -->
-
 ```{r hist-consultations-sdmissions, fig.cap = paste('Weekly number of consultations and admissions in an MSF supported COvid-19 health service as of', format(date_max_report, "%d %B %Y"))}
 # DONE by Paul
 
@@ -410,8 +448,8 @@ ggsave(file.path(path.local.msf.graphs.oc, paste0('hist_epicurve_consult_admit',
 hist_epicurve_consult_admit
 ```
 
-<!-- Histogram BY CONTINENT of number of consultation/admissions -->
 
+<!-- Histogram BY CONTINENT of number of consultation/admissions -->
 ```{r hist-consultations-admissions-facet-continent, fig.cap = paste('Weekly number of consultations and admissions in an MSF supported COvid-19 health service by continent as of', format(date_max_report, "%d %B %Y"))}
 # DONE by Paul
 
@@ -468,6 +506,7 @@ ggsave(file.path(path.local.msf.graphs.oc, paste0('hist_epicurve_consult_admit_c
 hist_epicurve_consult_admit_continent
 ```
 
+
 ```{r gtbl-consultation-continent, layout = "l-body-outset"}
 tbl_consultation_continent <- dta_linelist %>%
   filter(merge_admit != "Unknown") %>% 
@@ -501,12 +540,14 @@ gtbl_consultation_continent <- tbl_consultation_continent %>%
 gtbl_consultation_continent
 ```
 
+
 ### Summary tables of patients consulted/admitted to an MSF supported COvid-19 health facility
 
-```{=html}
-<!-- === SUMMARY TABLE BY COUNTRY === 
-Counts of patients consulted/admitted to an MSF supported health facility by Covid status (confirmed, probable, suspected, not a case and unknown) listed by country-->
-```
+<!-- 
+ === SUMMARY TABLE BY COUNTRY === 
+Counts of patients consulted/admitted to an MSF supported health facility by Covid 
+status (confirmed, probable, suspected, not a case and unknown) listed by country
+-->
 ```{r, tbl-covid-status-country, layout = "l-page"}
 # DONE by Francesco
 tbl_countries_covid_status <- dta_linelist_with_aggregated %>%
@@ -632,13 +673,12 @@ gtbl_countries_covid_status %>%
                  Counts of patients consulted/admitted to an MSF supported COvid-19 health service by Covid status listed by country as of', format(date_max_report, "%d %b %Y"))))
 ```
 
-```{=html}
+
 <!-- 
 === SUMMARY TABLE BY SITE === 
 Not in the EpiSitrep -- Too long
 Output in html file that will be available through a link
 -->
-```
 ```{r tbl-covid-status-site, layout = "l-page"}
 # DONE by Francesco
 
@@ -760,15 +800,6 @@ gtsave(gtbl_sites_covid_status %>%
   invisible()
 ```
 
-```{=html}
-<!-- 
-Table by continent (or region) 
-
-- Proportion of positive tests
-- Proportion of suspect cases sent home after screening
-- Proportion of asymptomatic among the tested positive
--->
-```
 
 
 ## Patients' characteristics
@@ -881,8 +912,8 @@ gtbl_sex_ratio
 
 ### Summary table of patients consulted/admitted by type of case
 
-<!-- Table age (median, IQR, min-max), sex and presence of at least one morbidity, by Covid status -->
 
+<!-- Table age (median, IQR, min-max), sex and presence of at least one morbidity, by Covid status -->
 ```{r tbl-all-general-characteristics, layout = "l-page"}
 # DONE by Francesco
 ## This is a complicated table, there might be a simpler way that this one
@@ -990,7 +1021,6 @@ gtbl_general %>%
 ### Age/sex pyramid by continent
 
 <!-- Age/sex pyramid by continent -->
-
 ```{r pyramid-age-all-continent, fig.cap = 'Age pyramid of patients consulted/admitted to an MSF supported Covid-19 health service by continent', fig.width = 8, fig.height = 8}
 # Done by Paul
 
@@ -1130,7 +1160,6 @@ gtbl_comcond_status %>%
 ### Symptoms at consultation/admission
 
 <!-- Table - Frequency and proportion of symptoms by Covid status -->
-
 ```{r tbl-symtopms-all, layout = "l-page"}
 # DONE by Francesco
 
@@ -1250,7 +1279,6 @@ gtbl_sympt_all %>%
 ### Severity by Covid status
 
 <!-- Table - Frequency and proportion of patients wit severity -->
-
 ```{r}
 # by Francesco
 
@@ -1542,7 +1570,7 @@ cfr_confirmed_probable_suspected <- dta_linelist %>%
   pull()
 ```
 
-------------------------------------------------------------------------
+--- 
 
 # Covid-19 confirmed patients
 
@@ -1644,8 +1672,8 @@ gtbl_age_distribution_by_sex_confirmed_only
 
 ```
 
-<!-- Age/sex pyramid -->
 
+<!-- Age/sex pyramid -->
 ```{r pyramid-age-sex-confirmed, fig.cap = 'Age pyramid of Covid-confirmed patients consulted/admitted to an MSF supported health service', fig.width = 8, fig.height = 8}
 # Done by Paul
 
@@ -1715,7 +1743,6 @@ pyramid_age_sex_confirmed_continent
 
 ### Patients care
 
-```{=html}
 <!-- 
 Table Patient’s care 1
 - Admitted to a hospital/inpatient department,
@@ -1724,7 +1751,7 @@ Table Patient’s care 1
 - supported with ventilator,
 - supported with ECMO
 -->
-```
+
 ```{r tbl-care-procedures}
 # DONE by Francesco
 
@@ -2039,12 +2066,11 @@ cfr_confirmed_3_comorbidities <- tbl_cfr_comorbidities %>%
 
 ```
 
-```{=html}
+
 <!-- 
 Table Outcome 2 - Count of cured, deaths, transferred… by Admitted/Not Admitted
 This table is NOT displayed any more 
 -->
-```
 ```{r, eval = FALSE}
 # DONE by Francesco
 
@@ -2142,7 +2168,6 @@ gtbl_outcome_admission %>%
 
 
 ### Case fatality by level of care received
-
 
 ```{r tbl-cfr-status-hospi-icu-oxy-venti}
 dta_cfr_status_hospi_icu <- dta_linelist %>%
@@ -2395,8 +2420,8 @@ gtbl_cfr_type_comcond %>%
   )
 ```
 
-<!-- CFR by age-group -->
 
+<!-- CFR by age-group -->
 ```{r tbl-cfr-agegroup, fig.cap = 'Case fatality risk by age-group among confirmed patients'}
 age_cut <- c(seq(0, 80, 10), Inf)
 age_labs <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80+")
@@ -2447,13 +2472,12 @@ ggsave(file.path(path.local.msf.graphs.oc, paste0('dots_cfr_agegroup', '_', week
 dots_cfr_agegroup
 ```
 
-------------------------------------------------------------------------
+--- 
 
 # Indicators overtime among Covid19 confirmed cases
 
 ### Weekly case fatality risk
 
-```{=html}
 <!--
 **With all confirmed cases as denominator: time-series and trends plot** with week as time unit of the following indicator:
 
@@ -2464,9 +2488,9 @@ Time-series plot:
 - Length of staying for patients hospitalised - boxplot
 - Case fatality risk for patients hospitalised - line
 -->
-```
-<!-- CFR by week overall -->
 
+
+<!-- CFR by week overall -->
 ```{r line-cfr-week, fig.cap = 'Evolution overtime of the case fatality risk among Covid confirmed patients consulted/admitted to an MSF supported health facility'}
 # DONE by Paul
 # Only including outcomes of cured or died as CFR denominator - is this ok? FG: Yes
@@ -2523,12 +2547,12 @@ ggsave(file.path(path.local.msf.graphs.oc, paste0('line_cfr_week', '_', week_rep
        scale = 1.1,
        dpi = 320)
 
-line_cfr_week
 
+line_cfr_week
 ```
 
-<!-- CFR by week and by continent -->
 
+<!-- CFR by week and by continent -->
 ```{r line-cfr-week-continent, fig.cap = 'Evolution overtime of the case fatality risk among Covid confirmed patients consulted/admitted to an MSF supported health facility, separated by continent', fig.width = 8, fig.height = 8}
 # DONE by Paul
 # Only including outcomes of cured or died as CFR denominator - is this ok? FG: Yes
@@ -2587,7 +2611,6 @@ ggsave(file.path(path.local.msf.graphs.oc, paste0('line_cfr_week_continent', '_'
 
 
 line_cfr_week_continent
-
 ```
 
 ### Delay from onset of symptpoms to consultation/admission
@@ -2651,7 +2674,6 @@ ggsave(file.path(path.local.msf.graphs.oc, paste0('boxplot_length_stay', '_', we
        dpi = 320)
 
 boxplot_length_stay_week
-
 ```
 
 # Analysis of non-cases
@@ -2743,6 +2765,7 @@ gtsave(gtbl_non_cases_diagt,
        file.path(path.local.msf.tables.oc, paste0('gtbl_non_cases_diagt', '_', week_report, '.png'))) %>%
   invisible()
 
+
 gtsave(gtbl_non_cases_diagt,
        file.path(path.local.msf.tables.oc, paste0('gtbl_non_cases_diagt', '_', week_report, '.html')),
        inline_css = TRUE) %>%
@@ -2753,11 +2776,11 @@ gtbl_non_cases_diagt %>%
   tab_header(
     title = 'Frequency of main diagnoses among non confirmed patients who attended an MSF Covid facility'
   )
-
 ```
 
 
-# Additional analyses by project
+
+# Analysis by project
 
 Inclusion criteria: patients were included in the study if COVID suspected or probable or confirmed case independently of level of care provided in the project.
 
@@ -2851,8 +2874,7 @@ print(tbl_epicurve_status_p$plot)
 Number of patient visits and hospitalisation status at admission and over course of disease, by project (includes confirmed, suspect, probable cases only).
 
 ```{r tble1}
-tble1 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+tble1 <- dta_linelist_project %>% 
   select(country, project, admit, outcome_admit, merge_admit) %>%
   group_by(country, project) %>% 
   summarise(n_patients           = n(),
@@ -2936,8 +2958,7 @@ Number of patient visits and hospitalisation by project and severity (includes c
 
 
 ```{r tble2}
-tble2 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+tble2 <- dta_linelist_project %>% 
   select(country, project, admit, merge_admit, severity, length_stay) %>%
   group_by(country, project) %>% 
   summarise(n_patients = n(),
@@ -3046,8 +3067,7 @@ gtble2 %>%
 Median length of stay according to severity 
 
 ```{r tble3}
-tble3 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+tble3 <- dta_linelist_project %>% 
   select(country, project, merge_admit, severity, length_stay) %>%
   group_by(country, project) %>% 
   summarise(
@@ -3150,8 +3170,7 @@ gtble3 %>%
 Median [IQR] time between onset of symptoms and presentations
 
 ```{r fig4}
-fig4 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+fig4 <- dta_linelist_project %>% 
   mutate(delay_before_consultation = as.numeric(date_consultation - dateonset)) %>% 
   filter(between(delay_before_consultation, left = 0, right = 50)) %>% 
   # select(country, project, merge_admit, severity, length_stay) %>%
@@ -3211,8 +3230,7 @@ Data unavailable
 Median age stratified by gender, project and hospitalisation status
 
 ```{r tble6}
-tble6 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+tble6 <- dta_linelist_project %>% 
   select(country, project, covid_status, merge_admit, sex, age_in_years) %>%
   group_by(country, project, sex) %>% 
   summarise(
@@ -3312,8 +3330,7 @@ gtble6 %>%
 Median [IQR] of age per project, stratified by gender
 
 ```{r fig5}
-fig5 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+fig5 <- dta_linelist_project %>% 
   drop_na(sex) %>% 
   mutate(Sex = factor(sex, 
                       levels = c('M', 'F'), 
@@ -3375,8 +3392,7 @@ Total number of patient visits by case status, ICU admission status, by project
 
 
 ```{r tble7}
-tble7 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+tble7 <- dta_linelist_project %>% 
   select(country, project, merge_admit, icu, merge_icu) %>%
   group_by(country, project) %>% 
   summarise(
@@ -3443,8 +3459,7 @@ gtble7 %>%
 Total number of patient visits by case status, ICU admission status, by project (includes confirmed, suspect, probable cases only)
 
 ```{r tble8}
-tble8 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+tble8 <- dta_linelist_project %>% 
   select(country, project, covid_status, merge_admit, icu, merge_icu) %>%
   group_by(country, project) %>% 
   summarise(
@@ -3570,8 +3585,7 @@ gtble8 %>%
 Total number of patient visits patients admitted and patients given oxygen on admission and over course of disease (confirmed, suspect, probable cases only)
 
 ```{r tble9}
-tble9 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+tble9 <- dta_linelist_project %>% 
   select(country, project, merge_admit, received_oxygen, merge_oxygen) %>%
   group_by(country, project) %>% 
   summarise(
@@ -3642,8 +3656,7 @@ gtble9 %>%
 Total number of patient visits patients admitted and patients given oxygen on admission and during hospitalization, by case status 
 
 ```{r tble10}
-tble10 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+tble10 <- dta_linelist_project %>% 
   select(country, project, covid_status, merge_admit, received_oxygen, merge_oxygen) %>%
   group_by(country, project) %>% 
   summarise(
@@ -3777,8 +3790,7 @@ Data currently non available.
 Total number of patient visits, patients admitted and patients mechanically ventilated by type of ventilation
 
 ```{r tble12}
-tble12 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+tble12 <- dta_linelist_project %>% 
   select(country, project, merge_admit, vent, merge_vent) %>%
   group_by(country, project) %>% 
   summarise(
@@ -3848,8 +3860,7 @@ gtble12 %>%
 Total number of patient visits, patients admitted and patients mechanically ventilated at admission and other time during hospitalization by project and case status
 
 ```{r tble13}
-tble13 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+tble13 <- dta_linelist_project %>% 
   select(country, project, covid_status, merge_admit, vent, merge_vent) %>%
   group_by(country, project) %>% 
   summarise(
@@ -3974,8 +3985,7 @@ gtble13 %>%
 Case severity per project
 
 ```{r tble14}
-tble14 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+tble14 <- dta_linelist_project %>% 
   select(country, project, merge_admit, covid_status, severity) %>%
   group_by(country, project) %>% 
   summarise(
@@ -4060,8 +4070,7 @@ gtble14 %>%
 Mortality by severity
 
 ```{r tble15}
-tble15 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+tble15 <- dta_linelist_project %>% 
   select(country, project, merge_admit, covid_status, severity, outcome_status, merge_icu) %>%
   group_by(country, project) %>% 
   summarise(
@@ -4145,8 +4154,7 @@ gtble15 %>%
 Mortality by therapy received, by project
 
 ```{r fig6}
-fig6 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected'),
+fig6 <- dta_linelist_project %>% 
          merge_admit == "Yes") %>% 
  
   group_by(continent, country, project) %>%
@@ -4218,8 +4226,7 @@ Number of patients with comorbidities and proportion of hospitalizations and dea
 list_comorb <- c("obesity", "Comcond_diabetes", "hypertension", "Comcond_renal")
 
 
-tble16 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+tble16 <- dta_linelist_project %>% 
   select(country, project, merge_admit, Comcond_01, Comcond_diabetes, hypertension,
          Comcond_renal, outcome_status, obesity) %>%
   group_by(country, project) %>% 
@@ -4367,9 +4374,8 @@ gtble16 %>%
 Comorbidities by project
 
 ```{r fig7}
-fig7 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected'),
-         merge_admit == "Yes") %>%
+fig7 <-dta_linelist_project %>% 
+  filter(merge_admit == "Yes") %>%
   mutate(project = paste(country, project, sep = " - ")) %>% 
   group_by(project) %>% 
   summarise(
@@ -4432,8 +4438,7 @@ Number of patients with coinfections and proportion of hospitalizations and deat
 list_coinf <- c("malaria", "hiv_status", "tb_active", "tb_treatment_past", "malnutrition")
 
 
-tble17 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+tble17 <-dta_linelist_project %>% 
   select(country, project, merge_admit, outcome_status, malaria, hiv_status, 
          tb_active, tb_treatment_past, malnutrition) %>%
   group_by(country, project) %>% 
@@ -4601,9 +4606,8 @@ gtble17 %>%
 Coinfections by project
 
 ```{r fig8}
-fig8 <- dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected'),
-         merge_admit == "Yes") %>%
+fig8 <- dta_linelist_project %>% 
+  filter(merge_admit == "Yes") %>%
   select(country, project, merge_admit, outcome_status, malaria, hiv_status, 
          tb_active, tb_treatment_past, malnutrition) %>%
   mutate(project = paste(country, project, sep = " - ")) %>% 
@@ -4819,11 +4823,7 @@ gtble19 %>%
 ## ???
 
 ```{r}
-dta_linelist %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>% 
-  mutate(severity = ifelse(is.na(severity), "Non available", severity),
-         severity = factor(severity, 
-                           levels = c("Mild", "Moderate", "Severe", "Critical", "Non available"))) %>% 
+dta_linelist_project %>% 
   filter(outcome_status == "Died") %>%
   filter(merge_admit == "Yes") %>% 
   
@@ -4861,54 +4861,9 @@ ggsave(filename = paste0('mortality_severity', '_', week_report, '.png'),
 ```
 
 ```{r include=FALSE}
-plot_mortality_project <- function(data, 
-                                   select_project = "",
-                                   path_save = "") {
-  
-  country <-  data %>% select(country) %>% unique() %>% pull()
-  
-  country_project <- paste(country, select_project, sep = "_")
-  
-  
-  fig_data <- data %>% 
-    ggplot(aes(x = epi_week_admission,
-               y = n,
-               colour = severity)) +
-    geom_line() +
-    geom_point(alpha = 0.8,
-               size = 2) +
-    
-    labs(x = "Week of admission",
-         y = "Nb of death",
-         title = glue::glue("Mortality by severity for hospitalized patients, {country_project}")) +
-    
-    scale_x_date(name = "Week of Admission", 
-                 date_breaks = "2 weeks", 
-                 date_labels = "%V", 
-                 sec.axis = ggplot2::sec_axis(trans = ~ .), 
-                 expand = expansion(mult = c(0.01, 0.01))) +
-    
-    ggthemes::scale_colour_tableau(name = "Severity", 
-                                   palette = "Tableau 20") 
-  
-  
-  ggsave(filename = paste0(country_project, '_', 'mortality_severity', '_',
-                           week_report, '.png'),
-         path = path_save,
-         plot = fig_data, 
-         width = 7,
-         height = 4,
-         scale = 1.1,
-         dpi = 320
-  )
-  
-  return(fig_data)
-}
 
-
-tbl_mortality_severity_p <- dta_linelist %>%
-  filter(country %in% c("Afghanistan", "Bangladesh", "Haiti", "Iraq", "Yemen"),
-         covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>% 
+tbl_mortality_severity_p <- dta_linelist_project %>% 
+  filter(country %in% c("Afghanistan", "Bangladesh", "Haiti", "Iraq", "Yemen")) %>% 
   mutate(severity = ifelse(is.na(severity), "Non available", severity),
          severity = factor(severity, 
                            levels = c("Mild", "Moderate", "Severe", 
@@ -4935,65 +4890,9 @@ tbl_mortality_severity_p <- dta_linelist %>%
 ## ??
 
 ```{r include=FALSE}
-plot_mortality_admission_project <- function(data, 
-                                             select_project = "",
-                                             path_save = "") {
-  
-  country <-  data %>% select(country) %>% unique() %>% pull()
-  country_project <- paste(country, select_project, sep = "_")
-  
-  
-  # Get scaling factor
-  scaling_factor <- data %>% 
-    ungroup() %>% 
-    summarise(m_hospi = max(n_hospi, na.rm = TRUE),
-              m_p = max(p_death, na.rm = TRUE)) %>% 
-    mutate(scaling_factor = m_p /m_hospi) %>% pull(scaling_factor)
-  
-  
-  fig_data <- data %>% 
-   
-    ggplot(aes(x = epi_week_admission)) +
-    
-    geom_col(aes(y = n_hospi), fill = "#A0CBE8") +
-    
-    geom_line(aes(y = p_death / scaling_factor), colour = "red") +
-    geom_point(aes(y = p_death / scaling_factor),
-               alpha = 0.8, colour = "red", size = 2) +
-    
-    scale_x_date(name = "Week of Admission", 
-                 date_breaks = "2 weeks", 
-                 date_labels = "%V", 
-                 sec.axis = ggplot2::sec_axis(trans = ~ .), 
-                 expand = expansion(mult = c(0.01, 0.01))) +
-    
-    scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, 
-                                                    name = "Mortality rate", 
-                                                    labels = scales::percent_format(accuracy = 2L)),
-                       expand = expansion(mult = c(0, 0.02))) +
-    
-    labs(x = "Week of admission",
-         y = "Nb of hospitalizations",
-         title = glue::glue("Hospitalized patients and mortality, {country_project}"))
-  
-  
-  ggsave(filename = paste0(country_project, '_', 'mortality_admission', '_', week_report, '.png'),
-         path = path_save,
-         plot = fig_data, 
-         width = 7,
-         height = 4,
-         scale = 1.1,
-         dpi = 320
-  )
-  
-  return(fig_data)
-}
 
-
-tbl_mortality_admission_p <- dta_linelist %>% 
-  # filter(project == "IQ244") %>% 
+tbl_mortality_admission_p <- dta_linelist_project %>%
   filter(country %in% c("Afghanistan", "Bangladesh", "Haiti", "Iraq", "Yemen"),
-         covid_status %in% c('Confirmed', 'Probable', 'Suspected'),
          merge_admit == "Yes") %>%
   drop_na(epi_week_admission) %>% 
   group_by(country, project, epi_week_admission) %>% 
@@ -5027,6 +4926,6 @@ tbl_mortality_admission_p <- dta_linelist %>%
 
 
 ```{r}
-Sys.setlocale(category = "LC_TIME", locale="") 
+# Sys.setlocale(category = "LC_TIME", locale="") 
 ```
 
