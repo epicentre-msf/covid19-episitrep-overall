@@ -4697,37 +4697,43 @@ dta_testing <- dta_linelist %>%
   )
 
 
-  
+
 
 # Graph
+
+scaling_factor <- 0.01
+  
 dta_testing %>% 
 group_by(epi_week_consultation) %>% 
   summarise(n_patients_PCR = sum(merge_test_PCR == "Yes", na.rm = TRUE),
             n_patients_PCR_positive = sum(merge_test_PCR_positive == "Yes", na.rm = TRUE),
             perct_patient_pos = ifelse(n_patients_PCR == 0,
                                NA_integer_,
-                               100 * n_patients_PCR_positive / n_patients_PCR),
+                               n_patients_PCR_positive / n_patients_PCR),
             
             nb_test_PCR = sum(n_test_PCR, na.rm = TRUE),
             nb_tests_PCR_positive =sum(n_test_PCR_positive, na.rm = TRUE),
             perct_test_pos = ifelse(nb_test_PCR == 0,
                                     NA_integer_,
-                                    100 * nb_tests_PCR_positive / nb_test_PCR)) %>% 
+                                    nb_tests_PCR_positive / nb_test_PCR)) %>% 
   
+
   ggplot(aes(x = epi_week_consultation)) +
   geom_col(aes(y = n_patients_PCR),
            fill = "#A0CBE8") +
-  geom_line(aes(y = perct_patient_pos),
+  geom_line(aes(y = perct_patient_pos / scaling_factor),
             colour = "red") +
   labs(x = "Week of consultation",
        y = "Number of patients tested",
        title = "Number of patient tested and positivity rates") +
+  
   scale_x_date(name = "Week of Consultation", 
                date_breaks = "2 weeks", 
                date_labels = "%V", 
                sec.axis = ggplot2::sec_axis(trans = ~ .), 
                expand = expansion(mult = c(0.01, 0.01))) +
-  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, 
+  
+  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ .* scaling_factor, 
                                                   name = "Positivity rate", 
                                                   labels = scales::percent_format(accuracy = 1)),
                      expand = expansion(mult = c(0, 0.02)))
@@ -4930,35 +4936,51 @@ tbl_mortality_severity_p <- dta_linelist %>%
 
 ```{r include=FALSE}
 plot_mortality_admission_project <- function(data, 
-                                   ncols_facet = 3,
-                                   country = "",
-                                   path_save = "") {
+                                             select_project = "",
+                                             path_save = "") {
+  
+  country <-  data %>% select(country) %>% unique() %>% pull()
+  country_project <- paste(country, select_project, sep = "_")
+  
+  
+  # Get scaling factor
+  scaling_factor <- data %>% 
+    ungroup() %>% 
+    summarise(m_hospi = max(n_hospi, na.rm = TRUE),
+              m_p = max(p_death, na.rm = TRUE)) %>% 
+    mutate(scaling_factor = m_p /m_hospi) %>% pull(scaling_factor)
+  
   
   fig_data <- data %>% 
-    ggplot(aes(x = epi_week_admission,
-               y = n)) +
-    geom_line() +
-    geom_point(alpha = 0.8,
-               size = 2) +
+   
+    ggplot(aes(x = epi_week_admission)) +
     
-    facet_wrap(~ project, ncol = ncols_facet) +
+    geom_col(aes(y = n_hospi), fill = "#A0CBE8") +
     
-     scale_x_date(name = "Week of Admission", 
-               date_breaks = "2 weeks", 
-               date_labels = "%V", 
-               sec.axis = ggplot2::sec_axis(trans = ~ .), 
-               expand = expansion(mult = c(0.01, 0.01))) +
+    geom_line(aes(y = p_death / scaling_factor), colour = "red") +
+    geom_point(aes(y = p_death / scaling_factor),
+               alpha = 0.8, colour = "red", size = 2) +
+    
+    scale_x_date(name = "Week of Admission", 
+                 date_breaks = "2 weeks", 
+                 date_labels = "%V", 
+                 sec.axis = ggplot2::sec_axis(trans = ~ .), 
+                 expand = expansion(mult = c(0.01, 0.01))) +
+    
+    scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, 
+                                                    name = "Mortality rate", 
+                                                    labels = scales::percent_format(accuracy = 2L)),
+                       expand = expansion(mult = c(0, 0.02))) +
     
     labs(x = "Week of admission",
-         y = "Nb of death",
-         title = glue::glue("Mortality for hospitalized patients"))
-    # ggthemes::scale_colour_tableau(name = "Severity", 
-    #                                palette = "Tableau 20")
+         y = "Nb of hospitalizations",
+         title = glue::glue("Hospitalized patients and mortality, {country_project}"))
   
-  ggsave(filename = paste0(country, '_', 'mortality_admission', '_', week_report, '.png'),
+  
+  ggsave(filename = paste0(country_project, '_', 'mortality_admission', '_', week_report, '.png'),
          path = path_save,
          plot = fig_data, 
-         width = 10,
+         width = 7,
          height = 4,
          scale = 1.1,
          dpi = 320
@@ -4968,24 +4990,26 @@ plot_mortality_admission_project <- function(data,
 }
 
 
-tbl_mortality_admission_p <- dta_linelist %>%
+tbl_mortality_admission_p <- dta_linelist %>% 
+  # filter(project == "IQ244") %>% 
   filter(country %in% c("Afghanistan", "Bangladesh", "Haiti", "Iraq", "Yemen"),
-         covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>% 
-  filter(outcome_status == "Died") %>%
-  filter(merge_admit == "Yes") %>% 
-  
-  group_by(country, project, epi_week_admission) %>% 
-  summarise(n = n()) %>% 
+         covid_status %in% c('Confirmed', 'Probable', 'Suspected'),
+         merge_admit == "Yes") %>%
   drop_na(epi_week_admission) %>% 
+  group_by(country, project, epi_week_admission) %>% 
+  summarise(n_hospi = n(),
+            n_death = sum(outcome_status == "Died", na.rm = TRUE),
+            p_death = n_death / n_hospi) %>% 
   
-  group_by(country) %>% 
+  filter(project == "CXB")
+  
+  group_by(project) %>% 
   nest() %>% 
   mutate(plot = map2(.x = data, 
-                     .y = country,
+                     .y = project,
                      ~ plot_mortality_admission_project(data = .x,
-                                              ncols_facet = 2,
-                                              country = .y,
-                                              path_save = path.local.msf.graphs.oc.per.project))) 
+                                                        select_project = .y,
+                                                        path_save = path.local.msf.graphs.oc.per.project))) 
 
 # print(tbl_mortality_admission_p$plot) 
 ```
