@@ -777,3 +777,71 @@ plot_mortality_project <- function(data,
   
   return(fig_data)
 }
+
+
+
+#' Plot mortality by project
+#'
+#' Generate and saves a plot with number of hospitalised patients and mortality 
+#' rates for a given project
+#' 
+#' @param data The summarised data for a project. 
+#' @param select_project Character string describing the project
+#' @param path_save Character string containing the path to save the graph
+#'
+#' @returnA ggplot object
+#' @export
+#'
+#' @examples
+plot_mortality_admission_project <- function(data, 
+                                             select_project = "",
+                                             path_save = "") {
+  
+  country <-  data %>% select(country) %>% unique() %>% pull()
+  country_project <- paste(country, select_project, sep = "_")
+  
+  # Get scaling factor
+  scaling_factor <- data %>% 
+    ungroup() %>% 
+    summarise(m_hospi = max(n_hospi, na.rm = TRUE),
+              m_p = max(p_death, na.rm = TRUE)) %>% 
+    mutate(scaling_factor = m_p /m_hospi) %>% pull(scaling_factor)
+  
+  
+  fig_data <- data %>% 
+    
+    ggplot(aes(x = epi_week_admission)) +
+    
+    geom_col(aes(y = n_hospi), fill = "#A0CBE8") +
+    
+    geom_line(aes(y = p_death / scaling_factor), colour = "red") +
+    geom_point(aes(y = p_death / scaling_factor),
+               alpha = 0.8, colour = "red", size = 2) +
+    
+    scale_x_date(name = "Week of Admission", 
+                 date_breaks = "2 weeks", 
+                 date_labels = "%V", 
+                 sec.axis = ggplot2::sec_axis(trans = ~ .), 
+                 expand = expansion(mult = c(0.01, 0.01))) +
+    
+    scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, 
+                                                    name = "Mortality rate", 
+                                                    labels = scales::percent_format(accuracy = 2L)),
+                       expand = expansion(mult = c(0, 0.02))) +
+    
+    labs(x = "Week of admission",
+         y = "Nb of hospitalizations",
+         title = glue::glue("Hospitalized patients and mortality, {country_project}"))
+  
+  
+  ggsave(filename = paste0(country_project, '_', 'mortality_admission', '_', week_report, '.png'),
+         path = path_save,
+         plot = fig_data, 
+         width = 7,
+         height = 4,
+         scale = 1.1,
+         dpi = 320
+  )
+  
+  return(fig_data)
+}
