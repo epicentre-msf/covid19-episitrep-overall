@@ -28,6 +28,9 @@ editor_options:
 
 ```{r setup, warning = FALSE, message = FALSE, include = FALSE}
 
+Sys.setlocale(category = "LC_TIME", locale="en_GB.UTF-8") 
+
+
 if (!exists('path.root')) {
   source(here::here('R', 'setup.r'), encoding = 'UTF-8')
 }
@@ -4829,6 +4832,12 @@ dta_linelist %>%
   geom_point(alpha = 0.8,
              size = 2) +
   
+  scale_x_date(name = "Week of Admission", 
+               date_breaks = "2 weeks", 
+               date_labels = "%V", 
+               sec.axis = ggplot2::sec_axis(trans = ~ .), 
+               expand = expansion(mult = c(0.01, 0.01))) +
+  
   labs(x = "Week of admission",
        y = "Nb of death",
        title = glue::glue("Mortality by severity for hospitalized patients")) +
@@ -4847,9 +4856,13 @@ ggsave(filename = paste0('mortality_severity', '_', week_report, '.png'),
 
 ```{r include=FALSE}
 plot_mortality_project <- function(data, 
-                                   ncols_facet = 3,
-                                   country = "",
+                                   select_project = "",
                                    path_save = "") {
+  
+  country <-  data %>% select(country) %>% unique() %>% pull()
+  
+  country_project <- paste(country, select_project, sep = "_")
+  
   
   fig_data <- data %>% 
     ggplot(aes(x = epi_week_admission,
@@ -4859,18 +4872,25 @@ plot_mortality_project <- function(data,
     geom_point(alpha = 0.8,
                size = 2) +
     
-    facet_wrap(~ project) +
-    
     labs(x = "Week of admission",
          y = "Nb of death",
-         title = glue::glue("Mortality by severity for hospitalized patients")) +
+         title = glue::glue("Mortality by severity for hospitalized patients, {country_project}")) +
+    
+    scale_x_date(name = "Week of Admission", 
+                 date_breaks = "2 weeks", 
+                 date_labels = "%V", 
+                 sec.axis = ggplot2::sec_axis(trans = ~ .), 
+                 expand = expansion(mult = c(0.01, 0.01))) +
+    
     ggthemes::scale_colour_tableau(name = "Severity", 
-                                   palette = "Tableau 20")
+                                   palette = "Tableau 20") 
   
-  ggsave(filename = paste0(country, '_', 'mortality_severity', '_', week_report, '.png'),
+  
+  ggsave(filename = paste0(country_project, '_', 'mortality_severity', '_',
+                           week_report, '.png'),
          path = path_save,
          plot = fig_data, 
-         width = 6,
+         width = 7,
          height = 4,
          scale = 1.1,
          dpi = 320
@@ -4885,7 +4905,8 @@ tbl_mortality_severity_p <- dta_linelist %>%
          covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>% 
   mutate(severity = ifelse(is.na(severity), "Non available", severity),
          severity = factor(severity, 
-                           levels = c("Mild", "Moderate", "Severe", "Critical", "Non available"))) %>% 
+                           levels = c("Mild", "Moderate", "Severe", 
+                                      "Critical", "Non available"))) %>% 
   filter(outcome_status == "Died") %>%
   filter(merge_admit == "Yes") %>% 
   
@@ -4893,13 +4914,12 @@ tbl_mortality_severity_p <- dta_linelist %>%
   summarise(n = n()) %>% 
   drop_na(severity, epi_week_admission) %>% 
   
-  group_by(country) %>% 
+  group_by(project) %>% 
   nest() %>% 
   mutate(plot = map2(.x = data, 
-                     .y = country,
+                     .y = project,
                      ~ plot_mortality_project(data = .x,
-                                              # ncols_facet = 3,
-                                              country = .y,
+                                              select_project = .y,
                                               path_save = path.local.msf.graphs.oc.per.project))) 
 
 # print(tbl_epicurve_status_p$plot) 
@@ -4921,7 +4941,13 @@ plot_mortality_admission_project <- function(data,
     geom_point(alpha = 0.8,
                size = 2) +
     
-    facet_wrap(~ project) +
+    facet_wrap(~ project, ncol = ncols_facet) +
+    
+     scale_x_date(name = "Week of Admission", 
+               date_breaks = "2 weeks", 
+               date_labels = "%V", 
+               sec.axis = ggplot2::sec_axis(trans = ~ .), 
+               expand = expansion(mult = c(0.01, 0.01))) +
     
     labs(x = "Week of admission",
          y = "Nb of death",
@@ -4932,7 +4958,7 @@ plot_mortality_admission_project <- function(data,
   ggsave(filename = paste0(country, '_', 'mortality_admission', '_', week_report, '.png'),
          path = path_save,
          plot = fig_data, 
-         width = 6,
+         width = 10,
          height = 4,
          scale = 1.1,
          dpi = 320
@@ -4957,10 +4983,26 @@ tbl_mortality_admission_p <- dta_linelist %>%
   mutate(plot = map2(.x = data, 
                      .y = country,
                      ~ plot_mortality_admission_project(data = .x,
-                                              # ncols_facet = 3,
+                                              ncols_facet = 2,
                                               country = .y,
                                               path_save = path.local.msf.graphs.oc.per.project))) 
 
 # print(tbl_mortality_admission_p$plot) 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+Sys.setlocale(category = "LC_TIME", locale="") 
 ```
 
