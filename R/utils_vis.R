@@ -706,3 +706,74 @@ format_med <- function(med, low, high) {
                       glue::glue("{med} [{low}-{high}]")
   )
 }
+
+
+
+#' Plot mortality by severity status  per project
+#'
+#' Generate and save the mortality over time for each severity status for a given project.
+#' 
+#' @param data The summarised data for a project. 
+#' @param select_project Character string describing the project
+#' @param path_save Character string containing the path to save the graph
+#'
+#' @return A ggplot object
+#' @export
+#'
+#' @examples
+#' dta_linelist %>%
+#'  group_by(country, project, epi_week_admission, severity) %>% 
+#'  summarise(n = n()) %>% 
+#'  group_by(project) %>% 
+#'  nest() %>% 
+#'  mutate(plot = map2(.x = data, 
+#'                     .y = project,
+#'                     ~ plot_mortality_project(data = .x,
+#'                                              select_project = .y,
+#'                                              path_save = path.local.msf.graphs.oc.per.project))) 
+plot_mortality_project <- function(data, 
+                                   select_project = "",
+                                   path_save = "") {
+  
+  
+  # Get the country the project is in.
+  country <- data %>% select(country) %>% unique() %>% pull()
+  
+  # String for plot title and name 
+  country_project <- paste(country, select_project, sep = "_")
+  
+  
+  fig_data <- data %>% 
+    ggplot(aes(x = epi_week_admission,
+               y = n,
+               colour = severity)) +
+    geom_line() +
+    geom_point(alpha = 0.8,
+               size = 2) +
+    
+    labs(x = "Week of admission",
+         y = "Nb of death",
+         title = glue::glue("Mortality by severity for hospitalized patients, {country_project}")) +
+    
+    scale_x_date(name = "Week of Admission", 
+                 date_breaks = "2 weeks", 
+                 date_labels = "%V", 
+                 sec.axis = ggplot2::sec_axis(trans = ~ .), 
+                 expand = expansion(mult = c(0.01, 0.01))) +
+    
+    ggthemes::scale_colour_tableau(name = "Severity", 
+                                   palette = "Tableau 20") 
+  
+  
+  ggsave(filename = paste0(country_project, '_', 'mortality_severity', '_',
+                           week_report, '.png'),
+         path = path_save,
+         plot = fig_data, 
+         width = 7,
+         height = 4,
+         scale = 1.1,
+         dpi = 320
+  )
+  
+  return(fig_data)
+}
