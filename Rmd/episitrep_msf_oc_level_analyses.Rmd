@@ -4850,17 +4850,14 @@ ggsave(filename = paste0('mortality_severity', '_', week_report, '.png'),
 
 tbl_mortality_severity_p <- dta_linelist_project %>%
   filter(country %in% c("Afghanistan", "Bangladesh", "Haiti", "Iraq", "Yemen")) %>%
-  mutate(severity = ifelse(is.na(severity), "Non available", severity),
-         severity = factor(severity,
-                           levels = c("Mild", "Moderate", "Severe",
-                                      "Critical", "Non available"))) %>%
+
   filter(outcome_status == "Died") %>%
   filter(merge_admit == "Yes") %>%
 
   group_by(country, project, epi_week_admission, severity) %>%
   summarise(n = n()) %>%
   drop_na(severity, epi_week_admission) %>%
-
+  
   group_by(project) %>%
   nest() %>%
   mutate(plot = map2(.x = data,
@@ -4885,8 +4882,6 @@ tbl_mortality_admission_p <- dta_linelist_project %>%
   summarise(n_hospi = n(),
             n_death = sum(outcome_status == "Died", na.rm = TRUE),
             p_death = n_death / n_hospi) %>%
-
-  filter(project == "CXB")
 
   group_by(project) %>%
   nest() %>%

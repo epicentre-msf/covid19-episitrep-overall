@@ -742,14 +742,16 @@ plot_mortality_project <- function(data,
   # String for plot title and name 
   country_project <- paste(country, select_project, sep = "_")
   
+  pd <- position_dodge2(1)
   
   fig_data <- data %>% 
     ggplot(aes(x = epi_week_admission,
                y = n,
                colour = severity)) +
-    geom_line() +
+    geom_line(position = pd) +
     geom_point(alpha = 0.8,
-               size = 2) +
+               size = 2,
+               position = pd) +
     
     labs(x = "Week of admission",
          y = "Nb of death",
