@@ -253,7 +253,7 @@ Reports of previous weeks are available [here](https://reports.msf.net/secure/ap
 **IMPORTANT NOTE:** Data and results presented here are possibly affected by bias related with factors such as the testing strategies used by each country and the performance of their surveillance systems. Results are to be interpreted in the light of this information.
 
 
-# Counts and trends of Covid-19 cases
+# Covid-19 cases and trends
 
 ## Cases counts 
 
@@ -324,7 +324,7 @@ write.csv(tbl_case_trend,
 ```
 
 <!-- csv for MSF GIS -->
-```{r}
+```{r csv-for-MSF-GIS, include = FALSE}
 tbl_case_trend %>% 
   select(iso_a3, all_of(vars_trends(model_for_trend))) %>% 
   select(iso = iso_a3, trend) %>% 
@@ -415,7 +415,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_case_count_trend
 
 
 <!-- Table cases trends -->
-```{r tbl-countries-cases-increasing, layout="l-body-outset"}
+```{r tbl-countries-cases-increasing}
 
 tbl_countries_increasing_cases <- tbl_case_trend %>% 
   select(c(iso_a3 : cases), all_of(vars_trends(model_for_trend))) %>% 
@@ -527,7 +527,7 @@ gtbl_countries_increasing_cases %>%
 ```
 
 
-# Counts and trends of Covid-19 associated deaths
+# Covid-19 associated deaths and trends
 
 ## Deaths counts
 
@@ -615,7 +615,7 @@ tbl_death_increasing_trend <- tbl_death_trend %>%
 **Oceania:** (`r length(call_countries_increasing('deaths', 'Oceania'))`)`r glue(":  {call_countries_increasing('deaths', 'Oceania') %>% combine_words()}")`. 
 
 <!-- Map deaths counts and trends in the last 12 days -->
-```{r map-world-deaths-trends, fig.width=8, fig.height=10, fig.cap = glue('Mapping of Covid-19 associated deaths and trends during the period from {format(date_max_report - (period_trend - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} ({period_trend} days)')}
+```{r map-world-deaths-trends, fig.width = 8, fig.height = 10, fig.cap = glue('Mapping of Covid-19 associated deaths and trends during the period from {format(date_max_report - (period_trend - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} ({period_trend} days)')}
 
 map_world_death_count_12d <- plot_map_world_count(tbl_death_count_12d, 'deaths') + 
   labs(title = 'Death count (12 days)')
@@ -669,7 +669,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_death_count_tren
 
 
 <!-- Table deaths trends -->
-```{r tbl-countries-deaths-increasing, layout="l-body-outset"}
+```{r tbl-countries-deaths-increasing}
 
 tbl_countries_increasing_deaths <- tbl_death_trend %>% 
   select(c(iso_a3 : deaths), all_of(vars_trends(model_for_trend))) %>% 
@@ -804,11 +804,11 @@ tbl_summary_cases_deaths <- df_countries %>%
     cfr = round(deaths / cases * 100, digits = 1)) %>% 
   left_join(select(df_pop_country, iso_a3, pop)) %>% 
   mutate(
-    cases_ar  = cases  / pop * 100000, 
-    deaths_ar = deaths / pop * 100000) %>% 
+    cases_ip  = cases  / pop * 100000, 
+    deaths_ip = deaths / pop * 100000) %>% 
   select(iso_a3, continent, region, country, 
          cases, deaths, cfr, 
-         cases_ar, deaths_ar, 
+         cases_ip, deaths_ip, 
          starts_with('trend_cases_'), starts_with('trend_deaths_')) %>% 
   left_join(select(tbl_case_count_12d, iso_a3, cases_12d = cases)) %>% 
   left_join(select(tbl_death_count_12d, iso_a3, deaths_12d = deaths)) %>%
@@ -826,8 +826,8 @@ gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>%
     cases = 'Cases', 
     deaths = 'Deaths', 
     cfr = html('naïve<br>CFR'),
-    cases_ar = 'cases',
-    deaths_ar ='deaths', 
+    cases_ip = 'cases',
+    deaths_ip ='deaths', 
     cases_12d = 'Cases', 
     deaths_12d = 'Deaths', 
     trend_cases_coeff  = 'Rate', 
@@ -836,7 +836,7 @@ gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>%
     trend_deaths_ci    = "[95% CI]") %>% 
   cols_move(
     columns = vars(cases_12d), 
-    after = vars(deaths_ar)) %>% 
+    after = vars(deaths_ip)) %>% 
   fmt_number(
     columns = starts_with(c('cases', 'deaths')), 
     decimals = 0) %>% 
@@ -902,44 +902,43 @@ gtsave(gtbl_summary_cases_deaths,
 
 # Incidence proportions
 
-<!-- Map of cumulative incidences -->
 ```{r, include = FALSE}
+## Table used in the maps of both cases and deaths incidence proportions
 
-# Specific breaks for incidence
-breaks_ar <- c(0, 10, 100, 1000, 10000, Inf)
-labels_ar <- label_breaks(breaks_ar) %>% gsub("\\<0-1\\>", "0", .)
+## Breaks for incidence proportions
+breaks_ip <- c(0, 10, 100, 1000, 10000, Inf)
+labels_ip <- label_breaks(breaks_ip) %>% gsub("\\<0-1\\>", "0", .)
 
-tbl_attack_rates <- tbl_summary_cases_deaths %>% 
-  select(iso_a3 : country, cases, deaths, cases_ar, deaths_ar) %>% 
+tbl_inc_prop <- tbl_summary_cases_deaths %>% 
+  select(iso_a3 : country, cases, deaths, cases_ip, deaths_ip) %>% 
   mutate(
-    cases_brks  = cut(cases_ar, breaks_ar, labels = labels_ar, include.lowest = TRUE, right = FALSE), 
-    deaths_brks = cut(deaths_ar, breaks_ar, labels = labels_ar, include.lowest = TRUE, right = FALSE)
-  )
+    cases_brks  = cut(cases_ip, breaks_ip, labels = labels_ip, include.lowest = TRUE, right = FALSE), 
+    deaths_brks = cut(deaths_ip, breaks_ip, labels = labels_ip, include.lowest = TRUE, right = FALSE))
 
 ```
 
 
-The cumulative number of cases are mapped in Figure \@ref(fig:map-world-cases-incidence-proportion). The cumulative number of deaths are mapped in Figure \@ref(fig:map-world-deaths-incidence-proportion). 
+The incidence proportions of cases are mapped in Figure \@ref(fig:map-world-cases-incidence-proportion). The incidence proportion of deaths are mapped in Figure \@ref(fig:map-world-deaths-incidence-proportion). 
 
 ## Incidence proportions of cases
 <!-- Map of incidences proportion of cases -->
 ```{r map-world-cases-incidence-proportion, fig.cap = paste('Incidence proportion of Covid-19 reported cases since beginning of epidemic per 100,000 population, data until', format(date_max_report, "%d %B %Y"))}
 
-sf_attack_rates <- tbl_attack_rates %>% 
+sf_inc_prop <- tbl_inc_prop %>% 
   inner_join(
     select(sf_world, iso_a3),
     by = "iso_a3"
   ) %>% 
   st_as_sf()
 
-map_world_case_attack_rates <- ggplot(sf_attack_rates) + 
+map_world_case_attack_rates <- ggplot(sf_inc_prop) + 
   geom_sf(aes(fill = cases_brks), size = .1) + 
   scale_fill_brewer(
     name = "Incidence proportion of cases / 100,000 population", palette = "Blues", 
     drop = FALSE, 
     guide = guide_legend(
       keyheight = unit(3, units = "mm"),
-      keywidth = unit(70 / length(labels_ar), units = "mm"),
+      keywidth = unit(70 / length(labels_ip), units = "mm"),
       title.hjust = 0.5,
       nrow = 1,
       label.position = "bottom",
@@ -966,14 +965,14 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_case_attack_rate
 <!-- Map of incidence proportion of deaths -->
 ```{r map-world-deaths-incidence-proportion, fig.cap = paste('Incidence proportion of Covid-19 associated deaths since the beginning of epidemic per 100,000 population, data until', format(date_max_report, "%d %B %Y"))}
 
-map_world_death_attack_rates <- ggplot(sf_attack_rates) + 
+map_world_death_attack_rates <- ggplot(sf_inc_prop) + 
   geom_sf(aes(fill = deaths_brks), size = .1) + 
   scale_fill_brewer(
     name = "Incidence proportion of deaths / 100,000 population", palette = "Reds", 
     drop = FALSE, 
     guide = guide_legend(
       keyheight = unit(3, units = "mm"),
-      keywidth = unit(70 / length(labels_ar), units = "mm"),
+      keywidth = unit(70 / length(labels_ip), units = "mm"),
       title.hjust = 0.5,
       nrow = 1,
       label.position = "bottom",
@@ -995,225 +994,237 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_death_attack_rat
 ```
 
 
-## Cumulative incidence versus incidence in the last 30 days
-
-<!-- Dots plot 30 days cumulative incidence versus 30 days incidence -->
-```{r cumulative-incidence-versus-incidences-30-days, fig.width = 9, fig.height = 8}
-# New graph as requested by Fran
-# to see how to display
-
-tbl_inc_cml <- dta_ecdc %>% 
-  select(-c(deaths, population_2019, source)) %>% 
-  group_by(iso_a3, country, continent, region) %>% 
-  arrange(date) %>% 
-  filter(between(date, left = date_max_report-29, right = date_max_report)) %>% 
-  summarise(
-    cml_count = max(cumsum(cases), na.rm = TRUE)) %>% 
-  left_join(df_pop_country %>% select(iso_a3, pop)) %>% 
-  mutate(
-    cml_inc = cml_count / pop * 100000)
-
-
-dotsgplot_inc <- function(tbl_inc = tbl_inc_cml, name_continent){
-
-  temp_tbl <- tbl_inc %>% filter(continent == name_continent, cml_count != 0)
-  countries_zero_count <- tbl_inc %>% filter(continent == name_continent, cml_count == 0) %>% pull(country)
-  
-  txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
-  
-  # The dots plot
-  dotsgplot <- ggplot(temp_tbl) + 
-    geom_point(aes(cml_count, cml_inc, col = region)) + 
-    ggrepel::geom_text_repel(
-      data = temp_tbl,
-      aes(cml_count, cml_inc, label = country, colour = region),
-      size = 3,
-      show.legend = FALSE) + 
-    scale_y_continuous(trans = 'log10', 
-                       breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
-                       labels = scales::label_number_si()) + 
-    scale_x_continuous(trans = 'log10', 
-                       breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
-                       labels = scales::label_number_si()) + 
-    labs(
-      subtitle = name_continent, 
-      caption = paste0("Countries with zero count: ",txt_countries_zero_count, ".\n", caption_world_map), 
-      y = "Incidence proportion of cases in the last 30 days per 100,000 population",
-      x = "Number of cases in the last 30 days",
-      color = NULL) + 
-    theme_light()
-    
-  return(dotsgplot)
-}
-
-
-dotsgplot_inc_Africa <- dotsgplot_inc(name_continent = 'Africa')
-
-ggsave(file.path(path.local.worldwide.graphs, paste0('dotsgplot_inc_Africa_30-days', '_', week_report, '.png')), 
-         plot = dotsgplot_inc_Africa + labs(title = NULL), 
-         width = 20 * cm_to_in, 
-         height = 20 * cm_to_in, 
-         scale = 1.3, 
-         dpi = 320)
-
-
-dotsgplot_inc_Asia <- dotsgplot_inc(name_continent = 'Asia')
-
-ggsave(file.path(path.local.worldwide.graphs, paste0('dotsgplot_inc_Asia_30-days', '_', week_report, '.png')), 
-         plot = dotsgplot_inc_Africa + labs(title = NULL), 
-         width = 20 * cm_to_in, 
-         height = 20 * cm_to_in, 
-         scale = 1.1, 
-         dpi = 320)
-
-
-dotsgplot_inc_Americas <- dotsgplot_inc(name_continent = 'Americas')
-
-ggsave(file.path(path.local.worldwide.graphs, paste0('dotsgplot_inc_Americas_30-days', '_', week_report, '.png')), 
-         plot = dotsgplot_inc_Americas + labs(title = NULL), 
-         width = 20 * cm_to_in, 
-         height = 20 * cm_to_in, 
-         scale = 1.1, 
-         dpi = 320)
-
-
-dotsgplot_inc_Europe <- dotsgplot_inc(name_continent = 'Europe')
-
-ggsave(file.path(path.local.worldwide.graphs, paste0('dotsgplot_inc_Europe_30-days', '_', week_report, '.png')), 
-         plot = dotsgplot_inc_Europe + labs(title = NULL), 
-         width = 20 * cm_to_in, 
-         height = 20 * cm_to_in, 
-         scale = 1.1, 
-         dpi = 320)
-
-
-dotsgplot_inc_Oceania  <- dotsgplot_inc(name_continent = 'Oceania')
-
-ggsave(file.path(path.local.worldwide.graphs, paste0('dotsgplot_inc_Oceania_30-days', '_', week_report, '.png')), 
-         plot = dotsgplot_inc_Oceania + labs(title = NULL), 
-         width = 20 * cm_to_in, 
-         height = 20 * cm_to_in, 
-         scale = 1.1, 
-         dpi = 320)
-
-
-dotsgplot_inc_Africa
-dotsgplot_inc_Asia
-dotsgplot_inc_Americas
-dotsgplot_inc_Europe
-
-```
-
-
-
-## Cumulative incidence versus incidence since the first cases reported
+## Cases count _versus_ incidence proportion
 
 <!-- Dots plot cumulative incidences versus incidence -->
-```{r cumulative-incidence-versus-incidence, fig.width = 9, fig.height = 8}
+```{r counts-versus-incidence-proportion}
 # New graph as requested by Fran
 # to see how to display
 
-tbl_inc_cml <- dta_ecdc %>% 
-  select(-c(deaths, population_2019, source)) %>% 
-  group_by(iso_a3, country, continent, region) %>% 
-  arrange(date) %>% 
-  filter(date <= date_max_report) %>% 
-  summarise(
-    cml_count = max(cumsum(cases), na.rm = TRUE)) %>% 
-  left_join(df_pop_country %>% select(iso_a3, pop)) %>% 
-  mutate(
-    cml_inc = cml_count / pop * 100000)
+scatter_plot_inc <- function(tbl_inc, var_x, var_y, label_log_x = TRUE, label_log_y = TRUE){
+  
+  var_x <- sym(var_x)
+  var_y <- sym(var_y)
 
-
-dotsgplot_inc <- function(tbl_inc = tbl_inc_cml, name_continent){
-
-  temp_tbl <- tbl_inc %>% filter(continent == name_continent, cml_count != 0)
-  countries_zero_count <- tbl_inc %>% filter(continent == name_continent, cml_count == 0) %>% pull(country)
+  temp_tbl <- tbl_inc %>% filter(!!var_x != 0)
+  countries_zero_count <- tbl_inc %>% filter(!!var_x == 0) %>% pull(country)
   
   txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
   
-  # The dots plot
-  dotsgplot <- ggplot(temp_tbl) + 
-    geom_point(aes(cml_count, cml_inc, col = region)) + 
+  
+  scatterplot <- ggplot(temp_tbl) + 
+    geom_point(aes(!!var_x, !!var_y, col = region)) + 
     ggrepel::geom_text_repel(
       data = temp_tbl,
-      aes(cml_count, cml_inc, label = country, colour = region),
+      aes(!!var_x, !!var_y, label = country, colour = region),
       size = 3,
       show.legend = FALSE) + 
-    scale_y_continuous(trans = 'log10', 
-                       breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
-                       labels = scales::label_number_si()) + 
-    scale_x_continuous(trans = 'log10', 
-                       breaks = scales::trans_breaks("log10", function(x) round(10^x, 0)), 
-                       labels = scales::label_number_si()) + 
-    labs(
-      subtitle = name_continent, 
-      caption = paste0("Countries with zero count: ",txt_countries_zero_count, ".\n", caption_world_map), 
-      y = "Cumulative incidence of cases per 100,000 population",
-      x = "Cumulative number of cases",
-      color = NULL) + 
+    labs(caption = paste0("Countries with zero count: ", txt_countries_zero_count, ".\n", caption_world_map), 
+         color = NULL) + 
     theme_light()
+
+  scatterplot <- if(label_log_x) {
+    scatterplot + 
+      scale_x_continuous(trans = 'log10', 
+                         breaks = scales::trans_breaks("log10", function(x) 10^x), 
+                         labels = scales::label_number_si()) + 
+      labs(x = paste(var_x, "(log scale)"))
+    } else {
+      scatterplot
+    }
+  
+  scatterplot <- if(label_log_y) {
+    scatterplot + 
+      scale_y_continuous(trans = 'log10', 
+                         breaks = scales::trans_breaks("log10", function(x) 10^x), 
+                         labels = scales::label_number_si()) + 
+      labs(y = paste(var_y, "(log scale)"))
+    } else {
+      scatterplot
+    }
     
-  return(dotsgplot)
+  return(scatterplot)
 }
 
 
-dotsgplot_inc_Africa <- dotsgplot_inc(name_continent = 'Africa')
+label_x_axis <-  "Total number of cases\n(log scale)"
+label_y_axis <- "Incidence proportion of cases per 100,000 population\n(log scale)"
 
-ggsave(file.path(path.local.worldwide.graphs, paste0('dotsgplot_inc_Africa', '_', week_report, '.png')), 
-         plot = dotsgplot_inc_Africa + labs(title = NULL), 
-         width = 20 * cm_to_in, 
-         height = 20 * cm_to_in, 
-         scale = 1.3, 
+
+scatter_plot_inc_Africa <- scatter_plot_inc(tbl_inc_prop %>% filter(continent == 'Africa'), var_x = 'cases', var_y = 'cases_ip') + 
+  labs(title = 'Africa', 
+       x = label_x_axis, 
+       y = label_y_axis)
+
+ggsave(file.path(path.local.worldwide.graphs, paste0('scatter_plot_inc_Africa', '_', week_report, '.png')), 
+         plot = scatter_plot_inc_Africa + labs(title = NULL), 
+         width = 15 * cm_to_in, 
+         height = 15 * cm_to_in, 
+         scale = 1, 
          dpi = 320)
 
 
-dotsgplot_inc_Asia <- dotsgplot_inc(name_continent = 'Asia')
+scatter_plot_inc_Asia <- scatter_plot_inc(tbl_inc_prop %>% filter(continent == 'Asia'), var_x = 'cases', var_y = 'cases_ip') + 
+  labs(title = 'Asia', 
+       x = label_x_axis, 
+       y = label_y_axis)
 
-ggsave(file.path(path.local.worldwide.graphs, paste0('dotsgplot_inc_Asia', '_', week_report, '.png')), 
-         plot = dotsgplot_inc_Asia + labs(title = NULL), 
-         width = 20 * cm_to_in, 
-         height = 20 * cm_to_in, 
-         scale = 1.1, 
+ggsave(file.path(path.local.worldwide.graphs, paste0('scatter_plot_inc_Asia', '_', week_report, '.png')), 
+         plot = scatter_plot_inc_Asia + labs(title = NULL), 
+         width = 15 * cm_to_in, 
+         height = 15 * cm_to_in, 
+         scale = 1, 
          dpi = 320)
 
 
-dotsgplot_inc_Americas <- dotsgplot_inc(name_continent = 'Americas')
+scatter_plot_inc_Americas <- scatter_plot_inc(tbl_inc_prop %>% filter(continent == 'Americas'), var_x = 'cases', var_y = 'cases_ip') + 
+  labs(title = 'Americas',
+       x = label_x_axis, 
+       y = label_y_axis)
 
-ggsave(file.path(path.local.worldwide.graphs, paste0('dotsgplot_inc_Americas', '_', week_report, '.png')), 
-         plot = dotsgplot_inc_Americas + labs(title = NULL), 
-         width = 20 * cm_to_in, 
-         height = 20 * cm_to_in, 
-         scale = 1.1, 
+ggsave(file.path(path.local.worldwide.graphs, paste0('scatter_plot_inc_Americas', '_', week_report, '.png')), 
+         plot = scatter_plot_inc_Americas + labs(title = NULL), 
+         width = 15 * cm_to_in, 
+         height = 15 * cm_to_in, 
+         scale = 1, 
          dpi = 320)
 
 
-dotsgplot_inc_Europe <- dotsgplot_inc(name_continent = 'Europe')
+scatter_plot_inc_Europe <- scatter_plot_inc(tbl_inc_prop %>% filter(continent == 'Europe'), var_x = 'cases', var_y = 'cases_ip') + 
+  labs(title = 'Europe', 
+       x = label_x_axis, 
+       y = label_y_axis)
 
-ggsave(file.path(path.local.worldwide.graphs, paste0('dotsgplot_inc_Europe', '_', week_report, '.png')), 
-         plot = dotsgplot_inc_Europe + labs(title = NULL), 
-         width = 20 * cm_to_in, 
-         height = 20 * cm_to_in, 
-         scale = 1.1, 
+ggsave(file.path(path.local.worldwide.graphs, paste0('scatter_plot_inc_Europe', '_', week_report, '.png')), 
+         plot = scatter_plot_inc_Europe + labs(title = NULL), 
+         width = 15 * cm_to_in, 
+         height = 15 * cm_to_in, 
+         scale = 1, 
          dpi = 320)
 
 
-dotsgplot_inc_Oceania  <- dotsgplot_inc(name_continent = 'Oceania')
+scatter_plot_inc_Oceania  <- scatter_plot_inc(tbl_inc_prop %>% filter(continent == 'Oceania'), var_x = 'cases', var_y = 'cases_ip') + 
+  labs(title = 'Oceania', 
+       x = label_x_axis, 
+       y = label_y_axis)
 
-ggsave(file.path(path.local.worldwide.graphs, paste0('dotsgplot_inc_Oceania', '_', week_report, '.png')), 
-         plot = dotsgplot_inc_Oceania + labs(title = NULL), 
-         width = 20 * cm_to_in, 
-         height = 20 * cm_to_in, 
-         scale = 1.1, 
+ggsave(file.path(path.local.worldwide.graphs, paste0('scatter_plot_inc_Oceania', '_', week_report, '.png')), 
+         plot = scatter_plot_inc_Oceania + labs(title = NULL), 
+         width = 15 * cm_to_in, 
+         height = 15 * cm_to_in, 
+         scale = 1, 
          dpi = 320)
 
 
-dotsgplot_inc_Africa
-dotsgplot_inc_Asia
-dotsgplot_inc_Americas
-dotsgplot_inc_Europe
+scatter_plot_inc_Africa
+scatter_plot_inc_Asia
+scatter_plot_inc_Americas
+scatter_plot_inc_Europe
 
 ```
+
+
+
+## Incidence proportions: Overall _versus_ last 30 days
+
+<!-- Dots plot 30 days cumulative incidence versus 30 days incidence -->
+```{r incidence-proportion-overall-versus-30-days}
+# New graph as requested by Fran
+# to see how to display
+
+tbl_inc_prop_30d <- dta_ecdc %>% 
+  group_by(iso_a3, country, continent, region) %>% 
+  arrange(date) %>% 
+  filter(between(date, left = date_max_report - 29, right = date_max_report)) %>% 
+  summarise(
+    cases = max(cumsum(cases), na.rm = TRUE)) %>% 
+  left_join(df_pop_country %>% select(iso_a3, pop)) %>% 
+  mutate(
+    cases_ip = cases / pop * 100000)
+
+tbl_inc_prop_all_and_30d <- select(tbl_inc_prop, iso_a3 : country, overall = cases_ip) %>% 
+  left_join(select(tbl_inc_prop_30d, iso_a3, last_30d = cases_ip))
+
+
+lab_x_axis <- "Incidence proportion of cases per 100,000 population\nsince the beginning of the epidemic (log scale)"
+lab_y_axis <- "Incidence proportion of cases per 100,000 population\nin the last 30 days (log scale)"
+
+scatter_plot_inc_Africa <- scatter_plot_inc(tbl_inc_prop_all_and_30d %>% filter(continent == 'Africa'), var_x = 'overall', var_y = 'last_30d') + 
+  labs(title = 'Africa', 
+       x = lab_x_axis, 
+       y = lab_y_axis)
+
+ggsave(file.path(path.local.worldwide.graphs, paste0('scatter_plot_inc_Africa_30-days', '_', week_report, '.png')), 
+         plot = scatter_plot_inc_Africa + labs(title = NULL), 
+         width = 15 * cm_to_in, 
+         height = 15 * cm_to_in, 
+         scale = 1, 
+         dpi = 320)
+
+
+scatter_plot_inc_Asia <- scatter_plot_inc(tbl_inc_prop_all_and_30d %>% filter(continent == 'Asia'), var_x = 'overall', var_y = 'last_30d') + 
+  labs(title = 'Asia', 
+       x = lab_x_axis, 
+       y = lab_y_axis)
+
+
+ggsave(file.path(path.local.worldwide.graphs, paste0('scatter_plot_inc_Asia_30-days', '_', week_report, '.png')), 
+         plot = scatter_plot_inc_Africa + labs(title = NULL), 
+         width = 15 * cm_to_in, 
+         height = 15 * cm_to_in, 
+         scale = 1, 
+         dpi = 320)
+
+
+scatter_plot_inc_Americas <- scatter_plot_inc(tbl_inc_prop_all_and_30d %>% filter(continent == 'Americas'), var_x = 'overall', var_y = 'last_30d') + 
+  labs(title = 'Americas', 
+       x = lab_x_axis, 
+       y = lab_y_axis)
+
+
+ggsave(file.path(path.local.worldwide.graphs, paste0('scatter_plot_inc_Americas_30-days', '_', week_report, '.png')), 
+         plot = scatter_plot_inc_Americas + labs(title = NULL), 
+         width = 15 * cm_to_in, 
+         height = 15 * cm_to_in, 
+         scale = 1, 
+         dpi = 320)
+
+
+scatter_plot_inc_Europe <- scatter_plot_inc(tbl_inc_prop_all_and_30d %>% filter(continent == 'Europe'), var_x = 'overall', var_y = 'last_30d') + 
+  labs(title = 'Europe', 
+       x = lab_x_axis, 
+       y = lab_y_axis)
+
+
+ggsave(file.path(path.local.worldwide.graphs, paste0('scatter_plot_inc_Europe_30-days', '_', week_report, '.png')), 
+         plot = scatter_plot_inc_Europe + labs(title = NULL), 
+         width = 15 * cm_to_in, 
+         height = 15 * cm_to_in, 
+         scale = 1, 
+         dpi = 320)
+
+
+scatter_plot_inc_Oceania  <- scatter_plot_inc(tbl_inc_prop_all_and_30d %>% filter(continent == 'Oceania'), var_x = 'overall', var_y = 'last_30d') + 
+  labs(title = 'Oceania', 
+       x = lab_x_axis, 
+       y = lab_y_axis)
+
+
+ggsave(file.path(path.local.worldwide.graphs, paste0('scatter_plot_inc_Oceania_30-days', '_', week_report, '.png')), 
+         plot = scatter_plot_inc_Oceania + labs(title = NULL), 
+         width = 15 * cm_to_in, 
+         height = 15 * cm_to_in, 
+         scale = 1, 
+         dpi = 320)
+
+
+scatter_plot_inc_Africa
+scatter_plot_inc_Asia
+scatter_plot_inc_Americas
+scatter_plot_inc_Europe
+
+```
+
 
 
 

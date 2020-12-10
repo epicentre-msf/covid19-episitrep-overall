@@ -87,7 +87,7 @@ print(my_doc, target = file.path(path.local.week, glue("draft_EpiSitrep_world_Co
 
 ## Copy table of trends to GIS Unit sharepoint
 file.copy(
-  from = file.path(path.local.week, 'worldwide', 'tables', 'epi-case-trends-2020-w45.csv'),
+  from = file.path(path.local.week, 'worldwide', 'tables', paste0('epi-case-trends-', week_report, '.csv')),
   to = file.path(sharepoint.parent.dir, 'MSF', 'GIS @ MSF - EPI csv data'), 
   overwrite = TRUE)
 
