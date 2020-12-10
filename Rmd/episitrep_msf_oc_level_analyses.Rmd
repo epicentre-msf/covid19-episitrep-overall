@@ -4681,7 +4681,8 @@ Data non available
 
 ```{r}
 dta_testing <- dta_linelist %>%
-  select(country, project, epi_week_consultation, merge_admit, matches("test|lab|sample")) %>%
+  select(country, project, epi_week_consultation, merge_admit, , covid_status,
+         outcome_status, matches("test|lab|sample")) %>%
   rowwise %>%
   mutate(
     test_1_10 = ifelse(test_type   == "PCR", 1, 0),
