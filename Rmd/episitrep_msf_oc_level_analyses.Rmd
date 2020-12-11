@@ -15,11 +15,13 @@ author:
     url: mailto:mathilde.MOUSSET@epicentre.msf.org
     affiliation: Epicentre
     affiliation_url: https://epicentre.msf.org/
-date: '`r Sys.Date()`'
+date: "`r format(Sys.Date(), '%d %B %Y')`"
 output:
-  distill::distill_article:
-    toc: TRUE
-    toc_depth: 1
+  rmdformats::readthedown:
+    highlight: "tango"
+    lightbox: TRUE
+    gallery: TRUE
+    use_bookdown: TRUE
 editor_options:
   chunk_output_type: console
 ---
@@ -4706,7 +4708,7 @@ fig6
 
 ## Aditional figures by project
 
-```{r}
+```{r echo=FALSE}
 fct_plot_1 <- function(data,
                        country_project = "",
                        path_save = "") {
@@ -4914,7 +4916,7 @@ tbl_plot1 <- dta_linelist_with_aggregated %>%
                                    country_project = .y,
                                    path_save = path.local.msf.graphs.oc.per.project)))
 
-print(tbl_plot1$plot1)
+# print(tbl_plot1$plot1)
 
 
 
@@ -4933,33 +4935,12 @@ tbl_plot <- dta_linelist_project %>%
                                    path_save = path.local.msf.graphs.oc.per.project)))
 
 
-print(tbl_plot$plot2)
-print(tbl_plot$plot3)
-
-
-
-
-
-
-
-library(patchwork)
-
-tbl_plot %>% 
-  mutate(plot_23 = map2(.x = plot2,
-                        .y = plot3,
-                         ~ wrap_plots(.x / .y)))
-  
+# print(tbl_plot$plot2)
+# print(tbl_plot$plot3)
 
 a <- left_join(tbl_plot1, 
                tbl_plot, by = "country_project" ) %>% 
   select(plot1, plot2, plot3) 
-
-  mutate(plot_big = pmap(..1 = plot1,
-                         ..2 = plot2,
-                         ..3 = plot3,
-                          ~wrap_plots(..1 / ..2 / ..3)))
-print(a$plot1) 
-
 
 for(i in 1:nrow(a)){
   print(a[[i, "plot1"]])
