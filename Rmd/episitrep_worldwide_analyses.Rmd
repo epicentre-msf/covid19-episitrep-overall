@@ -848,7 +848,7 @@ gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>%
     columns = vars(cases, deaths)) %>% 
   tab_spanner(
     label = html("Incidence proportion<br>per 100,000 people"), 
-    columns = ends_with('_ar')) %>% 
+    columns = ends_with('_ip')) %>% 
   tab_spanner(
     label = 'In the last 12 days', 
     columns = ends_with('_12d')) %>% 

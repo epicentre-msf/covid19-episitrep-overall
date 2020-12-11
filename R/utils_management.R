@@ -375,7 +375,7 @@ prepare_msf_dta_comcond <- function(dta){
 
 
 df_labels_comcond <- data.frame(
-  levels = c('Comcond_cardi', 'Comcond_diabetes', 'Comcond_immuno', 'Comcond_liver', 'Comcond_lung', 'Comcond_malig', 'Comcond_neuro', 'Comcond_other', 'Comcond_partum', 'Comcond_preg', 'Comcond_renal', 'hiv_status', 'hypertension', 'malaria', 'malnutrition', 'smoking', 'tb_active'),
+  levels = c('ind_Comcond_cardi', 'ind_Comcond_diabetes', 'ind_Comcond_immuno', 'ind_Comcond_liver', 'ind_Comcond_lung', 'ind_Comcond_malig', 'ind_Comcond_neuro', 'ind_Comcond_other', 'ind_Comcond_partum', 'ind_Comcond_preg', 'ind_Comcond_renal', 'ind_MSF_hiv_status', 'ind_MSF_hypertension', 'ind_MSF_malaria', 'ind_MSF_malnutrition', 'ind_MSF_smoking', 'ind_MSF_tb_active'),
   labels = c('Cardiovascular (including hypertention)', 'Diabetes', 'Immunological (including HIV)','Hepatic', 'Respiratory (including chronic lung diseases)', 'Cancer', 'Neurological', 'Other condition', 'Post-partum', 'Pregnancy', 'Renal', 'HIV', 'Hypertension', 'Malaria', 'Malnutrition', 'Smoking', 'TB'))
 
 
