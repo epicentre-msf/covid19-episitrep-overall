@@ -9,11 +9,11 @@
 
 # To get data and everything loaded, run the setup and import chunks from the OC sitrep.
 
-# rmarkdown::render(
-#   input       = file.path(path.Rmd, 'episitrep_msf_oc_level_analyses.Rmd'), 
-#   output_file = glue::glue("{week_report}_episitrep_msf_oc_level_analysis_OCP.html"),
-#   output_dir  = path.local.week.oc,
-#   params = list(OC = "OCP"))
+rmarkdown::render(
+  input       = file.path(path.Rmd, 'episitrep_msf_oc_level_analyses.Rmd'),
+  output_file = glue::glue("{week_report}_episitrep_msf_oc_level_analysis_OCP.html"),
+  output_dir  = path.local.week.oc,
+  params = list(OC = "OCP"))
 
 
 

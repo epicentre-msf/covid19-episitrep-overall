@@ -744,6 +744,7 @@ plot_mortality_project <- function(data,
   
   pd <- position_dodge2(1)
   
+  
   fig_data <- data %>% 
     ggplot(aes(x = epi_week_admission,
                y = n,
