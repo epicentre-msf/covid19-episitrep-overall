@@ -153,27 +153,24 @@ file.copy(
 
 
 # --- OC sitreps
+## Copy to archive
 purrr::walk(oc_list, 
             ~ file.copy(
               from = file.path(path.local.week.oc,
                                glue::glue("{week_report}_episitrep_msf_oc_level_analysis_{.}.html")), 
               
               to = file.path(path.sharepoint.public, "additional_episitrep_outputs_oc", "archive"),
-              overwrite = TRUE
-            )
-)
+              overwrite = TRUE))
 
 
-# --- OC sitreps
+## overwrite index
 purrr::walk(oc_list, 
             ~ file.copy(
               from = file.path(path.local.week.oc,
                                glue::glue("{week_report}_episitrep_msf_oc_level_analysis_{.}.html")), 
               
-              to = file.path(path.sharepoint.public, "additional_episitrep_outputs_oc"),
-              overwrite = TRUE
-            )
-)
+              to = file.path(path.sharepoint.public, "additional_episitrep_outputs_oc", ., "index.html"),
+              overwrite = TRUE))
 
 
 
