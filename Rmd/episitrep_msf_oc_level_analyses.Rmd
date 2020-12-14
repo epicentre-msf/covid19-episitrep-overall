@@ -116,10 +116,12 @@ df_countries <- readRDS(file.path(path.local.data, 'df_countries.RDS'))
 # Linelist data
 # === === === === === === ===
 
-dta_linelist <- get_msf_linelist(force = TRUE) %>%
+dta_linelist <- covidutils::get_msf_linelist(force = TRUE) %>%
   select(-Comcond_01, -Comcond_count) %>% 
-  prepare_msf_dta(shorten_var_names = TRUE) %>%
-  rename(iso_a3 = country) %>%
+  covidutils::prepare_msf_dta(shorten_var_names = FALSE) %>%
+  rename(iso_a3        = country,
+         Comcond_01    = ind_Comcond_01,
+         Comcond_count = ind_Comcond_count) %>%
   left_join(df_countries %>% select(continent, region, iso_a3, country), by = 'iso_a3') %>%
   mutate(
     country   = as.factor(country),
@@ -258,7 +260,7 @@ nb_msf_suspected <- sum(dta_linelist_with_aggregated$covid_status == 'Suspected'
 nb_msf_confirmed_linelist <- sum(dta_linelist$covid_status == 'Confirmed', na.rm = TRUE)
 
 nb_msf_confirmed_with_comorbidity <- with(dta_linelist,
-                                          sum(covid_status == 'Confirmed' & Comcond_count > 0,
+                                          sum(covid_status == 'Confirmed' & ind_Comcond_count > 0,
                                               na.rm = TRUE))
 
 nb_msf_conf_prob_susp <- with(dta_linelist,
@@ -993,7 +995,7 @@ gtbl_sex_ratio
 ## This is a complicated table, there might be a simpler way that this one
 
 tbl_general_by_status <- dta_linelist %>%
-  select(covid_status, age_in_years, age_5gp, sex, Comcond_01) %>%
+  select(covid_status, age_in_years, age_5gp, sex, ind_Comcond_01) %>%
   group_by(covid_status) %>%
   summarise(
     age_total   = paste0(sum(!is.na(age_in_years)) , '/',  n()),
@@ -1008,12 +1010,12 @@ tbl_general_by_status <- dta_linelist %>%
     sex_males   = sum(sex == 'M', na.rm = TRUE),
     sex_females = sum(sex == 'F', na.rm = TRUE),
     sex_ratio   = format(round(sum(sex == 'M', na.rm = TRUE)/sum(sex == 'F', na.rm = TRUE), digits = 1), nsmall = 1),
-    comorbidity_total = paste0(sum(!is.na(Comcond_01)) , '/',  n()),
-    comorbidity_presence = freq_prct(Comcond_01, 1))
+    comorbidity_total = paste0(sum(!is.na(ind_Comcond_01)) , '/',  n()),
+    comorbidity_presence = freq_prct(ind_Comcond_01, 1))
 
 
 tbl_general_total <- dta_linelist %>%
-  select(covid_status, age_in_years, age_5gp, sex, Comcond_01) %>%
+  select(covid_status, age_in_years, age_5gp, sex, ind_Comcond_01) %>%
   summarise(
     age_total   = paste0(sum(!is.na(age_in_years)) , '/',  n()),
     age_min_max = paste0(min(age_in_years, na.rm = TRUE), ' - ', max(age_in_years, na.rm = TRUE)),
@@ -1027,8 +1029,8 @@ tbl_general_total <- dta_linelist %>%
     sex_males   = sum(sex == 'M', na.rm = TRUE),
     sex_females = sum(sex == 'F', na.rm = TRUE),
     sex_ratio   = format(round(sum(sex == 'M', na.rm = TRUE)/sum(sex == 'F', na.rm = TRUE), digits = 1), nsmall = 1),
-    comorbidity_total = paste0(sum(!is.na(Comcond_01)) , '/',  n()),
-    comorbidity_presence = freq_prct(Comcond_01, 1)) %>%
+    comorbidity_total = paste0(sum(!is.na(ind_Comcond_01)) , '/',  n()),
+    comorbidity_presence = freq_prct(ind_Comcond_01, 1)) %>%
   mutate(
     covid_status = 'Total')
 
@@ -1133,7 +1135,7 @@ pyramid_age_sex_all_continent
 dta_comcond <- prepare_msf_dta_comcond(dta_linelist)
 
 dta_comcond <- dta_comcond %>%
-  select(-c(Comcond_other, Comcond_count, Comcond_01)) %>%
+  select(-c(Comcond_other, ind_Comcond_count, ind_Comcond_01)) %>%
   mutate(across(c(starts_with('Comcond_'),'hiv_status','hypertension', 'malaria', 'malnutrition', 'smoking', 'tb_active'), function(x){na_if(x,'Unknown')}))
 
 
@@ -2015,19 +2017,19 @@ tbl_cfr_sex <- levels(dta_cfr_sex$sex) %>%
   filter(outcome_status == 'Died')
 
 dta_cfr_comorbidities <- dta_linelist %>%
-  mutate(Comcond_count = as.factor(Comcond_count)) %>%
-  mutate(Comcond_count = fct_explicit_na(Comcond_count))
+  mutate(ind_Comcond_count = as.factor(ind_Comcond_count)) %>%
+  mutate(ind_Comcond_count = fct_explicit_na(ind_Comcond_count))
 
-tbl_cfr_comorbidities <- levels(dta_cfr_comorbidities$Comcond_count) %>%
+tbl_cfr_comorbidities <- levels(dta_cfr_comorbidities$ind_Comcond_count) %>%
   map_df(~{
     dta_cfr_comorbidities %>%
-      filter(Comcond_count == .x) %>%
+      filter(ind_Comcond_count == .x) %>%
       tbl_prop('outcome_status', 'continent', drop_levels = FALSE) %>%
       mutate(
-        Comcond_count = .x)
+        ind_Comcond_count = .x)
   }) %>%
   filter(outcome_status == 'Died') %>%
-  arrange(Comcond_count)
+  arrange(ind_Comcond_count)
 
 
 tbl_cfr_age_sex_comorbidities <- tbl_cfr_age %>%
@@ -2037,7 +2039,7 @@ tbl_cfr_age_sex_comorbidities <- tbl_cfr_age %>%
             rename(var = sex) %>%
             mutate(label_var = 'Sex')) %>%
   add_row(tbl_cfr_comorbidities %>%
-            rename(var = Comcond_count) %>%
+            rename(var = ind_Comcond_count) %>%
             mutate(label_var = 'Number of comorbidities'))
 
 gtbl_cfr_age_sex_comorbidities <- tbl_cfr_age_sex_comorbidities %>%
@@ -2117,11 +2119,11 @@ gtbl_cfr_age_sex_comorbidities %>%
 
 # Numbers for editing report
 cfr_confirmed_no_comorbidities <- tbl_cfr_comorbidities %>%
-  filter(Comcond_count == 0) %>%
+  filter(ind_Comcond_count == 0) %>%
   pull(p_Total)
 
 cfr_confirmed_3_comorbidities <- tbl_cfr_comorbidities %>%
-  filter(Comcond_count == 3) %>%
+  filter(ind_Comcond_count == 3) %>%
   pull(p_Total)
 
 ```
@@ -2389,7 +2391,7 @@ dta_cfr_comcond <- prepare_msf_dta_comcond(dta_linelist) %>%
       !is.na(Comcond_other) ~ 'Yes',
       TRUE ~ NA_character_)) %>%
   filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died')) %>%
-  pivot_longer(-c(covid_status, outcome_status, continent, Comcond_count, Comcond_01), names_to = "type_comorbidity") %>%
+  pivot_longer(-c(covid_status, outcome_status, continent, ind_Comcond_count, ind_Comcond_01), names_to = "type_comorbidity") %>%
   mutate(
     type_comorbidity = factor(type_comorbidity, levels = df_labels_comcond$levels, labels = df_labels_comcond$labels)) %>%
   filter(!is.na(value), value == 'Yes')
@@ -3687,21 +3689,21 @@ list_comorb <- c("obesity", "Comcond_diabetes", "hypertension", "Comcond_renal")
 
 
 tble16 <- dta_linelist_project %>%
-  select(country, project, merge_admit, Comcond_01, Comcond_diabetes, hypertension,
+  select(country, project, merge_admit, ind_Comcond_01, Comcond_diabetes, hypertension,
          Comcond_renal, outcome_status, obesity) %>%
   group_by(country, project) %>%
   summarise(
     n_all = n(), # Visits (cases) at project level
     
-    n_comorb = sum(Comcond_01 == 1, na.rm = TRUE), # at least one comorb (cases)
+    n_comorb = sum(ind_Comcond_01 == 1, na.rm = TRUE), # at least one comorb (cases)
     p_comorb = n_comorb / n_all,
     a_comorb = format_nbp(n_comorb, p_comorb),
     
-    n_comorb_hospi = sum(Comcond_01 == 1 & merge_admit == "Yes", na.rm = TRUE), #hospitalised, at least one comorb
+    n_comorb_hospi = sum(ind_Comcond_01 == 1 & merge_admit == "Yes", na.rm = TRUE), #hospitalised, at least one comorb
     p_comorb_hospi = n_comorb_hospi / n_comorb,
     a_comorb_hospi = format_nbp(n_comorb_hospi, p_comorb_hospi),
     
-    n_comorb_death = sum(Comcond_01 == 1 & outcome_status == "Died", na.rm = TRUE),
+    n_comorb_death = sum(ind_Comcond_01 == 1 & outcome_status == "Died", na.rm = TRUE),
     p_comorb_death = n_comorb_death / n_comorb_hospi,
     a_comorb_death = format_nbp(n_comorb_death, p_comorb_death),
     
