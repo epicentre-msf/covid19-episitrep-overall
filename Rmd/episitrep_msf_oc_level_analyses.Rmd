@@ -95,6 +95,11 @@ if (!dir.exists(path.local.msf.tables.oc)) {
 caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF linelists as of {format(date_max_report, "%d %b %Y")}')
 ```
 
+
+---
+subtitle: "Data as of week `r glue::glue("{format(date_max_report, '%V')}, ending {weekdays(date_max_report)} {format(date_max_report, '%d %B %Y')}")`"
+---
+
 <!-- Import and manage data -->
 
 ```{r get-data, include = FALSE}
