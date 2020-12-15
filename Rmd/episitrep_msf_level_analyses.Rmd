@@ -1,7 +1,7 @@
 ---
-title: "Covid-19 MSF data analysis"
-author: Francesco Grandesso (Epicentre) <mailto:francesco.GRANDESSO@epicentre.msf.org>
-date: "`r format(Sys.Date(), '%d %B %Y')`"
+title: "EpiSitrep of Covid-19 in MSF projects"
+author: Francesco Grandesso (Epicentre) <francesco.GRANDESSO@epicentre.msf.org>
+date: "Edited: `r format(Sys.Date(), '%d %B %Y')`"
 output:
   rmdformats::readthedown:
     highlight: "tango"
@@ -16,9 +16,23 @@ editor_options:
 <!-- Setup environment and upload functions -->
 ```{r setup, warning = FALSE, message = FALSE, include = FALSE}
 
+knitr::opts_chunk$set(cache = FALSE,
+                      echo = FALSE,
+                      tidy = TRUE,
+                      collapse = TRUE,
+                      dpi = 150,
+                      fig.width = 8,
+                      fig.height = 5,
+                      fig.align = "center",
+                      warning = FALSE,
+                      message = FALSE,
+                      encoding = "UTF-8")
+
+
 if (!exists('path.root')) {
   source(here::here('R', 'setup.r'), encoding = 'UTF-8')
 }
+
 
 source(file.path(path.R, 'utils_management.R'), encoding = 'UTF-8')
 source(file.path(path.R, 'utils_get_data.R')  , encoding = 'UTF-8')
@@ -36,20 +50,11 @@ week_report     <- dates_and_week[[3]]
 
 caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF linelists as of {format(date_max_report, "%d %b %Y")}')
 
-
-knitr::opts_chunk$set(cache = FALSE,
-                      echo = FALSE,
-                      tidy = TRUE,
-                      collapse = TRUE,
-                      dpi = 150,
-                      fig.width = 8,
-                      fig.height = 5,
-                      fig.align = "center",
-                      warning = FALSE,
-                      message = FALSE,
-                      encoding = "UTF-8")
-
 ```
+
+---
+subtitle: "Data as of week `r glue::glue("{format(date_max_report, '%V')}, ending {weekdays(date_max_report)} {format(date_max_report, '%d %B %Y')}")`"
+---
 
 <!-- Import and manage data -->
 ```{r get-data, include = FALSE}
