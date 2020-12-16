@@ -253,10 +253,10 @@ attach_prefix <- function(var_in, suffix_var_out) {
 #          age_in_years > 110 ~ NA_real_,
 #          TRUE ~ age_in_years),
 #      Comcond_immuno = case_when(
-#        grepl('Positive', MSF_hiv_status) ~ 'Yes',
+#        grepl('Positive', MSF_ind_MSF_hiv_status) ~ 'Yes',
 #        TRUE ~ Comcond_immuno),
 #      Comcond_cardi = case_when(
-#        MSF_hypertension == 'Yes' ~ 'Yes',
+#        MSF_ind_MSF_hypertension == 'Yes' ~ 'Yes',
 #        TRUE ~ Comcond_cardi))
 #
 #  return(dta)
@@ -267,22 +267,22 @@ attach_prefix <- function(var_in, suffix_var_out) {
 #prepare_msf_dta <- function(dta, shorten_var_names = FALSE){
 #
 #  # Create variable levels
-#  levels_covid_status <- c('Confirmed', 'Probable', 'Suspected', 'Not a case', '(Unknown)')
-#  levels_outcome_status <- c('Cured', 'Died', 'Left against medical advice', 'Transferred', 'Sent back home', 'Other')
+#  levels_ind_MSF_covid_status <- c('Confirmed', 'Probable', 'Suspected', 'Not a case', '(Unknown)')
+#  levels_ind_outcome_patcourse_status <- c('Cured', 'Died', 'Left against medical advice', 'Transferred', 'Sent back home', 'Other')
 #  levels_ynu <- c('Yes', 'No', '(Unknown)')
 
 
 #  # Covid status
 #  dta <- dta %>%
 #    mutate(
-#      MSF_covid_status = factor(MSF_covid_status, levels = levels_covid_status) %>% forcats::fct_explicit_na(na_level = '(Unknown)'))
+#      MSF_ind_MSF_covid_status = factor(MSF_ind_MSF_covid_status, levels = levels_ind_MSF_covid_status) %>% forcats::fct_explicit_na(na_level = '(Unknown)'))
 #
 #
 #  # Dates (and weeks)
 #  dta <- dta %>%
 #    mutate(
 #      MSF_date_consultation = as.Date(MSF_date_consultation),
-#      outcome_patcourse_status = factor(outcome_patcourse_status, levels = levels_outcome_status) %>% forcats::fct_explicit_na(na_level = '(Pending/Unknown)'),
+#      ind_outcome_patcourse_status = factor(ind_outcome_patcourse_status, levels = levels_ind_outcome_patcourse_status) %>% forcats::fct_explicit_na(na_level = '(Pending/Unknown)'),
 #      epi_week_report = make_epiweek_date(report_date),
 #      epi_week_consultation = make_epiweek_date(MSF_date_consultation),
 #      epi_week_admission = make_epiweek_date(patcourse_presHCF),
@@ -308,25 +308,25 @@ attach_prefix <- function(var_in, suffix_var_out) {
 #  # Recoding Comorbidities as Yes/No
 #  dta <- dta %>%
 #    mutate(
-#      MSF_malaria = case_when(
-#        MSF_malaria == 'Positive' ~ 'Yes',
-#        MSF_malaria == 'Negative' ~ 'No',
-#        MSF_malaria %in% c('Inconclusive', 'Not done') ~ 'Unknown',
-#        TRUE ~ MSF_malaria),
-#      MSF_hiv_status = case_when(
-#        MSF_hiv_status %in% c('Positive (no ARV)', 'Positive (on ART)', 'Positive (unknown)') ~ 'Yes',
-#        MSF_hiv_status == 'Negative' ~ 'No',
-#        TRUE ~ MSF_hiv_status),
-#      MSF_tb_active = case_when(
-#        MSF_tb_active %in% c('Yes (currently no treatment)', 'Yes (currently on treatment)', 'Yes (unknown)') ~ 'Yes',
-#       TRUE ~ MSF_tb_active),
-#     MSF_smoking = case_when(
-#        MSF_smoking %in% c('Yes (current)', 'Yes (former)') ~ 'Yes',
-#        TRUE ~ MSF_smoking))
+#      MSF_ind_MSF_malaria = case_when(
+#        MSF_ind_MSF_malaria == 'Positive' ~ 'Yes',
+#        MSF_ind_MSF_malaria == 'Negative' ~ 'No',
+#        MSF_ind_MSF_malaria %in% c('Inconclusive', 'Not done') ~ 'Unknown',
+#        TRUE ~ MSF_ind_MSF_malaria),
+#      MSF_ind_MSF_hiv_status = case_when(
+#        MSF_ind_MSF_hiv_status %in% c('Positive (no ARV)', 'Positive (on ART)', 'Positive (unknown)') ~ 'Yes',
+#        MSF_ind_MSF_hiv_status == 'Negative' ~ 'No',
+#        TRUE ~ MSF_ind_MSF_hiv_status),
+#      MSF_ind_MSF_tb_active = case_when(
+#        MSF_ind_MSF_tb_active %in% c('Yes (currently no treatment)', 'Yes (currently on treatment)', 'Yes (unknown)') ~ 'Yes',
+#       TRUE ~ MSF_ind_MSF_tb_active),
+#     MSF_ind_MSF_smoking = case_when(
+#        MSF_ind_MSF_smoking %in% c('Yes (current)', 'Yes (former)') ~ 'Yes',
+#        TRUE ~ MSF_ind_MSF_smoking))
 #
 #
 #  # Recode presence of comorbidities including the MSF ones
-#  Comcond_count <- rowSums(select(dta, starts_with('Comcond_'), MSF_hiv_status, MSF_hypertension, MSF_tb_active, MSF_malaria, MSF_malnutrition, MSF_smoking) == "Yes", na.rm = TRUE)
+#  Comcond_count <- rowSums(select(dta, starts_with('Comcond_'), MSF_ind_MSF_hiv_status, MSF_ind_MSF_hypertension, MSF_ind_MSF_tb_active, MSF_ind_MSF_malaria, MSF_ind_MSF_malnutrition, MSF_ind_MSF_smoking) == "Yes", na.rm = TRUE)
 #
 #  Comcond_01 <- ifelse(Comcond_count > 0, 1, 0)
 #
@@ -367,7 +367,10 @@ attach_prefix <- function(var_in, suffix_var_out) {
 prepare_msf_dta_comcond <- function(dta){
 
   dta <- dta %>%
-    select(continent, covid_status, outcome_status, starts_with('Comcond_'), hiv_status, hypertension, tb_active, malaria, malnutrition, smoking) %>%
+    select(continent, ind_MSF_covid_status, ind_outcome_patcourse_status,
+           starts_with('Comcond_'), ind_MSF_hiv_status, ind_MSF_hypertension,
+           ind_MSF_tb_active, ind_MSF_malaria, ind_MSF_malnutrition,
+           ind_MSF_smoking, ind_Comcond_count, ind_Comcond_01) %>%
     select(-c(Comcond_present, Comcond_pregt))
 
   return(dta)
@@ -375,7 +378,7 @@ prepare_msf_dta_comcond <- function(dta){
 
 
 df_labels_comcond <- data.frame(
-  levels = c('Comcond_cardi', 'Comcond_diabetes', 'Comcond_immuno', 'Comcond_liver', 'Comcond_lung', 'Comcond_malig', 'Comcond_neuro', 'Comcond_other', 'Comcond_partum', 'Comcond_preg', 'Comcond_renal', 'hiv_status', 'hypertension', 'malaria', 'malnutrition', 'smoking', 'tb_active'),
+  levels = c('Comcond_cardi', 'Comcond_diabetes', 'Comcond_immuno', 'Comcond_liver', 'Comcond_lung', 'Comcond_malig', 'Comcond_neuro', 'Comcond_other', 'Comcond_partum', 'Comcond_preg', 'Comcond_renal', 'ind_MSF_hiv_status', 'ind_MSF_hypertension', 'ind_MSF_malaria', 'ind_MSF_malnutrition', 'ind_MSF_smoking', 'ind_MSF_tb_active'),
   labels = c('Cardiovascular (including hypertention)', 'Diabetes', 'Immunological (including HIV)','Hepatic', 'Respiratory (including chronic lung diseases)', 'Cancer', 'Neurological', 'Other condition', 'Post-partum', 'Pregnancy', 'Renal', 'HIV', 'Hypertension', 'Malaria', 'Malnutrition', 'Smoking', 'TB'))
 
 
@@ -390,3 +393,5 @@ df_labels_comcond <- data.frame(
 #    TRUE ~ 'Not reported') %>%
 #    factor(levels = c('Yes', 'No at admission then not reported', 'No at any time', 'Not reported'))
 #}
+
+

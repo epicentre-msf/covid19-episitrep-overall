@@ -866,7 +866,7 @@ fct_plot_1 <- function(data,
   plot_1 <- data %>%
     ggplot(aes(x = epi_week_consultation,
                y = n,
-               fill = MSF_covid_status)) +
+               fill = ind_ind_MSF_covid_status)) +
     geom_col() +
     
     labs(title = paste("Evolution of the total number of patients by Covid19 status",
