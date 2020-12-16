@@ -848,3 +848,198 @@ plot_mortality_admission_project <- function(data,
   
   return(fig_data)
 }
+
+
+
+fct_plot_1 <- function(data,
+                       country_project = "",
+                       path_save = "") {
+  
+  
+  
+  # Get the country the project is in.
+  # country <- data %>% select(country) %>% unique() %>% pull()
+  
+  # String for plot title and name 
+  # country_project <- paste(country, select_project, sep = "_")
+  
+  plot_1 <- data %>%
+    ggplot(aes(x = epi_week_consultation,
+               y = n,
+               fill = MSF_covid_status)) +
+    geom_col() +
+    
+    labs(title = paste("Evolution of the total number of patients by Covid19 status",
+                       country_project, sep = " "),
+         caption = "Individual and aggregated data are displayed") +
+    
+    scale_x_date(name = "Week of Consultation",
+                 date_breaks = "2 week",
+                 date_labels = "%V",
+                 expand = expansion(mult = c(0.01, 0.01)),
+                 sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.))) +
+    
+    scale_y_continuous(name = "Patients", expand = expansion(mult = c(0, 0.02))) +
+    
+    ggthemes::scale_fill_tableau(name = "Status", palette = "Tableau 20") +
+    theme_light() +
+    theme(legend.position = 'top',
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank())
+  
+  
+  ggsave(filename = paste0(country_project, '_', 'hist_epicurve_status', '_',
+                           week_report, '.png'),
+         path = path.local.msf.graphs.oc.per.project,
+         plot = plot_1,
+         width = 6,
+         height = 4,
+         scale = 1.1,
+         dpi = 320
+  )
+  
+  return(plot_1)
+}
+
+
+
+fct_plot_2 <- function(data, 
+                       country_project = "",
+                       path_save = "") {
+  
+  # country <- data %>% select(iso_a3) %>% unique() %>% pull()
+  
+  pd <- position_dodge2(1)
+  
+  # Prepare data for both plots
+  data <- data %>%
+    filter(merge_admit == "Yes")  %>% 
+    drop_na(epi_week_admission)
+  
+  # MSF_severity & MORTALITY
+  data <- data %>% 
+    filter(outcome_patcourse_status == "Died") %>%
+    group_by(epi_week_admission, MSF_severity) %>%
+    summarise(n = n()) %>%
+    drop_na(MSF_severity)
+  
+  if(nrow(data) > 0) {
+    plot_1 <- data %>% 
+      
+      ggplot(aes(x = epi_week_admission,
+                 y = n,
+                 colour = MSF_severity)) +
+      geom_line(position = pd) +
+      geom_point(alpha = 0.8,
+                 size = 2,
+                 position = pd) +
+      
+      labs(x = "Week of admission",
+           y = "Nb of death",
+           title = glue::glue("Mortality by MSF_severity for hospitalized patients, {country_project}")) +
+      
+      scale_x_date(name = "Week of Admission", 
+                   date_breaks = "2 weeks", 
+                   date_labels = "%V", 
+                   sec.axis = ggplot2::sec_axis(trans = ~ .), 
+                   expand = expansion(mult = c(0.01, 0.01))) +
+      
+      ggthemes::scale_colour_tableau(name = "MSF_severity", 
+                                     palette = "Tableau 20") +
+      theme(legend.position = "bottom")
+    
+    
+    ggsave(filename = paste0(country_project, '_', 'mortality_MSF_severity', '_', week_report, '.png'),
+           path = path_save,
+           plot = plot_1,
+           width = 8,
+           height = 5,
+           scale = 1.1,
+           dpi = 320
+    )
+    
+  } else {
+    plot_1 <- NULL
+  }
+  
+  return(plot_1)
+}
+
+
+
+fct_plot_3 <- function(data, 
+                       country_project = "",
+                       path_save = "") {
+  
+  
+  # Prepare data for both plots
+  data <- data %>%
+    filter(merge_admit == "Yes")  %>% 
+    drop_na(epi_week_admission)
+  
+  # MORTALITY & ADMISSION
+  tbl_hospi_death <- data %>% 
+    group_by(epi_week_admission) %>%
+    summarise(n_hospi = n(),
+              n_death = sum(outcome_patcourse_status == "Died", na.rm = TRUE),
+              p_death = n_death / n_hospi)
+  
+  
+  # Get scaling factor
+  scaling_factor <- tbl_hospi_death %>% 
+    ungroup() %>% 
+    summarise(m_hospi = max(n_hospi, na.rm = TRUE),
+              m_p = max(p_death, na.rm = TRUE)) %>% 
+    mutate(scaling_factor = (m_p + 0.01) /(m_hospi + 0.01)) %>% pull(scaling_factor)
+  
+  
+  if(nrow(tbl_hospi_death) > 0) {
+    plot_3 <- tbl_hospi_death %>% 
+      
+      ggplot(aes(x = epi_week_admission)) +
+      
+      geom_col(aes(y = n_hospi), fill = "#A0CBE8") +
+      
+      geom_line(aes(y = p_death / scaling_factor), colour = "red") +
+      geom_point(aes(y = p_death / scaling_factor),
+                 alpha = 0.8, colour = "red", size = 2) +
+      
+      scale_x_date(name = "Week of Admission", 
+                   date_breaks = "2 weeks", 
+                   date_labels = "%V", 
+                   sec.axis = ggplot2::sec_axis(trans = ~ .), 
+                   expand = expansion(mult = c(0.01, 0.01))) +
+      
+      scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, 
+                                                      name = "Mortality rate", 
+                                                      labels = scales::percent_format(accuracy = 2L)),
+                         expand = expansion(mult = c(0, 0.02))) +
+      
+      labs(x = "Week of admission",
+           y = "Nb of hospitalizations",
+           title = glue::glue("Mortality of hospitalized patients, {country_project}"))
+    
+    
+    ggsave(filename = paste0(country_project, '_', 'mortality', '_', week_report, '.png'),
+           path = path_save,
+           plot = plot_3,
+           width = 8,
+           height = 5,
+           scale = 1.1,
+           dpi = 320
+    )
+    
+  } else {
+    plot_3 <- NULL
+  }
+  
+  return(plot_3)
+}
+
+
+
+print_plot <- function(x){
+  if (!is.null(x)) {
+    print(x)
+  }
+}

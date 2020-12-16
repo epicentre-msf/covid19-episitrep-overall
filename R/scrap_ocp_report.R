@@ -16,6 +16,12 @@ rmarkdown::render(
   params = list(OC = "OCP"))
 
 
+rmarkdown::render(
+  input       = file.path(path.Rmd, 'test.Rmd'),
+  # output_file = glue::glue("{week_report}_episitrep_msf_oc_level_analysis_OCP.html"),
+  # output_dir  = path.local.week.oc,
+  params = list(OC = "OCP"))
+
 
 # IQR age admis +/- morts GLOBAL
 dta_linelist %>%
