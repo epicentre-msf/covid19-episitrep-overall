@@ -7,6 +7,7 @@ output:
     highlight: "tango"
     lightbox: TRUE
     gallery: TRUE
+    toc_depth: 2
     use_bookdown: TRUE
 editor_options:
   chunk_output_type: console
@@ -33,10 +34,11 @@ if (!exists('path.root')) {
   source(here::here('R', 'setup.r'), encoding = 'UTF-8')
 }
 
-
 source(file.path(path.R, 'utils_management.R'), encoding = 'UTF-8')
 source(file.path(path.R, 'utils_get_data.R')  , encoding = 'UTF-8')
 source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
+
+df_labels_comcond <- read.csv(file.path(path.R, 'labels_comcond.csv'), encoding = 'UTF-8')
 
 
 # Set the left and right censoring for date of consultation. 
@@ -50,6 +52,7 @@ week_report     <- dates_and_week[[3]]
 
 caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF linelists as of {format(date_max_report, "%d %b %Y")}')
 
+palette_Reds4U <- c('#fcae91', '#fb6a4a','#de2d26', '#a50f15', '#969696')
 ```
 
 ---
@@ -182,7 +185,7 @@ nb_msf_suspected <- sum(dta_linelist_with_aggregated$ind_MSF_covid_status == 'Su
 
 nb_msf_confirmed_linelist <- sum(dta_linelist$ind_MSF_covid_status == 'Confirmed', na.rm = TRUE)
 
-nb_msf_confirmed_with_comorbidity <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' & Comcond_count > 0, na.rm = TRUE))
+nb_msf_confirmed_with_comorbidity <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' & ind_Comcond_count > 0, na.rm = TRUE))
 
 nb_msf_conf_prob_susp <- with(dta_linelist, sum(ind_MSF_covid_status %in% c('Confirmed', 'Probable', 'Suspected') & ind_outcome_patcourse_status %in% c('Cured', 'Died'), na.rm = TRUE))
 
@@ -322,7 +325,7 @@ hist_epicurve_status_continent
 Aggregated data excluded
 
 <!-- Histogram OVERALL of number of consultation/admissions -->
-```{r hist-consultations-sdmissions, fig.cap = paste('Weekly number of consultations and admissions in an MSF supported COvid-19 health service as of', format(date_max_report, "%d %B %Y"))}
+```{r hist-consultations-sdmissions, fig.cap = paste('Weekly number of consultations and admissions in an MSF supported Covid-19 health service as of', format(date_max_report, "%d %B %Y"))}
 # DONE by Paul
 
 dta_consultations <- dta_linelist %>% 
@@ -372,9 +375,11 @@ hist_epicurve_consult_admit <- tbl_epicurve_consultation %>%
                sec.axis = ggplot2::sec_axis(trans = ~ .), expand = expansion(mult = c(0.01, 0.01))) +
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1)),
                      expand = expansion(mult = c(0, 0.02))) +
-  labs(y = "Patients", colour = NULL, caption = glue::glue("Missing data: Consultation Date {missing_consultation}, Admission: {missing_admission}")) + 
+  labs(y = "Patients", colour = NULL, caption = glue::glue("Missing data: Consultation date {missing_consultation}, Admission: {missing_admission}")) + 
   theme_light() + 
-  theme(legend.position = "top", panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank())
+  theme(legend.position = "top", 
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank())
 
 ggsave(file.path(path.local.msf.graphs, paste0('hist_epicurve_consult_admit', '_', week_report, '.png')),
        plot = hist_epicurve_consult_admit, 
@@ -909,14 +914,14 @@ gtbl_sex_ratio
 
 
 
-### Summary table of patients consulted/admitted by type of case
+### Summary of patients consulted/admitted by type of case
 <!-- Table age (median, IQR, min-max), sex and presence of at least one morbidity, by Covid status -->
 ```{r tbl-all-general-characteristics}
 # DONE by Francesco
 ## This is a complicated table, there might be a simpler way that this one
 
 tbl_general_by_status <- dta_linelist %>% 
-  select(ind_MSF_covid_status, age_in_years, age_5gp, patinfo_sex, Comcond_01) %>% 
+  select(ind_MSF_covid_status, age_in_years, age_5gp, patinfo_sex, ind_Comcond_01) %>% 
   group_by(ind_MSF_covid_status) %>%
   summarise(
     N             = n(),  
@@ -932,11 +937,11 @@ tbl_general_by_status <- dta_linelist %>%
     sex_females   = sum(patinfo_sex == 'F', na.rm = TRUE),
     sex_ratio     = format(round(sum(patinfo_sex == 'M', na.rm = TRUE)/sum(patinfo_sex == 'F', na.rm = TRUE), digits = 1), nsmall = 1), 
     sex_n_missing = sum(is.na(patinfo_sex)), 
-    com_presence  = freq_prct(Comcond_01, 1))
+    com_presence  = freq_prct(ind_Comcond_01, 1))
 
 
 tbl_general_total <- dta_linelist %>% 
-  select(ind_MSF_covid_status, age_in_years, age_5gp, patinfo_sex, Comcond_01) %>% 
+  select(ind_MSF_covid_status, age_in_years, age_5gp, patinfo_sex, ind_Comcond_01) %>% 
   summarise(
     N             = n(),  
     age_min_max   = paste0(floor(min(age_in_years, na.rm = TRUE)), ' - ', floor(max(age_in_years, na.rm = TRUE))),
@@ -951,7 +956,7 @@ tbl_general_total <- dta_linelist %>%
     sex_females   = sum(patinfo_sex == 'F', na.rm = TRUE),
     sex_ratio     = format(round(sum(patinfo_sex == 'M', na.rm = TRUE)/sum(patinfo_sex == 'F', na.rm = TRUE), digits = 1), nsmall = 1), 
     sex_n_missing = sum(is.na(patinfo_sex)), 
-    com_presence  = freq_prct(Comcond_01, 1)) %>% 
+    com_presence  = freq_prct(ind_Comcond_01, 1)) %>% 
   mutate(
     ind_MSF_covid_status = 'Total')
 
@@ -1057,8 +1062,9 @@ pyramid_age_sex_all_continent
 ```{r tbl-symtopms-tbl_comcond_status}
 
 dta_comcond <- dta_linelist %>% 
+  filter(ind_Comcond_count < 9) %>% # This is a temporal rapid solution to remove cases with ALL comorbidities that might be a recording error
   select(continent, ind_MSF_covid_status, ind_outcome_patcourse_status, starts_with('ind_Comcond_'), ind_MSF_hiv_status, ind_MSF_hypertension, ind_MSF_tb_active, ind_MSF_malaria, ind_MSF_malnutrition, ind_MSF_smoking) %>% 
-  select(-c(ind_Comcond_other)) %>% 
+  select(-c(ind_Comcond_pregt, ind_Comcond_count, ind_Comcond_01)) %>% 
   mutate(across(c(starts_with('ind_Comcond_'),'ind_MSF_hiv_status','ind_MSF_hypertension', 'ind_MSF_malaria', 'ind_MSF_malnutrition', 'ind_MSF_smoking', 'ind_MSF_tb_active'), function(x){na_if(x,'Unknown')}))
 
 
@@ -1073,7 +1079,8 @@ tbl_comcond_status <- names(dta_comcond)[4:ncol(dta_comcond)] %>%
     }) %>% 
   filter(value == 'Yes') %>% 
   mutate(
-    type_comorbidity = factor(type_comorbidity, levels = df_labels_comcond$levels, labels = df_labels_comcond$labels))
+    type_comorbidity = factor(type_comorbidity, levels = df_labels_comcond$levels, labels = df_labels_comcond$labels)) %>% 
+  arrange(type_comorbidity)
 
 
 gtbl_comcond_status <- tbl_comcond_status %>% 
@@ -1501,6 +1508,70 @@ gtbl_severity_confirmed_continent %>%
 ```
 
 
+### Severity degree of patients overtime
+
+```{r hist-severity, fig.cap = 'Weekly number of patients by degree of severity, in each continent where MSF is operating'}
+
+tbl_severity_by_week <- dta_linelist %>% 
+  #filter(ind_MSF_covid_status %in% c('Confirmed')) %>%
+  select(continent, epi_week_consultation, MSF_severity) %>% 
+  #drop_na(MSF_severity) %>% 
+  group_by(continent, epi_week_consultation) %>% 
+  count(MSF_severity) %>% 
+  mutate(
+    MSF_severity = factor(MSF_severity, levels = c('Mild', 'Moderate', 'Severe', 'Critical')) %>% fct_explicit_na('(Unknown)')) %>% 
+  filter(epi_week_consultation > as.Date('2020-06-01'))
+
+
+hist_severity <- tbl_severity_by_week %>% 
+  ggplot(aes(epi_week_consultation, n, fill = MSF_severity)) + 
+  geom_col() +
+  scale_fill_manual(values = palette_Reds4U, name = "Degree of severity") +
+  scale_x_date(name = "Week of Consultation", date_breaks = "2 week", date_labels = "%V", expand = expansion(mult = c(0.01, 0.01)),
+               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.))) + 
+  scale_y_continuous(name = "Patients", expand = expansion(mult = c(0, 0.02))) +
+  theme_light() + 
+  theme(legend.position = 'top', 
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank())
+
+
+ggsave(file.path(path.local.msf.graphs, paste0('hist_severity', '_', week_report, '.png')),
+       plot = hist_severity, 
+       width = 6, 
+       height = 4, 
+       scale = 1.1,
+       dpi = 320)
+
+hist_severity
+
+```
+
+```{r hist-severity-facet-continent, fig.cap = 'Weekly number of patients by degree of severity, in each continent where MSF is operating'}
+
+hist_severity_by_continent <- tbl_severity_by_week %>% 
+  ggplot(aes(epi_week_consultation, n, fill = MSF_severity)) + 
+  facet_wrap(vars(continent), scales = "free_y") + 
+  geom_col() +
+  scale_fill_manual(values = palette_Reds4U, name = "Degree of severity") +
+  scale_x_date(name = "Week of Consultation", date_breaks = "2 week", date_labels = "%V", expand = expansion(mult = c(0.01, 0.01)),
+               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.))) + 
+  scale_y_continuous(name = "Patients", expand = expansion(mult = c(0, 0.02))) +
+  theme_light() + 
+  theme(legend.position = 'top', panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank())
+
+
+ggsave(file.path(path.local.msf.graphs, paste0('hist_severity_by_continent', '_', week_report, '.png')),
+       plot = hist_severity_by_continent, 
+       width = 6, 
+       height = 4, 
+       scale = 1.1,
+       dpi = 320)
+
+hist_severity_by_continent
+
+```
+
 
 
 ### Case-fatality by Covid status
@@ -1617,11 +1688,149 @@ cfr_confirmed_probable_suspected <- dta_linelist %>%
 ```
 
 
---- 
+### Fatality among all patients admitted
+
+```{r hist-fatality, fig.cap = "Fatality among all patients admitted to a Covid-related health facility supportd by MSF"}
+palette_GnRd <- c('#1b9e77', '#d95f02')
+
+dta_cfr_by_week <- dta_linelist %>% 
+  select(continent, epi_week_consultation, ind_outcome_patcourse_status, merge_admit) %>% 
+  mutate(
+    ind_outcome_patcourse_status = as.character(ind_outcome_patcourse_status), 
+    cured_sent_home = case_when(
+      ind_outcome_patcourse_status %in% c('Cured', 'Sent back home') ~ 'Cured/Sent back home', 
+      ind_outcome_patcourse_status %in% c('Died') ~ 'Died', 
+      TRUE ~ ind_outcome_patcourse_status)) %>% 
+  filter(cured_sent_home %in% c('Cured/Sent back home', 'Died'), merge_admit == 'Yes') 
+
+tbl_count_cured_died_by_week <- dta_cfr_by_week %>% 
+  group_by(continent, epi_week_consultation) %>% 
+  count(cured_sent_home)
+
+tbl_prop_cured_died_by_week <- dta_cfr_by_week %>% 
+  group_by(epi_week_consultation) %>% 
+  summarise(
+    p = sum(cured_sent_home == 'Died', na.rm = TRUE) / n()) %>% 
+  filter(epi_week_consultation < date_max_report - 14)
+
+n_max <- dta_cfr_by_week %>% 
+  group_by(epi_week_consultation) %>% 
+  count() %>% 
+  pull(n) %>% 
+  max()
+  
+scaling_factor = 1/n_max
+
+date_limits <- c(min(dta_cfr_by_week$epi_week_consultation, na.rm = TRUE), max(dta_cfr_by_week$epi_week_consultation, na.rm = TRUE)-14)
+
+hist_fatality <- ggplot(tbl_count_cured_died_by_week, aes(x = epi_week_consultation)) + 
+  geom_col(aes(y = n, fill = cured_sent_home), width = 7) + 
+  scale_fill_manual(values = palette_GnRd) +
+  geom_line(data = tbl_prop_cured_died_by_week,
+            aes(y = p / scaling_factor, colour = "Died %"),
+            key_glyph = 'timeseries', size = 0.8) +
+    scale_x_date(name = "Week of Consultation", date_breaks = "2 weeks", date_labels = "%V", 
+               sec.axis = ggplot2::sec_axis(trans = ~ .), expand = expansion(mult = c(0.01, 0.01))) + 
+  scale_y_continuous(name = 'Patients', sec.axis = sec_axis(~ . * scaling_factor, labels = scales::percent_format(accuracy = 1), name = 'Died (%)', breaks = seq(0, 1, 0.2))) + 
+  scale_color_manual(values = palette_GnRd[2]) + 
+  labs(fill = NULL, 
+       colour = NULL, 
+       caption = "Note: Only patients admitted to health facility are presented") + 
+  guides(fill = guide_legend(reverse = TRUE, order = 1), colour = guide_legend(order = 2)) + 
+  theme_light() + 
+  theme(legend.position = "top", 
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank(),
+        legend.direction = 'vertical', 
+        legend.text = element_text(size = 11))
+
+
+ggsave(file.path(path.local.msf.graphs, paste0('hist_fatality', '_', week_report, '.png')),
+       plot = hist_fatality, 
+       width = 6, 
+       height = 4, 
+       scale = 1.1,
+       dpi = 320)
+
+hist_fatality
+
+```
+
+```{r hist-died-continent, fig.cap = "Fatality among all patients admitted to a Covid-related health facility supportd by MSF by continent"}
+palette_GnRd <- c('#1b9e77', '#d95f02')
+
+dta_cfr_by_week <- dta_linelist %>% 
+  select(continent, epi_week_consultation, ind_outcome_patcourse_status, merge_admit) %>% 
+  mutate(
+    ind_outcome_patcourse_status = as.character(ind_outcome_patcourse_status), 
+    cured_sent_home = case_when(
+      ind_outcome_patcourse_status %in% c('Cured', 'Sent back home') ~ 'Cured/Sent back home', 
+      ind_outcome_patcourse_status %in% c('Died') ~ 'Died', 
+      TRUE ~ ind_outcome_patcourse_status)) %>% 
+  filter(cured_sent_home %in% c('Cured/Sent back home', 'Died'), merge_admit == 'Yes') 
+
+
+tbl_count_cured_died_by_week <- dta_cfr_by_week %>% 
+  group_by(continent, epi_week_consultation) %>% 
+  count(cured_sent_home)
+
+tbl_prop_cured_died_by_week <- dta_cfr_by_week %>% 
+  group_by(continent, epi_week_consultation) %>% 
+  summarise(
+    p = sum(cured_sent_home == 'Died', na.rm = TRUE) / n()) %>% 
+  filter(epi_week_consultation < date_max_report - 14)
+
+
+n_max <- dta_cfr_by_week %>% 
+  group_by(epi_week_consultation) %>% 
+  count() %>% 
+  pull(n) %>% 
+  max()
+
+cfr_max <- rounder(max(tbl_prop_cured_died_by_week$p, na.rm = TRUE), .1)
+cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
+
+scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
+
+hist_fatality_continent <- ggplot(tbl_count_cured_died_by_week, aes(x = epi_week_consultation)) + 
+  facet_wrap(vars(continent)) + 
+  geom_col(aes(y = n, fill = cured_sent_home), width = 7) + 
+  scale_fill_manual(values = palette_GnRd) +
+  geom_line(data = tbl_prop_cured_died_by_week,
+            aes(y = p / scaling_factor, colour = "Died %"),
+            key_glyph = 'timeseries', size = 0.8) +
+    scale_x_date(name = "Week of Consultation", date_breaks = "4 weeks", date_labels = "%V", 
+               sec.axis = ggplot2::sec_axis(trans = ~ .), expand = expansion(mult = c(0.01, 0.01))) +
+  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Died (%)", labels = scales::percent_format(accuracy = 1)), expand = expansion(mult = c(0, 0.02))) + 
+  scale_color_manual(values = palette_GnRd[2]) + 
+  labs(fill = NULL, 
+       colour = NULL, 
+       caption = "Note: Only patients admitted to health facility are presented") + 
+  guides(fill = guide_legend(reverse = TRUE, order = 1), colour = guide_legend(order = 2)) + 
+  theme_light() + 
+  theme(legend.position = "top", 
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank(),
+        legend.direction = 'vertical', 
+        legend.text = element_text(size = 11))
+
+
+ggsave(file.path(path.local.msf.graphs, paste0('hist_fatality_continent', '_', week_report, '.png')),
+       plot = hist_fatality_continent, 
+       width = 6, 
+       height = 4, 
+       scale = 1.1,
+       dpi = 320)
+
+hist_fatality_continent
+
+```
+
+
 
 # Covid-19 confirmed patients
 
-### Weekly number of confirmed patients consulted/admitted
+## Weekly number of confirmed patients consulted/admitted
 
 ```{r, hist-consultations-sdmissions-confirmed, fig.cap = paste('Weekly number of consultations and admissions of Covid confirmed patients in an MSF supported COvid-19 health service as of', format(date_max_report, "%d %B %Y"))}
 
@@ -1652,7 +1861,7 @@ cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
 scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
 
 missing_consultation <- sum(is.na(dta_linelist_confirmed$epi_week_consultation))
-missing_admission    <- sum(dta_linelist_confirmed$merge_admit == "Unknown")
+missing_admission    <- sum(dta_linelist_confirmed$merge_admit == "(Unknown)")
 
 hist_epicurve_consult_admit_confirmed_continent <- tbl_epicurve_consultation_continent %>% 
   ggplot(aes(epi_week_consultation, n)) +
@@ -1684,7 +1893,7 @@ hist_epicurve_consult_admit_confirmed_continent
 ```
 
 
-### Age and sex distribution of Covid confirmed patients
+## Age and sex distribution of confirmed patients
 
 ```{r gtbl-age-distribution-by-sex-confirmed-only}
 
@@ -1757,7 +1966,7 @@ pyramid_age_sex_confirmed
 ```
 
 
-### Age and sex distribution of Covid confirmed patients by continent
+## Age and sex distribution of confirmed patients by continent
 
 <!-- Age/sex pyramid by continent -->
 ```{r pyramid-age-sex-confirmed-continent, fig.cap = 'Age pyramid of patients consulted/admitted to an MSF supported Covid-19 health service by continent', fig.width = 8, fig.height = 8}
@@ -1804,7 +2013,7 @@ Table by continent (by region, if possible):
 
 
 
-### Patients care
+## Care of confirmed patients
 
 <!-- 
 Table Patient’s care 1
@@ -1918,7 +2127,7 @@ gtbl_care %>%
 ```
 
 
-### Age and sex of patients by outcome
+## Outcome by age and sex of confirmed patients
 
 ```{r tbl-age-sex-outcome}
 # DONE by Francesco
@@ -1995,7 +2204,7 @@ gtbl_age_sex_outcome %>%
 
 
 
-### Case fatality by age, sex and number of comorbidities
+## Case fatality by age, sex and number of comorbidities among confirmed patients
 
 <!-- CFR by age, sex and number of comorbidities -->
 ```{r tbl-cfr-age-sex-comorbidities}
@@ -2030,20 +2239,24 @@ tbl_cfr_sex <- levels(dta_cfr_sex$sex) %>%
     }) %>% 
   filter(ind_outcome_patcourse_status == 'Died') 
 
+# ---  ---  ---  ---  ---  ---  ---  ---  ---  --- 
 dta_cfr_comorbidities <- dta_linelist %>% 
-  mutate(Comcond_count = as.factor(Comcond_count)) %>% 
-  mutate(Comcond_count = fct_explicit_na(Comcond_count)) 
+  filter(ind_Comcond_count < 9) # This is a temporal rapid solution to remove cases with ALL comorbidities that might be a recording error
+# ---  ---  ---  ---  ---  ---  ---  ---  ---  --- 
 
-tbl_cfr_comorbidities <- levels(dta_cfr_comorbidities$Comcond_count) %>% 
+tbl_cfr_comorbidities <- unique(dta_cfr_comorbidities$ind_Comcond_count) %>% 
   map_df(~{
       dta_cfr_comorbidities %>% 
-      filter(Comcond_count == .x) %>% 
+      filter(ind_Comcond_count == .x) %>% 
       tbl_prop('ind_outcome_patcourse_status', 'continent', drop_levels = FALSE) %>% 
       mutate(
-        Comcond_count = .x)
+        ind_Comcond_count = .x)
     }) %>% 
   filter(ind_outcome_patcourse_status == 'Died') %>% 
-  arrange(Comcond_count)
+  arrange(ind_Comcond_count) %>% 
+  mutate(
+    ind_Comcond_count = as.factor(ind_Comcond_count)
+  )
 
 
 tbl_cfr_age_sex_comorbidities <- tbl_cfr_age %>% 
@@ -2053,7 +2266,7 @@ tbl_cfr_age_sex_comorbidities <- tbl_cfr_age %>%
             rename(var = sex) %>% 
             mutate(label_var = 'Sex')) %>% 
   add_row(tbl_cfr_comorbidities %>% 
-            rename(var = Comcond_count) %>% 
+            rename(var = ind_Comcond_count) %>% 
             mutate(label_var = 'Number of comorbidities'))
 
 gtbl_cfr_age_sex_comorbidities <- tbl_cfr_age_sex_comorbidities %>% 
@@ -2140,17 +2353,17 @@ gtbl_cfr_age_sex_comorbidities %>%
 
 # Numbers for editing report
 cfr_confirmed_no_comorbidities <- tbl_cfr_comorbidities %>% 
-  filter(Comcond_count == 0) %>% 
+  filter(ind_Comcond_count == 0) %>% 
   pull(p_Total)
 
 cfr_confirmed_3_comorbidities <- tbl_cfr_comorbidities %>% 
-  filter(Comcond_count == 3) %>% 
+  filter(ind_Comcond_count == 3) %>% 
   pull(p_Total)
 
 ```
 
 
-### Case fatality by type of comorbidity
+## Case fatality by type of comorbidity among confirmed patients
 
 <!-- CFR by type of comorbidity among confirmed patients -->
 ```{r tbl-cfr-type-comorbidity}
@@ -2158,13 +2371,14 @@ cfr_confirmed_3_comorbidities <- tbl_cfr_comorbidities %>%
 
 
 dta_cfr_comcond <- dta_linelist %>% 
-  select(continent, ind_MSF_covid_status, ind_outcome_patcourse_status, Comcond_count, Comcond_01, starts_with('ind_Comcond_'), ind_MSF_hiv_status, ind_MSF_hypertension, ind_MSF_tb_active, ind_MSF_malaria, ind_MSF_malnutrition, ind_MSF_smoking) %>% 
+  filter(ind_Comcond_count < 9) %>% # This is a temporal rapid solution to remove cases with ALL comorbidities that might be a recording error
+  select(continent, ind_MSF_covid_status, ind_outcome_patcourse_status, ind_Comcond_count, ind_Comcond_01, starts_with('ind_Comcond_'), ind_MSF_hiv_status, ind_MSF_hypertension, ind_MSF_tb_active, ind_MSF_malaria, ind_MSF_malnutrition, ind_MSF_smoking) %>% 
   mutate(
     ind_Comcond_other = case_when(
       !is.na(ind_Comcond_other) ~ 'Yes', 
       TRUE ~ NA_character_)) %>% 
   filter(ind_MSF_covid_status == 'Confirmed', ind_outcome_patcourse_status %in% c('Cured', 'Died')) %>% 
-  pivot_longer(-c(ind_MSF_covid_status, ind_outcome_patcourse_status, continent, Comcond_count, Comcond_01), names_to = "type_comorbidity") %>%
+  pivot_longer(-c(ind_MSF_covid_status, ind_outcome_patcourse_status, continent, ind_Comcond_count, ind_Comcond_01), names_to = "type_comorbidity") %>%
   mutate(
     type_comorbidity = factor(type_comorbidity, levels = df_labels_comcond$levels, labels = df_labels_comcond$labels)) %>% 
   filter(!is.na(value), value == 'Yes')
@@ -2547,7 +2761,7 @@ boxplot_length_stay
 
 # Analysis of non-cases 
 
-```{r tbl-non-cases-diagnosis, layout="l-body-outset"}
+```{r tbl-non-cases-diagnosis}
 
 dta_non_cases_diagt <- dta_linelist %>% 
   filter(ind_MSF_covid_status == 'Not a case') %>% 
