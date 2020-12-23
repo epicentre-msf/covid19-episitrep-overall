@@ -2240,8 +2240,8 @@ tbl_cfr_sex <- levels(dta_cfr_sex$sex) %>%
   filter(ind_outcome_patcourse_status == 'Died') 
 
 # ---  ---  ---  ---  ---  ---  ---  ---  ---  --- 
-dta_cfr_comorbidities <- dta_linelist %>% 
-  filter(ind_Comcond_count < 9) # This is a temporal rapid solution to remove cases with ALL comorbidities that might be a recording error
+dta_cfr_comorbidities <- dta_linelist # %>% 
+#  filter(ind_Comcond_count < 9) # This was a temporal rapid solution to remove cases with ALL comorbidities that might be a recording error (used only in week 50-2020)
 # ---  ---  ---  ---  ---  ---  ---  ---  ---  --- 
 
 tbl_cfr_comorbidities <- unique(dta_cfr_comorbidities$ind_Comcond_count) %>% 
