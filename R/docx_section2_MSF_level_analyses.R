@@ -281,7 +281,7 @@ my_doc <- add_par_normal(
 
 my_doc <- add_par_normal(
   sprintf("The length of stay (median number of days) was %s days (Figure 11)", 
-          median(dta_length_stay$length_stay)))
+          median(dta_length_stay$MSF_length_stay)))
 
 
 my_doc <- add_end_section_2columns()

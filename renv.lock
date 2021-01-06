@@ -366,10 +366,10 @@
     },
     "distill": {
       "Package": "distill",
-      "Version": "1.0",
+      "Version": "1.1",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "c1dd034939f4e35fd82f76dbabced9d1"
+      "Hash": "0e3a1bd101abd10ce59d4f71057bf84a"
     },
     "downlit": {
       "Package": "downlit",
@@ -625,10 +625,10 @@
     },
     "isoband": {
       "Package": "isoband",
-      "Version": "0.2.2",
+      "Version": "0.2.3",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "6e58bd3d6b3dd82a944cd6f05ade228f"
+      "Hash": "53647fb507373700028b2ce6cd30751a"
     },
     "janitor": {
       "Package": "janitor",
@@ -681,10 +681,10 @@
     },
     "lme4": {
       "Package": "lme4",
-      "Version": "1.1-25",
+      "Version": "1.1-26",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "b3b401eba1d6435bcf009576e811f9bf"
+      "Hash": "5f2466f5127e0ce67e44bb381387eeca"
     },
     "lmtest": {
       "Package": "lmtest",
@@ -877,10 +877,10 @@
     },
     "processx": {
       "Package": "processx",
-      "Version": "3.4.4",
+      "Version": "3.4.5",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "03446ed0b8129916f73676726cb3c48f"
+      "Hash": "22aab6098cb14edd0a5973a8438b569b"
     },
     "progress": {
       "Package": "progress",
@@ -898,10 +898,10 @@
     },
     "ps": {
       "Package": "ps",
-      "Version": "1.4.0",
+      "Version": "1.5.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "f5d7d94cc097aa9dade988e3e6715067"
+      "Hash": "ebaed51a03411fd5cfc1e12d9079b353"
     },
     "purrr": {
       "Package": "purrr",
@@ -968,10 +968,15 @@
     },
     "renv": {
       "Package": "renv",
-      "Version": "0.12.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "398cc1ea892e1aade66d1ecbb2874d24"
+      "Version": "0.12.3-8",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "renv",
+      "RemoteUsername": "rstudio",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "080234134766804fb1dbbd777dff77dffff4b2e6",
+      "Hash": "cf80821fca4292cf8af159b24d422536"
     },
     "rgeos": {
       "Package": "rgeos",
@@ -989,10 +994,10 @@
     },
     "rlang": {
       "Package": "rlang",
-      "Version": "0.4.8",
+      "Version": "0.4.9",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "843a6af51414bce7f8a8e372f11d6cd0"
+      "Hash": "9d7aba7bed9a79e2403b4777428a2b12"
     },
     "rmarkdown": {
       "Package": "rmarkdown",
@@ -1178,10 +1183,10 @@
     },
     "tseries": {
       "Package": "tseries",
-      "Version": "0.10-47",
+      "Version": "0.10-48",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "35ddfebb7e520955418f9dde02ca345d"
+      "Hash": "fde700fa41fd42a4bb03306dda6fd179"
     },
     "units": {
       "Package": "units",

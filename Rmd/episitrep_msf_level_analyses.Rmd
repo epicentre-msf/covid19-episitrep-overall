@@ -1,12 +1,13 @@
 ---
-title: "Covid-19 MSF data analysis"
-author: Francesco Grandesso (Epicentre) <mailto:francesco.GRANDESSO@epicentre.msf.org>
-date: "`r format(Sys.Date(), '%d %B %Y')`"
+title: "EpiSitrep of Covid-19 in MSF projects"
+author: Francesco Grandesso (Epicentre) <francesco.GRANDESSO@epicentre.msf.org>
+date: "Edited: `r format(Sys.Date(), '%d %B %Y')`"
 output:
   rmdformats::readthedown:
     highlight: "tango"
     lightbox: TRUE
     gallery: TRUE
+    toc_depth: 2
     use_bookdown: TRUE
 editor_options:
   chunk_output_type: console
@@ -15,27 +16,6 @@ editor_options:
 
 <!-- Setup environment and upload functions -->
 ```{r setup, warning = FALSE, message = FALSE, include = FALSE}
-
-if (!exists('path.root')) {
-  source(here::here('R', 'setup.r'), encoding = 'UTF-8')
-}
-
-source(file.path(path.R, 'utils_management.R'), encoding = 'UTF-8')
-source(file.path(path.R, 'utils_get_data.R')  , encoding = 'UTF-8')
-source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
-
-
-# Set the left and right censoring for date of consultation. 
-# The right-censoring create also the week value and the folders where to save the outputs
-dates_and_week <- set_date_frame(create_folders = TRUE)
-
-date_min_report <- dates_and_week[[1]]
-date_max_report <- dates_and_week[[2]]
-week_report     <- dates_and_week[[3]]
-
-
-caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF linelists as of {format(date_max_report, "%d %b %Y")}')
-
 
 knitr::opts_chunk$set(cache = FALSE,
                       echo = FALSE,
@@ -49,7 +29,35 @@ knitr::opts_chunk$set(cache = FALSE,
                       message = FALSE,
                       encoding = "UTF-8")
 
+
+if (!exists('path.root')) {
+  source(here::here('R', 'setup.r'), encoding = 'UTF-8')
+}
+
+source(file.path(path.R, 'utils_management.R'), encoding = 'UTF-8')
+source(file.path(path.R, 'utils_get_data.R')  , encoding = 'UTF-8')
+source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
+
+df_labels_comcond <- read.csv(file.path(path.R, 'labels_comcond.csv'), encoding = 'UTF-8')
+
+
+# Set the left and right censoring for date of consultation. 
+# The right-censoring create also the week value and the folders where to save the outputs
+dates_and_week <- set_date_frame(create_folders = TRUE)
+
+date_min_report <- dates_and_week[[1]]
+date_max_report <- dates_and_week[[2]]
+week_report     <- dates_and_week[[3]]
+
+
+caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF linelists as of {format(date_max_report, "%d %b %Y")}')
+
+palette_Reds4U <- c('#fcae91', '#fb6a4a','#de2d26', '#a50f15', '#969696')
 ```
+
+---
+subtitle: "Data as of week `r glue::glue("{format(date_max_report, '%V')}, ending {weekdays(date_max_report)} {format(date_max_report, '%d %B %Y')}")`"
+---
 
 <!-- Import and manage data -->
 ```{r get-data, include = FALSE}
@@ -62,13 +70,13 @@ df_countries <- readRDS(file.path(path.local.data, 'df_countries.RDS'))
 path.sharepoint.data <- file.path(path.sharepoint, 'data', 'linelist', 'world')
 
 dta_linelist <- get_msf_linelist(force = TRUE) %>% 
-  prepare_msf_dta(shorten_var_names = TRUE) %>% 
+  #prepare_msf_dta(shorten_var_names = TRUE) %>% 
   rename(iso_a3 = country) %>% 
   left_join(df_countries %>% select(continent, region, iso_a3, country), by = 'iso_a3') %>% 
   mutate(
     country = as.factor(country), 
     continent = as.factor(continent)) %>% 
-  filter(between(date_consultation, left = date_min_report, right = date_max_report) | is.na(date_consultation)) # Filter date limits using date of consultation
+  filter(between(MSF_date_consultation, left = date_min_report, right = date_max_report) | is.na(MSF_date_consultation)) # Filter date limits using date of consultation
 
 
 ## --- Import aggregated data --- --- --- 
@@ -90,7 +98,7 @@ dta_aggregated_expanded <- dta_weekly_aggregated %>%
     date = as.Date(date), 
     epi_week_consultation = make_epiweek_date(date) %>% as.Date(), 
     country = case_when(
-      country == 'DRC' ~ 'Democratic Republic of the Congo', 
+      country == 'Palestine' ~ 'Palestinian Territories', 
       country == "Côte d'Ivoire" ~ 'Côte d’Ivoire', 
       TRUE ~ country)) %>% 
   left_join(df_countries, by = 'country') %>% 
@@ -108,9 +116,9 @@ dta_aggregated_expanded <- dta_weekly_aggregated %>%
 
 # The dataset with linelist and the expanded aggregated data together
 dta_linelist_with_aggregated <- dta_linelist %>% 
-  select(continent, region, country, site_name, iso_a3, OC, epi_week_consultation, covid_status) %>% 
+  select(continent, region, country, site_name, iso_a3, OC, epi_week_consultation, ind_MSF_covid_status) %>% 
   add_row(dta_aggregated_expanded %>% 
-            select(continent, region, country, site_name, iso_a3, OC, epi_week_consultation, covid_status) %>% 
+            select(continent, region, country, site_name, iso_a3, OC, epi_week_consultation, ind_MSF_covid_status = covid_status) %>% 
             mutate(
               country = paste(country, '(*)'), 
               site_name = paste(site_name, '(*)')))
@@ -170,45 +178,45 @@ nb_msf_obs_linelist   <- dta_linelist %>% count() %>% pull(n)         # Nb of ob
 nb_msf_obs_aggregated <- dta_aggregated_expanded %>% count() %>% pull(n)  # Nb of observations in aggreagated data
 nb_msf_obs            <- nb_msf_obs_linelist + nb_msf_obs_aggregated
 
-nb_msf_confirmed <- sum(dta_linelist_with_aggregated$covid_status == 'Confirmed', na.rm = TRUE)
-nb_msf_probable  <- sum(dta_linelist_with_aggregated$covid_status == 'Probable' , na.rm = TRUE)
-nb_msf_suspected <- sum(dta_linelist_with_aggregated$covid_status == 'Suspected', na.rm = TRUE)
+nb_msf_confirmed <- sum(dta_linelist_with_aggregated$ind_MSF_covid_status == 'Confirmed', na.rm = TRUE)
+nb_msf_probable  <- sum(dta_linelist_with_aggregated$ind_MSF_covid_status == 'Probable' , na.rm = TRUE)
+nb_msf_suspected <- sum(dta_linelist_with_aggregated$ind_MSF_covid_status == 'Suspected', na.rm = TRUE)
 
 
-nb_msf_confirmed_linelist <- sum(dta_linelist$covid_status == 'Confirmed', na.rm = TRUE)
+nb_msf_confirmed_linelist <- sum(dta_linelist$ind_MSF_covid_status == 'Confirmed', na.rm = TRUE)
 
-nb_msf_confirmed_with_comorbidity <- with(dta_linelist, sum(covid_status == 'Confirmed' & Comcond_count > 0, na.rm = TRUE))
+nb_msf_confirmed_with_comorbidity <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' & ind_Comcond_count > 0, na.rm = TRUE))
 
-nb_msf_conf_prob_susp <- with(dta_linelist, sum(covid_status %in% c('Confirmed', 'Probable', 'Suspected') & outcome_status %in% c('Cured', 'Died'), na.rm = TRUE))
+nb_msf_conf_prob_susp <- with(dta_linelist, sum(ind_MSF_covid_status %in% c('Confirmed', 'Probable', 'Suspected') & ind_outcome_patcourse_status %in% c('Cured', 'Died'), na.rm = TRUE))
 
-nb_msf_conf_prob_susp_who_died <- with(dta_linelist, sum(covid_status %in% c('Confirmed', 'Probable', 'Suspected') & outcome_status == 'Died', na.rm = TRUE))
+nb_msf_conf_prob_susp_who_died <- with(dta_linelist, sum(ind_MSF_covid_status %in% c('Confirmed', 'Probable', 'Suspected') & ind_outcome_patcourse_status == 'Died', na.rm = TRUE))
 
-nb_msf_conf_above65 <- with(dta_linelist, sum(covid_status == 'Confirmed' & age_in_years >=65 & outcome_status %in% c('Cured', 'Died'), na.rm = TRUE))
+nb_msf_conf_above65 <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' & age_in_years >=65 & ind_outcome_patcourse_status %in% c('Cured', 'Died'), na.rm = TRUE))
 
-nb_msf_conf_above65_who_died <- with(dta_linelist, sum(covid_status == 'Confirmed' & age_in_years >=65 & outcome_status == 'Died', na.rm = TRUE))
+nb_msf_conf_above65_who_died <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' & age_in_years >=65 & ind_outcome_patcourse_status == 'Died', na.rm = TRUE))
 
 median_age_all <- dta_linelist %>% 
   pull(age_in_years) %>% 
   median(na.rm = TRUE)
 
 median_age_all_by_sex <- dta_linelist %>% 
-  group_by(sex) %>% 
+  group_by(patinfo_sex) %>% 
   summarise(
     age_median = median(age_in_years, na.rm = TRUE))
 
 median_age_confirmed <- dta_linelist %>% 
-  filter(covid_status == 'Confirmed') %>% 
+  filter(ind_MSF_covid_status == 'Confirmed') %>% 
   pull(age_in_years) %>% 
   median(na.rm = TRUE)
 
 median_age_confirmed_by_sex <- dta_linelist %>% 
-  filter(covid_status == 'Confirmed') %>% 
-  group_by(sex) %>% 
+  filter(ind_MSF_covid_status == 'Confirmed') %>% 
+  group_by(patinfo_sex) %>% 
   summarise(
     age_median = median(age_in_years, na.rm = TRUE))
 
 median_age_confirmed_died <- dta_linelist %>% 
-  filter(covid_status == 'Confirmed' & outcome_status == 'Died') %>% 
+  filter(ind_MSF_covid_status == 'Confirmed' & ind_outcome_patcourse_status == 'Died') %>% 
   pull(age_in_years) %>% 
   median(na.rm = TRUE)
 
@@ -249,11 +257,11 @@ Aggregated data included
 ```{r hist-covid-status, fig.cap = 'Weekly number of consultations (including admission) by Covid status'}
 # DONE by Paul
 
-tbl_epicurve_status <- dta_linelist_with_aggregated %>%
-  count(covid_status, epi_week_consultation)
+tbl_epicurve_status <- dta_linelist_with_aggregated %>% 
+  count(ind_MSF_covid_status, epi_week_consultation)
 
 hist_epicurve_status <- tbl_epicurve_status %>% 
-  ggplot(aes(epi_week_consultation, n, fill = covid_status)) +
+  ggplot(aes(epi_week_consultation, n, fill = ind_MSF_covid_status)) +
   geom_col() +
   ggthemes::scale_fill_tableau(name = "Status", palette = "Tableau 20") +
   scale_x_date(name = "Week of Consultation", date_breaks = "2 week", date_labels = "%V", expand = expansion(mult = c(0.01, 0.01)),
@@ -274,16 +282,22 @@ hist_epicurve_status
 
 ```
 
+```{r, include = FALSE}
+dta_linelist_with_aggregated %>% 
+  count(continent)
+```
+
+
 <!-- Histograms BY CONTINENT of patients Covid status -->
 ```{r hist-covid-status-facet-continent, fig.cap = 'Weekly number of consultations (including admission) by Covid status, in each continent where MSF is operating'}
 # DONE by Francesco (copied from the Paul graph just above)
 
 tbl_epicurve_status_continent <- dta_linelist_with_aggregated %>%
-  count(continent, covid_status, epi_week_consultation)
+  count(continent, ind_MSF_covid_status, epi_week_consultation)
 
 
 hist_epicurve_status_continent <- tbl_epicurve_status_continent %>% 
-  ggplot(aes(epi_week_consultation, n, fill = covid_status)) +
+  ggplot(aes(epi_week_consultation, n, fill = ind_MSF_covid_status)) +
   facet_wrap(vars(continent), scales = 'free_y') +
   geom_col() +
   ggthemes::scale_fill_tableau(name = NULL, palette = "Tableau 20") +
@@ -311,7 +325,7 @@ hist_epicurve_status_continent
 Aggregated data excluded
 
 <!-- Histogram OVERALL of number of consultation/admissions -->
-```{r hist-consultations-sdmissions, fig.cap = paste('Weekly number of consultations and admissions in an MSF supported COvid-19 health service as of', format(date_max_report, "%d %B %Y"))}
+```{r hist-consultations-sdmissions, fig.cap = paste('Weekly number of consultations and admissions in an MSF supported Covid-19 health service as of', format(date_max_report, "%d %B %Y"))}
 # DONE by Paul
 
 dta_consultations <- dta_linelist %>% 
@@ -361,9 +375,11 @@ hist_epicurve_consult_admit <- tbl_epicurve_consultation %>%
                sec.axis = ggplot2::sec_axis(trans = ~ .), expand = expansion(mult = c(0.01, 0.01))) +
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1)),
                      expand = expansion(mult = c(0, 0.02))) +
-  labs(y = "Patients", colour = NULL, caption = glue::glue("Missing data: Consultation Date {missing_consultation}, Admission: {missing_admission}")) + 
+  labs(y = "Patients", colour = NULL, caption = glue::glue("Missing data: Consultation date {missing_consultation}, Admission: {missing_admission}")) + 
   theme_light() + 
-  theme(legend.position = "top", panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank())
+  theme(legend.position = "top", 
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank())
 
 ggsave(file.path(path.local.msf.graphs, paste0('hist_epicurve_consult_admit', '_', week_report, '.png')),
        plot = hist_epicurve_consult_admit, 
@@ -493,15 +509,15 @@ Counts of patients consulted/admitted to an MSF supported health facility by Cov
 # DONE by Francesco
 
 tbl_countries_covid_status <- dta_linelist_with_aggregated %>%
-  select(continent, country, site_name, covid_status) %>%
+  select(continent, country, site_name, ind_MSF_covid_status) %>%
   group_by(continent, country) %>%
   summarise(
     total = n(),
-    n_confirmed = sum(covid_status == 'Confirmed'),
-    n_probable  = sum(covid_status == 'Probable'),
-    n_suspected = sum(covid_status == 'Suspected'),
-    n_not_case  = sum(covid_status == 'Not a case'),
-    n_unknown   = sum(covid_status == '(Unknown)'),
+    n_confirmed = sum(ind_MSF_covid_status == 'Confirmed'),
+    n_probable  = sum(ind_MSF_covid_status == 'Probable'),
+    n_suspected = sum(ind_MSF_covid_status == 'Suspected'),
+    n_not_case  = sum(ind_MSF_covid_status == 'Not a case'),
+    n_unknown   = sum(ind_MSF_covid_status == '(Unknown)'),
     p_confirmed = n_confirmed / total,
     p_probable  = n_probable  / total,
     p_suspected = n_suspected / total,
@@ -511,12 +527,12 @@ tbl_countries_covid_status <- dta_linelist_with_aggregated %>%
   arrange(continent, country)
 
 tbl_countries_dates <- dta_linelist %>%
-  select(continent, country, site_name, date_consultation) %>%
-  add_row(tbl_aggregated_expanded_with_dates %>% select(continent, country, site_name, date_consultation)) %>%  
+  select(continent, country, site_name, MSF_date_consultation) %>%
+  add_row(tbl_aggregated_expanded_with_dates %>% select(continent, country, site_name, MSF_date_consultation = date_consultation)) %>%  
   group_by(country) %>%
   summarise(
-    date_adm_first = format(min(date_consultation, na.rm = TRUE), '%d-%m-%Y'),
-    date_adm_last  = format(max(date_consultation, na.rm = TRUE), '%d-%m-%Y'))
+    date_adm_first = format(min(MSF_date_consultation, na.rm = TRUE), '%d-%m-%Y'),
+    date_adm_last  = format(max(MSF_date_consultation, na.rm = TRUE), '%d-%m-%Y'))
 
 gtbl_countries_covid_status <- tbl_countries_covid_status %>%
   left_join(tbl_countries_dates) %>%
@@ -636,11 +652,11 @@ tbl_sites_covid_status <- dta_linelist_with_aggregated %>%
   group_by(country, site_name) %>%
   summarise(
     total = n(),
-    n_confirmed = sum(covid_status == 'Confirmed'),
-    n_probable  = sum(covid_status == 'Probable'),
-    n_suspected = sum(covid_status == 'Suspected'),
-    n_not_case  = sum(covid_status == 'Not a case'),
-    n_unknown   = sum(covid_status == '(Unknown)'),
+    n_confirmed = sum(ind_MSF_covid_status == 'Confirmed'),
+    n_probable  = sum(ind_MSF_covid_status == 'Probable'),
+    n_suspected = sum(ind_MSF_covid_status == 'Suspected'),
+    n_not_case  = sum(ind_MSF_covid_status == 'Not a case'),
+    n_unknown   = sum(ind_MSF_covid_status == '(Unknown)'),
     p_confirmed = n_confirmed / total,
     p_probable  = n_probable  / total,
     p_suspected = n_suspected / total,
@@ -649,12 +665,12 @@ tbl_sites_covid_status <- dta_linelist_with_aggregated %>%
   ungroup()
 
 tbl_site_dates <- dta_linelist %>%
-  select(continent, country, site_name, date_consultation) %>%
-  add_row(tbl_aggregated_expanded_with_dates %>% select(continent, country, site_name, date_consultation)) %>%
+  select(continent, country, site_name, MSF_date_consultation) %>%
+  add_row(tbl_aggregated_expanded_with_dates %>% select(continent, country, site_name, MSF_date_consultation = date_consultation)) %>%
   group_by(site_name) %>%
   summarise(
-    date_adm_first = format(min(date_consultation, na.rm = TRUE), '%d-%m-%Y'),
-    date_adm_last  = format(max(date_consultation, na.rm = TRUE), '%d-%m-%Y'))
+    date_adm_first = format(min(MSF_date_consultation, na.rm = TRUE), '%d-%m-%Y'),
+    date_adm_last  = format(max(MSF_date_consultation, na.rm = TRUE), '%d-%m-%Y'))
 
 gtbl_sites_covid_status <- tbl_sites_covid_status %>%
   left_join(tbl_site_dates) %>%
@@ -779,9 +795,9 @@ Table by continent (or region)
 ```{r gtbl-age-distribution-by-sex-all}
 
 dta_age_sex <- dta_linelist %>% 
-  select(covid_status, age_in_years, age_5gp, sex) %>%
+  select(ind_MSF_covid_status, age_in_years, age_5gp, patinfo_sex) %>%
   drop_na() %>% 
-  transform(sex = factor(sex, levels = c('F', 'M'), labels = c('Female', 'Male')))
+  mutate(sex = factor(patinfo_sex, levels = c('F', 'M'), labels = c('Female', 'Male')))
 
 tbl_age_distribution_by_sex_all <- dta_age_sex %>% 
   group_by(sex) %>% 
@@ -823,7 +839,7 @@ gtbl_age_distribution_by_sex_all
 ```{r gtbl-age-sex-continent}
 
 dta_age_sex <- dta_linelist %>% 
-  mutate(sex = factor(sex, levels = c('F', 'M'), labels = c('Female', 'Male')) %>% fct_explicit_na(na_level = "(Unknown)")) 
+  mutate(sex = factor(patinfo_sex, levels = c('F', 'M'), labels = c('Female', 'Male')) %>% fct_explicit_na(na_level = "(Unknown)")) 
   
   
 tbl_age_sex <- dta_age_sex %>% 
@@ -866,8 +882,8 @@ gtbl_age_sex_continent
 ```{r}
 
 tbl_sex_ratio <- dta_linelist %>% 
-  select(continent, sex) %>% 
-  transform(sex = factor(sex, levels = c('M', 'F'), labels = c('Male', 'Female')) %>% fct_explicit_na(na_level = "(Unknown)")) %>% 
+  select(continent, patinfo_sex) %>% 
+  mutate(sex = factor(patinfo_sex, levels = c('M', 'F'), labels = c('Male', 'Female')) %>% fct_explicit_na(na_level = "(Unknown)")) %>% 
   group_by(continent) %>% 
   count(sex) %>% 
   pivot_wider(names_from = sex, values_from = n) %>% 
@@ -898,78 +914,78 @@ gtbl_sex_ratio
 
 
 
-### Summary table of patients consulted/admitted by type of case
+### Summary of patients consulted/admitted by type of case
 <!-- Table age (median, IQR, min-max), sex and presence of at least one morbidity, by Covid status -->
-```{r tbl-all-general-characteristics, layout = "l-page"}
+```{r tbl-all-general-characteristics}
 # DONE by Francesco
 ## This is a complicated table, there might be a simpler way that this one
 
 tbl_general_by_status <- dta_linelist %>% 
-  select(covid_status, age_in_years, age_5gp, sex, Comcond_01) %>% 
-  group_by(covid_status) %>%
+  select(ind_MSF_covid_status, age_in_years, age_5gp, patinfo_sex, ind_Comcond_01) %>% 
+  group_by(ind_MSF_covid_status) %>%
   summarise(
-    age_total   = paste0(sum(!is.na(age_in_years)) , '/',  n()),  
-    age_min_max = paste0(min(age_in_years, na.rm = TRUE), ' - ', max(age_in_years, na.rm = TRUE)),
-    age_median  = format(round(median(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1),
-    age_gp1     = freq_prct(age_5gp, '0-4'),
-    age_gp2     = freq_prct(age_5gp, '5-14'),
-    age_gp3     = freq_prct(age_5gp, '15-44'),
-    age_gp4     = freq_prct(age_5gp, '45-64'),
-    age_gp5     = freq_prct(age_5gp, '65+'),
-    sex_total   = paste0(sum(!is.na(sex)) , '/',  n()),
-    sex_males   = sum(sex == 'M', na.rm = TRUE),
-    sex_females = sum(sex == 'F', na.rm = TRUE),
-    sex_ratio   = format(round(sum(sex == 'M', na.rm = TRUE)/sum(sex == 'F', na.rm = TRUE), digits = 1), nsmall = 1),
-    comorbidity_total = paste0(sum(!is.na(Comcond_01)) , '/',  n()),
-    comorbidity_presence = freq_prct(Comcond_01, 1))
+    N             = n(),  
+    age_min_max   = paste0(floor(min(age_in_years, na.rm = TRUE)), ' - ', floor(max(age_in_years, na.rm = TRUE))),
+    age_median    = format(round(median(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1),
+    age_gp1       = freq_prct(age_5gp, '0-4'),
+    age_gp2       = freq_prct(age_5gp, '5-14'),
+    age_gp3       = freq_prct(age_5gp, '15-44'),
+    age_gp4       = freq_prct(age_5gp, '45-64'),
+    age_gp5       = freq_prct(age_5gp, '65+'), 
+    age_n_missing = sum(is.na(age_in_years)), 
+    sex_males     = sum(patinfo_sex == 'M', na.rm = TRUE),
+    sex_females   = sum(patinfo_sex == 'F', na.rm = TRUE),
+    sex_ratio     = format(round(sum(patinfo_sex == 'M', na.rm = TRUE)/sum(patinfo_sex == 'F', na.rm = TRUE), digits = 1), nsmall = 1), 
+    sex_n_missing = sum(is.na(patinfo_sex)), 
+    com_presence  = freq_prct(ind_Comcond_01, 1))
 
 
 tbl_general_total <- dta_linelist %>% 
-  select(covid_status, age_in_years, age_5gp, sex, Comcond_01) %>% 
+  select(ind_MSF_covid_status, age_in_years, age_5gp, patinfo_sex, ind_Comcond_01) %>% 
   summarise(
-    age_total   = paste0(sum(!is.na(age_in_years)) , '/',  n()),  
-    age_min_max = paste0(min(age_in_years, na.rm = TRUE), ' - ', max(age_in_years, na.rm = TRUE)),
-    age_median  = format(round(median(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1),
-    age_gp1     = freq_prct(age_5gp, '0-4'),
-    age_gp2     = freq_prct(age_5gp, '5-14'),
-    age_gp3     = freq_prct(age_5gp, '15-44'),
-    age_gp4     = freq_prct(age_5gp, '45-64'),
-    age_gp5     = freq_prct(age_5gp, '65+'),
-    sex_total   = paste0(sum(!is.na(sex)) , '/',  n()),
-    sex_males   = sum(sex == 'M', na.rm = TRUE),
-    sex_females = sum(sex == 'F', na.rm = TRUE),
-    sex_ratio   = format(round(sum(sex == 'M', na.rm = TRUE)/sum(sex == 'F', na.rm = TRUE), digits = 1), nsmall = 1),
-    comorbidity_total = paste0(sum(!is.na(Comcond_01)) , '/',  n()),
-    comorbidity_presence = freq_prct(Comcond_01, 1)) %>% 
+    N             = n(),  
+    age_min_max   = paste0(floor(min(age_in_years, na.rm = TRUE)), ' - ', floor(max(age_in_years, na.rm = TRUE))),
+    age_median    = format(round(median(age_in_years, na.rm = TRUE), digits = 1), nsmall = 1),
+    age_gp1       = freq_prct(age_5gp, '0-4'),
+    age_gp2       = freq_prct(age_5gp, '5-14'),
+    age_gp3       = freq_prct(age_5gp, '15-44'),
+    age_gp4       = freq_prct(age_5gp, '45-64'),
+    age_gp5       = freq_prct(age_5gp, '65+'), 
+    age_n_missing = sum(is.na(age_in_years)), 
+    sex_males     = sum(patinfo_sex == 'M', na.rm = TRUE),
+    sex_females   = sum(patinfo_sex == 'F', na.rm = TRUE),
+    sex_ratio     = format(round(sum(patinfo_sex == 'M', na.rm = TRUE)/sum(patinfo_sex == 'F', na.rm = TRUE), digits = 1), nsmall = 1), 
+    sex_n_missing = sum(is.na(patinfo_sex)), 
+    com_presence  = freq_prct(ind_Comcond_01, 1)) %>% 
   mutate(
-    covid_status = 'Total')
+    ind_MSF_covid_status = 'Total')
 
 tbl_general <- tbl_general_by_status %>% 
-  add_row(tbl_general_total) %>% 
-  mutate(
-    covid_status = factor(covid_status, levels = c('Confirmed', 'Probable', 'Suspected', 'Not a case', '(Unknown)', 'Total')))
+  add_row(tbl_general_total)
 
 vars_age <- tibble(levels = tbl_general %>% select(starts_with('age_')) %>% names(),
-                   labels = c('Totals with age information, n/N', 'Minimum - maximum', 'Median', '0 - 4, n (%)', '5 - 14, n (%)', '15 - 44, n (%)', '45 - 64, n (%)', '65+, n (%)'))
+                   labels = c('Minimum - maximum', 'Median', '0 - 4, n (%)', '5 - 14, n (%)', '15 - 44, n (%)', '45 - 64, n (%)', '65+, n (%)', 'Missing info age'))
 
 vars_sex <- tibble(levels = tbl_general %>% select(starts_with('sex_')) %>% names(),
-                   labels = c('Totals with sex information, n/N', 'Men, n', 'Women, n', 'Sex ratio (M/F)'))
+                   labels = c('Men, n', 'Women, n', 'Sex ratio (M/F)', 'Missing info sex'))
 
-vars_comorbidities <- tibble(levels = tbl_general %>% select(starts_with('comorbidity_')) %>% names(),
-                             labels = c('Totals with comorbidity information, n/N', 'Presence of at least one comorbidity, n (%)'))
+vars_comorbidities <- tibble(levels = tbl_general %>% select(starts_with('com_')) %>% names(),
+                             labels = c('Presence of at least one comorbidity, n (%)'))
 
-gtbl_general <- tbl_general %>%
-  gather(characteristics, values, -covid_status, factor_key = TRUE) %>%
-  spread(covid_status, values) %>%
+gtbl_general <- tbl_general %>% 
+  mutate(
+    ind_MSF_covid_status = factor(ind_MSF_covid_status, levels = c('Confirmed', 'Probable', 'Suspected', 'Not a case', 'Not a suspect', '(Unknown)', 'Total'))) %>% 
+  gather(characteristics, values, -ind_MSF_covid_status, factor_key = TRUE) %>%
+  spread(ind_MSF_covid_status, values) %>%
   mutate(type_characteristic = case_when(
-    characteristics ==  'total' ~ NA_character_,
+    characteristics ==  'N' ~ 'Total',
     characteristics %in% vars_age$levels ~ 'Age (in years)',
     characteristics %in% vars_sex$levels ~ 'Sex',
     characteristics %in% vars_comorbidities$levels ~ 'Comorbidities')) %>%
   mutate(
     characteristics = factor(characteristics,
-                             levels = c(vars_age$levels, vars_sex$levels, vars_comorbidities$levels),
-                             labels = c(vars_age$labels, vars_sex$labels, vars_comorbidities$labels))) %>%
+                             levels = c('N', vars_age$levels, vars_sex$levels, vars_comorbidities$levels),
+                             labels = c('N', vars_age$labels, vars_sex$labels, vars_comorbidities$labels))) %>%
   gt(rowname_col = "characteristics",
      groupname_col = "type_characteristic") %>%
   cols_label(
@@ -1012,14 +1028,14 @@ gtbl_general %>%
 # Done by Paul
 
 missing_age_sex <- dta_linelist %>% 
-  summarise(age = sum(is.na(age_in_years)), sex = sum(is.na(sex)))
+  summarise(age = sum(is.na(age_in_years)), sex = sum(is.na(patinfo_sex)))
 
 tbl_pyramid_continent <- dta_linelist %>% 
-  drop_na(sex, age_in_years) %>% 
-  count(continent, sex, age_9gp) %>% 
-  mutate(n = if_else(sex == "M", -n, n))
+  drop_na(patinfo_sex, age_in_years) %>% 
+  count(continent, patinfo_sex, age_9gp) %>% 
+  mutate(n = if_else(patinfo_sex == "M", -n, n))
 
-pyramid_age_sex_all_continent <- ggplot(tbl_pyramid_continent, aes(x = age_9gp, y = n, fill = sex)) +
+pyramid_age_sex_all_continent <- ggplot(tbl_pyramid_continent, aes(x = age_9gp, y = n, fill = patinfo_sex)) +
   facet_wrap(~continent, ncol = 2, scales = "free_x") +
   geom_col() +
   geom_hline(yintercept = 0, colour = "black") +
@@ -1043,27 +1059,28 @@ pyramid_age_sex_all_continent
 
 ### Comorbidities
 
-```{r tbl-symtopms-tbl_comcond_status, layout = "l-page"}
+```{r tbl-symtopms-tbl_comcond_status}
 
-dta_comcond <- prepare_msf_dta_comcond(dta_linelist)
-
-dta_comcond <- dta_comcond %>% 
-  select(-c(Comcond_other, Comcond_count, Comcond_01)) %>% 
-  mutate(across(c(starts_with('Comcond_'),'hiv_status','hypertension', 'malaria', 'malnutrition', 'smoking', 'tb_active'), function(x){na_if(x,'Unknown')}))
+dta_comcond <- dta_linelist %>% 
+  filter(ind_Comcond_count < 9) %>% # This is a temporal rapid solution to remove cases with ALL comorbidities that might be a recording error
+  select(continent, ind_MSF_covid_status, ind_outcome_patcourse_status, starts_with('ind_Comcond_'), ind_MSF_hiv_status, ind_MSF_hypertension, ind_MSF_tb_active, ind_MSF_malaria, ind_MSF_malnutrition, ind_MSF_smoking) %>% 
+  select(-c(ind_Comcond_pregt, ind_Comcond_count, ind_Comcond_01)) %>% 
+  mutate(across(c(starts_with('ind_Comcond_'),'ind_MSF_hiv_status','ind_MSF_hypertension', 'ind_MSF_malaria', 'ind_MSF_malnutrition', 'ind_MSF_smoking', 'ind_MSF_tb_active'), function(x){na_if(x,'Unknown')}))
 
 
 tbl_comcond_status <- names(dta_comcond)[4:ncol(dta_comcond)] %>% 
   map_df(~{
     dta_comcond %>% 
       drop_na(any_of(.x)) %>% 
-      tbl_prop(.x, 'covid_status', drop_levels = TRUE) %>% 
+      tbl_prop(.x, 'ind_MSF_covid_status', drop_levels = TRUE) %>% 
       rename('value'= .x) %>% 
       mutate(
         type_comorbidity = .x)
     }) %>% 
   filter(value == 'Yes') %>% 
   mutate(
-    type_comorbidity = factor(type_comorbidity, levels = df_labels_comcond$levels, labels = df_labels_comcond$labels))
+    type_comorbidity = factor(type_comorbidity, levels = df_labels_comcond$levels, labels = df_labels_comcond$labels)) %>% 
+  arrange(type_comorbidity)
 
 
 gtbl_comcond_status <- tbl_comcond_status %>% 
@@ -1071,25 +1088,28 @@ gtbl_comcond_status <- tbl_comcond_status %>%
   cols_hide('value') %>% 
   cols_move_to_start(columns = vars(type_comorbidity)) %>% 
   cols_label(
-    type_comorbidity = "Comorbidities/Underlying conditions", 
-    n_Confirmed    = 'n', 
-    n_Probable     = 'n',
-    n_Suspected    = 'n', 
-    `n_Not a case` = 'n', 
-    `n_(Unknown)`  = 'n', 
-    n_Total        = 'n', 
-    N_Confirmed    = 'N', 
-    N_Probable     = 'N',
-    N_Suspected    = 'N', 
-    `N_Not a case` = 'N', 
-    `N_(Unknown)`  = 'N', 
-    N_Total        = 'N',
-    p_Confirmed    = '(%)', 
-    p_Probable     = '(%)', 
-    p_Suspected    = '(%)', 
-    `p_Not a case` = '(%)', 
-    `p_(Unknown)`  = '(%)', 
-    p_Total        = '(%)') %>% 
+    type_comorbidity  = "Comorbidities/Underlying conditions", 
+    n_Confirmed       = 'n', 
+    n_Probable        = 'n',
+    n_Suspected       = 'n', 
+    `n_Not a case`    = 'n', 
+    `n_Not a suspect` = 'n',
+    `n_(Unknown)`     = 'n', 
+    n_Total           = 'n', 
+    N_Confirmed       = 'N', 
+    N_Probable        = 'N',
+    N_Suspected       = 'N', 
+    `N_Not a case`    = 'N', 
+    `N_Not a suspect` = 'N',
+    `N_(Unknown)`     = 'N', 
+    N_Total           = 'N',
+    p_Confirmed       = '(%)', 
+    p_Probable        = '(%)', 
+    p_Suspected       = '(%)', 
+    `p_Not a case`    = '(%)', 
+    `p_Not a suspect` = '(%)', 
+    `p_(Unknown)`     = '(%)', 
+    p_Total           = '(%)') %>% 
   cols_align(
    align = 'left', 
    columns = vars(type_comorbidity)) %>% 
@@ -1119,6 +1139,9 @@ gtbl_comcond_status <- tbl_comcond_status %>%
   tab_spanner(
     label = 'Not a case', 
     columns = ends_with('Not a case')) %>% 
+  tab_spanner(
+    label = 'Not a suspect', 
+    columns = ends_with('Not a suspect')) %>% 
   tab_spanner(
     label = 'Unknown', 
     columns = ends_with('(Unknown)')) %>% 
@@ -1160,12 +1183,12 @@ gtbl_comcond_status %>%
 # DONE by Francesco
 
 dta_sympt <- dta_linelist %>% 
-  select(covid_status, tidyselect::vars_select(names(dta_linelist), starts_with('symptom_') & !ends_with('_date_onset')))
+  select(ind_MSF_covid_status, tidyselect::vars_select(names(dta_linelist), starts_with('MSF_symptom_') & !ends_with('_date_onset')))
 
-names_sympt <- grep('^symptom_', names(dta_sympt), perl = TRUE, value = TRUE) %>% sort()
+names_sympt <- grep('^MSF_symptom_', names(dta_sympt), perl = TRUE, value = TRUE) %>% sort()
 
 names(names_sympt) <- names_sympt %>%
-  gsub('^symptom_','', .) %>%
+  gsub('^MSF_symptom_','', .) %>%
   gsub('_', ' ', .) %>%
   gsub('anosmia', 'loss of smell', .) %>%
   gsub('loss taste', 'loss of taste', .) %>%
@@ -1179,7 +1202,7 @@ tbl_sympt_status <- names(dta_sympt)[2:ncol(dta_sympt)] %>%
   map_df(~{
     dta_sympt %>% 
       drop_na(any_of(.x)) %>% 
-      tbl_prop(.x, 'covid_status', drop_levels = FALSE) %>% 
+      tbl_prop(.x, 'ind_MSF_covid_status', drop_levels = FALSE) %>% 
       rename('value'= .x) %>% 
       mutate(
         type_symptom = .x)
@@ -1195,20 +1218,23 @@ gtbl_sympt_all <- tbl_sympt_status %>%
     type_symptom = 'Signes/Symptoms',
     n_Confirmed    = 'n',
     n_Probable     = 'n',
-    n_Suspected    = 'n',
+    n_Suspected    = 'n', 
     `n_Not a case` = 'n',
+    `n_Not a suspect` = 'n',
     `n_(Unknown)`  = 'n',
     n_Total        = 'n',
     N_Confirmed    = 'N',
     N_Probable     = 'N',
     N_Suspected    = 'N',
     `N_Not a case` = 'N',
+    `N_Not a suspect` = 'N',
     `N_(Unknown)`  = 'N',
     N_Total        = 'N',
     p_Confirmed    = '(%)',
     p_Probable     = '(%)',
     p_Suspected    = '(%)',
-    `p_Not a case` = '(%)',
+    `p_Not a case` = '(%)', 
+    `p_Not a suspect` = '(%)',
     `p_(Unknown)`  = '(%)',  
     p_Total        = '(%)') %>%
   tab_spanner(
@@ -1222,7 +1248,10 @@ gtbl_sympt_all <- tbl_sympt_status %>%
     columns = ends_with('_Suspected')) %>%
   tab_spanner(
     label = "Not a case",
-    columns = ends_with('_Not a case')) %>%
+    columns = ends_with('_Not a case')) %>% 
+  tab_spanner(
+    label = "Not a suspect",
+    columns = ends_with('_Not a suspect')) %>%
   tab_spanner(
     label = "(Unknown)",
     columns = ends_with('_(Unknown)')) %>%
@@ -1285,37 +1314,39 @@ gtbl_sympt_all %>%
 # by Francesco
 
 dta_severity <- dta_linelist %>% 
-  select(covid_status, severity) %>% 
+  select(ind_MSF_covid_status, MSF_severity) %>% 
   mutate(
-    severity = factor(severity, levels = c('Mild', 'Moderate', 'Severe', 'Critical'))
+    MSF_severity = factor(MSF_severity, levels = c('Mild', 'Moderate', 'Severe', 'Critical'))
   )
 
 tbl_severity_status <- dta_severity %>% 
-  drop_na(severity) %>% 
-      tbl_prop('severity', 'covid_status', drop_levels = FALSE)
+  drop_na(MSF_severity) %>% 
+      tbl_prop('MSF_severity', 'ind_MSF_covid_status', drop_levels = FALSE)
 
 
 gtbl_severity_status <- tbl_severity_status %>% 
-  gt(rowname_col = "severity") %>% 
+  gt(rowname_col = "MSF_severity") %>% 
   cols_hide(
     columns = starts_with('N_', ignore.case = FALSE)) %>% 
   cols_label(
-    severity = "Level of severity", 
-    n_Confirmed    = 'n', 
-    n_Probable     = 'n',
-    n_Suspected    = 'n', 
-    `n_Not a case` = 'n', 
-    `n_(Unknown)`  = 'n', 
-    n_Total        = 'n', 
-    p_Confirmed    = '(%)', 
-    p_Probable     = '(%)', 
-    p_Suspected    = '(%)', 
-    `p_Not a case` = '(%)', 
-    `p_(Unknown)`  = '(%)', 
-    p_Total        = '(%)') %>% 
+    MSF_severity      = "Level of severity", 
+    n_Confirmed       = 'n', 
+    n_Probable        = 'n',
+    n_Suspected       = 'n', 
+    `n_Not a case`    = 'n', 
+    `n_Not a suspect` = 'n', 
+    `n_(Unknown)`     = 'n', 
+    n_Total           = 'n', 
+    p_Confirmed       = '(%)', 
+    p_Probable        = '(%)', 
+    p_Suspected       = '(%)', 
+    `p_Not a case`    = '(%)', 
+    `p_Not a suspect` = '(%)', 
+    `p_(Unknown)`     = '(%)', 
+    p_Total           = '(%)') %>% 
   cols_align(
    align = 'left', 
-   columns = vars(severity)) %>% 
+   columns = vars(MSF_severity)) %>% 
   cols_align(
     align = 'right',
     columns = starts_with(c('n_', 'p_'))) %>% 
@@ -1343,7 +1374,10 @@ gtbl_severity_status <- tbl_severity_status %>%
     label = 'Not a case', 
     columns = ends_with('Not a case')) %>% 
   tab_spanner(
-    label = 'Unknown', 
+    label = 'Not a suspect', 
+    columns = ends_with('Not a suspect')) %>% 
+  tab_spanner(
+    label = '(Unknown)', 
     columns = ends_with('(Unknown)')) %>% 
   tab_spanner(
     label = 'All', 
@@ -1385,19 +1419,19 @@ gtbl_severity_status %>%
 ```{r}
 
 dta_severity_confirmed_continent <- dta_linelist %>% 
-  select(continent, covid_status, severity) %>% 
-  filter(covid_status == 'Confirmed') %>% 
+  select(continent, ind_MSF_covid_status, MSF_severity) %>% 
+  filter(ind_MSF_covid_status == 'Confirmed') %>% 
   mutate(
-    severity = factor(severity, levels = c('Mild', 'Moderate', 'Severe', 'Critical'))
+    MSF_severity = factor(MSF_severity, levels = c('Mild', 'Moderate', 'Severe', 'Critical'))
   )
 
 
 tbl_severity_confirmed_continent <- dta_severity_confirmed_continent %>% 
-  drop_na(severity) %>% 
-      tbl_prop('severity', 'continent', drop_levels = FALSE)
+  drop_na(MSF_severity) %>% 
+      tbl_prop('MSF_severity', 'continent', drop_levels = FALSE)
 
 gtbl_severity_confirmed_continent <- tbl_severity_confirmed_continent %>% 
-  gt(rowname_col = "severity") %>% 
+  gt(rowname_col = "MSF_severity") %>% 
   cols_hide(
     columns = starts_with('N_', ignore.case = FALSE)) %>% 
   cols_label(
@@ -1474,6 +1508,70 @@ gtbl_severity_confirmed_continent %>%
 ```
 
 
+### Severity degree of patients overtime
+
+```{r hist-severity, fig.cap = 'Weekly number of patients by degree of severity, in each continent where MSF is operating'}
+
+tbl_severity_by_week <- dta_linelist %>% 
+  #filter(ind_MSF_covid_status %in% c('Confirmed')) %>%
+  select(continent, epi_week_consultation, MSF_severity) %>% 
+  #drop_na(MSF_severity) %>% 
+  group_by(continent, epi_week_consultation) %>% 
+  count(MSF_severity) %>% 
+  mutate(
+    MSF_severity = factor(MSF_severity, levels = c('Mild', 'Moderate', 'Severe', 'Critical')) %>% fct_explicit_na('(Unknown)')) %>% 
+  filter(epi_week_consultation > as.Date('2020-06-01'))
+
+
+hist_severity <- tbl_severity_by_week %>% 
+  ggplot(aes(epi_week_consultation, n, fill = MSF_severity)) + 
+  geom_col() +
+  scale_fill_manual(values = palette_Reds4U, name = "Degree of severity") +
+  scale_x_date(name = "Week of Consultation", date_breaks = "2 week", date_labels = "%V", expand = expansion(mult = c(0.01, 0.01)),
+               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.))) + 
+  scale_y_continuous(name = "Patients", expand = expansion(mult = c(0, 0.02))) +
+  theme_light() + 
+  theme(legend.position = 'top', 
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank())
+
+
+ggsave(file.path(path.local.msf.graphs, paste0('hist_severity', '_', week_report, '.png')),
+       plot = hist_severity, 
+       width = 6, 
+       height = 4, 
+       scale = 1.1,
+       dpi = 320)
+
+hist_severity
+
+```
+
+```{r hist-severity-facet-continent, fig.cap = 'Weekly number of patients by degree of severity, in each continent where MSF is operating'}
+
+hist_severity_by_continent <- tbl_severity_by_week %>% 
+  ggplot(aes(epi_week_consultation, n, fill = MSF_severity)) + 
+  facet_wrap(vars(continent), scales = "free_y") + 
+  geom_col() +
+  scale_fill_manual(values = palette_Reds4U, name = "Degree of severity") +
+  scale_x_date(name = "Week of Consultation", date_breaks = "2 week", date_labels = "%V", expand = expansion(mult = c(0.01, 0.01)),
+               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.))) + 
+  scale_y_continuous(name = "Patients", expand = expansion(mult = c(0, 0.02))) +
+  theme_light() + 
+  theme(legend.position = 'top', panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank())
+
+
+ggsave(file.path(path.local.msf.graphs, paste0('hist_severity_by_continent', '_', week_report, '.png')),
+       plot = hist_severity_by_continent, 
+       width = 6, 
+       height = 4, 
+       scale = 1.1,
+       dpi = 320)
+
+hist_severity_by_continent
+
+```
+
 
 
 ### Case-fatality by Covid status
@@ -1483,26 +1581,26 @@ gtbl_severity_confirmed_continent %>%
 # DONE by Francesco
 
 dta_cfr_status <- dta_linelist %>% 
-  select(continent, covid_status, outcome_status) %>%
-  filter(outcome_status %in% c('Cured', 'Died'))
+  select(continent, ind_MSF_covid_status, ind_outcome_patcourse_status) %>%
+  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died'))
 
-tbl_cfr_status_continent <- levels(dta_cfr_status$covid_status) %>% 
+tbl_cfr_status_continent <- levels(dta_cfr_status$ind_MSF_covid_status) %>% 
   map_df(~{
       dta_cfr_status %>% 
-      filter(covid_status == .x) %>% 
-      tbl_prop('outcome_status', 'continent', drop_levels = FALSE) %>% 
+      filter(ind_MSF_covid_status == .x) %>% 
+      tbl_prop('ind_outcome_patcourse_status', 'continent', drop_levels = FALSE) %>% 
       mutate(
-        covid_status = .x)
+        ind_MSF_covid_status = .x)
     }) %>% 
-  filter(outcome_status == 'Died') 
+  filter(ind_outcome_patcourse_status == 'Died') 
 
 
 gtbl_cfr_status_continent <- tbl_cfr_status_continent %>%
   gt() %>% 
-  cols_hide('outcome_status') %>% 
-  cols_move_to_start(columns = vars(covid_status)) %>% 
+  cols_hide('ind_outcome_patcourse_status') %>% 
+  cols_move_to_start(columns = vars(ind_MSF_covid_status)) %>% 
   cols_label(
-    covid_status = 'Covid status',
+    ind_MSF_covid_status = 'Covid status',
     n_Africa   = 'n', 
     n_Americas = 'n',
     n_Asia     = 'n', 
@@ -1549,7 +1647,7 @@ gtbl_cfr_status_continent <- tbl_cfr_status_continent %>%
     missing_text = "---") %>%
   cols_align(
     align = 'left',
-    columns = vars(covid_status)) %>%
+    columns = vars(ind_MSF_covid_status)) %>%
   cols_align(
     align = 'right',
     columns = starts_with('n_')) %>% 
@@ -1581,25 +1679,163 @@ gtbl_cfr_status_continent %>%
 
 # CFR text
 cfr_confirmed_probable_suspected <- dta_linelist %>%
-  select(covid_status, outcome_status) %>% 
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>% 
-  filter(outcome_status %in% c('Cured', 'Died'), ) %>% 
-  summarise(cfr = mean(outcome_status == 'Died')) %>% 
+  select(ind_MSF_covid_status, ind_outcome_patcourse_status) %>% 
+  filter(ind_MSF_covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>% 
+  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died'), ) %>% 
+  summarise(cfr = mean(ind_outcome_patcourse_status == 'Died')) %>% 
   pull()
 
 ```
 
 
---- 
+### Fatality among all patients admitted
+
+```{r hist-fatality, fig.cap = "Fatality among all patients admitted to a Covid-related health facility supportd by MSF"}
+palette_GnRd <- c('#1b9e77', '#d95f02')
+
+dta_cfr_by_week <- dta_linelist %>% 
+  select(continent, epi_week_consultation, ind_outcome_patcourse_status, merge_admit) %>% 
+  mutate(
+    ind_outcome_patcourse_status = as.character(ind_outcome_patcourse_status), 
+    cured_sent_home = case_when(
+      ind_outcome_patcourse_status %in% c('Cured', 'Sent back home') ~ 'Cured/Sent back home', 
+      ind_outcome_patcourse_status %in% c('Died') ~ 'Died', 
+      TRUE ~ ind_outcome_patcourse_status)) %>% 
+  filter(cured_sent_home %in% c('Cured/Sent back home', 'Died'), merge_admit == 'Yes') 
+
+tbl_count_cured_died_by_week <- dta_cfr_by_week %>% 
+  group_by(continent, epi_week_consultation) %>% 
+  count(cured_sent_home)
+
+tbl_prop_cured_died_by_week <- dta_cfr_by_week %>% 
+  group_by(epi_week_consultation) %>% 
+  summarise(
+    p = sum(cured_sent_home == 'Died', na.rm = TRUE) / n()) %>% 
+  filter(epi_week_consultation < date_max_report - 14)
+
+n_max <- dta_cfr_by_week %>% 
+  group_by(epi_week_consultation) %>% 
+  count() %>% 
+  pull(n) %>% 
+  max()
+  
+scaling_factor = 1/n_max
+
+date_limits <- c(min(dta_cfr_by_week$epi_week_consultation, na.rm = TRUE), max(dta_cfr_by_week$epi_week_consultation, na.rm = TRUE)-14)
+
+hist_fatality <- ggplot(tbl_count_cured_died_by_week, aes(x = epi_week_consultation)) + 
+  geom_col(aes(y = n, fill = cured_sent_home), width = 7) + 
+  scale_fill_manual(values = palette_GnRd) +
+  geom_line(data = tbl_prop_cured_died_by_week,
+            aes(y = p / scaling_factor, colour = "Died %"),
+            key_glyph = 'timeseries', size = 0.8) +
+    scale_x_date(name = "Week of Consultation", date_breaks = "2 weeks", date_labels = "%V", 
+               sec.axis = ggplot2::sec_axis(trans = ~ .), expand = expansion(mult = c(0.01, 0.01))) + 
+  scale_y_continuous(name = 'Patients', sec.axis = sec_axis(~ . * scaling_factor, labels = scales::percent_format(accuracy = 1), name = 'Died (%)', breaks = seq(0, 1, 0.2))) + 
+  scale_color_manual(values = palette_GnRd[2]) + 
+  labs(fill = NULL, 
+       colour = NULL, 
+       caption = "Note: Only patients admitted to health facility are presented") + 
+  guides(fill = guide_legend(reverse = TRUE, order = 1), colour = guide_legend(order = 2)) + 
+  theme_light() + 
+  theme(legend.position = "top", 
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank(),
+        legend.direction = 'vertical', 
+        legend.text = element_text(size = 11))
+
+
+ggsave(file.path(path.local.msf.graphs, paste0('hist_fatality', '_', week_report, '.png')),
+       plot = hist_fatality, 
+       width = 6, 
+       height = 4, 
+       scale = 1.1,
+       dpi = 320)
+
+hist_fatality
+
+```
+
+```{r hist-died-continent, fig.cap = "Fatality among all patients admitted to a Covid-related health facility supportd by MSF by continent"}
+palette_GnRd <- c('#1b9e77', '#d95f02')
+
+dta_cfr_by_week <- dta_linelist %>% 
+  select(continent, epi_week_consultation, ind_outcome_patcourse_status, merge_admit) %>% 
+  mutate(
+    ind_outcome_patcourse_status = as.character(ind_outcome_patcourse_status), 
+    cured_sent_home = case_when(
+      ind_outcome_patcourse_status %in% c('Cured', 'Sent back home') ~ 'Cured/Sent back home', 
+      ind_outcome_patcourse_status %in% c('Died') ~ 'Died', 
+      TRUE ~ ind_outcome_patcourse_status)) %>% 
+  filter(cured_sent_home %in% c('Cured/Sent back home', 'Died'), merge_admit == 'Yes') 
+
+
+tbl_count_cured_died_by_week <- dta_cfr_by_week %>% 
+  group_by(continent, epi_week_consultation) %>% 
+  count(cured_sent_home)
+
+tbl_prop_cured_died_by_week <- dta_cfr_by_week %>% 
+  group_by(continent, epi_week_consultation) %>% 
+  summarise(
+    p = sum(cured_sent_home == 'Died', na.rm = TRUE) / n()) %>% 
+  filter(epi_week_consultation < date_max_report - 14)
+
+
+n_max <- dta_cfr_by_week %>% 
+  group_by(epi_week_consultation) %>% 
+  count() %>% 
+  pull(n) %>% 
+  max()
+
+cfr_max <- rounder(max(tbl_prop_cured_died_by_week$p, na.rm = TRUE), .1)
+cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
+
+scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
+
+hist_fatality_continent <- ggplot(tbl_count_cured_died_by_week, aes(x = epi_week_consultation)) + 
+  facet_wrap(vars(continent)) + 
+  geom_col(aes(y = n, fill = cured_sent_home), width = 7) + 
+  scale_fill_manual(values = palette_GnRd) +
+  geom_line(data = tbl_prop_cured_died_by_week,
+            aes(y = p / scaling_factor, colour = "Died %"),
+            key_glyph = 'timeseries', size = 0.8) +
+    scale_x_date(name = "Week of Consultation", date_breaks = "4 weeks", date_labels = "%V", 
+               sec.axis = ggplot2::sec_axis(trans = ~ .), expand = expansion(mult = c(0.01, 0.01))) +
+  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Died (%)", labels = scales::percent_format(accuracy = 1)), expand = expansion(mult = c(0, 0.02))) + 
+  scale_color_manual(values = palette_GnRd[2]) + 
+  labs(fill = NULL, 
+       colour = NULL, 
+       caption = "Note: Only patients admitted to health facility are presented") + 
+  guides(fill = guide_legend(reverse = TRUE, order = 1), colour = guide_legend(order = 2)) + 
+  theme_light() + 
+  theme(legend.position = "top", 
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank(),
+        legend.direction = 'vertical', 
+        legend.text = element_text(size = 11))
+
+
+ggsave(file.path(path.local.msf.graphs, paste0('hist_fatality_continent', '_', week_report, '.png')),
+       plot = hist_fatality_continent, 
+       width = 6, 
+       height = 4, 
+       scale = 1.1,
+       dpi = 320)
+
+hist_fatality_continent
+
+```
+
+
 
 # Covid-19 confirmed patients
 
-### Weekly number of confirmed patients consulted/admitted
+## Weekly number of confirmed patients consulted/admitted
 
-```{r, eval = FALSE}
+```{r, hist-consultations-sdmissions-confirmed, fig.cap = paste('Weekly number of consultations and admissions of Covid confirmed patients in an MSF supported COvid-19 health service as of', format(date_max_report, "%d %B %Y"))}
 
 dta_linelist_confirmed <- dta_linelist %>% 
-  filter(covid_status == 'Confirmed')
+  filter(ind_MSF_covid_status == 'Confirmed')
 
 tbl_epicurve_consultation_continent <- dta_linelist_confirmed %>%
   filter(merge_admit != "Unknown") %>% 
@@ -1625,7 +1861,7 @@ cfr_max <- ifelse(cfr_max > 1, 1, cfr_max)
 scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
 
 missing_consultation <- sum(is.na(dta_linelist_confirmed$epi_week_consultation))
-missing_admission    <- sum(dta_linelist_confirmed$merge_admit == "Unknown")
+missing_admission    <- sum(dta_linelist_confirmed$merge_admit == "(Unknown)")
 
 hist_epicurve_consult_admit_confirmed_continent <- tbl_epicurve_consultation_continent %>% 
   ggplot(aes(epi_week_consultation, n)) +
@@ -1657,27 +1893,27 @@ hist_epicurve_consult_admit_confirmed_continent
 ```
 
 
-### Age and sex distribution of Covid confirmed patients
+## Age and sex distribution of confirmed patients
 
 ```{r gtbl-age-distribution-by-sex-confirmed-only}
 
 dta_age_sex_confirmed <- dta_linelist %>% 
-  select(covid_status, age_in_years, age_5gp, sex) %>% 
-  filter(covid_status == 'Confirmed') %>% 
+  select(ind_MSF_covid_status, age_in_years, age_5gp, patinfo_sex) %>% 
+  filter(ind_MSF_covid_status == 'Confirmed') %>% 
   drop_na() %>% 
-  transform(sex = factor(sex, levels = c('F', 'M'), labels = c('Female', 'Male')))
+  mutate(sex = factor(patinfo_sex, levels = c('F', 'M'), labels = c('Female', 'Male')))
 
 tbl_age_distribution_by_sex_confirmed_only <- dta_age_sex_confirmed %>% 
   group_by(sex) %>% 
   summarise(
-    age_min_max = paste0(min(age_in_years, na.rm = TRUE), ' - ', max(age_in_years, na.rm = TRUE)), 
+    age_min_max = paste0(round(min(age_in_years, na.rm = TRUE), digits = 1), ' - ', round(max(age_in_years, na.rm = TRUE), digits = 1)), 
     age_mean    = round(mean(age_in_years, na.rm = TRUE), digits = 1), 
     age_median  = round(median(age_in_years, na.rm = TRUE), digits = 1)) %>% 
   add_row(
     dta_age_sex_confirmed %>% 
       summarise(
         sex = 'All', 
-        age_min_max = paste0(min(age_in_years, na.rm = TRUE), ' - ', max(age_in_years, na.rm = TRUE)), 
+        age_min_max = paste0(round(min(age_in_years, na.rm = TRUE), digits = 1), ' - ', round(max(age_in_years, na.rm = TRUE), digits = 1)), 
         age_mean    = round(mean(age_in_years, na.rm = TRUE), digits = 1), 
         age_median  = round(median(age_in_years, na.rm = TRUE), digits = 1)))
 
@@ -1700,15 +1936,15 @@ gtbl_age_distribution_by_sex_confirmed_only
 ```{r pyramid-age-sex-confirmed, fig.cap = 'Age pyramid of Covid-confirmed patients consulted/admitted to an MSF supported health service', fig.width = 8, fig.height = 8}
 # Done by Paul
 
-missing_age_sex <- dta_linelist %>% filter(covid_status == "Confirmed") %>% summarise(age = sum(is.na(age_in_years)), sex = sum(is.na(sex)))
+missing_age_sex <- dta_linelist %>% filter(ind_MSF_covid_status == "Confirmed") %>% summarise(age = sum(is.na(age_in_years)), sex = sum(is.na(patinfo_sex)))
 
 tbl_pyramid_confirmed <- dta_linelist %>% 
-  drop_na(sex, age_in_years) %>% 
-  filter(covid_status %in% c("Confirmed")) %>% 
-  count(sex, age_9gp) %>% 
-  mutate(n = if_else(sex == "M", -n, n))
+  drop_na(patinfo_sex, age_in_years) %>% 
+  filter(ind_MSF_covid_status %in% c("Confirmed")) %>% 
+  count(patinfo_sex, age_9gp) %>% 
+  mutate(n = if_else(patinfo_sex == "M", -n, n))
 
-pyramid_age_sex_confirmed <- ggplot(tbl_pyramid_confirmed, aes(x = age_9gp, y = n, fill = sex)) +
+pyramid_age_sex_confirmed <- ggplot(tbl_pyramid_confirmed, aes(x = age_9gp, y = n, fill = patinfo_sex)) +
   geom_col() +
   geom_hline(yintercept = 0, colour = "black") +
   #geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 4) +
@@ -1730,21 +1966,21 @@ pyramid_age_sex_confirmed
 ```
 
 
-### Age and sex distribution of Covid confirmed patients by continent
+## Age and sex distribution of confirmed patients by continent
 
 <!-- Age/sex pyramid by continent -->
 ```{r pyramid-age-sex-confirmed-continent, fig.cap = 'Age pyramid of patients consulted/admitted to an MSF supported Covid-19 health service by continent', fig.width = 8, fig.height = 8}
 # Done by Paul
 
-missing_age_sex <- dta_linelist %>% filter(covid_status == "Confirmed") %>% summarise(age = sum(is.na(age_in_years)), sex = sum(is.na(sex)))
+missing_age_sex <- dta_linelist %>% filter(ind_MSF_covid_status == "Confirmed") %>% summarise(age = sum(is.na(age_in_years)), sex = sum(is.na(patinfo_sex)))
 
 tbl_pyramid_confirmed_continent <- dta_linelist %>% 
-  drop_na(sex, age_in_years) %>% 
-  filter(covid_status %in% c("Confirmed")) %>% 
-  count(continent, sex, age_9gp) %>% 
-  mutate(n = if_else(sex == "M", -n, n))
+  drop_na(patinfo_sex, age_in_years) %>% 
+  filter(ind_MSF_covid_status %in% c("Confirmed")) %>% 
+  count(continent, patinfo_sex, age_9gp) %>% 
+  mutate(n = if_else(patinfo_sex == "M", -n, n))
 
-pyramid_age_sex_confirmed_continent <- ggplot(tbl_pyramid_confirmed_continent, aes(x = age_9gp, y = n, fill = sex)) +
+pyramid_age_sex_confirmed_continent <- ggplot(tbl_pyramid_confirmed_continent, aes(x = age_9gp, y = n, fill = patinfo_sex)) +
   facet_wrap(~continent, ncol = 2, scales = "free_x") +
   geom_col() +
   geom_hline(yintercept = 0, colour = "black") +
@@ -1777,7 +2013,7 @@ Table by continent (by region, if possible):
 
 
 
-### Patients care
+## Care of confirmed patients
 
 <!-- 
 Table Patient’s care 1
@@ -1791,7 +2027,7 @@ Table Patient’s care 1
 # DONE by Francesco
 
 dta_care <- dta_linelist %>% 
-  filter(covid_status %in% c('Confirmed')) %>%
+  filter(ind_MSF_covid_status %in% c('Confirmed')) %>%
   select(continent, country, starts_with('merge_'))
 
 
@@ -1891,17 +2127,17 @@ gtbl_care %>%
 ```
 
 
-### Age and sex of patients by outcome
+## Outcome by age and sex of confirmed patients
 
 ```{r tbl-age-sex-outcome}
 # DONE by Francesco
 
 dta_age_sex_outcome <- dta_linelist %>% 
-  select(site_name, covid_status, outcome_status, sex = sex, age_in_years) %>% 
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) 
+  select(site_name, ind_MSF_covid_status, ind_outcome_patcourse_status, sex = patinfo_sex, age_in_years) %>% 
+  filter(ind_MSF_covid_status %in% c('Confirmed', 'Probable', 'Suspected')) 
 
 tbl_age_sex_outcome <- dta_age_sex_outcome %>% 
-  group_by(outcome_status) %>% 
+  group_by(ind_outcome_patcourse_status) %>% 
   summarise(
     N = n(), 
     age_median = median(age_in_years, na.rm = TRUE), 
@@ -1916,7 +2152,7 @@ gtbl_age_sex_outcome <- tbl_age_sex_outcome %>%
   gt() %>% 
   cols_label(
     N = 'N', 
-    outcome_status = 'Status',
+    ind_outcome_patcourse_status = 'Status',
     age_median = 'Median', 
     age__prcl = '[25% - 75%]', 
     sex_ratio = html('Male/Female<br>ratio')) %>% 
@@ -1934,7 +2170,7 @@ gtbl_age_sex_outcome <- tbl_age_sex_outcome %>%
     columns = starts_with('age_')) %>% 
   cols_align(
     align = 'left', 
-    columns = vars(outcome_status, age__prcl)) %>% 
+    columns = vars(ind_outcome_patcourse_status, age__prcl)) %>% 
   cols_align(
     align = 'right', 
     columns = vars(N, age_median, sex_ratio)) %>% 
@@ -1945,7 +2181,7 @@ gtbl_age_sex_outcome <- tbl_age_sex_outcome %>%
   tab_style(
     style = list(
       cell_text(align = 'left')),
-    locations = cells_column_labels(columns = vars(outcome_status, age__prcl))) %>%
+    locations = cells_column_labels(columns = vars(ind_outcome_patcourse_status, age__prcl))) %>%
   tab_options(
     column_labels.font.weight = 'bold', 
     data_row.padding = px(2))
@@ -1968,7 +2204,7 @@ gtbl_age_sex_outcome %>%
 
 
 
-### Case fatality by age, sex and number of comorbidities
+## Case fatality by age, sex and number of comorbidities among confirmed patients
 
 <!-- CFR by age, sex and number of comorbidities -->
 ```{r tbl-cfr-age-sex-comorbidities}
@@ -1982,41 +2218,45 @@ tbl_cfr_age <- levels(dta_cfr_age$age_5gp) %>%
   map_df(~{
       dta_cfr_age %>% 
       filter(age_5gp == .x) %>% 
-      tbl_prop('outcome_status', 'continent', drop_levels = FALSE) %>% 
+      tbl_prop('ind_outcome_patcourse_status', 'continent', drop_levels = FALSE) %>% 
       mutate(
         age_5gp = .x)
     }) %>% 
-  filter(outcome_status == 'Died') 
+  filter(ind_outcome_patcourse_status == 'Died') 
 
 
 dta_cfr_sex <- dta_linelist %>% 
-  mutate(sex = factor(sex, levels = c('F', 'M'), labels = c('Females', 'Males'))) %>% 
+  mutate(sex = factor(patinfo_sex, levels = c('F', 'M'), labels = c('Females', 'Males'))) %>% 
   mutate(sex = fct_explicit_na(sex)) 
 
 tbl_cfr_sex <- levels(dta_cfr_sex$sex) %>% 
   map_df(~{
       dta_cfr_sex %>% 
       filter(sex == .x) %>% 
-      tbl_prop('outcome_status', 'continent', drop_levels = FALSE) %>% 
+      tbl_prop('ind_outcome_patcourse_status', 'continent', drop_levels = FALSE) %>% 
       mutate(
         sex = .x)
     }) %>% 
-  filter(outcome_status == 'Died') 
+  filter(ind_outcome_patcourse_status == 'Died') 
 
-dta_cfr_comorbidities <- dta_linelist %>% 
-  mutate(Comcond_count = as.factor(Comcond_count)) %>% 
-  mutate(Comcond_count = fct_explicit_na(Comcond_count)) 
+# ---  ---  ---  ---  ---  ---  ---  ---  ---  --- 
+dta_cfr_comorbidities <- dta_linelist # %>% 
+#  filter(ind_Comcond_count < 9) # This was a temporal rapid solution to remove cases with ALL comorbidities that might be a recording error (used only in week 50-2020)
+# ---  ---  ---  ---  ---  ---  ---  ---  ---  --- 
 
-tbl_cfr_comorbidities <- levels(dta_cfr_comorbidities$Comcond_count) %>% 
+tbl_cfr_comorbidities <- unique(dta_cfr_comorbidities$ind_Comcond_count) %>% 
   map_df(~{
       dta_cfr_comorbidities %>% 
-      filter(Comcond_count == .x) %>% 
-      tbl_prop('outcome_status', 'continent', drop_levels = FALSE) %>% 
+      filter(ind_Comcond_count == .x) %>% 
+      tbl_prop('ind_outcome_patcourse_status', 'continent', drop_levels = FALSE) %>% 
       mutate(
-        Comcond_count = .x)
+        ind_Comcond_count = .x)
     }) %>% 
-  filter(outcome_status == 'Died') %>% 
-  arrange(Comcond_count)
+  filter(ind_outcome_patcourse_status == 'Died') %>% 
+  arrange(ind_Comcond_count) %>% 
+  mutate(
+    ind_Comcond_count = as.factor(ind_Comcond_count)
+  )
 
 
 tbl_cfr_age_sex_comorbidities <- tbl_cfr_age %>% 
@@ -2026,14 +2266,14 @@ tbl_cfr_age_sex_comorbidities <- tbl_cfr_age %>%
             rename(var = sex) %>% 
             mutate(label_var = 'Sex')) %>% 
   add_row(tbl_cfr_comorbidities %>% 
-            rename(var = Comcond_count) %>% 
+            rename(var = ind_Comcond_count) %>% 
             mutate(label_var = 'Number of comorbidities'))
 
 gtbl_cfr_age_sex_comorbidities <- tbl_cfr_age_sex_comorbidities %>% 
   gt(rowname_col = "var", 
      groupname_col = "label_var") %>% 
   cols_hide(
-    columns = vars('outcome_status')) %>% 
+    columns = vars('ind_outcome_patcourse_status')) %>% 
   cols_label(
     n_Africa   = 'n', 
     n_Americas = 'n', 
@@ -2113,129 +2353,32 @@ gtbl_cfr_age_sex_comorbidities %>%
 
 # Numbers for editing report
 cfr_confirmed_no_comorbidities <- tbl_cfr_comorbidities %>% 
-  filter(Comcond_count == 0) %>% 
+  filter(ind_Comcond_count == 0) %>% 
   pull(p_Total)
 
 cfr_confirmed_3_comorbidities <- tbl_cfr_comorbidities %>% 
-  filter(Comcond_count == 3) %>% 
+  filter(ind_Comcond_count == 3) %>% 
   pull(p_Total)
 
 ```
 
 
-<!-- 
-Table Outcome 2 - Count of cured, deaths, transferred… by Admitted/Not Admitted
-This table is NOT displayed any more 
--->
-```{r, eval = FALSE}
-# DONE by Francesco
-
-dta_outcome_admission <- dta_linelist %>%
-  select(covid_status, merge_admit, tidyselect::vars_select(names(dta_linelist), starts_with('outcome_')))
-
-tbl_outcome_admission <- dta_outcome_admission %>%
-  filter(covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
-  count(merge_admit, outcome_status, .drop = FALSE) %>%
-  pivot_wider(names_from = merge_admit, values_from = n, values_fill = list(n = 0)) %>%
-  adorn_totals('col') %>%
-  mutate(
-    prct_yes = round(Yes / sum(Yes) * 100, 1),
-    prct_no  = round(No / sum(No) * 100, 1),
-    prct_ukn = round(Unknown / sum(Unknown) * 100, 1),
-    prct_tot = round(Total / sum(Total) * 100, 1)) %>%
-  adorn_totals('row')
-
-gtbl_outcome_admission <- tbl_outcome_admission %>%
-  gt() %>%
-  cols_label(
-    outcome_status = 'Status',
-    Yes     = 'N',
-    No      = 'N',
-    Unknown = 'N',
-    Total   = 'N',
-    prct_yes = '(%)',
-    prct_no  = '(%)',
-    prct_ukn = '(%)',
-    prct_tot = '(%)') %>%
-  tab_spanner(
-    label = "Admitted",
-    columns = vars(Yes, prct_yes)) %>%
-  tab_spanner(
-    label = "Non admitted",
-    columns = vars(No, prct_no)) %>%
-  tab_spanner(
-    label = "Unknown",
-    columns = vars(Unknown, prct_ukn)) %>%
-  tab_spanner(
-    label = "Total",
-    columns = vars(Total, prct_tot)) %>%
-  fmt_missing(
-    columns = starts_with('prct_'),
-   missing_text = "--") %>%
-  text_transform(
-    locations = cells_body(
-      columns = starts_with('prct_')),
-    fn = function(x) {
-        x = paste0('(',x,')')}) %>%
-  text_transform(
-    locations = cells_body(
-      columns = starts_with('prct_'),
-      rows = outcome_status == 'Total'),
-    fn = function(x) {
-        x = '---'}) %>%
-  cols_align(
-    align = 'right',
-    columns = vars(Yes, No, Unknown, Total)) %>%
-  cols_align(
-    align = 'right',
-    columns = starts_with('prct_')) %>%
-  tab_style(
-    style = list(
-      cell_text(align = "right")),
-    locations = cells_column_labels(columns = vars(Yes, No, Unknown, Total))) %>%
-  tab_style(
-    style = list(
-      cell_text(align = "right")),
-    locations = cells_column_labels(columns = starts_with('prct_'))) %>%
-  cols_width(
-    vars(outcome_status) ~ px(210),
-    vars(Yes, No, Unknown , Total) ~ px(70),
-    starts_with("prct_") ~ px(50)) %>%
-  tab_options(
-    column_labels.font.weight = "bold",
-    data_row.padding = px(2))
-
-gtsave(gtbl_outcome_admission,
-       file.path(path.local.msf.tables, paste0('gtbl_outcome_admission', '_', week_report, '.png'))) %>%
-  invisible()
-
-gtsave(gtbl_outcome_admission,
-       file.path(path.local.msf.tables, paste0('gtbl_outcome_admission', '_', week_report, '.html')),
-       inline_css = TRUE) %>%
-  invisible()
-
-
-gtbl_outcome_admission %>% 
-  tab_header(
-    title = 'Count of patients outcome by Admitted/Not Admitted'
-  )
-
-```
-
-
-### Case fatality by type of comorbidity
+## Case fatality by type of comorbidity among confirmed patients
 
 <!-- CFR by type of comorbidity among confirmed patients -->
 ```{r tbl-cfr-type-comorbidity}
 # DONE by Francesco
 
-dta_cfr_comcond <- prepare_msf_dta_comcond(dta_linelist) %>% 
+
+dta_cfr_comcond <- dta_linelist %>% 
+  filter(ind_Comcond_count < 9) %>% # This is a temporal rapid solution to remove cases with ALL comorbidities that might be a recording error
+  select(continent, ind_MSF_covid_status, ind_outcome_patcourse_status, ind_Comcond_count, ind_Comcond_01, starts_with('ind_Comcond_'), ind_MSF_hiv_status, ind_MSF_hypertension, ind_MSF_tb_active, ind_MSF_malaria, ind_MSF_malnutrition, ind_MSF_smoking) %>% 
   mutate(
-    Comcond_other = case_when(
-      !is.na(Comcond_other) ~ 'Yes', 
+    ind_Comcond_other = case_when(
+      !is.na(ind_Comcond_other) ~ 'Yes', 
       TRUE ~ NA_character_)) %>% 
-  filter(covid_status == 'Confirmed', outcome_status %in% c('Cured', 'Died')) %>% 
-  pivot_longer(-c(covid_status, outcome_status, continent, Comcond_count, Comcond_01), names_to = "type_comorbidity") %>%
+  filter(ind_MSF_covid_status == 'Confirmed', ind_outcome_patcourse_status %in% c('Cured', 'Died')) %>% 
+  pivot_longer(-c(ind_MSF_covid_status, ind_outcome_patcourse_status, continent, ind_Comcond_count, ind_Comcond_01), names_to = "type_comorbidity") %>%
   mutate(
     type_comorbidity = factor(type_comorbidity, levels = df_labels_comcond$levels, labels = df_labels_comcond$labels)) %>% 
   filter(!is.na(value), value == 'Yes')
@@ -2244,16 +2387,16 @@ tbl_cfr_type_comcond <- levels(dta_cfr_comcond$type_comorbidity) %>%
   map_df(~{
     dta_cfr_comcond %>% 
     filter(type_comorbidity == .x) %>% 
-    tbl_prop('outcome_status', 'continent', drop_levels = FALSE) %>% 
+    tbl_prop('ind_outcome_patcourse_status', 'continent', drop_levels = FALSE) %>% 
     mutate(
       type_comorbidity = .x)
   }) %>% 
-  filter(outcome_status == 'Died') %>% 
+  filter(ind_outcome_patcourse_status == 'Died') %>% 
   arrange(desc(p_Total))
 
 gtbl_cfr_type_comcond <- tbl_cfr_type_comcond %>%
   gt() %>% 
-  cols_hide('outcome_status') %>% 
+  cols_hide('ind_outcome_patcourse_status') %>% 
   cols_move_to_start(columns = vars(type_comorbidity)) %>% 
   cols_label(
     type_comorbidity = "Comorbidities/Underlying conditions", 
@@ -2361,17 +2504,17 @@ age_labs <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70-7
 
 df_severity <- dta_linelist %>% 
   mutate(age_group = cut(age_in_years, breaks = age_cut, labels = age_labs, right = FALSE, include.lowest = TRUE)) %>% 
-  filter(!is.na(age_group), covid_status == "Confirmed") %>% 
+  filter(!is.na(age_group), ind_MSF_covid_status == "Confirmed") %>% 
   group_by(age_group) %>% 
   summarize(
     n = n(),
-    n_hosp = sum(admit == "Yes", na.rm = TRUE),
-    n_hosp_known = sum(admit %in% c("Yes", "No"), na.rm = TRUE),
+    n_hosp = sum(merge_admit == "Yes", na.rm = TRUE),
+    n_hosp_known = sum(merge_admit %in% c("Yes", "No"), na.rm = TRUE),
     p_hosp = n_hosp / n_hosp_known,
     p_hosp_low95 = as.numeric(binom.test(n_hosp, n_hosp_known)$conf.int)[1],
     p_hosp_upp95 = as.numeric(binom.test(n_hosp, n_hosp_known)$conf.int)[2],
-    n_died = sum(outcome_status == "Died", na.rm = TRUE),
-    n_died_known = sum(outcome_status %in% c("Died", "Cured"), na.rm = TRUE),
+    n_died = sum(ind_outcome_patcourse_status == "Died", na.rm = TRUE),
+    n_died_known = sum(ind_outcome_patcourse_status %in% c("Died", "Cured"), na.rm = TRUE),
     p_died_low95 = as.numeric(binom.test(n_died, n_died_known)$conf.int)[1],
     p_died_upp95 = as.numeric(binom.test(n_died, n_died_known)$conf.int)[2],
     p_died = n_died / n_died_known,
@@ -2434,26 +2577,26 @@ latest_2_epiweeks <- max_2(dta_linelist$epi_week_consultation)
 
 tbl_cfr_epiweek_prop <- dta_linelist %>%
   filter(
-    covid_status %in% c("Confirmed", "Suspected", "Probable"),
-    outcome_status %in% c("Cured", "Died"),
+    ind_MSF_covid_status %in% c("Confirmed", "Suspected", "Probable"),
+    ind_outcome_patcourse_status %in% c("Cured", "Died"),
     !epi_week_consultation %in% latest_2_epiweeks
   ) %>%
   drop_na(epi_week_consultation) %>%
   group_by(epi_week_consultation) %>%
   summarise(
-    total = sum(!is.na(outcome_status)),
-    dead = sum(outcome_status == "Died", na.rm = T),
+    total = sum(!is.na(ind_outcome_patcourse_status)),
+    dead = sum(ind_outcome_patcourse_status == "Died", na.rm = T),
     prop_dead = (dead / total) #* 100
   ) %>%
   ungroup()
 
 tbl_cfr_epiweek <- dta_linelist %>%
   filter(
-    covid_status %in% c("Confirmed", "Suspected", "Probable"),
-    outcome_status %in% c("Cured", "Died"),
+    ind_MSF_covid_status %in% c("Confirmed", "Suspected", "Probable"),
+    ind_outcome_patcourse_status %in% c("Cured", "Died"),
     !epi_week_consultation %in% latest_2_epiweeks
   ) %>%
-  count(epi_week_consultation, outcome_status) %>%
+  count(epi_week_consultation, ind_outcome_patcourse_status) %>%
   drop_na() %>%
   ungroup()
 
@@ -2462,7 +2605,7 @@ cfr_max <- rounder(max(tbl_cfr_epiweek_prop$prop_dead, na.rm = TRUE), .1)
 scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to nearest 10% above cfr max
 
 line_cfr_week <- ggplot(tbl_cfr_epiweek, aes(epi_week_consultation, n)) +
-  geom_col(aes(fill = outcome_status)) +
+  geom_col(aes(fill = ind_outcome_patcourse_status)) +
   geom_line(data = tbl_cfr_epiweek_prop,
             aes(y = prop_dead / scaling_factor, colour = "CFR"),
             key_glyph = "timeseries", size = 1) +
@@ -2497,25 +2640,25 @@ latest_2_epiweeks <- max_2(dta_linelist$epi_week_consultation)
 
 tbl_cfr_epiweek_continent_prop <- dta_linelist %>%
   filter(
-    covid_status %in% c("Confirmed", "Suspected", "Probable"),
-    outcome_status %in% c("Cured", "Died"),
+    ind_MSF_covid_status %in% c("Confirmed", "Suspected", "Probable"),
+    ind_outcome_patcourse_status %in% c("Cured", "Died"),
     !epi_week_consultation %in% latest_2_epiweeks
   ) %>%
   group_by(continent, epi_week_consultation) %>%
   summarise(
-    total = sum(!is.na(outcome_status)),
-    dead = sum(outcome_status == "Died", na.rm = T),
+    total = sum(!is.na(ind_outcome_patcourse_status)),
+    dead = sum(ind_outcome_patcourse_status == "Died", na.rm = T),
     prop_dead = (dead / total) #* 100
   ) %>%
   ungroup()
 
 tbl_cfr_epiweek_continent <- dta_linelist %>%
   filter(
-    covid_status %in% c("Confirmed", "Suspected", "Probable"),
-    outcome_status %in% c("Cured", "Died"),
+    ind_MSF_covid_status %in% c("Confirmed", "Suspected", "Probable"),
+    ind_outcome_patcourse_status %in% c("Cured", "Died"),
     !epi_week_consultation %in% latest_2_epiweeks
   ) %>%
-  count(continent, epi_week_consultation, outcome_status) %>%
+  count(continent, epi_week_consultation, ind_outcome_patcourse_status) %>%
   drop_na()
 
 n_max <- max(tbl_cfr_epiweek_continent_prop$total, na.rm = TRUE)
@@ -2525,7 +2668,7 @@ scaling_factor <- cfr_max / n_max # sets the y limit of CFR rounded up to neares
 
 line_cfr_week_continent <- ggplot(tbl_cfr_epiweek_continent, aes(epi_week_consultation, n)) +
   facet_wrap(~continent, ncol = 2) +
-  geom_col(aes(fill = outcome_status)) +
+  geom_col(aes(fill = ind_outcome_patcourse_status)) +
   geom_line(data = tbl_cfr_epiweek_continent_prop,
             aes(y = prop_dead / scaling_factor, colour = "CFR"),
             key_glyph = "timeseries", size = 1) +
@@ -2556,11 +2699,11 @@ line_cfr_week_continent
 # DONE by Paul
 
 dta_delay <- dta_linelist %>% 
-  filter(covid_status %in% c("Confirmed")) %>% 
-  select(epi_week_consultation, dateonset, date_consultation, covid_status) %>% 
+  filter(ind_MSF_covid_status %in% c("Confirmed")) %>% 
+  select(epi_week_consultation, patcourse_dateonset, MSF_date_consultation, ind_MSF_covid_status) %>% 
   drop_na(epi_week_consultation) %>% 
   mutate(
-    delay_before_consultation = as.numeric(date_consultation - dateonset)) %>% 
+    delay_before_consultation = as.numeric(MSF_date_consultation - patcourse_dateonset)) %>% 
   filter(between(delay_before_consultation, left = 0, right = 50)) # filter any delays negative or over 50 days
 
 
@@ -2592,48 +2735,48 @@ latest_2_epiweeks <- max_2(dta_linelist$epi_week_consultation)
 
 # length stay
 dta_length_stay <- dta_linelist %>% 
-  select(epi_week_consultation, covid_status, merge_admit, length_stay) %>% 
-  filter(covid_status %in% c('Confirmed'), merge_admit == 'Yes') %>% 
-  drop_na(epi_week_consultation, length_stay) %>% 
-  filter(between(length_stay, left = 0, right = 50), !epi_week_consultation %in% latest_2_epiweeks)
+  select(epi_week_consultation, ind_MSF_covid_status, merge_admit, MSF_length_stay) %>% 
+  filter(ind_MSF_covid_status %in% c('Confirmed'), merge_admit == 'Yes') %>% 
+  drop_na(epi_week_consultation, MSF_length_stay) %>% 
+  filter(between(MSF_length_stay, left = 0, right = 50), !epi_week_consultation %in% latest_2_epiweeks)
 
 
-boxplot_length_stay_week <- ggplot(dta_length_stay, aes(epi_week_consultation, length_stay, group = epi_week_consultation)) + 
+boxplot_length_stay <- ggplot(dta_length_stay, aes(epi_week_consultation, MSF_length_stay, group = epi_week_consultation)) + 
   geom_boxplot() + 
   #geom_jitter(colour = "red", alpha = 0.3) +
   scale_x_date(name = "Week of Admission", date_breaks = "2 weeks", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .)) +
   labs(y = "Length of stay in hospital (days)", caption = "Latest 2 weeks omitted for data completeness purposes")
 
 ggsave(file.path(path.local.msf.graphs, paste0('boxplot_length_stay', '_', week_report, '.png')),
-       plot = boxplot_length_stay_week, 
+       plot = boxplot_length_stay, 
        width = 6, 
        height = 4, 
        scale = 1.1,
        dpi = 320)
 
-boxplot_length_stay_week
+boxplot_length_stay
 
 ```
 
 
 # Analysis of non-cases 
 
-```{r tbl-non-cases-diagnosis, layout="l-body-outset"}
+```{r tbl-non-cases-diagnosis}
 
 dta_non_cases_diagt <- dta_linelist %>% 
-  filter(covid_status == 'Not a case') %>% 
-  select(main_diagnosis, outcome_status) %>% 
+  filter(ind_MSF_covid_status == 'Not a case') %>% 
+  select(MSF_main_diagnosis, ind_outcome_patcourse_status) %>% 
   mutate(
-    main_diagnosis = fct_explicit_na(main_diagnosis, na_level = "Not reported"))
+    MSF_main_diagnosis = fct_explicit_na(MSF_main_diagnosis, na_level = "Not reported"))
 
-tbl_non_cases_diagt <- tbl_prop(dta_non_cases_diagt, 'main_diagnosis', 'outcome_status', prop_by = 'row')
+tbl_non_cases_diagt <- tbl_prop(dta_non_cases_diagt, 'MSF_main_diagnosis', 'ind_outcome_patcourse_status', prop_by = 'row')
 
 gtbl_non_cases_diagt <- tbl_non_cases_diagt %>% 
   gt() %>% 
   cols_hide(
     columns = starts_with('N_', ignore.case = FALSE)) %>% 
   cols_label(
-    main_diagnosis = '', 
+    MSF_main_diagnosis = '', 
     n_Cured = 'n', 
     n_Died = 'n', 
     `n_Left against medical advice` = 'n', 
@@ -2690,7 +2833,7 @@ gtbl_non_cases_diagt <- tbl_non_cases_diagt %>%
     columns = starts_with('p_')) %>% 
   cols_align(
     align = 'left', 
-    columns = vars(main_diagnosis)) %>% 
+    columns = vars(MSF_main_diagnosis)) %>% 
   tab_style(
     style = list(
       cell_text(align = 'right')),

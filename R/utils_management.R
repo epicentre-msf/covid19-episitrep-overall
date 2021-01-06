@@ -186,8 +186,7 @@ attach_prefix <- function(var_in, suffix_var_out) {
 
 
 
-
-# --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+# --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
 # Specific functions for worldwide ECDC dataset
 # --- --- --- --- --- --- --- --- --- --- --- --- --- ---
 
@@ -364,6 +363,7 @@ attach_prefix <- function(var_in, suffix_var_out) {
 #}
 
 
+
 prepare_msf_dta_comcond <- function(dta){
 
   dta <- dta %>%
@@ -380,6 +380,16 @@ prepare_msf_dta_comcond <- function(dta){
 df_labels_comcond <- data.frame(
   levels = c('Comcond_cardi', 'Comcond_diabetes', 'Comcond_immuno', 'Comcond_liver', 'Comcond_lung', 'Comcond_malig', 'Comcond_neuro', 'Comcond_other', 'Comcond_partum', 'Comcond_preg', 'Comcond_renal', 'ind_MSF_hiv_status', 'ind_MSF_hypertension', 'ind_MSF_malaria', 'ind_MSF_malnutrition', 'ind_MSF_smoking', 'ind_MSF_tb_active'),
   labels = c('Cardiovascular (including hypertention)', 'Diabetes', 'Immunological (including HIV)','Hepatic', 'Respiratory (including chronic lung diseases)', 'Cancer', 'Neurological', 'Other condition', 'Post-partum', 'Pregnancy', 'Renal', 'HIV', 'Hypertension', 'Malaria', 'Malnutrition', 'Smoking', 'TB'))
+
+
+#prepare_msf_dta_comcond <- function(dta){
+#  
+#  dta <- dta %>% 
+#    select(continent, covid_status, outcome_status, starts_with('Comcond_'), hiv_status, hypertension, tb_active, malaria, malnutrition, smoking) %>% 
+#    select(-c(Comcond_present, Comcond_pregt))
+#  
+#  return(dta)
+#}
 
 
 

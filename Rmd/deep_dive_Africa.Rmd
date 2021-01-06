@@ -1,0 +1,1153 @@
+---
+title: "Description of the Covid-19 epidemic in Africa"
+date: "`r format(Sys.Date(), '%d %B %Y')`"
+author: Francesco Grandesso Epicentre (MSF)
+output: 
+  rmdformats::readthedown:
+    use_bookdown: TRUE
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(cache = FALSE, 
+                      echo = FALSE, 
+                      tidy = TRUE, 
+                      collapse = TRUE, 
+                      dpi = 150, 
+                      fig.align = "center", 
+                      warning = FALSE, 
+                      message = FALSE, 
+                      encoding = "UTF-8")
+
+source(here::here('R', 'setup.R'), encoding = 'UTF-8')
+
+library(treemap)
+library(patchwork)
+
+source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
+source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
+
+
+date_min <- NULL
+date_max <- as.Date('2020-12-06')
+week_report <- ISOweek::ISOweek(date_max) %>% gsub("W","w", .)
+
+set_paths(path.local, week_report)
+path.local.deepdive.Africa <- file.path(path.local.worldwide, 'deepdive_Africa')
+dir.create(path.local.deepdive.Africa, showWarnings = FALSE, recursive = TRUE) 
+
+
+```
+
+```{r upload-data, include = FALSE}
+
+dta <- get_ecdc_data() %>% 
+  prepare_ecdc_data() %>% 
+  tidyr::drop_na(iso_a3) %>% 
+  filter(between(date, left = NULL, right = date_max))
+
+
+## --- ECDC Covid data
+dta_ecdc <- get_ecdc_data() %>% 
+  prepare_ecdc_data() %>% 
+  tidyr::drop_na(iso_a3) %>% 
+  filter(between(date, left = NULL, right = date_max) & (continent == 'Africa'))
+
+
+## --- Population data
+df_countries <- readRDS(file.path(path.local.data, paste0('df_countries','.RDS'))) %>% 
+  filter(continent == 'Africa') %>% 
+  left_join(readRDS(file.path(path.local.data, paste0('df_pop_country','.RDS'))))
+
+# sf Robinson projection
+sf_robinson <- readRDS(file.path(path.local.data, paste0('sf_world','.RDS'))) %>% 
+  filter(continent == 'Africa')
+
+## --- GIS data - Mercator projection
+sf_mercator <- rnaturalearth::ne_countries(type = "countries", returnclass = "sf") %>% 
+  tibble::as_tibble() %>% 
+  sf::st_as_sf() %>% 
+  dplyr::select(country = name_long, iso_a3, iso_a2, pop_est) %>% 
+  dplyr::mutate(
+    continent = suppressWarnings(countrycode::countrycode(iso_a3, origin = "iso3c", destination = "continent")),
+    region = suppressWarnings(countrycode::countrycode(iso_a3, origin = "iso3c", destination = "region23"))) %>% 
+  dplyr::filter(stringr::str_detect(country, "Antarctic", negate = TRUE)) %>% 
+  cbind(sf::st_coordinates(suppressWarnings(sf::st_centroid(., of_largest_polygon = TRUE)))) %>% 
+  dplyr::rename(lon = X, lat = Y) 
+
+```
+
+```{r prepare-data, include = FALSE}
+
+## Grouping regions
+
+grp_region_NW <- c('Northern Africa', 'Western Africa')
+grp_region_EMS <- c('Eastern Africa', 'Middle Africa', 'Southern Africa')
+
+
+## CASES Incidence proportion
+
+tbl_cases_prop <- dta_ecdc %>% 
+  group_by(country) %>% 
+  summarise(
+    n = sum(cases)) %>% 
+  left_join(df_countries) %>% 
+  mutate(
+   p = n/pop * 100)
+
+tbl_cases_prop_30d <- dta_ecdc %>% 
+  filter(between(date, left = date_max - 29, right = date_max)) %>%
+  group_by(country) %>% 
+  summarise(
+    n_30d = sum(cases)) %>% 
+    left_join(df_countries) %>% 
+  mutate(
+   p_30d = n_30d/pop * 100) %>% 
+  left_join(tbl_cases_prop) %>% 
+  select(region, country, n, p, n_30d, p_30d)
+
+
+tbl_cases_prop_2w <- dta_ecdc %>% 
+  filter(between(date, left = date_max - 13, right = date_max)) %>%
+  group_by(country) %>% 
+  summarise(
+    n_2w = sum(cases)) %>% 
+    left_join(df_countries) %>% 
+  mutate(
+   p_2w = n_2w/pop * 100) %>% 
+  left_join(tbl_cases_prop) %>% 
+  select(region, country, n, p, n_2w, p_2w)
+
+
+## DEATHS Incidence proportion
+
+tbl_deaths_prop <- dta_ecdc %>% 
+  group_by(country) %>% 
+  summarise(
+    n = sum(deaths)) %>% 
+  left_join(df_countries) %>% 
+  mutate(
+   p = n/pop * 100)
+
+tbl_deaths_prop_2w <- dta_ecdc %>% 
+  filter(between(date, left = date_max - 13, right = date_max)) %>%
+  group_by(country) %>% 
+  summarise(
+    n_2w = sum(deaths)) %>% 
+    left_join(df_countries) %>% 
+  mutate(
+   p_2w = n_2w/pop * 100) %>% 
+  left_join(tbl_deaths_prop) %>% 
+  select(region, country, n, p, n_2w, p_2w)
+
+```
+
+
+Data source: [ECDC data](https://opendata.ecdc.europa.eu/covid19/casedistribution/csv) updated until `r format(date_max, '%d %B %Y')`
+
+**How to read the treemaps**
+
+**Treemapping** is a method to display a set of tiled rectangles whose area is proportional to a specified dimension of the data. The rectangles are filled with a sequential colour scheme representing a second dimension of the data. When the size and colour dimensions are correlated, one can often easily see patterns that would be difficult to spot in other ways.
+
+The **treemaps presented in this report** display the size of the rectangles proportional to the total number of cases (or deaths) in each country, and the colour of the rectangles representing a second variable whose definition and colour scheme is displayed in the legend. 
+
+The relation of the the two variables are also presented in scatter plots.
+
+
+# Overview
+
+## Total number and incidence proportion of cases
+
+### Treemap cases `r combine_words(grp_region_NW)`
+
+```{r, fig.cap = paste("TREEMAP: Total number and incidence proportion of confirmed cases per country in", combine_words(grp_region_NW))}
+
+tbl_cases_prop %>% 
+  filter(region %in% grp_region_NW) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n', 
+          vColor = 'p',
+          type = 'dens', 
+          palette = 'YlGn', 
+          range = c(0, max(tbl_cases_prop$p)), 
+          title = 'Total cases', 
+          title.legend = 'Incidence proportion of cases (%)')
+```
+
+```{r,include= FALSE}
+
+png(filename = file.path(path.local.deepdive.Africa, "treemap_cases_prop_NW.png"), width = 900, height = 600, res = 144)
+tbl_cases_prop %>% 
+  filter(region %in% grp_region_NW) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n', 
+          vColor = 'p',
+          type = 'dens', 
+          palette = 'YlGn', 
+          range = c(0, max(tbl_cases_prop$p)), 
+          title = 'Total cases', 
+          title.legend = 'Incidence proportion of cases (%)')
+dev.off()
+```
+
+### Treemap cases `r combine_words(grp_region_EMS)`
+
+```{r, fig.cap = paste("TREEMAP: Total number and incidence proportion of confirmed cases per country in", combine_words(grp_region_EMS))}
+
+tbl_cases_prop %>% 
+  filter(region %in% grp_region_EMS) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n', 
+          vColor = 'p',
+          type = 'dens', 
+          palette = 'YlGn', 
+          range = c(0, max(tbl_cases_prop$p)), 
+          title = 'Total cases', 
+          title.legend = 'Incidence proportion of cases (%)')
+
+```
+
+```{r, include = FALSE}
+png(filename = file.path(path.local.deepdive.Africa, "treemap_cases_prop_EMS.png"), width = 900, height = 600, res = 144)
+tbl_cases_prop %>% 
+  filter(region %in% grp_region_EMS) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n', 
+          vColor = 'p',
+          type = 'dens', 
+          palette = 'YlGn', 
+          range = c(0, max(tbl_cases_prop$p)), 
+          title = 'Total cases', 
+          title.legend = 'Incidence proportion of cases (%)')
+dev.off()
+```
+
+
+### Scatter plot all African countries
+
+```{r, fig.cap = paste("SCATTER PLOT: Total number and incidence proportion of confirmed cases per country")}
+
+countries_zero_count <- tbl_cases_prop %>% 
+  filter(n == 0) %>% 
+  pull(country)
+
+txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
+
+ggplot(tbl_cases_prop %>% filter(n != 0)) + 
+  geom_point(aes(n, p, col = region)) + 
+  ggrepel::geom_text_repel(aes(n, p, label = country, colour = region), size = 3, show.legend = FALSE) + 
+  scale_x_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0), n = 5), 
+                     labels = scales::label_number_si()) + 
+  scale_y_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0), n = 10), 
+                     labels = scales::label_percent(scale = 1)) + 
+  labs(
+    colour = 'Region', 
+    caption = paste0("Countries with zero count: \n", txt_countries_zero_count), 
+    x = "Total count of cases\n(log scale)",
+    y = "Incidence proportion %\n(log scale)") + 
+  theme_light() + 
+  theme(
+    plot.caption = element_text(hjust = 0, face = "italic"), 
+    plot.caption.position =  "panel")
+
+```
+
+
+## Total number and incidence proportion of associated deaths
+
+### Treemap deaths `r combine_words(grp_region_NW)`
+
+```{r, fig.cap = paste("TREEMAP: Total number and incidence proportion of associated deaths per country in", combine_words(grp_region_NW))}
+
+tbl_deaths_prop %>% 
+  filter(region %in% grp_region_NW) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n', 
+          vColor = 'p',
+          type = 'dens', 
+          palette = 'OrRd', 
+          range = c(0, max(tbl_deaths_prop$p)), 
+          title = 'Total deaths', 
+          title.legend = 'Incidence proportion of deaths (%)')
+
+```
+
+```{r, include = FALSE}
+
+png(filename = file.path(path.local.deepdive.Africa, "treemap_deaths_prop_NW.png"), width = 900, height = 600, res = 144)
+tbl_deaths_prop %>% 
+  filter(region %in% grp_region_NW) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n', 
+          vColor = 'p',
+          type = 'dens', 
+          palette = 'OrRd', 
+          range = c(0, max(tbl_deaths_prop$p)), 
+          title = 'Total deaths', 
+          title.legend = 'Incidence proportion of deaths (%)')
+dev.off()
+
+```
+
+
+### Treemap deaths `r combine_words(grp_region_EMS)`
+
+```{r, fig.cap = paste("TREEMAP: Total number and incidence proportion of associated deaths per country in", combine_words(grp_region_EMS))}
+
+tbl_deaths_prop %>% 
+  filter(region %in% grp_region_EMS) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n', 
+          vColor = 'p',
+          type = 'dens', 
+          palette = 'OrRd', 
+          range = c(0, max(tbl_deaths_prop$p)), 
+          title = 'Total deaths', 
+          title.legend = 'Incidence proportion of deaths (%)')
+
+```
+
+```{r, include = FALSE}
+
+png(filename = file.path(path.local.deepdive.Africa, "treemap_deaths_prop_EMS.png"), width = 900, height = 600, res = 144)
+tbl_deaths_prop %>% 
+  filter(region %in% grp_region_EMS) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n', 
+          vColor = 'p',
+          type = 'dens', 
+          palette = 'OrRd', 
+          range = c(0, max(tbl_deaths_prop$p)), 
+          title = 'Total deaths', 
+          title.legend = 'Incidence proportion of deaths (%)')
+dev.off()
+
+```
+
+# During the last 30 days
+
+## Number of confirmed cases in the last 30 days
+
+### Treemap cases `combine_words(grp_region_NW)`
+
+```{r, fig.cap = paste("Number of confirmed cases since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_NW))}
+
+tbl_cases_prop_30d %>% 
+  filter(region %in% grp_region_NW) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n_30d', 
+          vColor = 'p_30d',
+          type = 'dens', 
+          palette = 'YlGn', 
+          range = c(0, max(tbl_cases_prop_30d$p_30d)), 
+          title = 'Total cases in the last 30 days', 
+          title.legend = 'Incidence proportion of cases (%) in the last 30 days')
+
+```
+
+
+```{r,include = FALSE}
+
+png(filename = file.path(path.local.deepdive.Africa, "treemap_cases_prop_NW_30d.png"), width = 900, height = 600, res = 144)
+tbl_cases_prop_30d %>% 
+  filter(region %in% grp_region_NW) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n_30d', 
+          vColor = 'p_30d',
+          type = 'dens', 
+          palette = 'YlGn', 
+          range = c(0, max(tbl_cases_prop_30d$p_30d)), 
+          title = 'Total cases in the last 30 days', 
+          title.legend = 'Incidence proportion of cases (%) in the last 30 days')
+dev.off()
+
+```
+
+
+### Treemap cases `combine_words(grp_region_EMS)`
+
+```{r, fig.cap = paste("Number of confirmed cases since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_EMS))}
+
+tbl_cases_prop_30d %>% 
+  filter(region %in% grp_region_EMS) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n_30d', 
+          vColor = 'p_30d',
+          type = 'dens', 
+          palette = 'YlGn', 
+          range = c(0, max(tbl_cases_prop_30d$p_30d)), 
+          title = 'Total cases in the last 30 days', 
+          title.legend = 'Incidence proportion of cases (%) in the last 30 days')
+
+```
+
+```{r, include = FALSE}
+
+png(filename = file.path(path.local.deepdive.Africa, "treemap_cases_prop_EMS_30d.png"), width = 900, height = 600, res = 144)
+tbl_cases_prop_30d %>% 
+  filter(region %in% grp_region_EMS) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n_30d', 
+          vColor = 'p_30d',
+          type = 'dens', 
+          palette = 'YlGn', 
+          range = c(0, max(tbl_cases_prop_30d$p_30d)), 
+          title = 'Total cases in the last 30 days', 
+          title.legend = 'Incidence proportion of cases (%) in the last 30 days')
+dev.off()
+
+```
+
+
+### Scatter plot total cases _versus_ cases in the last 30 days
+
+```{r, fig.cap = paste("SCATTER PLOT: Number of cases and cases in the last 30 days")}
+
+countries_zero_count <- tbl_cases_prop_30d %>% 
+  filter(n == 0) %>% 
+  pull(country)
+
+txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
+
+scatter_plot_cases_cases_30d <- ggplot(tbl_cases_prop_30d %>% filter(n != 0)) + 
+  geom_point(aes(n, n_30d, col = region)) + 
+  ggrepel::geom_text_repel(aes(n, n_30d, label = country, colour = region), size = 3, show.legend = FALSE) + 
+  scale_x_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0), n = 5), 
+                     labels = scales::label_number_si()) + 
+  scale_y_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0), n = 10), 
+                     labels = scales::label_number_si()) + 
+  labs(
+    colour = 'Region', 
+    caption = paste0("Countries with zero count: \n", txt_countries_zero_count), 
+    x = "Total number of cases\n(log scale)",
+    y = "Number of cases in the last 30 days\n(log scale)") + 
+  theme_light() + 
+  theme(
+    plot.caption = element_text(hjust = 0, face = "italic"), 
+    plot.caption.position =  "panel")
+
+
+scatter_plot_cases_cases_30d
+
+ggsave(file.path(path.local.deepdive.Africa, paste0('scatter_plot_cases_cases_30d', '_', week_report, '.png')), 
+       plot = scatter_plot_cases_cases_30d, 
+       scale = 1, 
+       dpi = 320)
+
+```
+
+
+### Scatter plot cases _versus_ incidence proportion of cases in the last 30 days
+
+```{r, fig.cap = paste("SCATTER PLOT: Number of cases and cases in the last 30 days")}
+
+countries_zero_count <- tbl_cases_prop_30d %>% 
+  filter(n == 0) %>% 
+  pull(country)
+
+txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
+
+scatter_plot_cases_prop_30d <- ggplot(tbl_cases_prop_30d %>% filter(n != 0)) + 
+  geom_point(aes(n_30d, p_30d, col = region)) + 
+  ggrepel::geom_text_repel(aes(n_30d, p_30d, label = country, colour = region), size = 3, show.legend = FALSE) + 
+  scale_x_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 0), n = 5), 
+                     labels = scales::label_number_si()) + 
+  scale_y_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 1), n = 10), 
+                     labels = scales::label_percent(scale = 1)) + 
+  labs(
+    colour = 'Region', 
+    caption = paste0("Countries with zero count: \n", txt_countries_zero_count), 
+    x = "Number of cases in the last 30 days\n(log scale)",
+    y = "Incidence proportion of cases in the last 30 days\n(log scale)") + 
+  theme_light() + 
+  theme(
+    plot.caption = element_text(hjust = 0, face = "italic"), 
+    plot.caption.position =  "panel")
+
+scatter_plot_cases_prop_30d
+
+ggsave(file.path(path.local.deepdive.Africa, paste0('scatter_plot_cases_prop_30d', '_', week_report, '.png')), 
+       plot = scatter_plot_cases_prop_30d, 
+       scale = 1, 
+       dpi = 320)
+
+```
+
+
+### Scatter plot overall incidence proportion of cases _versus_ incidence proportion of cases in the last 30 days
+
+```{r, fig.cap = paste("SCATTER PLOT: Number of cases and cases in the last 30 days")}
+
+countries_zero_count <- tbl_cases_prop_30d %>% 
+  filter(n == 0) %>% 
+  pull(country)
+
+txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
+
+scatter_plot_prop_prop_30d <- ggplot(tbl_cases_prop_30d %>% filter(n != 0)) + 
+  geom_point(aes(p, p_30d, col = region)) + 
+  ggrepel::geom_text_repel(aes(p, p_30d, label = country, colour = region), size = 3, show.legend = FALSE) + 
+  scale_x_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 1), n = 10), 
+                     labels = scales::label_percent(scale = 1)) + 
+  scale_y_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 1), n = 10), 
+                     labels = scales::label_percent(scale = 1)) + 
+  labs(
+    colour = 'Region', 
+    caption = paste0("Countries with zero count: \n", txt_countries_zero_count), 
+    x = "Overall incidence proportion of cases\n(log scale)",
+    y = "Incidence proportion of cases in the last 30 days\n(log scale)") + 
+  theme_light() + 
+  theme(
+    plot.caption = element_text(hjust = 0, face = "italic"), 
+    plot.caption.position =  "panel")
+
+scatter_plot_prop_prop_30d
+
+ggsave(file.path(path.local.deepdive.Africa, paste0('scatter_plot_prop_prop_30d', '_', week_report, '.png')), 
+       plot = scatter_plot_prop_prop_30d, 
+       scale = 1, 
+       dpi = 320)
+```
+
+
+# During the last 14 days
+
+## Number of confirmed cases in the last 14 days
+
+### Treemap cases `r combine_words(grp_region_NW)`
+
+```{r, fig.cap = paste("Number of confirmed cases since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_NW))}
+
+tbl_cases_prop_2w %>% 
+  filter(region %in% grp_region_NW) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n', 
+          vColor = 'n_2w',
+          type = 'dens', 
+          palette = 'YlGn', 
+          range = c(0, max(tbl_cases_prop_2w$n_2w)), 
+          title = 'Total cases', 
+          title.legend = 'Cases in the last 14 days')
+
+```
+
+```{r, include = FALSE}
+
+png(filename = file.path(path.local.deepdive.Africa, "treemap_cases_cases_NW_14d.png"), width = 900, height = 600, res = 144)
+tbl_cases_prop_2w %>% 
+  filter(region %in% grp_region_NW) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n', 
+          vColor = 'n_2w',
+          type = 'dens', 
+          palette = 'YlGn', 
+          range = c(0, max(tbl_cases_prop_2w$n_2w)), 
+          title = 'Total cases', 
+          title.legend = 'Cases in the last 14 days')
+dev.off()
+
+```
+
+
+### Treemap cases `r combine_words(grp_region_EMS)`
+
+```{r, fig.cap = paste("Number of confirmed cases since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_EMS))}
+
+tbl_cases_prop_2w %>% 
+  filter(region %in% grp_region_EMS) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n', 
+          vColor = 'n_2w',
+          type = 'dens', 
+          palette = 'YlGn', 
+          range = c(0, max(tbl_cases_prop_2w$n_2w)), 
+          title = 'Total cases', 
+          title.legend = 'Cases in the last 14 days')
+
+```
+
+```{r, include = FALSE}
+
+png(filename = file.path(path.local.deepdive.Africa, "treemap_cases_cases_EMS_14d.png"), width = 900, height = 600, res = 144)
+tbl_cases_prop_2w %>% 
+  filter(region %in% grp_region_EMS) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n', 
+          vColor = 'n_2w',
+          type = 'dens', 
+          palette = 'YlGn', 
+          range = c(0, max(tbl_cases_prop_2w$n_2w)), 
+          title = 'Total cases', 
+          title.legend = 'Cases in the last 14 days')
+dev.off()
+
+```
+
+
+
+## Number of associated deaths in the last 14 days
+
+### Treemap deaths `r combine_words(grp_region_NW)`
+
+```{r, fig.cap = paste("Number of confirmed associated deaths since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_NW))}
+
+tbl_deaths_prop_2w %>% 
+  filter(region %in% grp_region_NW) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n', 
+          vColor = 'n_2w',
+          type = 'dens', 
+          palette = 'OrRd', 
+          range = c(0, max(tbl_deaths_prop_2w$n_2w)), 
+          title = 'Total deaths', 
+          title.legend = 'Deaths in the last 14 days')
+
+```
+
+### Treemap deaths `r combine_words(grp_region_EMS)`
+
+```{r, fig.cap = paste("Number of confirmed associated deaths since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_EMS))}
+
+tbl_deaths_prop_2w %>% 
+  filter(region %in% grp_region_EMS) %>% 
+  treemap(index = c('region', 'country'), 
+          vSize = 'n', 
+          vColor = 'n_2w',
+          type = 'dens', 
+          palette = 'OrRd', 
+          range = c(0, max(tbl_deaths_prop_2w$n_2w)), 
+          title = 'Total deaths', 
+          title.legend = 'Deaths in the last 14 days')
+
+```
+
+
+## Overall incidence proportions _versus_ incidence proportions in the last 14 days
+
+### Maps
+
+<!-- Map of overall incidence proportion -->
+```{r maps-incidence-proportions, fig.cap = "MAP: Overall incidence proportion of cases and recent incidence proportions of cases (last 14 days)"}
+
+## Breaks for incidence
+breaks_inc <- c(0, 0.01, 0.1, 1, Inf)
+labels_inc <- c("0 - 0.01%", "0.01 - 0.1%", "0.1 - 1%", "1%+")
+
+
+## --- OVERALL ---
+
+## Put incidence table in to sf
+sf_case_inc <- df_countries %>% 
+  left_join(tbl_cases_prop) %>% 
+  mutate(
+    inc_brks = cut(p, breaks_inc, labels = labels_inc, include.lowest = TRUE, right = FALSE)) %>% 
+  full_join(
+    select(sf_mercator, iso_a3),
+    by = "iso_a3"
+  ) %>% 
+  st_as_sf()
+
+## Map 
+map_case_inc <- ggplot(sf_case_inc) + 
+  geom_sf(aes(fill = inc_brks), size = .1) + 
+  scale_fill_brewer(
+    name = 'Incidence proportion', 
+    palette = "Blues", 
+    na.value = "lightgrey", 
+    drop = FALSE, 
+    guide = guide_legend(
+      keyheight = unit(3, units = "mm"),
+      keywidth = unit(70 / length(labels_inc), units = "mm"),
+      title.hjust = 0.5,
+      nrow = 1,
+      label.position = "bottom",
+      title.position = 'top')) + 
+  coord_sf(
+    xlim = c(-25, 60), 
+    ylim = c(-35, 40), 
+    expand = FALSE) + 
+  labs(title = 'Overall') + 
+  theme_light() +
+  theme(plot.title = element_text(hjust = 0.5), 
+        axis.text.x = element_blank(), 
+        axis.text.y = element_blank(), 
+        legend.position = "bottom")
+
+
+## --- LAST TWO WEEKS ---
+
+## Put incdence table (last 2 weks) in to sf
+sf_case_inc_2weeks <- df_countries %>% 
+  left_join(tbl_cases_prop_2w) %>% 
+  mutate(
+    inc_brks = cut(p_2w, breaks_inc, labels = labels_inc, include.lowest = TRUE, right = FALSE)) %>% 
+  full_join(
+    select(sf_mercator, iso_a3),
+    by = "iso_a3"
+  ) %>% 
+  st_as_sf()
+
+## Map
+map_case_inc_2weeks <- ggplot(sf_case_inc_2weeks) + 
+  geom_sf(aes(fill = inc_brks), size = .1) + 
+  scale_fill_brewer(
+    name = 'Incidence proportion', 
+    palette = "Blues", 
+    na.value = "lightgrey", 
+    drop = FALSE, 
+    guide = guide_legend(
+      keyheight = unit(3, units = "mm"),
+      keywidth = unit(70 / length(labels_inc), units = "mm"),
+      title.hjust = 0.5,
+      nrow = 1,
+      label.position = "bottom",
+      title.position = 'top')) + 
+  coord_sf(
+    xlim = c(-25, 60), 
+    ylim = c(-35, 40), 
+    expand = FALSE) + 
+  labs(title = 'Last 14 days') + 
+  theme_light() +
+  theme(plot.title = element_text(hjust = 0.5), 
+        axis.text.x = element_blank(), 
+        axis.text.y = element_blank(), 
+        legend.position = "bottom")
+
+
+## Combine maps
+map_case_inc <- map_case_inc + 
+  map_case_inc_2weeks + 
+  plot_layout(ncol = 2, guides = 'collect') & theme(legend.position = 'bottom')
+
+map_case_inc
+
+## Save map
+ggsave(file.path(path.local.deepdive.Africa, paste0('map_case_inc', '_', week_report, '.png')), 
+       plot = map_case_inc, 
+       scale = 1, 
+       dpi = 320)
+
+```
+
+### Scatter plots
+
+```{r, fig.cap = paste("SCATTER PLOT: Overall incidence proportion of cases and recent incidence proportions of cases in the last 14 days")}
+
+tbl_case_inc_vs_inc_2weeks <- tbl_cases_prop_2w %>% 
+  select(region, country, overall = p, last2weeks = p_2w)
+
+countries_zero_count <- tbl_case_inc_vs_inc_2weeks %>% 
+  filter(last2weeks == 0) %>% 
+  pull(country)
+
+txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
+
+
+# The dots plot
+ggplot(tbl_case_inc_vs_inc_2weeks %>% filter(last2weeks != 0)) + 
+  geom_point(aes(overall, last2weeks, col = region)) + 
+  ggrepel::geom_text_repel(aes(overall, last2weeks, label = country, colour = region), size = 3, show.legend = FALSE) + 
+  scale_x_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 1), n = 5), 
+                     labels = scales::label_percent(scale = 1)) + 
+  scale_y_continuous(trans = 'log10', 
+                     breaks = scales::trans_breaks("log10", function(x) round(10^x, 2), n = 10), 
+                     labels = scales::label_percent(scale = 1)) + 
+  labs(
+    colour = 'Region', 
+    caption = paste0("Countries with zero count in the last 14 days: \n", txt_countries_zero_count), 
+    x = "Incidence proportion since the beginning of the epidemic %\n(log scale)",
+    y = "Incidence proportion in the last 14 days %\n(log scale)") + 
+  theme_light() + 
+  theme(
+    plot.caption = element_text(hjust = 0, face = "italic"), 
+    plot.caption.position =  "panel")
+
+```
+
+
+# Trends
+
+```{r}
+# The function
+
+linear_trend <- function(dta, series, last_date, n_days, ma_window = 3, min_sum = 30){
+  
+  dta <- dta %>% select(date, cnt = all_of(series))
+  
+  dates_extent <- c(last_date - (n_days - 1), last_date)
+    
+  dta <- dta %>% 
+    filter(between(date, dates_extent[1], dates_extent[2])) %>% 
+    tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
+                                    max(date, na.rm = TRUE), by = 1), 
+                    fill = list(cnt = NA_real_))
+  
+  
+  # Moving average
+  dta$ma <- forecast::ma(dta$cnt, order = ma_window)
+  dta$ma <- na_if(dta$ma, 0) # Replace 0 values as NA
+  
+  
+  # Empty matrix of predictions
+  m_preds <- matrix(data = NA, 
+                    nrow = dim(dta)[1], 
+                    ncol = 3, 
+                    dimnames = list(c(1:dim(dta)[1]), c('fit', 'lwr', 'upr')))
+  
+  
+  # Run model with conditions
+  if (dim(dta)[1] > ma_window & sum(dta$cnt, na.rm = TRUE) > min_sum) {
+    
+    mdl <- lm(log(ma) ~ date, data = dta)
+    
+    preds <- exp(predict(mdl, interval = 'confidence'))
+    
+    matched_rows <- match(rownames(preds), rownames(m_preds))
+    matched_cols <- match(colnames(preds), colnames(m_preds))
+    m_preds[matched_rows, matched_cols] <- preds
+    
+    tbl_preds <- tibble(date = seq.Date(from = dates_extent[1], to = dates_extent[2], by = 1), 
+                        cnt  = dta$cnt, 
+                        ma   = dta$ma, 
+                        fit  = as.double(m_preds[, 'fit']), 
+                        lwr  = as.double(m_preds[, 'lwr']), 
+                        upr  = as.double(m_preds[, 'upr']))
+    
+    mdl_coeffs <- tibble(coeff = coefficients(mdl)[[2]], 
+                         lwr   = confint(mdl)[2,1], 
+                         upr   = confint(mdl)[2,2])
+    
+  } else {
+    mdl <- NA_character_
+    
+    tbl_preds <- tibble(date = seq.Date(from = dates_extent[1], to = dates_extent[2], by = 1), 
+                        cnt  = dta$cnt, 
+                        ma   = dta$ma, 
+                        fit  = as.double(m_preds[, 'fit']), 
+                        lwr  = as.double(m_preds[, 'lwr']), 
+                        upr  = as.double(m_preds[, 'upr']))
+    
+    mdl_coeffs <- tibble(coeff = NA_real_, 
+                         lwr   = NA_real_, 
+                         upr   = NA_real_)
+  }
+  
+  return(list(mdl = mdl, preds = tbl_preds, coeffs = mdl_coeffs))
+}
+```
+
+
+
+```{r}
+lst_dta_ecdc <- dta_ecdc %>% 
+  multisplit("iso_a3")
+
+
+# -- Linear model trends - last 14 days 
+
+lst_mdl_cases_14d <- list()
+
+for(i in names(lst_dta_ecdc)){
+  mdl <- linear_trend(dta = lst_dta_ecdc[[i]], series = 'cases', n_days = 12, last_date = date_max)
+  lst_mdl_cases_14d[[i]] <- mdl
+}
+
+
+lst_mdl_deaths_14d <- list()
+
+for(i in names(lst_dta_ecdc)){
+  mdl <- linear_trend(dta = lst_dta_ecdc[[i]], series = 'deaths', n_days = 12, last_date = date_max)
+  lst_mdl_deaths_14d[[i]] <- mdl
+}
+
+
+# -- Linear model trends - last 30 days 
+
+lst_mdl_cases_30d <- list()
+
+for(i in names(lst_dta_ecdc)){
+  mdl <- linear_trend(dta = lst_dta_ecdc[[i]], series = 'cases', n_days = 30, last_date = date_max)
+  lst_mdl_cases_30d[[i]] <- mdl
+}
+
+
+lst_mdl_deaths_30d <- list()
+
+for(i in names(lst_dta_ecdc)){
+  mdl <- linear_trend(dta = lst_dta_ecdc[[i]], series = 'deaths', n_days = 30, last_date = date_max)
+  lst_mdl_deaths_30d[[i]] <- mdl
+}
+
+```
+
+```{r}
+# -- Lists of predictions
+lst_preds_cases_30d <- lapply(lst_mdl_cases_30d, function (x) x[['preds']])
+lst_preds_cases_14d <- lapply(lst_mdl_cases_14d, function (x) x[['preds']])
+
+lst_preds_deaths_30d <- lapply(lst_mdl_deaths_30d, function (x) x[['preds']])
+lst_preds_deaths_14d <- lapply(lst_mdl_deaths_14d, function (x) x[['preds']])
+
+
+tbl_coeff_cases_30d <- lapply(lst_mdl_cases_30d, function (x) x[['coeffs']]) %>% 
+  tibble::enframe(name = "iso_a3") %>% 
+  unnest(cols = c(value)) %>% 
+  mutate(
+    trend = case_when(
+      lwr > 0 ~ "Increasing", 
+      upr < 0 ~ "Declining", 
+      upr > 0 & lwr < 0 ~ "Stable", 
+      TRUE ~ NA_character_) %>% 
+      factor(levels = c('Increasing', 'Stable', 'Declining')))
+
+tbl_coeff_cases_14d <- lapply(lst_mdl_cases_14d, function (x) x[['coeffs']]) %>% 
+  tibble::enframe(name = "iso_a3") %>% 
+  unnest(cols = c(value)) %>% 
+  mutate(
+    trend = case_when(
+      lwr > 0 ~ "Increasing", 
+      upr < 0 ~ "Declining", 
+      upr > 0 & lwr < 0 ~ "Stable", 
+      TRUE ~ NA_character_) %>% 
+      factor(levels = c('Increasing', 'Stable', 'Declining')))
+
+tbl_coeff_deaths_30d <- lapply(lst_mdl_deaths_30d, function (x) x[['coeffs']]) %>% 
+  tibble::enframe(name = "iso_a3") %>% 
+  unnest(cols = c(value))
+
+tbl_coeff_deaths_14d <- lapply(lst_mdl_deaths_14d, function (x) x[['coeffs']]) %>% 
+  tibble::enframe(name = "iso_a3") %>% 
+  unnest(cols = c(value))
+
+```
+
+
+## Map
+
+```{r}
+
+sf_case_trend_30d <- df_countries %>% 
+  select(iso_a3, country) %>% 
+  left_join(tbl_coeff_cases_30d) %>% 
+  full_join(
+    select(sf_mercator, iso_a3),
+    by = "iso_a3") %>% 
+  st_as_sf()
+
+
+sf_case_trend_14d <- df_countries %>% 
+  select(iso_a3, country) %>% 
+  left_join(tbl_coeff_cases_14d) %>% 
+  full_join(
+    select(sf_mercator, iso_a3),
+    by = "iso_a3") %>% 
+  st_as_sf()
+
+
+RdAmGn <- c('#D95F02', '#E6AB02', '#1B9E77') 
+
+map_case_trend_30d <- ggplot(sf_case_trend_30d) + 
+  geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
+  scale_fill_manual(
+    name = NULL, 
+    values = RdAmGn, 
+    drop = FALSE, 
+    guide = guide_legend(
+      keyheight = unit(3, units = "mm"),
+      keywidth = unit(70 / length(labels_inc), units = "mm"),
+      title.hjust = 0.5,
+      nrow = 1,
+      label.position = "bottom",
+      title.position = 'top')) + 
+  coord_sf(
+    xlim = c(-25, 60), 
+    ylim = c(-35, 40), 
+    expand = FALSE) + 
+  labs(title = 'Last 30 days') + 
+  theme_light() +
+  theme(plot.title = element_text(hjust = 0.5), 
+        axis.text.x = element_blank(), 
+        axis.text.y = element_blank(), 
+        legend.position = "bottom")
+
+
+map_case_trend_14d <- ggplot(sf_case_trend_14d) + 
+  geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
+  scale_fill_manual(
+    name = NULL, 
+    values = RdAmGn, 
+    drop = FALSE, 
+    guide = guide_legend(
+      keyheight = unit(3, units = "mm"),
+      keywidth = unit(70 / length(labels_inc), units = "mm"),
+      title.hjust = 0.5,
+      nrow = 1,
+      label.position = "bottom",
+      title.position = 'top')) + 
+  coord_sf(
+    xlim = c(-25, 60), 
+    ylim = c(-35, 40), 
+    expand = FALSE) + 
+  labs(title = 'Last 12 days') + 
+  theme_light() +
+  theme(plot.title = element_text(hjust = 0.5), 
+        axis.text.x = element_blank(), 
+        axis.text.y = element_blank(), 
+        legend.position = "bottom")
+
+
+
+## Combine maps
+map_cases_trends <- map_case_trend_30d + 
+  map_case_trend_14d + 
+  plot_layout(ncol = 2, guides = 'collect') & theme(legend.position = 'bottom')
+
+map_cases_trends
+
+ggsave(file.path(path.local.deepdive.Africa, paste0('map_cases_trends', '_', week_report, '.png')), 
+       plot = map_cases_trends, 
+       scale = 1, 
+       dpi = 320)
+```
+
+## Epidemic curves
+
+```{r}
+iso_a3_increasing <- tbl_coeff_cases_30d %>% 
+  filter(trend == 'Increasing') %>% 
+  pull(iso_a3)
+
+dta_ecdc_increasing <- dta_ecdc %>% 
+  filter(iso_a3 %in% iso_a3_increasing)
+
+
+epicurves <- ggplot(dta_ecdc_increasing, aes(x = date, y = cases)) + 
+    facet_wrap(~country, scales = "free_y", ncol = 4) + 
+    geom_col(fill = '#1A62A3') + 
+    scale_x_date(breaks = '2 months', date_labels = "%b-%Y") +
+    xlab('') + 
+    ylab('frequency') + 
+    theme_light() + 
+    theme(legend.position = "none", 
+          axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), 
+          strip.text = element_text(size = 11))
+
+epicurves
+
+ggsave(file.path(path.local.deepdive.Africa, paste0('epicurves', '_', week_report, '.png')), 
+       plot = epicurves, 
+       height = 9,
+       width = 12,
+       scale = 0.8)
+```
+
+
+```{r}
+
+tbl_preds_cases_30d <- lapply(lst_mdl_cases_30d, function (x) x[['preds']]) %>% 
+  tibble::enframe(name = "iso_a3") %>% 
+  unnest(cols = c(value)) %>% 
+  left_join(df_countries) %>% 
+  filter(iso_a3 %in% iso_a3_increasing)
+
+preds <- ggplot(tbl_preds_cases_30d, aes(x = date, y = cnt)) + 
+    facet_wrap(~ country, scales = "free_y", ncol = 4) + 
+    geom_point(colour = '#1A62A3', size = 2) + 
+    geom_ribbon(aes(ymin = lwr, ymax = upr), fill = '#1A62A3', alpha = 0.4) + 
+    geom_line(aes(y = fit), colour = '#1A62A3', size = 1) + 
+    scale_x_date(date_labels = "%d-%b") +
+    xlab('') + 
+    ylab(paste0('frequency and fitted values')) + 
+    theme_light() + 
+    theme(legend.position = "none", 
+          axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1), 
+          strip.text = element_text(size = 11))
+
+preds
+
+ggsave(file.path(path.local.deepdive.Africa, paste0('preds', '_', week_report, '.png')), 
+       plot = preds, 
+       height = 9,
+       width = 12,
+       scale = 0.8)
+
+```
+
+```{r, eval = FALSE}
+# To plot both cases and deaths into a single graphic plot
+country_six_plots2 <- function(dta_all, dta_long, dta_short, date_max) {
+    
+  # Parameters
+  main_colour  <- c(cases = '#1A62A3', deaths = '#e10000')
+  date_min     <- dta_all %>% filter(cnt != 0) %>% pull(date) %>% min()
+
+  
+  # Plots
+  plot_all <- ggplot(dta_all, aes(x = date, y = cnt)) + 
+    facet_wrap(~obs, scales = "free_y", ncol = 1) + 
+    geom_col(aes(colour = obs, fill = obs)) + 
+    scale_colour_manual(values = main_colour) + 
+    scale_fill_manual(values = main_colour) + 
+    scale_x_date(limits = c(date_min, NA), breaks = '2 months', date_labels = "%b-%Y") +
+    xlab('') + 
+    ylab('frequency') + 
+    labs(subtitle = 'Since the first cases reported') + 
+    theme_light() + 
+    theme(legend.position = "none", 
+          strip.text = element_text(size = 11))
+  
+  plot_long <- ggplot(dta_long, aes(x = date, y = cnt)) + 
+    facet_wrap(~ obs, scales = "free_y", ncol = 1) + 
+    geom_point(aes(colour = obs), size = 2) + 
+    scale_colour_manual(values = main_colour) + 
+    geom_ribbon(aes(ymin = lwr, ymax = upr, fill = obs), alpha = 0.4) + 
+    geom_line(aes(y = fit, colour = obs), size = 1) + 
+    scale_fill_manual(values = main_colour) + 
+    scale_x_date(limits = c(min(dta_long$date), max(dta_long$date)), date_labels = "%d-%b") +
+    xlab('') + 
+    ylab(paste0('frequency and fitted values')) + 
+    labs(subtitle = paste('Last', (max(dta_long$date) - min(dta_long$date) + 1), 'days')) + 
+    theme_light() + 
+    theme_light() + 
+    theme(legend.position = "none", 
+          strip.text = element_text(size = 11))
+  
+  plot_short <- ggplot(dta_short, aes(x = date, y = cnt)) + 
+    facet_wrap(~ obs, scales = "free_y", ncol = 1) + 
+    geom_point(aes(colour = obs), size = 2) + 
+    scale_colour_manual(values = main_colour) + 
+    geom_ribbon(aes(ymin = lwr, ymax = upr, fill = obs), alpha = 0.4) + 
+    geom_line(aes(y = fit, colour = obs), size = 1) + 
+    scale_fill_manual(values = main_colour) + 
+    scale_x_date(limits = c(min(dta_short$date), max(dta_short$date)), breaks = '4 days', date_labels = "%d-%b") +
+    xlab('') + 
+    ylab(paste0('frequency and fitted values')) + 
+    labs(subtitle = paste('Last', (max(dta_short$date) - min(dta_short$date) + 1), 'days')) + 
+    theme_light() + 
+    theme_light() + 
+    theme(legend.position = "none", 
+          strip.text = element_text(size = 11))
+  
+  
+  # Arrange plots
+  multiplot <- ggarrange(plot_all, 
+                         plot_long, 
+                         plot_short, 
+                         ncol = 3, 
+                         widths = c(2, 1.4, 1.1))
+  
+  return(multiplot)
+}
+```
