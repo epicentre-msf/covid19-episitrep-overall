@@ -19,9 +19,11 @@ date: "`r format(Sys.Date(), '%d %B %Y')`"
 output:
   rmdformats::readthedown:
     highlight: "tango"
+    css: styles_blues.css
     lightbox: TRUE
     gallery: TRUE
     use_bookdown: TRUE
+    toc_depth: 3
 editor_options:
   chunk_output_type: console
 ---
