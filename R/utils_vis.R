@@ -855,6 +855,12 @@ fct_plot_1 <- function(data,
                        country_project = "",
                        path_save = "") {
   
+  status_levels <- c("Confirmed", "Probable", "Suspected", "Not a case", 
+                     "Not a suspect", "Unknown")
+  status_levels_cols <- c("#4E79A7", "#A0CBE8", "#F28E2B", "#FFBE7D", "#59A14F",
+                          "#8CD17D")
+  
+  
   # Get the country the project is in.
   # country <- data %>% select(country) %>% unique() %>% pull()
   
@@ -879,7 +885,9 @@ fct_plot_1 <- function(data,
     
     scale_y_continuous(name = "Patients", expand = expansion(mult = c(0, 0.02))) +
     
-    ggthemes::scale_fill_tableau(name = "Status", palette = "Tableau 20") +
+    scale_fill_manual(name = "Status", 
+                      breaks = status_levels,
+                      values = status_levels_cols) +
     theme_light() +
     theme(legend.position = 'top',
           panel.grid.major.x = element_blank(),
