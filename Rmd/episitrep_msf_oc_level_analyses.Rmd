@@ -1654,7 +1654,7 @@ cfr_confirmed_probable_suspected <- dta_linelist %>%
 
 # Covid-19 confirmed patients
 
-### Weekly number of confirmed patients consulted/admitted
+## Weekly number of confirmed patients consulted/admitted
 
 ```{r, eval = FALSE}
 
@@ -1714,7 +1714,7 @@ ggsave(file.path(path.local.msf.graphs.oc, paste0('hist_epicurve_consult_admit_c
 hist_epicurve_consult_admit_confirmed_continent
 ```
 
-### Age and sex distribution of Covid confirmed patients
+## Age and sex distribution of Covid confirmed patients
 
 ```{r gtbl-age-distribution-by-sex-confirmed-only}
 
@@ -1786,7 +1786,7 @@ pyramid_age_sex_confirmed
 
 ```
 
-### Age and sex distribution of Covid confirmed patients by continent
+## Age and sex distribution of Covid confirmed patients by continent
 
 <!-- Age/sex pyramid by continent -->
 
@@ -1821,7 +1821,7 @@ ggsave(file.path(path.local.msf.graphs.oc, paste0('pyramid_age_sex_confirmed_con
 pyramid_age_sex_confirmed_continent
 ```
 
-### Patients care
+## Patients care
 
 <!--
 Table Patient’s care 1
@@ -1916,7 +1916,7 @@ gtbl_care %>%
     title = "Major care procedures to Covid confirmed patient's in MSF heatlth facilities, by location")
 ```
 
-### Age and sex of patients by outcome
+## Age and sex of patients by outcome
 
 ```{r tbl-age-sex-outcome}
 # DONE by Francesco
@@ -1985,7 +1985,7 @@ gtbl_age_sex_outcome %>%
     title = 'Age and sex ditribution by type of patient outcome among confirmed, probable and suspected Covid cases')
 ```
 
-### Case fatality by age, sex and number of comorbidities
+## Case fatality by age, sex and number of comorbidities
 
 <!-- CFR by age, sex and number of comorbidities -->
 
@@ -2234,7 +2234,7 @@ gtbl_outcome_admission %>%
 ```
 
 
-### Case fatality by level of care received
+## Case fatality by level of care received
 
 ```{r tbl-cfr-status-hospi-icu-oxy-venti}
 dta_cfr_status_hospi_icu <- dta_linelist %>%
@@ -2383,7 +2383,7 @@ gtbl_cfr_status_hospi_icu_oxy_venti %>%
     title = 'Case fatality risk by status, admission and ICU ')
 ```
 
-### Case fatality by type of comorbidity
+## Case fatality by type of comorbidity
 
 <!-- CFR by type of comorbidity among confirmed patients -->
 
@@ -2503,8 +2503,8 @@ df_MSF_severity <- dta_linelist %>%
   group_by(age_group) %>%
   summarize(
     n = n(),
-    n_hosp = sum(patcourse_admit == "Yes", na.rm = TRUE),
-    n_hosp_known = sum(patcourse_admit %in% c("Yes", "No"), na.rm = TRUE),
+    n_hosp = sum(merge_admit == "Yes", na.rm = TRUE),
+    n_hosp_known = sum(merge_admit %in% c("Yes", "No"), na.rm = TRUE),
     p_hosp = n_hosp / n_hosp_known,
     p_hosp_low95 = as.numeric(binom.test(n_hosp, n_hosp_known)$conf.int)[1],
     p_hosp_upp95 = as.numeric(binom.test(n_hosp, n_hosp_known)$conf.int)[2],
@@ -2545,9 +2545,9 @@ dots_cfr_agegroup
 
 ---
 
-# Indicators overtime among Covid19 confirmed cases
+# Indicators over time among Covid19 confirmed cases
 
-### Weekly case fatality risk
+## Weekly case fatality risk
 
 <!--
 **With all confirmed cases as denominator: time-series and trends plot** with week as time unit of the following indicator:
@@ -2684,7 +2684,7 @@ ggsave(file.path(path.local.msf.graphs.oc, paste0('line_cfr_week_continent', '_'
 line_cfr_week_continent
 ```
 
-### Delay from onset of symptpoms to consultation/admission
+## Delay from onset of symptpoms to consultation/admission
 
 ```{r boxplot-delay-admission-week, fig.cap = 'Evolution overtime of the delay to admission among Covid confirmed patients consulted/admitted to an MSF supported health facility'}
 # DONE by Paul
@@ -2715,7 +2715,7 @@ boxplot_delay_before_consultation
 
 ```
 
-### Length of stay in hospital
+## Length of stay in hospital
 
 ```{r boxplot-length-stay-week, fig.cap = 'Evolution overtime of of length of stay among Covid confirmed, probable and suspected patients in an MSF supported health facility'}
 # DONE by Paul
@@ -2848,9 +2848,6 @@ gtbl_non_cases_diagt %>%
     title = 'Frequency of main diagnoses among non confirmed patients who attended an MSF Covid facility'
   )
 ```
-
-
-
 
 
 
@@ -3638,7 +3635,7 @@ gtble15 %>%
 
 ## Comorbidities
 
-```{r fig-comorb, fig.width=8, fig.height=8, , fig.cap = "comorbidities of hospitalized patients per project"}
+```{r fig-comorb, fig.width=8, fig.height=8, fig.cap = "comorbidities of hospitalized patients per project"}
 fig7 <- dta_linelist_project %>%
   filter(merge_admit == "Yes") %>%
   mutate(project = paste(country, project, sep = " - ")) %>%
@@ -4085,7 +4082,6 @@ gtble17 %>%
 
 
 ## Intervention received
-
 ### ICU
 
 ```{r tbl-icu}
@@ -4778,12 +4774,13 @@ a <- left_join(tbl_plot1,
 for(i in 1:nrow(a)){
   
   cat('\n')
-  cat('\n#', a[[i, "country_project"]], '\n')
+  cat('\n###', a[[i, "country_project"]], '\n')
   
   print_plot(a[[i, "plot1"]][[1]])
   print_plot(a[[i, "plot2"]][[1]])
   print_plot(a[[i, "plot3"]][[1]])
 
+  cat('\n')
   cat('\n')
   cat('\n')
 }
