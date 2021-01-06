@@ -4768,7 +4768,7 @@ a <- left_join(tbl_plot1,
 ```
 
 
-```{r echo=FALSE, message=FALSE, results ='asis'}
+```{r echo=FALSE, message=FALSE, results ='asis', fig.width=5, fig.height=4}
 
 
 for(i in 1:nrow(a)){
