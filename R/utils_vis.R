@@ -176,6 +176,7 @@ plot_map_world_count <- function(tbl_dta, series){
   
   plot_map <- ggplot(sf_dta) + 
     geom_sf(aes(fill = brks), size = .1) + 
+    coord_sf(datum = NA) +
     scale_fill_brewer(
       name = legend_title, palette = plot_palette, 
       drop = FALSE, 
@@ -225,6 +226,7 @@ plot_map_world_trend <- function(tbl_dta, series, model_for_trends = 'linear', p
   
   plot_map <- ggplot(sf_dta) + 
     geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
+    coord_sf(datum = NA) +
     scale_fill_manual(
       name = legend_title, 
       values = plot_palette, 

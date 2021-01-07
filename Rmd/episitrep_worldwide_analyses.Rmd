@@ -70,20 +70,20 @@ subtitle: "Data as of week `r glue::glue("{format(date_max_report, '%V')}, endin
 # === === === === === === === 
 
 # Get ECDC data either from the web or from the saved RDS file
-#dta_ecdc <- covidutils::get_ecdc_data() %>% 
+#dta_jhu <- covidutils::get_ecdc_data() %>% 
 #  prepare_ecdc_data()
 
-dta_ecdc <- readRDS(file.path(path.local.worldwide.data, 'dta_ECDC.RDS'))
+dta_jhu <- get_owid_jhcsse()
 
-saveRDS(dta_ecdc, file.path(path.local.worldwide.data, 'dta_ECDC.RDS'))
+saveRDS(dta_jhu, file.path(path.local.worldwide.data, 'dta_jhu.RDS'))
 
 # ECDC data right censored until date_max
-dta_ecdc_right_censored <- dta_ecdc %>% 
+dta_jhu_right_censored <- dta_jhu %>% 
   tidyr::drop_na(iso_a3) %>% 
   filter(between(date, left = NULL, right = date_max_report))
 
 # ECDC split data in a list of countries with iso_a3 as key
-lst_dta_ecdc <- dta_ecdc_right_censored %>% 
+lst_dta_jhu <- dta_jhu_right_censored %>% 
   multisplit("iso_a3")
 
 
@@ -142,7 +142,7 @@ for (i in names(lst_tests)) {
 
 ```{r get-trends}
 
-trend_models <- get_trend_models(periods_trend = c(12, 30), force = TRUE)
+trend_models <- get_trend_models(lst_jhu = lst_dta_jhu, periods_trend = c(12, 30), force = TRUE)
 
 model_cnt_cases_linear_short <- trend_models$model_cnt_cases_linear_short
 model_cnt_cases_linear_long  <- trend_models$model_cnt_cases_linear_long
@@ -183,14 +183,14 @@ labels_deaths <- label_breaks(breaks_deaths) %>% gsub("\\<0-1\\>", "0", .)
 # --- --- --- --- --- 
 
 # Summary table of total cases
-tbl_case_count <- dta_ecdc_right_censored %>% 
+tbl_case_count <- dta_jhu_right_censored %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(cases = sum(cases, na.rm = TRUE)) %>% 
   mutate(brks = cut(cases, breaks_cases, labels = labels_cases, include.lowest = TRUE, right = FALSE)) %>% 
   ungroup()
 
 # Summary table of cases in the last 30 days 
-tbl_case_count_30d <- dta_ecdc_right_censored %>% 
+tbl_case_count_30d <- dta_jhu_right_censored %>% 
   filter(between(date, left = date_max_report-29, right = date_max_report)) %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(cases = sum(cases, na.rm = TRUE)) %>% 
@@ -198,7 +198,7 @@ tbl_case_count_30d <- dta_ecdc_right_censored %>%
   ungroup()
 
 # Summary table of cases in the last 12 days 
-tbl_case_count_12d <- dta_ecdc_right_censored %>% 
+tbl_case_count_12d <- dta_jhu_right_censored %>% 
   filter(between(date, left = date_max_report-11, right = date_max_report)) %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(cases = sum(cases, na.rm = TRUE)) %>% 
@@ -210,14 +210,14 @@ tbl_case_count_12d <- dta_ecdc_right_censored %>%
 # --- --- --- --- --- 
 
 # Summary table of total deaths
-tbl_death_count <- dta_ecdc_right_censored %>% 
+tbl_death_count <- dta_jhu_right_censored %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(deaths = sum(deaths, na.rm = TRUE)) %>% 
   mutate(brks = cut(deaths, breaks_deaths, labels = labels_deaths, include.lowest = TRUE, right = FALSE)) %>% 
   ungroup()
 
 # Summary table of deaths in the last 30 days 
-tbl_death_count_30d <- dta_ecdc_right_censored %>% 
+tbl_death_count_30d <- dta_jhu_right_censored %>% 
   filter(between(date, left = date_max_report-29, right = date_max_report)) %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(deaths = sum(deaths, na.rm = TRUE)) %>% 
@@ -225,7 +225,7 @@ tbl_death_count_30d <- dta_ecdc_right_censored %>%
   ungroup()
 
 # Summary table of deaths in the last 12 days 
-tbl_death_count_12d <- dta_ecdc_right_censored %>% 
+tbl_death_count_12d <- dta_jhu_right_censored %>% 
   filter(between(date, left = date_max_report-11, right = date_max_report)) %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(deaths = sum(deaths, na.rm = TRUE)) %>% 
@@ -251,7 +251,7 @@ The R scripts are available at the following Github repository https://github.co
 
 This document uses the following data sources: 
 
-  - [ECDC data](https://opendata.ecdc.europa.eu/covid19/casedistribution/csv) last updated `r format(max(dta_ecdc$date, na.rm = TRUE), "%d %b %Y")`.   
+  - [ECDC data](https://opendata.ecdc.europa.eu/covid19/casedistribution/csv) last updated `r format(max(dta_jhu$date, na.rm = TRUE), "%d %b %Y")`.   
   -	FIND [SARS-COV-2 Test Tracker](https://www.finddx.org/covid-19/test-tracker/) for data on Covid-19 tests
 
 Definitions of increasing, declining and stable trends and the definition of doubling time, as well as detailed information on the analysis methods, can be found [here](https://reports.msf.net/secure/app_direct/covid19-additional-analysis/analysis_methods_2020-08-20.html).
@@ -280,7 +280,7 @@ Reports of previous weeks are available [here](https://reports.msf.net/secure/ap
 
 
 <!-- Map World cases -->
-```{r map-world-cases-count, fig.cap = glue('Mapping of number of Covid-19 cases as of {format(max(dta_ecdc$date, na.rm = TRUE), "%d %B %Y")}')}
+```{r map-world-cases-count, fig.cap = glue('Mapping of number of Covid-19 cases as of {format(max(dta_jhu$date, na.rm = TRUE), "%d %B %Y")}')}
 
 map_world_case_count <- plot_map_world_count(tbl_case_count, 'cases')
 
@@ -943,6 +943,7 @@ sf_inc_prop <- tbl_inc_prop %>%
 
 map_world_case_attack_rates <- ggplot(sf_inc_prop) + 
   geom_sf(aes(fill = cases_brks), size = .1) + 
+  coord_sf(datum = NA) +
   scale_fill_brewer(
     name = "Incidence proportion of cases / 100,000 population", palette = "Blues", 
     drop = FALSE, 
@@ -977,6 +978,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_case_attack_rate
 
 map_world_death_attack_rates <- ggplot(sf_inc_prop) + 
   geom_sf(aes(fill = deaths_brks), size = .1) + 
+  coord_sf(datum = NA) +
   scale_fill_brewer(
     name = "Incidence proportion of deaths / 100,000 population", palette = "Reds", 
     drop = FALSE, 
@@ -1142,7 +1144,7 @@ scatter_plot_inc_Europe
 # New graph as requested by Fran
 # to see how to display
 
-tbl_inc_prop_30d <- dta_ecdc %>% 
+tbl_inc_prop_30d <- dta_jhu %>% 
   group_by(iso_a3, country, continent, region) %>% 
   arrange(date) %>% 
   filter(between(date, left = date_max_report - 29, right = date_max_report)) %>% 
@@ -1363,6 +1365,7 @@ RdYl <- c('#993404','#D95F0E','#FE9929','#FED98E','#FFFFD4')
 
 map_world_doubling_cases <- ggplot(sf_doubling_cases) + 
   geom_sf(aes(fill = brks), size = .1) + 
+  coord_sf(datum = NA) +
   scale_fill_manual(
     name = "Doubling time (days)", 
     values = RdYl, 
@@ -1429,6 +1432,7 @@ sf_doubling_deaths <- df_doubling_deaths %>%
 # plot the map
 map_world_doubling_deaths <- ggplot(sf_doubling_deaths) + 
   geom_sf(aes(fill = brks), size = .1) + 
+  coord_sf(datum = NA) +
   scale_fill_manual(
     name = "Doubling time (days)", 
     values = RdYl, 
