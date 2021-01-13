@@ -17,7 +17,7 @@ week_report     <- dates_and_week[[3]]
 
 
 # --- Download geo data if not already present locally
-get_geo_data(path = path.local.data, force = TRUE)
+get_geo_data(path = path.local.data, force = FALSE)
 
 
 # === === === === === === === === 

@@ -32,7 +32,7 @@ source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
 
 
 date_min <- NULL
-date_max <- as.Date('2020-12-06')
+date_max <- as.Date('2021-01-03')
 week_report <- ISOweek::ISOweek(date_max) %>% gsub("W","w", .)
 
 set_paths(path.local, week_report)
@@ -44,15 +44,13 @@ dir.create(path.local.deepdive.Africa, showWarnings = FALSE, recursive = TRUE)
 
 ```{r upload-data, include = FALSE}
 
-dta <- get_ecdc_data() %>% 
-  prepare_ecdc_data() %>% 
+dta <- get_owid_jhcsse() %>% 
   tidyr::drop_na(iso_a3) %>% 
   filter(between(date, left = NULL, right = date_max))
 
 
 ## --- ECDC Covid data
-dta_ecdc <- get_ecdc_data() %>% 
-  prepare_ecdc_data() %>% 
+dta_ecdc <- get_owid_jhcsse() %>% 
   tidyr::drop_na(iso_a3) %>% 
   filter(between(date, left = NULL, right = date_max) & (continent == 'Africa'))
 
@@ -146,7 +144,7 @@ tbl_deaths_prop_2w <- dta_ecdc %>%
 ```
 
 
-Data source: [ECDC data](https://opendata.ecdc.europa.eu/covid19/casedistribution/csv) updated until `r format(date_max, '%d %B %Y')`
+Data source: [JHU CSSE data](https://github.com/owid/covid-19-data/tree/master/public/data) updated until `r format(date_max, '%d %B %Y')`
 
 **How to read the treemaps**
 
@@ -676,7 +674,8 @@ map_case_inc <- ggplot(sf_case_inc) +
   coord_sf(
     xlim = c(-25, 60), 
     ylim = c(-35, 40), 
-    expand = FALSE) + 
+    expand = FALSE,
+    datum = NA) + 
   labs(title = 'Overall') + 
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5), 
@@ -716,7 +715,8 @@ map_case_inc_2weeks <- ggplot(sf_case_inc_2weeks) +
   coord_sf(
     xlim = c(-25, 60), 
     ylim = c(-35, 40), 
-    expand = FALSE) + 
+    expand = FALSE,
+    datum = NA) + 
   labs(title = 'Last 14 days') + 
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5), 
@@ -974,7 +974,8 @@ map_case_trend_30d <- ggplot(sf_case_trend_30d) +
   coord_sf(
     xlim = c(-25, 60), 
     ylim = c(-35, 40), 
-    expand = FALSE) + 
+    expand = FALSE,
+    datum = NA) + 
   labs(title = 'Last 30 days') + 
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5), 
@@ -999,13 +1000,15 @@ map_case_trend_14d <- ggplot(sf_case_trend_14d) +
   coord_sf(
     xlim = c(-25, 60), 
     ylim = c(-35, 40), 
-    expand = FALSE) + 
+    expand = FALSE, 
+    datum = NA) + 
   labs(title = 'Last 12 days') + 
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5), 
         axis.text.x = element_blank(), 
         axis.text.y = element_blank(), 
-        legend.position = "bottom")
+        legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0, "pt"))
 
 
 

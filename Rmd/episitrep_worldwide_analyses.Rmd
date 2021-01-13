@@ -54,7 +54,7 @@ week_report     <- dates_and_week[[3]]
 
 # Default parameters for graphics
 palette_RdAmGn <- c('#D95F02', '#E6AB02', '#1B9E77') # Three-colours palette (Red-Amber-Green) colour-blind safe
-caption_world_map <- paste0('Analysis and graphic by Epicentre | Data source: ECDC as of ', format(date_max_report, '%d %b %Y'))
+caption_world_map <- paste0('Analysis and graphic by Epicentre | Data source: JHU CSSE as of ', format(date_max_report, '%d %b %Y'))
 
 ```
 
@@ -142,7 +142,7 @@ for (i in names(lst_tests)) {
 
 ```{r get-trends}
 
-trend_models <- get_trend_models(lst_jhu = lst_dta_jhu, periods_trend = c(12, 30), force = TRUE)
+trend_models <- get_trend_models(lst_jhu = lst_dta_jhu, periods_trend = c(12, 30), force = FALSE)
 
 model_cnt_cases_linear_short <- trend_models$model_cnt_cases_linear_short
 model_cnt_cases_linear_long  <- trend_models$model_cnt_cases_linear_long
@@ -944,6 +944,8 @@ sf_inc_prop <- tbl_inc_prop %>%
 map_world_case_attack_rates <- ggplot(sf_inc_prop) + 
   geom_sf(aes(fill = cases_brks), size = .1) + 
   coord_sf(datum = NA) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
   scale_fill_brewer(
     name = "Incidence proportion of cases / 100,000 population", palette = "Blues", 
     drop = FALSE, 
@@ -957,7 +959,8 @@ map_world_case_attack_rates <- ggplot(sf_inc_prop) +
   labs(caption = caption_world_map) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5), 
-        legend.position = "bottom")
+        legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0, "pt"))
 
 map_world_case_attack_rates 
 
@@ -979,6 +982,8 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_case_attack_rate
 map_world_death_attack_rates <- ggplot(sf_inc_prop) + 
   geom_sf(aes(fill = deaths_brks), size = .1) + 
   coord_sf(datum = NA) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
   scale_fill_brewer(
     name = "Incidence proportion of deaths / 100,000 population", palette = "Reds", 
     drop = FALSE, 
@@ -992,7 +997,8 @@ map_world_death_attack_rates <- ggplot(sf_inc_prop) +
   labs(caption = caption_world_map) +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5), 
-        legend.position = "bottom")
+        legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0, "pt"))
 
 map_world_death_attack_rates 
 
@@ -1366,6 +1372,8 @@ RdYl <- c('#993404','#D95F0E','#FE9929','#FED98E','#FFFFD4')
 map_world_doubling_cases <- ggplot(sf_doubling_cases) + 
   geom_sf(aes(fill = brks), size = .1) + 
   coord_sf(datum = NA) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
   scale_fill_manual(
     name = "Doubling time (days)", 
     values = RdYl, 
@@ -1379,7 +1387,8 @@ map_world_doubling_cases <- ggplot(sf_doubling_cases) +
       title.position = 'top')) +
   labs(title = 'Doubling time of cases', caption = caption_world_map) +
   theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0, "pt"))
 
 map_world_doubling_cases + labs(title = NULL) 
 
@@ -1433,6 +1442,8 @@ sf_doubling_deaths <- df_doubling_deaths %>%
 map_world_doubling_deaths <- ggplot(sf_doubling_deaths) + 
   geom_sf(aes(fill = brks), size = .1) + 
   coord_sf(datum = NA) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
   scale_fill_manual(
     name = "Doubling time (days)", 
     values = RdYl, 
@@ -1446,7 +1457,8 @@ map_world_doubling_deaths <- ggplot(sf_doubling_deaths) +
       title.position = 'top')) +
   labs(title = 'Doubling time of deaths', caption = caption_world_map) +
   theme_minimal() +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom",
+        plot.margin = margin(0, 0, 0, 0, "pt"))
 
 map_world_doubling_deaths
 
