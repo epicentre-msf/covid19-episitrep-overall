@@ -361,7 +361,7 @@ ts_coeff <- function(series, lst_dta, time_unit_extent = 5, ma_window = 3, min_s
   for (j in names(lst_dta)) {
     
     dta <- lst_dta[[j]] %>% 
-      select(date, continent, region, country, country_ecdc, iso_a3, series) %>% 
+      select(date, continent, region, country, iso_a3, series) %>% 
       tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
                                       max(date, na.rm = TRUE), by = 1), 
                       fill = list(series = NA_real_))
@@ -418,7 +418,7 @@ ts_coeff <- function(series, lst_dta, time_unit_extent = 5, ma_window = 3, min_s
 
 
 
-get_trend_models <- function(lst_ecdc = lst_dta_ecdc, date_max = date_max_report, periods_trends = c(12, 30), local_path = path.local.worldwide.data, file_name = 'trends_models.RDS', last_update = last_update_dta_ecdc, force = FALSE) {
+get_trend_models <- function(lst_jhu = lst_dta_jhu, date_max = date_max_report, periods_trends = c(12, 30), local_path = path.local.worldwide.data, file_name = 'trends_models.RDS', last_update = last_update_dta_jhu, force = FALSE) {
   
   make_new_models <- ifelse(!file.exists(file.path(local_path, file_name)) | force, TRUE, FALSE)
   
@@ -428,13 +428,13 @@ get_trend_models <- function(lst_ecdc = lst_dta_ecdc, date_max = date_max_report
     # <!-- Modelling Cases Trends -->
     
     model_cnt_cases_linear_short  <- linear_model_cnt(series = 'cases', 
-                                                      lst_dta = lst_ecdc, 
+                                                      lst_dta = lst_jhu, 
                                                       last_date = date_max, 
                                                       time_unit_extent = periods_trends[1], 
                                                       min_sum = 30)
     
     model_cnt_cases_linear_long   <- linear_model_cnt(series = 'cases', 
-                                                      lst_dta = lst_ecdc, 
+                                                      lst_dta = lst_jhu, 
                                                       last_date = date_max, 
                                                       time_unit_extent = periods_trends[2], 
                                                       min_sum = 30)
@@ -442,26 +442,26 @@ get_trend_models <- function(lst_ecdc = lst_dta_ecdc, date_max = date_max_report
     # <!-- Modelling Deaths Trends -->
     
     model_cnt_deaths_linear_short  <- linear_model_cnt(series = 'deaths', 
-                                                       lst_dta = lst_ecdc, 
+                                                       lst_dta = lst_jhu, 
                                                        last_date = date_max, 
                                                        time_unit_extent = periods_trends[1], 
                                                        min_sum = 30)
     
     model_cnt_deaths_linear_long   <- linear_model_cnt(series = 'deaths', 
-                                                       lst_dta = lst_ecdc, 
+                                                       lst_dta = lst_jhu, 
                                                        last_date = date_max, 
                                                        time_unit_extent = periods_trends[2], 
                                                        min_sum = 30)
     
 
     lst_coeffs_cases <- ts_coeff(series = 'cases', 
-                                 lst_dta = lst_dta_ecdc, 
+                                 lst_dta = lst_dta_jhu, 
                                  time_unit_extent = 5, 
                                  ma_window = 3, 
                                  min_sum = 30)
     
     lst_coeffs_deaths <- ts_coeff(series = 'deaths', 
-                                  lst_dta = lst_dta_ecdc, 
+                                  lst_dta = lst_dta_jhu, 
                                   time_unit_extent = 5, 
                                   ma_window = 3, 
                                   min_sum = 30)

@@ -19,7 +19,7 @@ week_report     <- dates_and_week[[3]]
 
 
 # Get ECDC data either from the web or from the saved RDS file
-rds_ecdc <- readRDS(file.path(path.local.worldwide.data, 'dta_ECDC.RDS'))
+rds_ecdc <- readRDS(file.path(path.local.worldwide.data, 'dta_jhu.RDS'))
 
 lst_dta_ecdc <- rds_ecdc %>% 
   tidyr::drop_na(iso_a3) %>% 
@@ -52,10 +52,11 @@ path.local.worldwide.graphs.country_trends <- file.path(path.local.worldwide.gra
 dir.create(path.local.worldwide.graphs.country_trends, showWarnings = FALSE, recursive = TRUE) 
 
 # To filter which countries to plot 
-country_list <- df_countries
+country_list <- df_countries %>% filter(iso_a3 != "HKG")
 
 # Loop of plots
 for (i in country_list$iso_a3){
+  print(i)
   name_country <- country_list %>% filter(iso_a3 == i) %>% pull(country) %>% gsub(" ", "_", .)
   plots <- country_six_plots(country_iso = i)
   ggsave(file.path(path.local.worldwide.graphs.country_trends, glue("trends_{name_country}_{week_report}.png")), 
@@ -76,7 +77,7 @@ path.local.worldwide.graphs.country_growth_rates <- file.path(path.local.worldwi
 dir.create(path.local.worldwide.graphs.country_growth_rates, showWarnings = FALSE, recursive = TRUE) 
 
 # To filter which countries to plot 
-country_list <- df_countries
+country_list <- df_countries %>% filter(iso_a3 != "HKG")
 
 
 for (i in country_list$iso_a3){
@@ -105,7 +106,7 @@ dir.create(path.local.worldwide.graphs.country_case_fatality, showWarnings = FAL
 plot_cfr_ma <- function(dta){
   
   dta_cfr <- dta %>% 
-    select(date, continent, region, country, country_ecdc, iso_a3, cases, deaths) %>% 
+    select(date, continent, region, country, iso_a3, cases, deaths) %>% 
     tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
                                     max(date, na.rm = TRUE), by = 1), 
                     fill = list(cases = 0, deaths = 0)) %>% 

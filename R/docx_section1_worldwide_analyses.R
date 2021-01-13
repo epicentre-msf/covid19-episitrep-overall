@@ -25,9 +25,9 @@ my_doc <- add_end_section_continuous()
 # 1
 my_doc <- add_par_normal(
   sprintf("As of %s, %s Covid-19 cases and %s Covid-19 associated deaths were reported worldwide. The number of cases and deaths in the last %s days were %s and %s respectively.", 
-          format(max(dta_ecdc$date), "%d %B %Y"), 
-          format(sum(dta_ecdc$cases, na.rm = TRUE), big.mark = ","), 
-          format(sum(dta_ecdc$deaths, na.rm = TRUE), big.mark = ","), 
+          format(max(dta_jhu$date), "%d %B %Y"), 
+          format(sum(dta_jhu$cases, na.rm = TRUE), big.mark = ","), 
+          format(sum(dta_jhu$deaths, na.rm = TRUE), big.mark = ","), 
           period_trend, 
           n_cases_12d, 
           n_deaths_12d))

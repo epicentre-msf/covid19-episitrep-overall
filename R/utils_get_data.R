@@ -54,23 +54,37 @@ get_geo_data <- function(path_local, force = FALSE) {
   path_iso_a3        <- file.path(path_local, paste0('iso-a3_for_tests','.csv'))
   
   if (any(!file.exists(c(path_countries, path_pop_country, path_pop_region, path_pop_continent, path_iso_a3))) | force) {
-    df_ecdc <- covidutils::get_ecdc_data() %>% covidutils::prepare_ecdc_dta()
+    #df_ecdc <- covidutils::get_ecdc_data() %>% covidutils::prepare_ecdc_data()
     
-    df_countries     <- df_ecdc %>% filter(!is.na(iso_a3)) %>% distinct_at(vars(continent, region, iso_a3, country))
-    df_pop_country   <- df_ecdc %>% filter(!is.na(iso_a3)) %>% distinct_at(vars(iso_a3, country, pop = population_2019))
-    df_pop_region    <- df_ecdc %>% filter(!is.na(iso_a3)) %>% group_by(region)    %>% summarise(pop = sum(population_2019, na.rm = TRUE))
-    df_pop_continent <- df_ecdc %>% filter(!is.na(iso_a3)) %>% group_by(continent) %>% summarise(pop = sum(population_2019, na.rm = TRUE))
+    # use latest covid data file from our world in data github that has one row per country
+    # and includes population data
+    df_owid_raw <- read_csv("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/latest/owid-covid-latest.csv")
+    
+    df_owid <- df_owid_raw %>% 
+      dplyr::filter(!location %in% c("World")) %>%
+      dplyr::rename(iso_a3 = iso_code) %>% 
+      dplyr::mutate(
+        continent = countrycode::countrycode(iso_a3, origin = "iso3c", destination = "continent"),
+        region = countrycode::countrycode(iso_a3, origin = "iso3c", destination = "region23"),
+        continent = dplyr::case_when(location == "Kosovo" ~ "Europe", TRUE ~ continent),
+        region = dplyr::case_when(location == "Kosovo" ~ "Southern Europe", TRUE ~ region),
+        iso_a3 = dplyr::case_when(location == "Kosovo" ~ "XKX", TRUE ~ iso_a3)
+      ) %>% 
+      select(continent, region, iso_a3, country = location, population)
+    
+    df_countries     <- df_owid %>% filter(!is.na(iso_a3)) %>% distinct_at(vars(continent, region, iso_a3, country))
+    df_pop_country   <- df_owid %>% filter(!is.na(iso_a3)) %>% distinct_at(vars(iso_a3, country, pop = population))
+    df_pop_region    <- df_owid %>% filter(!is.na(iso_a3)) %>% group_by(region)    %>% summarise(pop = sum(population, na.rm = TRUE))
+    df_pop_continent <- df_owid %>% filter(!is.na(iso_a3)) %>% group_by(continent) %>% summarise(pop = sum(population, na.rm = TRUE))
     df_iso_a3 <- get_iso_for_tests()
     
     saveRDS(df_countries    , file = path_countries)
     saveRDS(df_pop_country  , file = path_pop_country)
     saveRDS(df_pop_region   , file = path_pop_region)
     saveRDS(df_pop_continent, file = path_pop_continent)
-    readr::write_csv(df_iso_a3, path = path_iso_a3)
+    readr::write_csv(df_iso_a3, file = path_iso_a3)
   }
 }
-
-
 
 #' Import ECDC dataset
 #get_ecdc_data <- function(local_path = path.local.worldwide.data, file_name = 'dta_ECDC.RDS', force = FALSE) {

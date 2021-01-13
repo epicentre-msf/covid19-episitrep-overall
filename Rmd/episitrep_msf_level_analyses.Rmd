@@ -98,8 +98,9 @@ dta_aggregated_expanded <- dta_weekly_aggregated %>%
     date = as.Date(date), 
     epi_week_consultation = make_epiweek_date(date) %>% as.Date(), 
     country = case_when(
-      country == 'Palestine' ~ 'Palestinian Territories', 
-      country == "Côte d'Ivoire" ~ 'Côte d’Ivoire', 
+      country == 'Palestine' ~ 'Palestine', 
+      country == "Côte d'Ivoire" ~ "Cote d'Ivoire", 
+      country == "Democratic Republic of the Congo" ~ "Democratic Republic of Congo",
       TRUE ~ country)) %>% 
   left_join(df_countries, by = 'country') %>% 
   pivot_longer(cols = c('confirmed', 'probable', 'suspected', 'non_cases', 'unknown'), names_to = 'covid_status') %>% 
@@ -301,7 +302,7 @@ hist_epicurve_status_continent <- tbl_epicurve_status_continent %>%
   facet_wrap(vars(continent), scales = 'free_y') +
   geom_col() +
   ggthemes::scale_fill_tableau(name = NULL, palette = "Tableau 20") +
-  scale_x_date(name = "Week of Consultation", date_breaks = "2 week", date_labels = "%V", expand = expansion(mult = c(0.01, 0.01)),
+  scale_x_date(name = "Week of Consultation", date_breaks = "3 weeks", date_labels = "%V", expand = expansion(mult = c(0.01, 0.01)),
                sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.))) + #labels = function(x) format(x, "%b-%Y")
   scale_y_continuous(name = "Patients", expand = expansion(mult = c(0, 0.02))) +
   labs(y = "Patients", caption = 'NOTE: free y axis scale among graphics') +
@@ -441,7 +442,7 @@ hist_epicurve_consult_admit_continent <- tbl_epicurve_consultation_continent %>%
             aes(y = admit_prop / scaling_factor, colour = "Admitted %"),
             key_glyph = 'timeseries', size = 0.5) +
   ggthemes::scale_fill_tableau(name = NULL, palette = "Tableau 20") +
-  scale_x_date(name = "Week of Consultation", date_breaks = "3 week", date_labels = "%V", 
+  scale_x_date(name = "Week of Consultation", date_breaks = "3 weeks", date_labels = "%V", 
                sec.axis = ggplot2::sec_axis(trans = ~ .), expand = expansion(mult = c(0.01, 0.01))) +
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1)),
                      expand = expansion(mult = c(0, 0.02))) +
@@ -1554,7 +1555,7 @@ hist_severity_by_continent <- tbl_severity_by_week %>%
   facet_wrap(vars(continent), scales = "free_y") + 
   geom_col() +
   scale_fill_manual(values = palette_Reds4U, name = "Degree of severity") +
-  scale_x_date(name = "Week of Consultation", date_breaks = "2 week", date_labels = "%V", expand = expansion(mult = c(0.01, 0.01)),
+  scale_x_date(name = "Week of Consultation", date_breaks = "3 weeks", date_labels = "%V", expand = expansion(mult = c(0.01, 0.01)),
                sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.))) + 
   scale_y_continuous(name = "Patients", expand = expansion(mult = c(0, 0.02))) +
   theme_light() + 
@@ -1871,7 +1872,7 @@ hist_epicurve_consult_admit_confirmed_continent <- tbl_epicurve_consultation_con
             aes(y = admit_prop / scaling_factor, colour = "Admitted %"),
             key_glyph = "timeseries", size = 0.5) +
   ggthemes::scale_fill_tableau(name = NULL, palette = "Tableau 20") +
-  scale_x_date(name = "Week of Consultation", date_breaks = "3 week", date_labels = "%V", 
+  scale_x_date(name = "Week of Consultation", date_breaks = "3 weeks", date_labels = "%V", 
                sec.axis = ggplot2::sec_axis(trans = ~ .), expand = expansion(mult = c(0.01, 0.01))) +
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1)),
                      expand = expansion(mult = c(0, 0.02))) +

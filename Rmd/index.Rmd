@@ -1,0 +1,47 @@
+---
+title: "COVID-19 Additional Analysis"
+output: distill::distill_article
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+# author:
+#   - name: Anaïs Broban 
+#     url: mailto:anais.BROBAN@epicentre.msf.org
+#     affiliation: Epicentre
+#     affiliation_url: https://epicentre.msf.org/
+#   - name: Francesco Grandesso
+#     url: mailto:francesco.GRANDESSO@epicentre.msf.org
+#     affiliation: Epicentre
+#     affiliation_url: https://epicentre.msf.org/
+#   - name: Paul Campbell
+#     url: mailto:paul.campbell@epicentre.msf.org
+#     affiliation: Epicentre
+#     affiliation_url: https://epicentre.msf.org/
+#   - name: Mathilde Mousset
+#     url: mailto:mathilde.mousset@epicentre.msf.org
+#     affiliation: Epicentre
+#     affiliation_url: https://epicentre.msf.org/
+# output: distill::distill_article
+```
+
+### **Epi Sitrep** (updated monthly)
+- [Latest](episitreps/latest.pdf)
+- [Archive](episitreps/archive/)
+
+### **Worldwide Overview** (updated weekly)
+- [Full Report](addtional_episitrep_outputs_worldwide/)
+- [Summary Table](tables_world_summary/)
+- [Analysis Methods](analysis_methods_2020-08-20.html)
+
+### **MSF Linelist Global Analysis** (updated weekly)
+- [Full Report](additional_episitrep_outputs_msf/)
+- [Sites Table](tables_msf_sites/)
+
+### **MSF Linelist OC Level Analysis** (updated weekly)
+- [OCA](additional_episitrep_outputs_oc/OCA/)
+- [OCB](additional_episitrep_outputs_oc/OCB/)
+- [OCBA](additional_episitrep_outputs_oc/OCBA/)
+- [OCG](additional_episitrep_outputs_oc/OCG/)
+- [OCP](additional_episitrep_outputs_oc/OCP/)

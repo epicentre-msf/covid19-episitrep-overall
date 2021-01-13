@@ -176,6 +176,9 @@ plot_map_world_count <- function(tbl_dta, series){
   
   plot_map <- ggplot(sf_dta) + 
     geom_sf(aes(fill = brks), size = .1) + 
+    coord_sf(datum = NA) +
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0)) +
     scale_fill_brewer(
       name = legend_title, palette = plot_palette, 
       drop = FALSE, 
@@ -190,7 +193,8 @@ plot_map_world_count <- function(tbl_dta, series){
          caption = caption_world_map) +
     theme_minimal() +
     theme(plot.title = element_text(hjust = 0.5), 
-          legend.position = "bottom")
+          legend.position = "bottom",
+          plot.margin = margin(0, 0, 0, 0, "pt"))
   
   return(plot_map)
   
@@ -225,6 +229,9 @@ plot_map_world_trend <- function(tbl_dta, series, model_for_trends = 'linear', p
   
   plot_map <- ggplot(sf_dta) + 
     geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
+    coord_sf(datum = NA) +
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0)) +
     scale_fill_manual(
       name = legend_title, 
       values = plot_palette, 
@@ -238,7 +245,8 @@ plot_map_world_trend <- function(tbl_dta, series, model_for_trends = 'linear', p
         title.position = 'top')) +
     labs(title = plot_title, caption = caption_world_map) +
     theme_minimal() +
-    theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+    theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom",
+          plot.margin = margin(0, 0, 0, 0, "pt"))
   
   return(plot_map)
   

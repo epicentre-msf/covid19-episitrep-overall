@@ -1,3 +1,7 @@
+calibri_8 <- fp_text(font.family = "Calibri", 
+                     font.size = 8)
+
+calibri_8_bold <- update(calibri_8, bold = TRUE)
 
 # --- --- --- --- --- --- --- --- --- 
 # II. MSF level analyses - Heading

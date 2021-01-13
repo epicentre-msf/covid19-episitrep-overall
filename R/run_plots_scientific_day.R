@@ -90,7 +90,7 @@ levels_continents_ordered <- c("Asia", "Europe", "Americas", "Africa", "Oceania"
 
 ## ---- Epidemic curve by continent ----
 
-hist_epi_curve_world <- dta_ecdc_right_censored %>% 
+hist_epi_curve_world <- dta_jhu_right_censored %>% 
   mutate(continent = factor(continent, levels =  levels_continents_ordered)) %>% 
   ggplot(aes(x = date, y = cases, fill = continent)) + 
   geom_col() + 
@@ -116,7 +116,7 @@ ggsave(file.path(path.sharepoint.scientific.day.2020, paste0('hist_epi_curve_wor
 
 ## ---- FACET epidemic curve by continent ----
 
-hist_epicurve_continent <- dta_ecdc_right_censored %>% 
+hist_epicurve_continent <- dta_jhu_right_censored %>% 
   transform(continent = factor(continent, levels = levels_continents_ordered)) %>% 
   ggplot(aes(x = date, y = cases, fill = continent)) + 
   facet_wrap(vars(continent), nrow = 1) + 
@@ -253,7 +253,7 @@ for (c in names(lst_survey_pop)) {
 }
 
 
-tbl_case_count_may2020 <- dta_ecdc %>% 
+tbl_case_count_may2020 <- dta_jhu %>% 
   filter(date <= as.Date("2020-05-30")) %>% 
   group_by(continent, country) %>% 
   summarise(
