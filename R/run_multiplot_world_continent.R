@@ -5,8 +5,15 @@ source(file.path(path.R, 'utils_management.R'), encoding = 'UTF-8')
 source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
 source(file.path(path.R, 'utils_modelling.R')       , encoding = 'UTF-8')
 
+path_world_continent_growth_rates <- file.path(path.local.worldwide.graphs,
+                                               'world_continent_growth_rates')
+
+dir.create(path_world_continent_growth_rates, 
+           showWarnings = FALSE, recursive = TRUE) 
+
 # Load data
 load(file.path(path.local.worldwide.data, glue('episitrep_worldwide_analyses_{week_report}.RData')))
+
 
 
 # Get coeff ---------------------------------------------------------------
@@ -33,7 +40,6 @@ all_coeffs <- c(list("World" = world_coeffs), continent_coeffs)
 
 # Plot --------------------------------------------------------------------
 
-
 plot_list <- c("World", "Asia", "Africa", "Oceania", "Europe", "Americas")
 
 all_plots <- plot_list %>% 
@@ -46,10 +52,6 @@ all_plots <- plot_list %>%
 
 
 # Save plots --------------------------------------------------------------
-
-path_world_continent_growth_rates <- file.path(path.local.worldwide.graphs, 'world_continent_growth_rates')
-dir.create(path_world_continent_growth_rates, showWarnings = FALSE, recursive = TRUE) 
-
 
 plot_list %>% 
   purrr::walk(
