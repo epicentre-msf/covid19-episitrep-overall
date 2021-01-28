@@ -5,9 +5,9 @@
 
 # Setup environment -------------------------------------------------------
 
-source(here::here('R',   'setup.R'),            encoding = 'UTF-8')
-source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
-source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
+# source(here::here('R',   'setup.R'),            encoding = 'UTF-8')
+# source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
+# source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
 
 # dates_and_week <- set_date_frame(create_folders = FALSE)
 # 

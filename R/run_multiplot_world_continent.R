@@ -1,9 +1,9 @@
 # ---- Prepare environment ----
 
-source(file.path(path.R, "setup.R")  , encoding = "UTF-8")
-source(file.path(path.R, 'utils_management.R'), encoding = 'UTF-8')
-source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
-source(file.path(path.R, 'utils_modelling.R')       , encoding = 'UTF-8')
+# source(file.path(path.R, "setup.R")  , encoding = "UTF-8")
+# source(file.path(path.R, 'utils_management.R'), encoding = 'UTF-8')
+# source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
+source(file.path(path.R, 'utils_modelling.R') , encoding = 'UTF-8')
 
 path_world_continent_growth_rates <- file.path(path.local.worldwide.graphs,
                                                'world_continent_growth_rates')

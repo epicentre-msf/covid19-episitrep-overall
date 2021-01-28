@@ -33,10 +33,6 @@ rmarkdown::render(
   output_dir  = path.local.week)
 
 
-# Plots continent & countries
-source(here::here('R', 'run_multiplot_world_continent.R'), encoding = 'UTF-8')
-source(here::here('R', 'run_multiplot_world_country.R'), encoding = 'UTF-8')
-
 # MSF data
 file_out_msf <- paste0(week_report, '_', 'episitrep_msf_level_analysis', '.html')
 
@@ -57,8 +53,6 @@ purrr::walk(oc_list,
               )
             )
             
-
-
 
 # === === === === === === === ===  ===  
 # ---- Edit and save docx file ----
@@ -87,7 +81,16 @@ source(file.path(path.R, 'docx_section2_MSF_level_analyses.R'), encoding = 'UTF-
 print(my_doc, target = file.path(path.local.week, glue("draft_EpiSitrep_world_Covid-19_{week_report}.docx")))
 
 
+
  
+# === === === === === === === === === ===
+# ---- Plots continent & countries ----
+# === === === === === === === === === === 
+source(here::here('R', 'run_multiplot_world_continent.R'), encoding = 'UTF-8')
+source(here::here('R', 'run_multiplot_world_country.R'), encoding = 'UTF-8')
+
+
+
 # === === === === === === === === === ===
 # ---- Copy outputs to public folder ----
 # === === === === === === === === === === 
