@@ -9,12 +9,9 @@ source(file.path(path.R, 'utils_modelling.R')       , encoding = 'UTF-8')
 load(file.path(path.local.worldwide.data, glue('episitrep_worldwide_analyses_{week_report}.RData')))
 
 
+# Get coeff ---------------------------------------------------------------
 
-
-
-
-
-world_coeffs <- dta_ecdc_right_censored %>% 
+world_coeffs <- dta_jhu_right_censored %>% 
   count(date, wt = cases, name = "cases") %>% 
   arrange(date) %>% 
   ts_coeff_single(series = "cases")
@@ -23,7 +20,7 @@ continent_coeffs <-
   c("Asia", "Africa", "Oceania", "Europe", "Americas") %>% 
   setNames(nm = .) %>% 
   purrr::map(~{
-    dta_ecdc_right_censored %>% 
+    dta_jhu_right_censored %>% 
       filter(continent == .x) %>% 
       count(date, wt = cases, name = "cases") %>% 
       arrange(date) %>% 
@@ -31,6 +28,11 @@ continent_coeffs <-
   })
 
 all_coeffs <- c(list("World" = world_coeffs), continent_coeffs)
+
+
+
+# Plot --------------------------------------------------------------------
+
 
 plot_list <- c("World", "Asia", "Africa", "Oceania", "Europe", "Americas")
 
@@ -43,9 +45,11 @@ all_plots <- plot_list %>%
 
 
 
-## Save plots
+# Save plots --------------------------------------------------------------
+
 path_world_continent_growth_rates <- file.path(path.local.worldwide.graphs, 'world_continent_growth_rates')
 dir.create(path_world_continent_growth_rates, showWarnings = FALSE, recursive = TRUE) 
+
 
 plot_list %>% 
   purrr::walk(
