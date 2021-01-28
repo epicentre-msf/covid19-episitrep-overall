@@ -9,14 +9,20 @@ my_doc %<>%
   body_add_par(style = 'Subtitle', 
                value = glue('Week {lubridate::week(date_max_report)}-{lubridate::year(date_max_report)}')) 
 
+
+
+# --- --- --- --- --- --- --- --- 
+# PARAGRAPH
+# --- --- --- --- --- --- --- --- 
+
 my_doc %<>% 
   body_add_par(style = 'Description bold', 
-               value = "This is a biweekly report that describes the evolution of the current Covid-19 epidemic worldwide and in MSF projects (no report published in week 34). It intends to support MSF in their Covid-19 intervention projects. Additional graphics and tables are also available at the Epicentre ") %>% 
+               value = "This is a monthly report that describes the evolution of the current Covid-19 epidemic worldwide and in MSF projects. It intends to support MSF in their Covid-19 intervention projects. Worldwild graphics and tables are also available at the Epicentre ") %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "COVID-19 Epi Dashboard", 
                hyperlink = "https://reports.msf.net/public/covid19/") %>% 
   slip_in_text(style = 'Description char', 
-               str = ". Additional information on data collected through MSF linelists is now also available on the ") %>% 
+               str = ". Information on data collected through MSF linelists is also available on the ") %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "MSF COVID-19 Dashboard ", 
                hyperlink = "https://reports.msf.net/secure/app/covid19-linelist-dashboard/") %>% 
@@ -27,17 +33,29 @@ my_doc %<>%
                hyperlink = "https://reports.msf.net/signup/") %>% 
   slip_in_text(style = 'Description char', 
                str = ').') %>% 
-  body_add_par(style = 'Description bold', 
-               value = "This report was edited by Epicentre. For any request or query, please contact Anaïs Broban (") %>% 
+  slip_in_text(style = 'Description char', 
+               str = " All additional routine analyses on MSF data are available ") %>% 
+  slip_in_text(style = 'Hyperlink', 
+               str = "here", 
+               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis") %>% 
+  slip_in_text(style = 'Description char', 
+               str = '.') %>% 
+  slip_in_text(style = 'Description char', 
+               str = " This report was edited by Epicentre. For any request or query, please contact Anaïs Broban (") %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "Anais.BROBAN@epicentre.msf.org", 
                hyperlink = "mailto:Anais.BROBAN@epicentre.msf.org") %>% 
   slip_in_text(style = 'Description char', 
                str = ').') %>% 
+  
   body_add_par(style = 'Horizontal line', 
                value = '') %>% 
   body_end_section_continuous()
 
+
+# --- --- --- --- --- --- --- --- 
+# PARAGRAPHS (3 columns)
+# --- --- --- --- --- --- --- --- 
 
 my_doc %<>% 
   body_add_par(style = 'Description bold', 
@@ -46,8 +64,8 @@ my_doc %<>%
   body_add_par(style = 'Description bullet', 
                value = "") %>% 
   slip_in_text(style = 'Hyperlink', 
-               str = "ECDC data", 
-               hyperlink = "https://opendata.ecdc.europa.eu/covid19/casedistribution/csv") %>% 
+               str = "JHU data", 
+               hyperlink = "https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/jhu/full_data.csv") %>% 
   slip_in_text(style = 'Description char', 
                str = glue(" last updated {format(max(dta_jhu$date, na.rm = TRUE), '%d %b %Y')}")) %>% 
   
@@ -61,14 +79,16 @@ my_doc %<>%
                hyperlink = "https://mapcentre.msf.org/") %>% 
   slip_in_text(style = 'Description char', 
                str = glue(" (baseline country maps)")) %>% 
-
+  
   body_add_par(style = 'Description bullet', 
-             value = "FIND ") %>% 
+               value = "FIND ") %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "SARS-COV-2 Test Tracker", 
                hyperlink = "https://www.finddx.org/covid-19/test-tracker/") %>% 
   slip_in_text(style = 'Description char', 
                str = glue(" for data on Covid-19 tests"))
+
+
 
 
 my_doc %<>%   
@@ -85,7 +105,7 @@ my_doc %<>%
 
 
 
-  
+
 my_doc %<>%  
   body_add_par(style = 'Description bold', 
                value = "Useful links") %>% 
@@ -120,16 +140,25 @@ my_doc %<>%
 my_doc <- add_end_section_3columns()
 
 
-  calibri_8 <- fp_text(font.family = "Calibri", 
-                       font.size = 8)
-  
-  calibri_8_bold <- update(calibri_8, bold = TRUE)
+# --- --- --- --- --- --- --- --- 
+# PARAGRAPH
+# --- --- --- --- --- --- --- --- 
 
-  my_doc %<>% 
-    body_add_fpar(style = 'Description', 
-                  fpar(ftext("IMPORTANT NOTE: ", 
-                             prop = calibri_8_bold), 
-                       ftext("Data and results presented here are possibly affected by bias related with factors such as the testing strategies used by each country and the performance of their surveillance systems. Results would be better interpreted in the light of this information, though currently not available to display in this document.", 
-                               prop = calibri_8))) %>% 
-      body_add_par(style = 'Horizontal line', 
-                   value = '')
+
+calibri_8 <- fp_text(font.family = "Calibri", 
+                     font.size = 8)
+
+calibri_8_bold <- update(calibri_8, bold = TRUE)
+
+
+
+my_doc %<>% 
+  body_add_fpar(style = 'Description', 
+                fpar(ftext("IMPORTANT NOTE: ", 
+                           prop = calibri_8_bold), 
+                     ftext("Data and results presented here are possibly affected by bias related with factors such as the testing strategies used by each country and the performance of their surveillance systems. Results would be better interpreted in the light of this information, though currently not available to display in this document.", 
+                           prop = calibri_8))) %>% 
+  body_add_par(style = 'Horizontal line', 
+               value = '') %>% 
+  
+  body_end_section_continuous()
