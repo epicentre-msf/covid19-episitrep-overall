@@ -5,9 +5,13 @@
 
 rm(list = ls())
 
-source(here::here('R', 'setup.R'), encoding = 'UTF-8')
-source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
-source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
+
+# Setup environment -------------------------------------------------------
+
+# source(here::here('R',   'setup.R'),            encoding = 'UTF-8')
+# source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
+# source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
+
 
 
 dates_and_week <- set_date_frame(create_folders = FALSE)
@@ -81,8 +85,13 @@ country_list <- df_countries %>% filter(iso_a3 != "HKG")
 
 
 for (i in country_list$iso_a3){
-  name_country <- country_list %>% filter(iso_a3 == i) %>% pull(country) %>% gsub(" ", "_", .)
+  name_country <- country_list %>% 
+    filter(iso_a3 == i) %>% 
+    pull(country) %>% 
+    gsub(" ", "_", .)
+  
   temp_plot <- country_plot_coeff('cases' , i)
+  
   ggsave(file.path(path.local.worldwide.graphs.country_growth_rates, glue("growth_rates_{name_country}_{week_report}.png")), 
          plot = temp_plot, 
          scale = 1, 

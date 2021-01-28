@@ -56,3 +56,4 @@ sharepoint.parent.dir <- dplyr::case_when(
 path.sharepoint <- file.path(sharepoint.parent.dir, 'MSF', 'GRP-EPI-COVID-19 - NCoVEpi')
 path.sharepoint.public <- file.path(path.sharepoint, "template", "sitreps", "public")
 path.sharepoint.data <- file.path(path.sharepoint, 'data', 'linelist', 'world')
+path.sharepoint.sitrep <- file.path(sharepoint.parent.dir, 'MSF', 'GRP-EPI-COVID-19 - NCoVEpi', "template", "sitreps")
