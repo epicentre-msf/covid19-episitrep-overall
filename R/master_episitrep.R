@@ -33,8 +33,9 @@ rmarkdown::render(
   output_dir  = path.local.week)
 
 
-# Countries world
+# Plots continent & countries
 source(here::here('R', 'run_multiplot_world_continent.R'), encoding = 'UTF-8')
+source(here::here('R', 'run_multiplot_world_country.R'), encoding = 'UTF-8')
 
 # MSF data
 file_out_msf <- paste0(week_report, '_', 'episitrep_msf_level_analysis', '.html')
