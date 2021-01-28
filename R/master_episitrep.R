@@ -91,9 +91,14 @@ source(here::here('R', 'run_multiplot_world_country.R'), encoding = 'UTF-8')
 
 
 
-# === === === === === === === === === ===
-# ---- Copy outputs to public folder ----
-# === === === === === === === === === === 
+
+
+# Copy outputs to various locations ---------------------------------------
+
+
+# === === === === === === === === === === ===
+# ---- Copy outputs to GIS unit sharepoint  ----
+# === === === === === === === === === === ===
 
 ## Copy table of trends to GIS Unit sharepoint
 file.copy(
@@ -101,6 +106,11 @@ file.copy(
   to = file.path(sharepoint.parent.dir, 'MSF', 'GIS @ MSF - EPI csv data'), 
   overwrite = TRUE)
 
+
+
+# === === === === === === === === === ===
+# ---- Copy outputs to public folder ----
+# === === === === === === === === === === 
 
 # --- Worldwide analysis
 ## Copy to archive
@@ -161,8 +171,6 @@ file.copy(
 )
 
 
-
-
 # --- OC sitreps
 ## Copy to archive
 purrr::walk(oc_list, 
@@ -185,7 +193,24 @@ purrr::walk(oc_list,
 
 
 
+# === === === === === === === === === === ===
+# ---- Copy outputs to non public cfolder ---
+# === === === === === === === === === === ===
+
+# path.sharepoint.sitrep.week <- file.path(path.sharepoint.sitrep,
+#                                     week_report)
+# 
+# if (!exists(path.sharepoint.sitrep.week)){
+#   dir.create(path.sharepoint.sitrep.week, showWarnings = FALSE, recursive = TRUE)
+# }
 
 
+file.copy(path.local.week, 
+          path.sharepoint.sitrep, 
+          recursive = TRUE)
 
 
+  
+  
+
+  
