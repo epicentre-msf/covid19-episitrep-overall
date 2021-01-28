@@ -105,7 +105,7 @@ country_list <- df_countries %>% filter(iso_a3 != "HKG")
 for (i in country_list$iso_a3){
   name_country <- country_list %>% 
     filter(iso_a3 == i) %>% 
-    ull(country) %>% 
+    pull(country) %>% 
     gsub(" ", "_", .)
   
   temp_plot <- country_plot_coeff('cases' , i)
