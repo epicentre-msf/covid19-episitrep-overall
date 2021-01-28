@@ -24,7 +24,7 @@ get_geo_data(path = path.local.data, force = FALSE)
 # ---- Run analyses ----
 # === === === === === === === === 
 
-# World section
+# World
 file_out_worldwide <- paste0(week_report, '_', 'episitrep_worldwide_analyses', '.html')
 
 rmarkdown::render(
@@ -42,7 +42,7 @@ rmarkdown::render(
   output_dir  = path.local.week)
 
 
-# MSF sections
+# Sections
 oc_list <- list("OCP", "OCA", "OCB", "OCBA", "OCG")
 purrr::walk(oc_list, 
             ~rmarkdown::render(
@@ -53,6 +53,7 @@ purrr::walk(oc_list,
               )
             )
             
+
 
 # === === === === === === === ===  ===  
 # ---- Edit and save docx file ----
