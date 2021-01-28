@@ -253,8 +253,64 @@ plot_map_world_trend <- function(tbl_dta, series, model_for_trends = 'linear', p
 }
 
 
+plot_cfr_ma <- function(dta){
+  
+  dta_cfr <- dta %>% 
+    select(date, continent, region, country, iso_a3, cases, deaths) %>% 
+    tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
+                                    max(date, na.rm = TRUE), by = 1), 
+                    fill = list(cases = 0, deaths = 0)) %>% 
+    mutate(
+      cases_lagged = dplyr::lag(cases, 8), 
+      cases_ma = forecast::ma(cases_lagged, order = 5), 
+      deaths_ma = forecast::ma(deaths, order = 5), 
+      cfr = deaths_ma / cases_ma) %>% 
+    mutate(
+      cfr = as.double(cfr), 
+      cfr = case_when(
+        cfr > 1 ~ NA_real_, 
+        TRUE ~ cfr))
+  
+  dta_cfr %>% as.data.frame()
+  
+  
+  # Parameters
+  main_colour  <- c(cases = '#1A62A3', deaths = '#e10000')
+  name_country <- unique(dta$country)
+  date_min     <- dta_cfr %>% filter(cases != 0) %>% pull(date) %>% min()
+  
+  n_max <- max(dta_cfr$deaths, na.rm = TRUE)
+  p_max <- rounder(max(dta_cfr$cfr, na.rm = TRUE), .1)
+  p_max <- ifelse(p_max > 1, 1, p_max)
+  scaling_factor <- p_max / n_max # sets the y limit of the proportion rounded up to nearest 10% above the max
+  
+  
+  p1 <- ggplot(dta_cfr, aes(x = date, y = cases)) + 
+    geom_col(fill = '#1A62A3', width = 1) + 
+    scale_x_date(name = NULL, date_breaks = "2 months", date_labels = "%b\n%Y") + 
+    scale_y_continuous(name = 'Cases') + 
+    theme_light() + 
+    theme(axis.title.x=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank())
+  
+  p2 <- ggplot(dta_cfr, aes(x = date, y = deaths)) + 
+    geom_col(fill = '#de2d26', width = 1) + 
+    geom_line(data = dta_cfr,
+              aes(y = cfr / scaling_factor),
+              key_glyph = "timeseries", size = 1) + 
+    scale_x_date(name = NULL, date_breaks = "2 months", date_labels = "%b\n%Y") + 
+    scale_y_continuous(name = 'Deaths', sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Case fatality (lag 8 days)", labels = scales::percent_format(accuracy = 1))) + 
+    labs(fill = NULL, colour = NULL) + 
+    theme_light() + 
+    theme(legend.position = "top", legend.direction = 'vertical', legend.text = element_text(size = 11))
+  
+  p1 + p2 + plot_layout(ncol = 1)
+  
+}
 
-country_plot <- function(country_iso, series, lst_dta = lst_ecdc, model = 'linear', date_min = NULL) {
+
+country_plot <- function(country_iso, series, lst_dta = lst_jhu, model = 'linear', date_min = NULL) {
   
   choice <- paste(series, model, sep = '_')
   
@@ -317,7 +373,7 @@ country_plot <- function(country_iso, series, lst_dta = lst_ecdc, model = 'linea
 
 
 # Plot cases or deaths for a single country with a zoom in the last 12 days -->
-country_duo_plots <- function(series, country_iso, lst_dta = lst_ecdc, model = 'linear') {
+country_duo_plots <- function(series, country_iso, lst_dta = lst_jhu, model = 'linear') {
   
   name_country <- df_countries %>% filter(iso_a3 == country_iso) %>% pull(country)
   
@@ -334,7 +390,7 @@ country_duo_plots <- function(series, country_iso, lst_dta = lst_ecdc, model = '
 
 # To plot both cases and deaths into a single graphic plot
 # This function was replace by the one below "country_four_plots" from week 29-2020
-country_four_plots <- function(country_iso, lst_dta = lst_ecdc, model = 'linear') {
+country_four_plots <- function(country_iso, lst_dta = lst_jhu, model = 'linear') {
   
   # Parameters
   main_colour  <- c(cases = '#1A62A3', deaths = '#e10000')

@@ -88,7 +88,7 @@ print(my_doc, target = file.path(path.local.week, glue("draft_EpiSitrep_world_Co
 # ---- Plots continent & countries ----
 # === === === === === === === === === === 
 source(here::here('R', 'run_multiplot_world_continent.R'), encoding = 'UTF-8')
-source(here::here('R', 'run_multiplot_world_country.R'), encoding = 'UTF-8')
+source(here::here('R', 'run_multiplot_country.R'), encoding = 'UTF-8')
 
 
 
