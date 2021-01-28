@@ -3,8 +3,6 @@
 # --- LOOPS to plot graphs for each country 
 # --- --- --- --- --- --- --- --- --- --- --- --- 
 
-rm(list = ls())
-
 source(here::here('R', 'setup.R'), encoding = 'UTF-8')
 source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
 source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
@@ -18,10 +16,10 @@ week_report     <- dates_and_week[[3]]
 
 
 
-# Get ECDC data either from the web or from the saved RDS file
-rds_ecdc <- readRDS(file.path(path.local.worldwide.data, 'dta_jhu.RDS'))
+# Get jhu data either from the web or from the saved RDS file
+rds_jhu <- readRDS(file.path(path.local.worldwide.data, 'dta_jhu.RDS'))
 
-lst_dta_ecdc <- rds_ecdc %>% 
+lst_dta_jhu <- rds_jhu %>% 
   tidyr::drop_na(iso_a3) %>% 
   filter(between(date, left = NULL, right = date_max_report)) %>% 
   multisplit("iso_a3")
@@ -160,9 +158,9 @@ plot_cfr_ma <- function(dta){
 }
 
 
-for (i in names(lst_dta_ecdc)) {
+for (i in names(lst_dta_jhu)) {
   
-  dta <- lst_dta_ecdc[[i]]
+  dta <- lst_dta_jhu[[i]]
   
   name_country <- unique(dta$country) 
   last_date <- max(dta$date)
