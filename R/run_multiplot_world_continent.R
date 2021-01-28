@@ -1,11 +1,8 @@
 
 source(file.path(path.R, "setup.R")  , encoding = "UTF-8")
-
-# Upload functions
 source(file.path(path.R, 'utils_management.R'), encoding = 'UTF-8')
 source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
 
-source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
 
 load(file.path(path.local.worldwide.data, glue('episitrep_worldwide_analyses_{week_report}.RData')))
 
