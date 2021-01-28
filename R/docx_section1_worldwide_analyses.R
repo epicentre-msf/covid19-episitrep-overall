@@ -24,7 +24,7 @@ my_doc <- add_end_section_continuous()
 # --- --- --- --- --- --- --- 
 # 1
 my_doc <- add_par_normal(
-  sprintf("As of %s, %s Covid-19 cases and %s Covid-19 associated deaths were reported worldwide. The number of cases and deaths in the last %s days were %s and %s respectively.", 
+  sprintf("As of the %s, %s Covid-19 cases and %s Covid-19 associated deaths were reported worldwide. The number of cases and deaths in the last %s days were %s and %s respectively.", 
           format(max(dta_jhu$date), "%d %B %Y"), 
           format(sum(dta_jhu$cases, na.rm = TRUE), big.mark = ","), 
           format(sum(dta_jhu$deaths, na.rm = TRUE), big.mark = ","), 
@@ -44,12 +44,12 @@ my_doc <- add_par_normal(
 
 # 3
 my_doc <- add_par_normal(
-  sprintf('%s countries reported an increasing trend (compared to XX last/two week) (Figure 1). Trends calculated on the last 30 days are also available in the full worldwide analysis report.', 
+  sprintf('%s countries reported an increasing trend (compared to XX last month) (Figure 1). Trends calculated on the last 30 days are available in the full worldwide analysis report.', 
   call_countries_increasing('cases') %>% length() %>% Words()))
 
 my_doc %<>% 
 body_add_par(style = 'Normal', 
-             value = sprintf('%s countries reported an increasing trend (compared to XX last/two week) (Figure 1). Trends calculated on the last 30 days (see ', 
+             value = sprintf('%s countries reported an increasing trend (compared to XX last month) (Figure 1). Trends calculated on the last 30 days (see ', 
                      call_countries_increasing('cases') %>% length() %>% Words())) %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "html report", 
@@ -71,12 +71,16 @@ my_doc <- add_par_normal(
 
 my_doc <- add_end_section_2columns()
 
+
+
 ## - Map Cases count and trend
 my_doc <- add_figure_map_world_grid(
   object_name  = paste0('map_world_case_count_trend_grid', '_', week_report, '.png'),
-  figure_title = glue("Number of Covid-19 cases and cases trends estimated during the period from {format(date_max_report - (period_trend - 1), '%d %B %Y')} to {format(date_max_report, '%d %B %Y')} ({period_trend} days)"))
+  figure_title = glue("Mapping of Covid-19 cases counts and trends, period from {format(date_max_report - (period_trend - 1), '%d %B %Y')} to {format(date_max_report, '%d %B %Y')} ({period_trend} days)"))
 
 my_doc <- add_end_section_continuous()
+
+
 
 # 5 - Incidence
 my_doc <- add_par_normal(
@@ -130,10 +134,11 @@ my_doc <- my_doc %<>%
 
 my_doc <- add_end_section_2columns()
 
+
 ## - Map
 my_doc <- add_figure_map_world_grid(
   object_name  = glue('map_world_death_count_trend_grid_{week_report}.png'), 
-  figure_title = glue('Mapping of number of Covid-19 associated deaths and deaths trends estimated during the period from {format(date_max_report - (period_trend - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} (12 days)'))
+  figure_title = glue('Mapping of number of Covid-19 associated deaths counts and trends, period from {format(date_max_report - (period_trend - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} (12 days)'))
 
 
 
