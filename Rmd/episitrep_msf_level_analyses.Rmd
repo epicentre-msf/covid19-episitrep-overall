@@ -183,7 +183,6 @@ nb_msf_confirmed <- sum(dta_linelist_with_aggregated$ind_MSF_covid_status == 'Co
 nb_msf_probable  <- sum(dta_linelist_with_aggregated$ind_MSF_covid_status == 'Probable' , na.rm = TRUE)
 nb_msf_suspected <- sum(dta_linelist_with_aggregated$ind_MSF_covid_status == 'Suspected', na.rm = TRUE)
 
-
 nb_msf_confirmed_linelist <- sum(dta_linelist$ind_MSF_covid_status == 'Confirmed', na.rm = TRUE)
 
 nb_msf_confirmed_with_comorbidity <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' & ind_Comcond_count > 0, na.rm = TRUE))
@@ -195,6 +194,10 @@ nb_msf_conf_prob_susp_who_died <- with(dta_linelist, sum(ind_MSF_covid_status %i
 nb_msf_conf_above65 <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' & age_in_years >=65 & ind_outcome_patcourse_status %in% c('Cured', 'Died'), na.rm = TRUE))
 
 nb_msf_conf_above65_who_died <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' & age_in_years >=65 & ind_outcome_patcourse_status == 'Died', na.rm = TRUE))
+
+nb_msf_conf_known_outcome <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' &ind_outcome_patcourse_status %in% c('Cured', 'Died'), na.rm = TRUE))
+
+
 
 median_age_all <- dta_linelist %>% 
   pull(age_in_years) %>% 
