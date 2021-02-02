@@ -17,7 +17,7 @@ my_doc %<>%
 
 my_doc %<>% 
   body_add_par(style = 'Description bold', 
-               value = "This is a monthly report that describes the evolution of the current Covid-19 epidemic worldwide and in MSF projects. It intends to support MSF in their Covid-19 intervention projects. Worldwild graphics and tables are also available at the Epicentre ") %>% 
+               value = "This is a monthly report that describes the evolution of the current Covid-19 epidemic worldwide and in MSF projects. It intends to support MSF in their Covid-19 intervention projects. Worldwide graphics and tables are also available at the Epicentre ") %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "COVID-19 Epi Dashboard", 
                hyperlink = "https://reports.msf.net/public/covid19/") %>% 
@@ -64,7 +64,7 @@ my_doc %<>%
   body_add_par(style = 'Description bullet', 
                value = "") %>% 
   slip_in_text(style = 'Hyperlink', 
-               str = "JHU data", 
+               str = "JHU CSSE data", 
                hyperlink = "https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/jhu/full_data.csv") %>% 
   slip_in_text(style = 'Description char', 
                str = glue(" last updated {format(max(dta_jhu$date, na.rm = TRUE), '%d %b %Y')}")) %>% 
@@ -156,7 +156,7 @@ my_doc %<>%
   body_add_fpar(style = 'Description', 
                 fpar(ftext("IMPORTANT NOTE: ", 
                            prop = calibri_8_bold), 
-                     ftext("Data and results presented here are possibly affected by bias related with factors such as the testing strategies used by each country and the performance of their surveillance systems. Results would be better interpreted in the light of this information, though currently not available to display in this document.", 
+                     ftext("Data and results presented here are possibly affected by bias related with factors such as the testing strategies used by each country and the performance of their surveillance systems. Results would be better interpreted in the light of this information.", 
                            prop = calibri_8))) %>% 
   body_add_par(style = 'Horizontal line', 
                value = '') %>% 

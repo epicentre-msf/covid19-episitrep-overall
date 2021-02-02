@@ -45,18 +45,16 @@ my_doc <- add_par_normal(
 # 3
 
 my_doc <- add_par_normal(
-  sprintf('%s countries reported an increasing trend (compared to XXX last month) (Figure 1). Trends calculated on the last 30 days are available in the full worldwide analysis report.', 
-  call_countries_increasing('cases') %>% length() %>% Words()))
-
-my_doc %<>% 
-body_add_par(style = 'Normal', 
-             value = sprintf('%s countries reported an increasing trend (compared to XXX last month) (Figure 1). Trends calculated on the last 30 days (see ', 
-                     call_countries_increasing('cases') %>% length() %>% Words())) %>% 
-  slip_in_text(style = 'Hyperlink', 
-               str = "html report", 
-               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/addtional_episitrep_outputs_worldwide/") %>% 
-  slip_in_text(style = 'Normal char', 
-               str = ').')
+  sprintf('%s countries reported an increasing trend (compared to XXX last month) (Figure 1) (see ', 
+  call_countries_increasing('cases') %>% length() %>% Words())) %>% 
+  
+  slip_in_text(style = 'Hyperlink',
+               str = "html report",
+               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/addtional_episitrep_outputs_worldwide/") %>%
+  
+  slip_in_text(style = 'Normal char',
+               str = '). Trends calculated on the last 30 days are available in the full worldwide analysis report.')
+  
 
 my_doc <- add_end_section_2columns()
 
@@ -180,7 +178,7 @@ my_doc <- my_doc %<>%
   slip_in_text(style = 'Hyperlink', 
                str = "here", 
                hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/") %>% 
-  slip_in_text(style = 'Description char', 
+  slip_in_text(style = 'Normal', 
                str = "), in order to account for high case numbers reached, and possible second surge in cases.") 
 
 

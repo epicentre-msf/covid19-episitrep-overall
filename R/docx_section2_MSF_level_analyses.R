@@ -28,17 +28,20 @@ my_doc %<>%
                 fpar(ftext("This section analyses data reported by MSF in the reporting system created by Epicentre and distributed to MSF projects. OCs are highly encouraged to send updated linelist exports on a weekly basis by Tuesdays nights to the following email address (EPI-COVID19-DATA@epicentre.msf.org) (please respect your OC guidelines by discussing with identified surveillance focal point).", 
                            prop = calibri_8)))
 
+my_doc <- add_end_section_2columns()
+
+
+
 my_doc %<>% 
-  body_add_fpar(style = 'Description bold', 
-                fpar(ftext('This section presents the main analysis of the dataset. However, supplementary analysis and figures are available in the full analysis report available ', 
-                           prop = calibri_10_bold_orange))) %>% 
+  body_add_fpar(style = 'Description bold orange Car', 
+                fpar(
+                  ftext('This section presents the main analysis of the dataset. However, supplementary analysis and figures are available in the full analysis report available '))) %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "here", 
                hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/additional_episitrep_outputs_msf/") %>% 
-  slip_in_text(style = 'Description char', 
+  slip_in_text(style = 'Description bold orange Car', 
                str = '. ') 
 
-my_doc <- add_end_section_2columns()
 
 
 
@@ -61,13 +64,13 @@ my_doc <- add_end_section_continuous()
 # 1
 my_doc <- add_par_normal(
   sprintf("As of %s, %s MSF project sites representing all 5 OCs and %s countries reported data, for a total of %s consultations/admissions, including %s confirmed. %s projects reported only aggregated data (included in Figure 6 and in the dashboard, but not in further analyses below). ", 
-  format(date_max_report , "%d %B %Y"), 
-  nb_msf_sites, 
-  nb_msf_countries, 
-  format(nb_msf_obs, big.mark   = ','), 
-  format(nb_msf_confirmed, big.mark   = ','), 
-  Words(nb_msf_sites_aggregated)))
-  
+          format(date_max_report , "%d %B %Y"), 
+          nb_msf_sites, 
+          nb_msf_countries, 
+          format(nb_msf_obs, big.mark   = ','), 
+          format(nb_msf_confirmed, big.mark   = ','), 
+          Words(nb_msf_sites_aggregated)))
+
 # 2
 
 my_doc %<>% 
@@ -82,7 +85,7 @@ my_doc %<>%
 
 # 3
 my_doc <- add_par_normal(
-  sprintf("The weekly evolution of patients consulted by covid19 status is shown in Figure 5 below. The continent with the higher number of patients is XXX_TO_CONTINUE"))
+  sprintf("The weekly evolution of patients consulted by covid19 status is shown in Figure 5 below. The continent with the higher number of patients is Asia, though a lot were seen for triage only. The majority of Asian cases are classified as probable due to testing access difficulties. In Europe, most cases were cared for during the first surge of cases. After a decrease in the other continents over the course of the summer, the reported numbers are now stable in the last weeks."))
 
 
 my_doc <- add_end_section_2columns()
@@ -126,7 +129,7 @@ my_doc <- add_par_normal(
 
 # 2
 my_doc <- add_par_normal(
-  sprintf("Patients consulted/admitted to MSF facilities had median age of %s years. The male/female ratio was %s among all Covid19-related patients and %s (%s%%) patients reported at least one comorbidity. The most frequent comorbidities recorded are hypertension, diabetes, respiratory diseases and malaria. XXX_TO_CONTINUE", 
+  sprintf("Patients consulted/admitted to MSF facilities had median age of %s years. The male/female ratio was %s among all Covid19-related patients and %s (%s%%) patients reported at least one comorbidity. The most frequent comorbidities recorded are hypertension, diabetes, respiratory diseases and malaria. Hypertension and diabetes were more frequent in confirmed cases than in cases proved negative (Not a case).", 
           median(dta_linelist$age_in_years, na.rm = TRUE),
           tbl_sex_ratio %>% pull(ratio_mf) %>% last(), 
           sum(dta_linelist$ind_Comcond_01), 
@@ -182,10 +185,10 @@ my_doc <- add_par_normal(
   sprintf("Table 2 describes the levels of severity found in patients consulted/admitted in MSF facilities, according to their Covid19 status. Though there was a lot of missing data for this variable, overall, %s%% of all patients (%s%% of confirmed) received were assessed to be in a severe or critical state.",
           tbl_severity_all %>% pull(p_sc) %>% round(1),
           tbl_severity_confirmed %>% pull(p_sc) %>% round(1)
-          )
   )
+)
 
- 
+
 # my_doc <- add_par_normal('')
 
 
@@ -243,7 +246,7 @@ my_doc <- add_par_normal(
 
 
 my_doc <- add_par_normal(
-  sprintf("In MSF facilities, %s%% of confirmed cases with known outcome died, including %s%% in over 65 years of age. The median age among deceased patients was %s years (stable in the last weeks). The proportion of patients who died largely varied with the number of comorbidities declared (Table 5). CFR starts increasing from the XXX-XX years old category, to reach over XXX%% in patients over 80 years old", 
+  sprintf("In MSF facilities, %s%% of confirmed cases with known outcome died, including %s%% in over 65 years of age. The median age among deceased patients was %s years (stable in the last weeks). The proportion of patients who died largely varied with the number of comorbidities declared (Table 5). CFR starts increasing from the 40-49 years old category, to reach over XXX%% in patients over 80 years old", 
           round(nb_msf_conf_who_died / nb_msf_conf_known_outcome * 100, digits = 1), 
           round(nb_msf_conf_above65_who_died / nb_msf_conf_above65 * 100, digits = 1), 
           median_age_confirmed_died))
@@ -260,7 +263,7 @@ my_doc <- add_table(
 
 
 my_doc <- add_par_normal(
-  sprintf("The overall delay between onset and consultation/admission (median number of days) was %s days. The overall length of stay (median number of days) was %s days (Figure 11", 
+  sprintf("The overall delay between onset and consultation/admission (median number of days) was %s days. The overall length of stay (median number of days) was %s days.", 
           median(dta_delay$delay_before_consultation),
           median(dta_length_stay$MSF_length_stay)))
 
@@ -317,23 +320,23 @@ my_doc <- add_table(
 
 
 # Graph DELAY TO ADMISSION
-my_doc <- add_figure(
-  object_name = paste0('boxplot_delay_before_consultation','_', week_report, '.png'),
-  figure_title = "Weekly evolution of the distribution of delay from onset of symptoms and consultation/admission",
-  folder = 'msf',
-  width = 8.37 * cm_to_in,
-  height = 5.58 * cm_to_in)
+# my_doc <- add_figure(
+#   object_name = paste0('boxplot_delay_before_consultation','_', week_report, '.png'),
+#   figure_title = "Weekly evolution of the distribution of delay from onset of symptoms and consultation/admission",
+#   folder = 'msf',
+#   width = 8.37 * cm_to_in,
+#   height = 5.58 * cm_to_in)
 
 
 
 
 #  Graph LENGTH OF STAY HOSPITALISED
-my_doc <- add_figure(
-  object_name  = paste0('boxplot_length_stay', '_', week_report, '.png'),
-  figure_title = "Weekly evolution of the distribution of length of stay among hospitalized patient",
-  folder = 'msf',
-  width = 8.37 * cm_to_in,
-  height = 5.58 * cm_to_in)
+# my_doc <- add_figure(
+#   object_name  = paste0('boxplot_length_stay', '_', week_report, '.png'),
+#   figure_title = "Weekly evolution of the distribution of length of stay among hospitalized patient",
+#   folder = 'msf',
+#   width = 8.37 * cm_to_in,
+#   height = 5.58 * cm_to_in)
 
 
 
@@ -377,12 +380,12 @@ my_doc <- add_figure(
 # 
 # my_doc <- add_par_normal("")
 # 
-my_doc <- add_table(
-  object_name = paste0('gtbl_non_cases_diagt', '_', week_report, '.png'),
-  table_title = 'Frequency of main diagnosis among non confirmed patients who attended an MSF Covid facility, by type of outcome',
-  folder = 'msf',
-  width = 15.85 * cm_to_in,
-  height = 11.92 * cm_to_in)
+# my_doc <- add_table(
+#   object_name = paste0('gtbl_non_cases_diagt', '_', week_report, '.png'),
+#   table_title = 'Frequency of main diagnosis among non confirmed patients who attended an MSF Covid facility, by type of outcome',
+#   folder = 'msf',
+#   width = 15.85 * cm_to_in,
+#   height = 11.92 * cm_to_in)
 # 
 # my_doc <- add_par_normal('')
 
@@ -405,7 +408,7 @@ my_doc <- add_table(
   folder = 'msf',
   width = 17.45 * cm_to_in,
   height = 9.45 * cm_to_in)
-  
+
 
 
 # Text CFR all patients
