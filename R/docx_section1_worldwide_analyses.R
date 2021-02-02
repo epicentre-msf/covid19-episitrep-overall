@@ -96,10 +96,14 @@ my_doc <- add_par_normal(
 # my_doc <- add_par_normal(
 #   sprintf("Since last week, NAME OF THE COUNTRIES reached the threshold of 10 confirmed cases per 100,000 population. Some others, including NAME OF THE COUNTRIES, are now over 100 confirmed cases per 100,000 population."))
 
+
 ## - Map Case Incidence
 my_doc <- add_figure_map_world(
   object_name  = glue("map_world_case_attack_rates_{week_report}.png"), 
-  figure_title = glue("Cumulative incidence of Covid-19 reported cases since beginning of epidemic, per 100,000 population"))
+  figure_title = glue("Cumulative incidence of Covid-19 reported cases since beginning of epidemic, per 100,000 population"),
+  width = 7 * cm_to_in, 
+  height = 4.5 * cm_to_in
+  )
 
 
 my_doc <- add_end_section_2columns(widths = c(7 * cm_to_in, 10 * cm_to_in))
@@ -215,9 +219,9 @@ my_doc <- add_figure_map_world_grid(
 my_doc <- add_table(
   object_name = glue("gtbl_cfr_doubling_rank_{week_report}.png"), 
   table_title = glue("Countries with estimated doubling time of cases or deaths of less than {threshold_doubling_time} days"), 
-  folder = "worldwide", 
-  width = 13.55 * cm_to_in, 
-  height = 5.01 * cm_to_in)
+  folder = "worldwide",
+  width = 11.55 * cm_to_in, 
+  height = 13.5 * cm_to_in)
 
 my_doc <- add_end_section_continuous()
 
