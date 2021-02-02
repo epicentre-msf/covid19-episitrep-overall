@@ -33,7 +33,7 @@ my_doc %<>%
                hyperlink = "https://reports.msf.net/signup/") %>% 
   slip_in_text(style = 'Description char', 
                str = ').') %>% 
-  slip_in_text(style = 'Description char', 
+  slip_in_text(style = "Description bold orange Car", 
                str = " All additional routine analyses on MSF data are available ") %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "here", 
