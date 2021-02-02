@@ -5,7 +5,7 @@ calibri_8_bold <- update(calibri_8, bold = TRUE)
 
 calibri_10_bold_orange <- fp_text(font.family = "Calibri", 
                                   font.size = 10,
-                                  color = "orange",
+                                  color = "#ED7D31",
                                   bold = TRUE)
 
 
@@ -28,9 +28,6 @@ my_doc %<>%
                 fpar(ftext("This section analyses data reported by MSF in the reporting system created by Epicentre and distributed to MSF projects. OCs are highly encouraged to send updated linelist exports on a weekly basis by Tuesdays nights to the following email address (EPI-COVID19-DATA@epicentre.msf.org) (please respect your OC guidelines by discussing with identified surveillance focal point).", 
                            prop = calibri_8)))
 
-
-my_doc <- add_end_section_2columns()
-
 my_doc %<>% 
   body_add_fpar(style = 'Description bold', 
                 fpar(ftext('This section presents the main analysis of the dataset. However, supplementary analysis and figures are available in the full analysis report available ', 
@@ -40,6 +37,10 @@ my_doc %<>%
                hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/additional_episitrep_outputs_msf/") %>% 
   slip_in_text(style = 'Description char', 
                str = '. ') 
+
+my_doc <- add_end_section_2columns()
+
+
 
 
 # === === === === === === 
@@ -136,6 +137,7 @@ my_doc <- add_end_section_2columns()
 
 my_doc <- add_par_normal('')
 
+
 # Histogram Week Covid Admission
 my_doc <- add_figure(
   object_name  = paste0('hist_epicurve_consult_admit_continent', '_', week_report, '.png'), 
@@ -143,9 +145,8 @@ my_doc <- add_figure(
   folder = 'msf')
 
 
-# my_doc <- add_end_section_continuous()
-
-my_doc <- add_end_section_2columns()
+my_doc <- add_end_section_continuous()
+# my_doc <- add_end_section_2columns()
 
 
 
@@ -184,22 +185,20 @@ my_doc <- add_par_normal(
           )
   )
 
-
-my_doc <- add_par_normal('')
-
-
-
-
+ 
+# my_doc <- add_par_normal('')
 
 
 my_doc <- add_table(
   object_name = paste0('gtbl_severity_status', '_', week_report, '.png'), 
   table_title = 'Levels of severity in MSF facilities, by covid19 status', 
   folder = 'msf', 
-  width = 8.93 * cm_to_in, 
-  height = 9.29 * cm_to_in)
+  width = 8 * cm_to_in, 
+  height = 3.5 * cm_to_in)
 
 my_doc <- add_end_section_2columns()
+
+
 
 
 
@@ -245,7 +244,7 @@ my_doc <- add_par_normal(
 
 my_doc <- add_par_normal(
   sprintf("In MSF facilities, %s%% of confirmed cases with known outcome died, including %s%% in over 65 years of age. The median age among deceased patients was %s years (stable in the last weeks). The proportion of patients who died largely varied with the number of comorbidities declared (Table 5). CFR starts increasing from the XXX-XX years old category, to reach over XXX%% in patients over 80 years old", 
-          round(nb_msf_conf_who_died / nb_msf_conf_known_outcome* 100, digits = 1), 
+          round(nb_msf_conf_who_died / nb_msf_conf_known_outcome * 100, digits = 1), 
           round(nb_msf_conf_above65_who_died / nb_msf_conf_above65 * 100, digits = 1), 
           median_age_confirmed_died))
 
@@ -255,8 +254,8 @@ my_doc <- add_table(
   object_name = paste0('gtbl_severity_confirmed_continent', '_', week_report, '.png'), 
   table_title = 'Patient’s severity status by continent (confirmed)', 
   folder = 'msf', 
-  width = 8.93 * cm_to_in, 
-  height = 9.29 * cm_to_in)
+  width = 8.9 * cm_to_in, 
+  height = 4 * cm_to_in)
 
 
 
@@ -270,8 +269,8 @@ my_doc <- add_table(
   object_name = paste0('gtbl_care', '_', week_report, '.png'), 
   table_title = 'Major patient’s care procedures by location (confirmed patients)', 
   folder = 'msf', 
-  width = 8.93 * cm_to_in, 
-  height = 9.29 * cm_to_in)
+  width = 7.93 * cm_to_in, 
+  height = 7.29 * cm_to_in)
 
 
 # Table CFR by age-group and sex
@@ -296,6 +295,7 @@ my_doc <- add_table(
 
 my_doc <- add_par_normal('')
 
+my_doc <- add_end_section_2columns()
 
 
 
@@ -303,52 +303,48 @@ my_doc <- add_par_normal('')
 
 
 
+
+my_doc <- add_heading2("EN VRAC")
 
 # TABLE STATUS PATIENTS
-# my_doc <- add_table(
-#   object_name = paste0('gtbl_countries_covid_status', '_', week_report, '.png'), 
-#   table_title = glue('Summary of Covid-19 infection-related status of patients consulted/admitted'), 
-#   folder = 'msf', 
-#   width = 16.93 * cm_to_in, 
-#   height = 23.02 * cm_to_in) # size may need to be adapted with the increase of the number of countries
+my_doc <- add_table(
+  object_name = paste0('gtbl_countries_covid_status', '_', week_report, '.png'),
+  table_title = glue('Summary of Covid-19 infection-related status of patients consulted/admitted'),
+  folder = 'msf',
+  width = 16.93 * cm_to_in,
+  height = 23.02 * cm_to_in) 
 
 
 
 # Graph DELAY TO ADMISSION
-# my_doc <- add_figure(
-#   object_name = paste0('boxplot_delay_before_consultation','_', week_report, '.png'), 
-#   figure_title = "Weekly evolution of the distribution of delay from onset of symptoms and consultation/admission", 
-#   folder = 'msf', 
-#   width = 8.37 * cm_to_in, 
-#   height = 5.58 * cm_to_in)
+my_doc <- add_figure(
+  object_name = paste0('boxplot_delay_before_consultation','_', week_report, '.png'),
+  figure_title = "Weekly evolution of the distribution of delay from onset of symptoms and consultation/admission",
+  folder = 'msf',
+  width = 8.37 * cm_to_in,
+  height = 5.58 * cm_to_in)
 
 
 
 
 #  Graph LENGTH OF STAY HOSPITALISED
-# my_doc <- add_figure(
-#   object_name  = paste0('boxplot_length_stay', '_', week_report, '.png'), 
-#   figure_title = "Weekly evolution of the distribution of length of stay among hospitalized patient", 
-#   folder = 'msf', 
-#   width = 8.37 * cm_to_in, 
-#   height = 5.58 * cm_to_in)
+my_doc <- add_figure(
+  object_name  = paste0('boxplot_length_stay', '_', week_report, '.png'),
+  figure_title = "Weekly evolution of the distribution of length of stay among hospitalized patient",
+  folder = 'msf',
+  width = 8.37 * cm_to_in,
+  height = 5.58 * cm_to_in)
 
 
 
 # Graph CFR BY AGE-GROUP
-# my_doc <- add_figure(
-#   object_name = paste0('dots_cfr_agegroup', '_', week_report, '.png'), 
-#   figure_title = "Case fatality risk by age groups among Covide-19 confirmed patients", 
-#   folder = 'msf', 
-#   width = 8.97 * cm_to_in, 
-#   height = 5.57 * cm_to_in)
+my_doc <- add_figure(
+  object_name = paste0('dots_cfr_agegroup', '_', week_report, '.png'),
+  figure_title = "Case fatality risk by age groups among Covide-19 confirmed patients",
+  folder = 'msf',
+  width = 8.97 * cm_to_in,
+  height = 5.57 * cm_to_in)
 
-
-
-# TEXT - Comorbidities
-# my_doc <- add_par_normal(
-#   sprintf("Table 9 presents the case fatality among confirmed cases according to the types of comorbidity (patients with known cured or died outcome in the denominator). XXXX are the comorbidities associated wit hthe highest case fatality. Over/Almost XX%% with underlying respiratory disease died......"))
-# my_doc <- add_end_section_2columns()
 
 
 
@@ -381,12 +377,12 @@ my_doc <- add_par_normal('')
 # 
 # my_doc <- add_par_normal("")
 # 
-# my_doc <- add_table(
-#   object_name = paste0('gtbl_non_cases_diagt', '_', week_report, '.png'), 
-#   table_title = 'Frequency of main diagnosis among non confirmed patients who attended an MSF Covid facility, by type of outcome', 
-#   folder = 'msf', 
-#   width = 15.85 * cm_to_in, 
-#   height = 11.92 * cm_to_in)
+my_doc <- add_table(
+  object_name = paste0('gtbl_non_cases_diagt', '_', week_report, '.png'),
+  table_title = 'Frequency of main diagnosis among non confirmed patients who attended an MSF Covid facility, by type of outcome',
+  folder = 'msf',
+  width = 15.85 * cm_to_in,
+  height = 11.92 * cm_to_in)
 # 
 # my_doc <- add_par_normal('')
 
@@ -394,69 +390,69 @@ my_doc <- add_par_normal('')
 
 
 # TABLE COMORBIDITIES
-# my_doc <- add_table(
-#   object_name = paste0('gtbl_comcond_status', '_', week_report, '.png'), 
-#   table_title = 'Frequency and percentage of comorbidities or underlying conditions among patients consulted/admitted', 
-#   folder = 'msf', 
-#   width = 15.61 * cm_to_in, 
-#   height = 9.45 * cm_to_in)
+my_doc <- add_table(
+  object_name = paste0('gtbl_comcond_status', '_', week_report, '.png'),
+  table_title = 'Frequency and percentage of comorbidities or underlying conditions among patients consulted/admitted',
+  folder = 'msf',
+  width = 15.61 * cm_to_in,
+  height = 9.45 * cm_to_in)
 
 
 # TABLE SYMPTOMS
-# my_doc <- add_table(
-#   object_name = paste0('gtbl_sympt_all', '_', week_report, '.png'), 
-#   table_title = 'Frequency and percentage of signs and symptoms of patients consulted/admitted', 
-#   folder = 'msf', 
-#   width = 17.45 * cm_to_in, 
-#   height = 9.45 * cm_to_in)
+my_doc <- add_table(
+  object_name = paste0('gtbl_sympt_all', '_', week_report, '.png'),
+  table_title = 'Frequency and percentage of signs and symptoms of patients consulted/admitted',
+  folder = 'msf',
+  width = 17.45 * cm_to_in,
+  height = 9.45 * cm_to_in)
   
 
 
 # Text CFR all patients
 # --- --- --- --- --- --- 
-# my_doc <- add_par_normal(
-#   sprintf("%s confirmed, probable, or suspected cases with known outcome (cured/died) died, which gives a case fatality risk (CFR) of %s%%. Figure 7 shows the evolution of death numbers and of CFR across the continents.", 
-#           Words(nb_msf_conf_prob_susp_who_died), 
-#           round(cfr_confirmed_probable_suspected * 100, digits = 1)))
-# my_doc <- add_par_normal('')
+my_doc <- add_par_normal(
+  sprintf("%s confirmed, probable, or suspected cases with known outcome (cured/died) died, which gives a case fatality risk (CFR) of %s%%. Figure 7 shows the evolution of death numbers and of CFR across the continents.",
+          Words(nb_msf_conf_prob_susp_who_died),
+          round(cfr_confirmed_probable_suspected * 100, digits = 1)))
+my_doc <- add_par_normal('')
 
 
 # TABLE CFR ALL PATIENTS
 # --- --- --- --- --- --- 
-# my_doc <- add_table(
-#   object_name = paste0('gtbl_cfr_status_continent', '_', week_report, '.png'), 
-#   table_title = 'Case fatality risk in MSF facilities, by covid19 status and continent', 
-#   folder = 'msf', 
-#   width = 8.87 * cm_to_in, 
-#   height = 3.08 * cm_to_in)
+my_doc <- add_table(
+  object_name = paste0('gtbl_cfr_status_continent', '_', week_report, '.png'),
+  table_title = 'Case fatality risk in MSF facilities, by covid19 status and continent',
+  folder = 'msf',
+  width = 8.87 * cm_to_in,
+  height = 3.08 * cm_to_in)
 
 
 
 # GRAPH AGE PYRAMID CONFRMED
-# my_doc <- add_figure(
-#   object_name = paste0('pyramid_age_sex_confirmed_continent', '_', week_report, '.png'), 
-#   figure_title = "Age pyramid of Covid-confirmed patients consulted/ admitted in MSF facilities, by continent", 
-#   folder = 'msf', 
-#   width = 8.57 * cm_to_in, 
-#   height = 8.57 * cm_to_in)
+my_doc <- add_figure(
+  object_name = paste0('pyramid_age_sex_confirmed_continent', '_', week_report, '.png'),
+  figure_title = "Age pyramid of Covid-confirmed patients consulted/ admitted in MSF facilities, by continent",
+  folder = 'msf',
+  width = 8.57 * cm_to_in,
+  height = 8.57 * cm_to_in)
 
 
 
 
 # GRAPH  AGE PYRAMID ALL PATIENTS
-# my_doc <- add_figure(
-#   object_name = paste0('pyramid_age_sex_all_continent', '_', week_report, '.png'), 
-#   figure_title = "Age pyramid of patients consulted/admitted in MSF facilities, by continent", 
-#   folder = 'msf', 
-#   width = 8.57 * cm_to_in, 
-#   height = 8.57 * cm_to_in)
+my_doc <- add_figure(
+  object_name = paste0('pyramid_age_sex_all_continent', '_', week_report, '.png'),
+  figure_title = "Age pyramid of patients consulted/admitted in MSF facilities, by continent",
+  folder = 'msf',
+  width = 8.57 * cm_to_in,
+  height = 8.57 * cm_to_in)
 
 
 
 # TABLE PATIENT CHARACTERISTICS
-# my_doc <- add_table(
-#   object_name = paste0('gtbl_general', '_', week_report, '.png'), 
-#   table_title = glue('Patient characteristics in MSF facilities, by covid19 status'), 
-#   folder = 'msf', 
-#   width = 9.17 * cm_to_in, 
-#   height = 5.49 * cm_to_in) # size may need to be adapted with the increase of the number of countries
+my_doc <- add_table(
+  object_name = paste0('gtbl_general', '_', week_report, '.png'),
+  table_title = glue('Patient characteristics in MSF facilities, by covid19 status'),
+  folder = 'msf',
+  width = 9.17 * cm_to_in,
+  height = 5.49 * cm_to_in) # size may need to be adapted with the increase of the number of countries

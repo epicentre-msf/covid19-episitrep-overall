@@ -195,8 +195,9 @@ nb_msf_conf_above65 <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed
 
 nb_msf_conf_above65_who_died <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' & age_in_years >=65 & ind_outcome_patcourse_status == 'Died', na.rm = TRUE))
 
-nb_msf_conf_known_outcome <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' &ind_outcome_patcourse_status %in% c('Cured', 'Died'), na.rm = TRUE))
+nb_msf_conf_known_outcome <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' & ind_outcome_patcourse_status %in% c('Cured', 'Died'), na.rm = TRUE))
 
+nb_msf_conf_who_died <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' & ind_outcome_patcourse_status == 'Died', na.rm = TRUE))
 
 
 median_age_all <- dta_linelist %>% 
