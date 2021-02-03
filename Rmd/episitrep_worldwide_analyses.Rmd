@@ -70,19 +70,23 @@ subtitle: "Data as of week `r glue::glue("{format(date_max_report, '%V')}, endin
 # === === === === === === === 
 
 # Get ECDC data either from the web or from the saved RDS file
-#dta_jhu <- covidutils::get_ecdc_data() %>% 
+#dta_ecdc <- covidutils::get_ecdc_data() %>% 
 #  prepare_ecdc_data()
+
+# === === === === === === === 
+# JHU data
+# === === === === === === === 
 
 dta_jhu <- get_owid_jhcsse()
 
 saveRDS(dta_jhu, file.path(path.local.worldwide.data, 'dta_jhu.RDS'))
 
-# ECDC data right censored until date_max
+# JHU data right censored until date_max
 dta_jhu_right_censored <- dta_jhu %>% 
   tidyr::drop_na(iso_a3) %>% 
   filter(between(date, left = NULL, right = date_max_report))
 
-# ECDC split data in a list of countries with iso_a3 as key
+# JHU split data in a list of countries with iso_a3 as key
 lst_dta_jhu <- dta_jhu_right_censored %>% 
   multisplit("iso_a3")
 
@@ -251,7 +255,7 @@ The R scripts are available at the following Github repository https://github.co
 
 This document uses the following data sources: 
 
-  - [ECDC data](https://opendata.ecdc.europa.eu/covid19/casedistribution/csv) last updated `r format(max(dta_jhu$date, na.rm = TRUE), "%d %b %Y")`.   
+  - [JHU CSSE data](https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/jhu/full_data.csv) last updated `r format(max(dta_jhu$date, na.rm = TRUE), "%d %b %Y")`.   
   -	FIND [SARS-COV-2 Test Tracker](https://www.finddx.org/covid-19/test-tracker/) for data on Covid-19 tests
 
 Definitions of increasing, declining and stable trends and the definition of doubling time, as well as detailed information on the analysis methods, can be found [here](https://reports.msf.net/secure/app_direct/covid19-additional-analysis/analysis_methods_2020-08-20.html).
