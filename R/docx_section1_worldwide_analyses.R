@@ -90,9 +90,30 @@ my_doc <- add_end_section_continuous()
 my_doc <- add_par_normal(
   sprintf("Since the beginning of the epidemic, countries presenting the highest cumulative incidences are in North and South America, Europe, and Middle East (Figure 2)."))
 
-# 6
-# my_doc <- add_par_normal(
-#   sprintf("Since last week, NAME OF THE COUNTRIES reached the threshold of 10 confirmed cases per 100,000 population. Some others, including NAME OF THE COUNTRIES, are now over 100 confirmed cases per 100,000 population."))
+tbl_inc_cum_30d_ago <- dta_jhu %>% 
+  group_by(iso_a3, country, continent, region) %>% 
+  arrange(date) %>% 
+  filter(between(date, 
+                 left = date_min_report,
+                 right = date_max_report - 29)) %>% 
+  summarise(
+    cases = sum(cases, na.rm = TRUE)) %>% 
+  left_join(df_pop_country %>% select(iso_a3, pop)) %>% 
+  mutate(
+    cases_ip_before = cases / pop * 100000)
+
+
+country_over1000_30d <- select(tbl_inc_prop, iso_a3 : country, case_ip_now = cases_ip) %>% 
+  left_join(select(tbl_inc_cum_30d_ago, iso_a3, cases_ip_before)) %>% 
+  filter(cases_ip_before < 1000,
+         case_ip_now >= 1000) 
+ 
+
+my_doc <- add_par_normal(
+  sprintf("During the last month, %s reached the threshold of 1,000 confirmed cases per 100,000 population (1%%).", 
+          country_over1000_30d %>% pull(country) %>% combine_words()
+          )
+  )
 
 
 ## - Map Case Incidence
@@ -178,7 +199,7 @@ my_doc <- my_doc %<>%
   slip_in_text(style = 'Hyperlink', 
                str = "here", 
                hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/") %>% 
-  slip_in_text(style = 'Normal', 
+  slip_in_text(style = 'Normal char', 
                str = "), in order to account for high case numbers reached, and possible second surge in cases.") 
 
 
@@ -191,7 +212,8 @@ my_doc <- add_par_normal(
 my_doc <- add_par_normal(
   sprintf("This week %s reported a doubling time in cases of less than 8 days. The other countries with a doubling time in cases of less than 12 days are %s.",
           combine_words(call_countries_doubling('cases_est', threshold = 8)), 
-          combine_words(setdiff(call_countries_doubling('cases_est', threshold = 12), call_countries_doubling('cases_est', threshold = 8)))))
+          combine_words(setdiff(call_countries_doubling('cases_est', threshold = 12),
+                                call_countries_doubling('cases_est', threshold = 8)))))
 
 # 3
 my_doc <- add_par_normal(

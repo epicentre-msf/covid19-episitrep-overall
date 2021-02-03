@@ -115,7 +115,9 @@ call_countries_increasing <- function(obs, continent_name = NULL){
 
 
 
-call_countries_doubling <- function(est, continent_name = NULL, tbl_dta = tbl_doubling_cfr_rank, threshold = threshold_doubling_time){
+call_countries_doubling <- function(est, continent_name = NULL,
+                                    tbl_dta = tbl_doubling_cfr_rank, 
+                                    threshold = threshold_doubling_time){
   
   est <- rlang::sym(est)
   

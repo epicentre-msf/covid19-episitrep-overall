@@ -33,9 +33,10 @@ my_doc <- add_end_section_2columns()
 
 
 my_doc %<>% 
-  body_add_fpar(style = 'Description bold orange Car', 
+  body_add_fpar(style = 'Description bold', 
                 fpar(
-                  ftext('This section presents the main analysis of the dataset. However, supplementary analysis and figures are available in the full analysis report available '))) %>% 
+                  ftext('This section presents the main analysis of the dataset. However, supplementary analysis and figures are available in the full analysis report available ',
+                        prop = calibri_10_bold_orange))) %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "here", 
                hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/additional_episitrep_outputs_msf/") %>% 
@@ -131,7 +132,7 @@ my_doc <- add_par_normal(
 my_doc <- add_par_normal(
   sprintf("Patients consulted/admitted to MSF facilities had median age of %s years. The male/female ratio was %s among all Covid19-related patients and %s (%s%%) patients reported at least one comorbidity. The most frequent comorbidities recorded are hypertension, diabetes, respiratory diseases and malaria. Hypertension and diabetes were more frequent in confirmed cases than in cases proved negative (Not a case).", 
           median(dta_linelist$age_in_years, na.rm = TRUE),
-          tbl_sex_ratio %>% pull(ratio_mf) %>% last(), 
+          tbl_sex_ratio %>% pull(ratio_mf) %>% last() %>% round(., 2), 
           sum(dta_linelist$ind_Comcond_01), 
           format_percent(sum(dta_linelist$ind_Comcond_01)/count(dta_linelist)) %>% pull())) 
 
@@ -185,6 +186,21 @@ my_doc <- add_par_normal(
   sprintf("Table 2 describes the levels of severity found in patients consulted/admitted in MSF facilities, according to their Covid19 status. Though there was a lot of missing data for this variable, overall, %s%% of all patients (%s%% of confirmed) received were assessed to be in a severe or critical state.",
           tbl_severity_all %>% pull(p_sc) %>% round(1),
           tbl_severity_confirmed %>% pull(p_sc) %>% round(1)
+  )
+)
+
+tbl_cfr_global <- dta_cfr_status %>% 
+  filter(ind_MSF_covid_status %in% c("Confirmed", "Suspected", "Probable"),
+         ind_outcome_patcourse_status %in% c("Cured", "Died")) %>% 
+  summarise(n_tot = n(),
+            n_died =  sum(ind_outcome_patcourse_status == 'Died', 
+                          na.rm = TRUE),
+            cfr = 100 * n_died / n_tot)
+
+my_doc <- add_par_normal(
+  sprintf("%s confirmed, probable, or suspected cases with known outcome (cured/died) died, which gives a case fatality risk (CFR) of %s%%. Figure 7 shows the evolution of death numbers and of CFR across the continents.",
+          tbl_cfr_global %>% pull(n_died) %>% Words(),
+          tbl_cfr_global %>% pull(cfr) %>% round(., 1)  
   )
 )
 
