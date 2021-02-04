@@ -45,13 +45,12 @@ dir.create(path.local.deepdive.Africa, showWarnings = FALSE, recursive = TRUE)
 
 ```{r upload-data, include = FALSE}
 
-dta <- get_owid_jhcsse() %>% 
-  tidyr::drop_na(iso_a3) %>% 
-  filter(between(date, left = NULL, right = date_max))
+## --- ECDC data
+dta_ecdc <- covidutils::get_ecdc_data()
 
 
-## --- ECDC Covid data
-dta_ecdc <- get_owid_jhcsse() %>% 
+## --- JHU Covid data
+dta_jhu <- get_owid_jhcsse() %>% 
   tidyr::drop_na(iso_a3) %>% 
   filter(between(date, left = NULL, right = date_max) & (continent == 'Africa'))
 
@@ -61,9 +60,11 @@ df_countries <- readRDS(file.path(path.local.data, paste0('df_countries','.RDS')
   filter(continent == 'Africa') %>% 
   left_join(readRDS(file.path(path.local.data, paste0('df_pop_country','.RDS'))))
 
+
 # sf Robinson projection
 sf_robinson <- readRDS(file.path(path.local.data, paste0('sf_world','.RDS'))) %>% 
   filter(continent == 'Africa')
+
 
 ## --- GIS data - Mercator projection
 sf_mercator <- rnaturalearth::ne_countries(type = "countries", returnclass = "sf") %>% 
@@ -81,6 +82,11 @@ sf_mercator <- rnaturalearth::ne_countries(type = "countries", returnclass = "sf
 
 ```{r prepare-data, include = FALSE}
 
+dta_ecdc <- dta_ecdc %>% 
+   prepare_ecdc_data_geofacet() %>% 
+  drop_na(iso_a3) %>% 
+  filter(between(date, left = NULL, right = date_max))
+
 ## Grouping regions
 
 grp_region_NW <- c('Northern Africa', 'Western Africa')
@@ -89,7 +95,7 @@ grp_region_EMS <- c('Eastern Africa', 'Middle Africa', 'Southern Africa')
 
 ## CASES Incidence proportion
 
-tbl_cases_prop <- dta_ecdc %>% 
+tbl_cases_prop <- dta_jhu %>% 
   group_by(country) %>% 
   summarise(
     n = sum(cases)) %>% 
@@ -97,7 +103,7 @@ tbl_cases_prop <- dta_ecdc %>%
   mutate(
    p = n/pop * 100)
 
-tbl_cases_prop_30d <- dta_ecdc %>% 
+tbl_cases_prop_30d <- dta_jhu %>% 
   filter(between(date, left = date_max - 29, right = date_max)) %>%
   group_by(country) %>% 
   summarise(
@@ -109,7 +115,7 @@ tbl_cases_prop_30d <- dta_ecdc %>%
   select(region, country, n, p, n_30d, p_30d)
 
 
-tbl_cases_prop_2w <- dta_ecdc %>% 
+tbl_cases_prop_2w <- dta_jhu %>% 
   filter(between(date, left = date_max - 13, right = date_max)) %>%
   group_by(country) %>% 
   summarise(
@@ -123,7 +129,7 @@ tbl_cases_prop_2w <- dta_ecdc %>%
 
 ## DEATHS Incidence proportion
 
-tbl_deaths_prop <- dta_ecdc %>% 
+tbl_deaths_prop <- dta_jhu %>% 
   group_by(country) %>% 
   summarise(
     n = sum(deaths)) %>% 
@@ -131,7 +137,7 @@ tbl_deaths_prop <- dta_ecdc %>%
   mutate(
    p = n/pop * 100)
 
-tbl_deaths_prop_2w <- dta_ecdc %>% 
+tbl_deaths_prop_2w <- dta_jhu %>% 
   filter(between(date, left = date_max - 13, right = date_max)) %>%
   group_by(country) %>% 
   summarise(
@@ -852,7 +858,7 @@ linear_trend <- function(dta, series, last_date, n_days, ma_window = 3, min_sum 
 
 
 ```{r}
-lst_dta_ecdc <- dta_ecdc %>% 
+lst_dta_jhu <- dta_jhu %>% 
   multisplit("iso_a3")
 
 
@@ -860,16 +866,16 @@ lst_dta_ecdc <- dta_ecdc %>%
 
 lst_mdl_cases_14d <- list()
 
-for(i in names(lst_dta_ecdc)){
-  mdl <- linear_trend(dta = lst_dta_ecdc[[i]], series = 'cases', n_days = 12, last_date = date_max)
+for(i in names(lst_dta_jhu)){
+  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'cases', n_days = 12, last_date = date_max)
   lst_mdl_cases_14d[[i]] <- mdl
 }
 
 
 lst_mdl_deaths_14d <- list()
 
-for(i in names(lst_dta_ecdc)){
-  mdl <- linear_trend(dta = lst_dta_ecdc[[i]], series = 'deaths', n_days = 12, last_date = date_max)
+for(i in names(lst_dta_jhu)){
+  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'deaths', n_days = 12, last_date = date_max)
   lst_mdl_deaths_14d[[i]] <- mdl
 }
 
@@ -878,16 +884,16 @@ for(i in names(lst_dta_ecdc)){
 
 lst_mdl_cases_30d <- list()
 
-for(i in names(lst_dta_ecdc)){
-  mdl <- linear_trend(dta = lst_dta_ecdc[[i]], series = 'cases', n_days = 30, last_date = date_max)
+for(i in names(lst_dta_jhu)){
+  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'cases', n_days = 30, last_date = date_max)
   lst_mdl_cases_30d[[i]] <- mdl
 }
 
 
 lst_mdl_deaths_30d <- list()
 
-for(i in names(lst_dta_ecdc)){
-  mdl <- linear_trend(dta = lst_dta_ecdc[[i]], series = 'deaths', n_days = 30, last_date = date_max)
+for(i in names(lst_dta_jhu)){
+  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'deaths', n_days = 30, last_date = date_max)
   lst_mdl_deaths_30d[[i]] <- mdl
 }
 
@@ -1034,11 +1040,11 @@ iso_a3_increasing <- tbl_coeff_cases_30d %>%
   filter(trend == 'Increasing') %>% 
   pull(iso_a3)
 
-dta_ecdc_increasing <- dta_ecdc %>% 
+dta_jhu_increasing <- dta_jhu %>% 
   filter(iso_a3 %in% iso_a3_increasing)
 
 
-epicurves <- ggplot(dta_ecdc_increasing, aes(x = date, y = cases)) + 
+epicurves <- ggplot(dta_jhu_increasing, aes(x = date, y = cases)) + 
     facet_wrap(~country, scales = "free_y", ncol = 4) + 
     geom_col(fill = '#1A62A3') + 
     scale_x_date(breaks = '2 months', date_labels = "%b-%Y") +
