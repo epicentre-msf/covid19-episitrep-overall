@@ -42,6 +42,7 @@ dir.create(path.local.deepdive.Africa, showWarnings = FALSE, recursive = TRUE)
 
 ```
 
+
 ```{r upload-data, include = FALSE}
 
 dta <- get_owid_jhcsse() %>% 
@@ -260,7 +261,7 @@ ggplot(tbl_cases_prop %>% filter(n != 0)) +
 
 ### Treemap deaths `r combine_words(grp_region_NW)`
 
-```{r, fig.cap = paste("TREEMAP: Total number and incidence proportion of associated deaths per country in", combine_words(grp_region_NW))}
+```{r, fig.cap = paste("TREEMAP: Total number and incidence proportion of associated deaths per country in", combine_words(grp_region_NW)), include=FALSE, eval=FALSE}
 
 tbl_deaths_prop %>% 
   filter(region %in% grp_region_NW) %>% 
@@ -275,7 +276,7 @@ tbl_deaths_prop %>%
 
 ```
 
-```{r, include = FALSE}
+```{r, include=FALSE, eval=FALSE}
 
 png(filename = file.path(path.local.deepdive.Africa, "treemap_deaths_prop_NW.png"), width = 900, height = 600, res = 144)
 tbl_deaths_prop %>% 
@@ -295,7 +296,7 @@ dev.off()
 
 ### Treemap deaths `r combine_words(grp_region_EMS)`
 
-```{r, fig.cap = paste("TREEMAP: Total number and incidence proportion of associated deaths per country in", combine_words(grp_region_EMS))}
+```{r, fig.cap = paste("TREEMAP: Total number and incidence proportion of associated deaths per country in", combine_words(grp_region_EMS), include=FALSE, eval=FALSE)}
 
 tbl_deaths_prop %>% 
   filter(region %in% grp_region_EMS) %>% 
@@ -310,7 +311,7 @@ tbl_deaths_prop %>%
 
 ```
 
-```{r, include = FALSE}
+```{r, include=FALSE, eval=FALSE}
 
 png(filename = file.path(path.local.deepdive.Africa, "treemap_deaths_prop_EMS.png"), width = 900, height = 600, res = 144)
 tbl_deaths_prop %>% 
@@ -525,7 +526,7 @@ ggsave(file.path(path.local.deepdive.Africa, paste0('scatter_plot_prop_prop_30d'
 
 ### Treemap cases `r combine_words(grp_region_NW)`
 
-```{r, fig.cap = paste("Number of confirmed cases since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_NW))}
+```{r, fig.cap = paste("Number of confirmed cases since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_NW)), include=FALSE, eval=FALSE}
 
 tbl_cases_prop_2w %>% 
   filter(region %in% grp_region_NW) %>% 
@@ -540,7 +541,7 @@ tbl_cases_prop_2w %>%
 
 ```
 
-```{r, include = FALSE}
+```{r, include = FALSE, eval=TRUE}
 
 png(filename = file.path(path.local.deepdive.Africa, "treemap_cases_cases_NW_14d.png"), width = 900, height = 600, res = 144)
 tbl_cases_prop_2w %>% 
@@ -598,7 +599,7 @@ dev.off()
 
 ### Treemap deaths `r combine_words(grp_region_NW)`
 
-```{r, fig.cap = paste("Number of confirmed associated deaths since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_NW))}
+```{r, fig.cap = paste("Number of confirmed associated deaths since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_NW)), include=FALSE, eval=FALSE}
 
 tbl_deaths_prop_2w %>% 
   filter(region %in% grp_region_NW) %>% 
@@ -615,7 +616,7 @@ tbl_deaths_prop_2w %>%
 
 ### Treemap deaths `r combine_words(grp_region_EMS)`
 
-```{r, fig.cap = paste("Number of confirmed associated deaths since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_EMS))}
+```{r, fig.cap = paste("Number of confirmed associated deaths since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_EMS)), include=FALSE, eval=FALSE}
 
 tbl_deaths_prop_2w %>% 
   filter(region %in% grp_region_EMS) %>% 
@@ -1027,6 +1028,7 @@ ggsave(file.path(path.local.deepdive.Africa, paste0('map_cases_trends', '_', wee
 
 ## Epidemic curves
 
+
 ```{r}
 iso_a3_increasing <- tbl_coeff_cases_30d %>% 
   filter(trend == 'Increasing') %>% 
@@ -1154,3 +1156,10 @@ country_six_plots2 <- function(dta_all, dta_long, dta_short, date_max) {
   return(multiplot)
 }
 ```
+
+### Geofacet
+
+```{r}
+
+```
+
