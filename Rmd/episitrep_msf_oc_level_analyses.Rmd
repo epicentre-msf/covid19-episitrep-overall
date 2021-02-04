@@ -205,7 +205,12 @@ dta_linelist_with_aggregated <- dta_linelist %>%
       is.na(project) ~ site_name,
       TRUE           ~ project),
     ind_MSF_covid_status = recode(ind_MSF_covid_status, "(Unknown)" = "Unknown")
-  )
+  ) %>% 
+  mutate(continent = case_when(
+      country == "Cote d'Ivoire (*)" ~ 'Africa', 
+      country == "Democratic Republic of Congo (*)" ~ 'Africa',
+      country == "Palestine (*)" ~ "Asia",
+      TRUE ~ continent))
 
 
 tbl_aggregated_expanded_with_dates <- dta_aggregated_expanded %>%
