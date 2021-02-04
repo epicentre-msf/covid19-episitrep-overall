@@ -7,7 +7,7 @@ my_doc %<>%
                value = "MSF EpiSitrep on Covid-19 epidemic",
                pos = "before") %>% 
   body_add_par(style = 'Subtitle', 
-               value = glue('Week {lubridate::week(date_max_report)}-{lubridate::year(date_max_report)}')) 
+               value = glue('Week {lubridate::week(date_max_report)-1}-{lubridate::year(date_max_report)}')) 
 
 
 
