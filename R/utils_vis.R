@@ -1059,3 +1059,46 @@ print_plot <- function(x){
     print(x)
   }
 }
+
+
+
+
+geofacet_plot <- function(data, 
+                          .count = c("cases", "deaths", "cases_per_100000",
+                                     "deaths_per_million"),
+                          continent = "",
+                          my_grid = "africa_countries_grid1",
+                          scales = "fixed", 
+                          angle = 45) {
+  
+  .count <- match.arg(.count)
+  count_label <- .count %>% 
+    str_replace_all("_", " ")
+  
+  data <- data %>% 
+    filter(count == .count)
+  
+  ggplot(data, aes(x = date)) + 
+    geom_line(aes(y = value_raw), colour = "steelblue") +
+    geom_line(aes(y = value_ma), colour = "grey20", size = 1) +
+    # geom_smooth(aes(y = value_raw), 
+    # se = FALSE, colour = "grey20") +
+    facet_geo(~code,
+              grid = my_grid,
+              label = "name", 
+              scales = scales) +
+    
+    theme_bw() + 
+    ylab("") + 
+    scale_x_date("", 
+                 date_breaks = "2 months", 
+                 date_labels = "%b") + 
+    theme(strip.text.x = element_text(size = 6), 
+          axis.text.x = element_text(angle = angle, 
+                                     hjust = 1, 
+                                     vjust = 1)) +
+    labs(title = glue("COVID-19 {count_label} in {continent}"),
+         subtitle = "", caption = "Data from ECDC")
+  
+  
+}
