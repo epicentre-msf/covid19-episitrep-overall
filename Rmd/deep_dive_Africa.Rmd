@@ -22,24 +22,35 @@ knitr::opts_chunk$set(cache = FALSE,
                       message = FALSE, 
                       encoding = "UTF-8")
 
+
 source(here::here('R', 'setup.R'), encoding = 'UTF-8')
-
-library(treemap)
-library(patchwork)
-
 source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
 source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
 
+# Packages
+library(tidyverse)
+library(treemap)
+library(patchwork)
+library(countrycode)
+library(geofacet)
+library(glue)
+library(slider)
 
-date_min <- NULL
-date_max <- as.Date('2021-01-03')
-week_report <- ISOweek::ISOweek(date_max) %>% gsub("W","w", .)
 
+# Set dates
+dates_and_week <- set_date_frame(create_folders = TRUE)
+
+date_min_report_report <- dates_and_week[[1]]
+date_max_report_report <- dates_and_week[[2]]
+week_report            <- dates_and_week[[3]]
+
+# Set paths
 set_paths(path.local, week_report)
-path.local.deepdive.Africa <- file.path(path.local.worldwide, 'deepdive_Africa')
-dir.create(path.local.deepdive.Africa, showWarnings = FALSE, recursive = TRUE) 
-
-
+path.local.deepdive.Africa <- file.path(path.local.worldwide,
+                                        'deepdive_Africa')
+if(!exists(path.local.deepdive.Africa)) {
+  dir.create(path.local.deepdive.Africa, showWarnings = FALSE, recursive = TRUE)
+}
 ```
 
 
@@ -52,7 +63,7 @@ dta_ecdc <- covidutils::get_ecdc_data()
 ## --- JHU Covid data
 dta_jhu <- get_owid_jhcsse() %>% 
   tidyr::drop_na(iso_a3) %>% 
-  filter(between(date, left = NULL, right = date_max) & (continent == 'Africa'))
+  filter(between(date, left = NULL, right = date_max_report) & (continent == 'Africa'))
 
 
 ## --- Population data
@@ -85,7 +96,7 @@ sf_mercator <- rnaturalearth::ne_countries(type = "countries", returnclass = "sf
 dta_ecdc <- dta_ecdc %>% 
    prepare_ecdc_data_geofacet() %>% 
   drop_na(iso_a3) %>% 
-  filter(between(date, left = NULL, right = date_max))
+  filter(between(date, left = NULL, right = date_max_report))
 
 ## Grouping regions
 
@@ -104,7 +115,7 @@ tbl_cases_prop <- dta_jhu %>%
    p = n/pop * 100)
 
 tbl_cases_prop_30d <- dta_jhu %>% 
-  filter(between(date, left = date_max - 29, right = date_max)) %>%
+  filter(between(date, left = date_max_report - 29, right = date_max_report)) %>%
   group_by(country) %>% 
   summarise(
     n_30d = sum(cases)) %>% 
@@ -116,7 +127,7 @@ tbl_cases_prop_30d <- dta_jhu %>%
 
 
 tbl_cases_prop_2w <- dta_jhu %>% 
-  filter(between(date, left = date_max - 13, right = date_max)) %>%
+  filter(between(date, left = date_max_report - 13, right = date_max_report)) %>%
   group_by(country) %>% 
   summarise(
     n_2w = sum(cases)) %>% 
@@ -138,7 +149,7 @@ tbl_deaths_prop <- dta_jhu %>%
    p = n/pop * 100)
 
 tbl_deaths_prop_2w <- dta_jhu %>% 
-  filter(between(date, left = date_max - 13, right = date_max)) %>%
+  filter(between(date, left = date_max_report - 13, right = date_max_report)) %>%
   group_by(country) %>% 
   summarise(
     n_2w = sum(deaths)) %>% 
@@ -151,7 +162,7 @@ tbl_deaths_prop_2w <- dta_jhu %>%
 ```
 
 
-Data source: [JHU CSSE data](https://github.com/owid/covid-19-data/tree/master/public/data) updated until `r format(date_max, '%d %B %Y')`
+Data source: [JHU CSSE data](https://github.com/owid/covid-19-data/tree/master/public/data) updated until `r format(date_max_report, '%d %B %Y')`
 
 **How to read the treemaps**
 
@@ -867,7 +878,7 @@ lst_dta_jhu <- dta_jhu %>%
 lst_mdl_cases_14d <- list()
 
 for(i in names(lst_dta_jhu)){
-  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'cases', n_days = 12, last_date = date_max)
+  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'cases', n_days = 12, last_date = date_max_report)
   lst_mdl_cases_14d[[i]] <- mdl
 }
 
@@ -875,7 +886,7 @@ for(i in names(lst_dta_jhu)){
 lst_mdl_deaths_14d <- list()
 
 for(i in names(lst_dta_jhu)){
-  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'deaths', n_days = 12, last_date = date_max)
+  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'deaths', n_days = 12, last_date = date_max_report)
   lst_mdl_deaths_14d[[i]] <- mdl
 }
 
@@ -885,7 +896,7 @@ for(i in names(lst_dta_jhu)){
 lst_mdl_cases_30d <- list()
 
 for(i in names(lst_dta_jhu)){
-  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'cases', n_days = 30, last_date = date_max)
+  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'cases', n_days = 30, last_date = date_max_report)
   lst_mdl_cases_30d[[i]] <- mdl
 }
 
@@ -893,7 +904,7 @@ for(i in names(lst_dta_jhu)){
 lst_mdl_deaths_30d <- list()
 
 for(i in names(lst_dta_jhu)){
-  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'deaths', n_days = 30, last_date = date_max)
+  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'deaths', n_days = 30, last_date = date_max_report)
   lst_mdl_deaths_30d[[i]] <- mdl
 }
 
@@ -1098,11 +1109,11 @@ ggsave(file.path(path.local.deepdive.Africa, paste0('preds', '_', week_report, '
 
 ```{r, eval = FALSE}
 # To plot both cases and deaths into a single graphic plot
-country_six_plots2 <- function(dta_all, dta_long, dta_short, date_max) {
+country_six_plots2 <- function(dta_all, dta_long, dta_short, date_max_report) {
     
   # Parameters
   main_colour  <- c(cases = '#1A62A3', deaths = '#e10000')
-  date_min     <- dta_all %>% filter(cnt != 0) %>% pull(date) %>% min()
+  date_min_report     <- dta_all %>% filter(cnt != 0) %>% pull(date) %>% min()
 
   
   # Plots
@@ -1111,7 +1122,7 @@ country_six_plots2 <- function(dta_all, dta_long, dta_short, date_max) {
     geom_col(aes(colour = obs, fill = obs)) + 
     scale_colour_manual(values = main_colour) + 
     scale_fill_manual(values = main_colour) + 
-    scale_x_date(limits = c(date_min, NA), breaks = '2 months', date_labels = "%b-%Y") +
+    scale_x_date(limits = c(date_min_report, NA), breaks = '2 months', date_labels = "%b-%Y") +
     xlab('') + 
     ylab('frequency') + 
     labs(subtitle = 'Since the first cases reported') + 
