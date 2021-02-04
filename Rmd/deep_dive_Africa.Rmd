@@ -40,9 +40,9 @@ library(slider)
 # Set dates
 dates_and_week <- set_date_frame(create_folders = TRUE)
 
-date_min_report_report <- dates_and_week[[1]]
-date_max_report_report <- dates_and_week[[2]]
-week_report            <- dates_and_week[[3]]
+date_min_report <- dates_and_week[[1]]
+date_max_report <- dates_and_week[[2]]
+week_report     <- dates_and_week[[3]]
 
 # Set paths
 set_paths(path.local, week_report)
@@ -867,7 +867,6 @@ linear_trend <- function(dta, series, last_date, n_days, ma_window = 3, min_sum 
 ```
 
 
-
 ```{r}
 lst_dta_jhu <- dta_jhu %>% 
   multisplit("iso_a3")
@@ -909,6 +908,7 @@ for(i in names(lst_dta_jhu)){
 }
 
 ```
+
 
 ```{r}
 # -- Lists of predictions
@@ -1177,6 +1177,181 @@ country_six_plots2 <- function(dta_all, dta_long, dta_short, date_max_report) {
 ### Geofacet
 
 ```{r}
+df_data_africa <- dta_ecdc %>% 
+  filter(continent == "Africa", 
+         date >= as.Date("2020-03-01")) %>% 
+  rename(code = geoid) %>% 
+  mutate(cases_per_100000   = cases/population_2019*1e5, 
+         deaths_per_million = deaths/population_2019*1e6) %>% 
+  pivot_longer(cols = c(cases, deaths, cases_per_100000,
+                        deaths_per_million), 
+               names_to = "count", 
+               values_to = "value_raw") %>% 
+  group_by(code, count) %>% 
+  arrange(date) %>% 
+  mutate(value_ma = slide_dbl(value_raw, 
+                              mean, 
+                              .before = 1, 
+                              .after = 1)) %>% 
+  ungroup()
+
+df_code_data <- df_data_africa %>% 
+  distinct(country_ecdc, country, code, iso_a3)
+
+
+# Correct country code for Namibia in geofacet grid
+africa_countries_grid1[africa_countries_grid1$code == "NAM", "code"] <- "NA"
+
+
+
+# cases
+geofacet_plot <- function(data, 
+                      .count = c("cases", "deaths", "cases_per_100000",
+                                 "deaths_per_million"),
+                      continent = "",
+                      my_grid = "africa_countries_grid1",
+                      scales = "fixed", 
+                      angle = 45) {
+  
+  .count <- match.arg(.count)
+  count_label <- .count %>% 
+    str_replace_all("_", " ")
+  
+  data <- data %>% 
+    filter(count == .count)
+  
+  ggplot(data, aes(x = date)) + 
+    geom_line(aes(y = value_raw), colour = "steelblue") +
+    geom_line(aes(y = value_ma), colour = "grey20", size = 1) +
+    # geom_smooth(aes(y = value_raw), 
+    # se = FALSE, colour = "grey20") +
+    facet_geo(~code,
+              grid = my_grid,
+              label = "name", 
+              scales = scales) +
+    
+    theme_bw() + 
+    ylab("") + 
+    scale_x_date("", 
+                 date_breaks = "2 months", 
+                 date_labels = "%b") + 
+    theme(strip.text.x = element_text(size = 6), 
+          axis.text.x = element_text(angle = angle, 
+                                     hjust = 1, 
+                                     vjust = 1)) +
+    labs(title = glue("COVID-19 {count_label} in {continent}"),
+         subtitle = "", caption = "Data from ECDC")
+  
+  
+}
+
+
+# CAS
+p <- geofacet_plot(df_data_africa, 
+                   "cases", 
+                   continent = "Africa", 
+                   my_grid = "africa_countries_grid1",
+                    scales = "free_y",
+                   angle = 90)
+ggsave(file.path(path.local.deepdive.Africa,
+                 paste0('geofacet_cases_free_y', '_', 
+                        week_report, '.png')),
+       width = 14, 
+       height = 12)
+
+
+
+p <- geofacet_plot(df_data_africa, 
+                   "cases", 
+                   continent = "Africa", 
+                   my_grid = "africa_countries_grid1",
+                    scales = "fixed",
+                   angle = 90)
+ggsave(file.path(path.local.deepdive.Africa,
+                 paste0('geofacet_cases_fixed', '_', 
+                        week_report, '.png')),
+       width = 14, 
+       height = 12)
+
+
+# DEATHS
+p <- geofacet_plot(df_data_africa, 
+                   "deaths", 
+                   continent = "Africa", 
+                   my_grid = "africa_countries_grid1",
+                    scales = "free_y",
+                   angle = 90)
+ggsave(file.path(path.local.deepdive.Africa,
+                 paste0('geofacet_deaths_free_y', '_', 
+                        week_report, '.png')),
+       width = 14, 
+       height = 12)
+
+p <- geofacet_plot(df_data_africa, 
+                   "deaths", 
+                   continent = "Africa", 
+                   my_grid = "africa_countries_grid1",
+                    scales = "fixed",
+                   angle = 90)
+ggsave(file.path(path.local.deepdive.Africa,
+                 paste0('geofacet_deaths_fixed', '_', 
+                        week_report, '.png')),
+       width = 14, 
+       height = 12)
+
+# CASE PER 100 000
+p <- geofacet_plot(df_data_africa, 
+                   "cases_per_100000", 
+                   continent = "Africa", 
+                   my_grid = "africa_countries_grid1",
+                    scales = "free_y",
+                   angle = 90)
+ggsave(file.path(path.local.deepdive.Africa,
+                 paste0('geofacet_cases_per_100000_free_y', '_', 
+                        week_report, '.png')),
+       width = 14, 
+       height = 12)
+
+p <- geofacet_plot(df_data_africa, 
+                   "cases_per_100000", 
+                   continent = "Africa", 
+                   my_grid = "africa_countries_grid1",
+                    scales = "fixed",
+                   angle = 90)
+ggsave(file.path(path.local.deepdive.Africa,
+                 paste0('geofacet_cases_per_100000_fixed', '_', 
+                        week_report, '.png')),
+       width = 14, 
+       height = 12)
+
+
+
+# DEATHS PER MILLIONS
+p <- geofacet_plot(df_data_africa, 
+                   "deaths_per_million", 
+                   continent = "Africa", 
+                   my_grid = "africa_countries_grid1",
+                    scales = "free_y",
+                   angle = 90)
+ggsave(file.path(path.local.deepdive.Africa,
+                 paste0('geofacet_deaths_per_million_free_y', '_', 
+                        week_report, '.png')),
+       width = 14, 
+       height = 12)
+
+p <- geofacet_plot(df_data_africa, 
+                   "deaths_per_million", 
+                   continent = "Africa", 
+                   my_grid = "africa_countries_grid1",
+                    scales = "fixed",
+                   angle = 90)
+ggsave(file.path(path.local.deepdive.Africa,
+                 paste0('geofacet_deaths_per_million_fixed', '_', 
+                        week_report, '.png')),
+       width = 14, 
+       height = 12)
+
+
 
 ```
 
