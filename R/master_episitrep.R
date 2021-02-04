@@ -80,7 +80,20 @@ source(file.path(path.R, 'docx_section2_MSF_level_analyses.R'), encoding = 'UTF-
 print(my_doc, target = file.path(path.local.week, glue("draft_EpiSitrep_world_Covid-19_{week_report}.docx")))
 
 
- 
+
+# === === === === === === 
+# ---- Run Deepdives ----
+# === === === === === ===  
+file_out_deepdive_africa <- paste0(week_report, '_', 'deepdive_Africa', '.html')
+
+rmarkdown::render(
+  input = file.path(path.Rmd, 'deep_dive_Africa.Rmd'), 
+  output_file = file_out_deepdive_africa,
+  output_dir  = path.local.week)
+
+
+
+
 # === === === === === === === === === ===
 # ---- Copy outputs to public folder ----
 # === === === === === === === === === === 
