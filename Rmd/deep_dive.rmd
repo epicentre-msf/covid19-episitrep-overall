@@ -360,7 +360,7 @@ ggsave(file.path(path.local.deepdive, paste0('scatter_plot_prop_prop_30d', '_', 
 
 ## Overall incidence proportions _versus_ incidence proportions in the last 14 days
 
-### Maps
+### Map
 
 <!-- Map of overall incidence proportion -->
 ```{r maps-incidence-proportions, fig.cap = "MAP: Overall incidence proportion of cases and recent incidence proportions of cases (last 14 days)"}
@@ -454,8 +454,8 @@ map_case_inc_2weeks <- ggplot(sf_case_inc_2weeks) +
       label.position = "bottom",
       title.position = 'top')) + 
   coord_sf(
-    xlim = xlim__continent, 
-    ylim = ylim__continent,
+    xlim = xlim_continent, 
+    ylim = ylim_continent,
     expand = FALSE,
     datum = NA) + 
   labs(title = 'Last 14 days') + 
@@ -659,8 +659,8 @@ map_case_trend_30d <- ggplot(sf_case_trend_30d) +
       label.position = "bottom",
       title.position = 'top')) + 
   coord_sf(
-    xlim = xlim__continent, 
-    ylim = ylim__continent, 
+    xlim = xlim_continent, 
+    ylim = ylim_continent, 
     expand = FALSE,
     datum = NA) + 
   labs(title = 'Last 30 days') + 
@@ -685,8 +685,8 @@ map_case_trend_14d <- ggplot(sf_case_trend_14d) +
       label.position = "bottom",
       title.position = 'top')) + 
   coord_sf(
-    xlim = xlim__continent, 
-    ylim = ylim__continent, 
+    xlim = xlim_continent, 
+    ylim = ylim_continent, 
     expand = FALSE, 
     datum = NA) + 
   labs(title = 'Last 12 days') + 
