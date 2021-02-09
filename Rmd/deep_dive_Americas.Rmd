@@ -19,13 +19,12 @@ author: "Francesco Grandesso"
 date: "23/09/2020"
 output: html_document
 editor_options: 
-  chunk_output_type: console
+chunk_output_type: console
 ---
 -->
 
 
 ```{r setup, include = FALSE}
-
 knitr::opts_chunk$set(cache = FALSE, 
                       echo = FALSE, 
                       tidy = TRUE, 
@@ -37,35 +36,53 @@ knitr::opts_chunk$set(cache = FALSE,
                       encoding = "UTF-8")
 
 source(here::here('R', 'setup.R'), encoding = 'UTF-8')
+source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
+source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
 
 library(treemap)
 
-source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
-source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
-source(file.path(path.R, "set_time_frame.R")  , encoding = "UTF-8")
 
+# Set dates
+dates_and_week <- set_date_frame(create_folders = TRUE)
+
+date_min_report <- dates_and_week[[1]]
+date_max_report <- dates_and_week[[2]]
+week_report     <- dates_and_week[[3]]
+
+
+# Set paths
+set_paths(path.local, week_report)
+path.local.deepdive.Americas <- file.path(path.local.worldwide,
+                                          'deepdive_Americas')
+if(!exists(path.local.deepdive.Americas)) {
+  dir.create(path.local.deepdive.Americas, showWarnings = FALSE, recursive = TRUE)
+}
 ```
+
 
 ```{r upload-data, include = FALSE}
 
-#load(file.path(path.local.worldwide.data, paste0('episitrep_worldwide_analyses', '_', week_report, '.RData')))
+## --- ECDC data
+dta_ecdc <- covidutils::get_ecdc_data()
 
-rds_ecdc <- readRDS(file.path(path.local.worldwide.data, 'dta_ECDC.RDS'))
 
-dta_ecdc <- rds_ecdc[[1]] %>% 
-  prepare_ecdc_dta() %>% 
+## --- JHU Covid data
+dta_jhu <- get_owid_jhcsse() %>% 
   tidyr::drop_na(iso_a3) %>% 
-  filter(between(date, left = NULL, right = date_max_report), continent == 'Americas')
+  filter(between(date, left = NULL, right = date_max_report) & (continent == 'Americas'))
+
 
 
 # List of Americas countries with population
-df_countries <- readRDS(file.path(path.data, paste0('df_countries','.RDS'))) %>% 
+df_countries <- readRDS(file.path(path.local.data, paste0('df_countries','.RDS'))) %>% 
   filter(continent == 'Americas') %>% 
-  left_join(readRDS(file.path(path.data, paste0('df_pop_country','.RDS'))))
+  left_join(readRDS(file.path(path.local.data, paste0('df_pop_country','.RDS'))))
+
 
 # sf Robinson projection
-sf_robinson_Americas <- readRDS(file.path(path.data, paste0('sf_world','.RDS'))) %>% 
+sf_robinson_Americas <- readRDS(file.path(path.local.data, paste0('sf_world','.RDS'))) %>%
   filter(continent == 'Americas')
+
 
 ## Mercator projection
 sf_mercator_Americas <- rnaturalearth::ne_countries(type = "countries", returnclass = "sf") %>% 
@@ -80,16 +97,73 @@ sf_mercator_Americas <- rnaturalearth::ne_countries(type = "countries", returncl
   cbind(sf::st_coordinates(suppressWarnings(sf::st_centroid(., of_largest_polygon = TRUE)))) %>% 
   dplyr::rename(lon = X, lat = Y) %>% 
   filter(continent == 'Americas')
-
-
-
-
-# Specific path for outputs of this analysis
-path.local.South_America <- file.path(path.local, 'South-America')
-dir.create(path.local.South_America, showWarnings = FALSE, recursive = TRUE) 
-
 ```
 
+
+
+```{r prepare-data, include = FALSE}
+
+dta_ecdc <- dta_ecdc %>% 
+  prepare_ecdc_data_geofacet() %>% 
+  drop_na(iso_a3) %>% 
+  filter(between(date, left = NULL, right = date_max_report))
+
+
+## CASES Incidence proportion
+tbl_cases_prop <- dta_jhu %>% 
+  group_by(country) %>% 
+  summarise(
+    n = sum(cases)) %>% 
+  left_join(df_countries) %>% 
+  mutate(
+    p = n / pop * 100)
+
+tbl_cases_prop_30d <- dta_jhu %>% 
+  filter(between(date, left = date_max_report - 29, right = date_max_report)) %>%
+  group_by(country) %>% 
+  summarise(
+    n_30d = sum(cases)) %>% 
+  left_join(df_countries) %>% 
+  mutate(
+    p_30d = n_30d/pop * 100) %>% 
+  left_join(tbl_cases_prop) %>% 
+  select(region, country, n, p, n_30d, p_30d)
+
+
+tbl_cases_prop_2w <- dta_jhu %>% 
+  filter(between(date, left = date_max_report - 13, right = date_max_report)) %>%
+  group_by(country) %>% 
+  summarise(
+    n_2w = sum(cases)) %>% 
+  left_join(df_countries) %>% 
+  mutate(
+    p_2w = n_2w/pop * 100) %>% 
+  left_join(tbl_cases_prop) %>% 
+  select(region, country, n, p, n_2w, p_2w)
+
+
+## DEATHS Incidence proportion
+
+tbl_deaths_prop <- dta_jhu %>% 
+  group_by(country) %>% 
+  summarise(
+    n = sum(deaths)) %>% 
+  left_join(df_countries) %>% 
+  mutate(
+    p = n/pop * 100)
+
+tbl_deaths_prop_2w <- dta_jhu %>% 
+  filter(between(date, left = date_max_report - 13, right = date_max_report)) %>%
+  group_by(country) %>% 
+  summarise(
+    n_2w = sum(deaths)) %>% 
+  left_join(df_countries) %>% 
+  mutate(
+    p_2w = n_2w/pop * 100) %>% 
+  left_join(tbl_deaths_prop) %>% 
+  select(region, country, n, p, n_2w, p_2w)
+
+```
 
 
 Data source: [ECDC data](https://opendata.ecdc.europa.eu/covid19/casedistribution/csv) updated until `r format(date_max_report, '%d %B %Y')`
@@ -103,7 +177,7 @@ Data source: [ECDC data](https://opendata.ecdc.europa.eu/covid19/casedistributio
 
 selected <- c('Northern America', 'Central America')
 
-dta_ecdc %>% 
+dta_jhu %>% 
   filter(region %in% selected) %>% 
   treemap(index = "country", vSize = "cases", type = "index" , title = paste0('Cumulative cases - ', combine_words(selected)))
 
@@ -113,7 +187,7 @@ dta_ecdc %>%
 
 selected <- c('South America')
 
-dta_ecdc %>% 
+dta_jhu %>% 
   filter(region %in% selected) %>% 
   treemap(index = "country", vSize = "cases", type = "index" , title = paste0('Cumulative cases - ', combine_words(selected)))
 
@@ -126,7 +200,7 @@ dta_ecdc %>%
 
 selected <- c('Northern America', 'Central America')
 
-dta_ecdc %>% 
+dta_jhu %>% 
   filter(region %in% selected) %>% 
   treemap(index = "country", vSize = "deaths", type = "index" , title = paste0('Cumulative deaths - ', combine_words(selected)))
 
@@ -136,7 +210,7 @@ dta_ecdc %>%
 
 selected <- c('South America')
 
-dta_ecdc %>% 
+dta_jhu %>% 
   filter(region %in% selected) %>% 
   treemap(index = "country", vSize = "deaths", type = "index" , title = paste0('Cumulative deaths - ', combine_words(selected)))
 
@@ -149,7 +223,7 @@ dta_ecdc %>%
 
 selected <- c('Northern America', 'Central America')
 
-dta_ecdc %>% 
+dta_jhu %>% 
   filter(between(date, left = date_max_report-13, right = date_max_report)) %>% 
   filter(region %in% selected) %>% 
   treemap(index = "country", vSize = "cases", type = "index" , title = paste0('Cumulative cases in the last 14 days - ', combine_words(selected)))
@@ -160,7 +234,7 @@ dta_ecdc %>%
 
 selected <- c('South America')
 
-dta_ecdc %>% 
+dta_jhu %>% 
   filter(between(date, left = date_max_report-13, right = date_max_report)) %>% 
   filter(region %in% selected) %>% 
   treemap(index = "country", vSize = "cases", type = "index" , title = paste0('Cumulative cases in the last 14 days - ', combine_words(selected)))
@@ -174,7 +248,7 @@ dta_ecdc %>%
 
 selected <- c('Northern America', 'Central America')
 
-dta_ecdc %>% 
+dta_jhu %>% 
   filter(between(date, left = date_max_report-13, right = date_max_report)) %>% 
   filter(region %in% selected) %>% 
   treemap(index = "country", vSize = "deaths", type = "index" , title = paste0('Cumulative deaths in the last 14 days - ', combine_words(selected)))
@@ -185,7 +259,7 @@ dta_ecdc %>%
 
 selected <- c('South America')
 
-dta_ecdc %>% 
+dta_jhu %>% 
   filter(between(date, left = date_max_report-13, right = date_max_report)) %>% 
   filter(region %in% selected) %>% 
   treemap(index = "country", vSize = "deaths", type = "index" , title = paste0('Cumulative deaths in the last 14 days - ', combine_words(selected)))
@@ -202,7 +276,7 @@ dta_ecdc %>%
 ```{r tbl-cumulative-incidences}
 
 # Cumulative count cases
-tbl_case_count <- dta_ecdc %>% 
+tbl_case_count <- dta_jhu %>% 
   group_by(iso_a3, region, country) %>% 
   summarise(cases = sum(cases, na.rm = TRUE)) %>% 
   ungroup()
@@ -250,7 +324,7 @@ map_case_inc <- ggplot(sf_case_inc) +
 ```{r tbl-cumulative-incidences-2weeks}
 
 # Cumulative count cases
-tbl_case_count_2weeks <- dta_ecdc %>% 
+tbl_case_count_2weeks <- dta_jhu %>% 
   filter(between(date, left = date_max_report-13, right = date_max_report)) %>% 
   group_by(iso_a3, region, country) %>% 
   summarise(cases = sum(cases, na.rm = TRUE)) %>% 
@@ -393,7 +467,7 @@ linear_trend <- function(dta, series, last_date, n_days = 12, ma_window = 3, min
   dta <- dta %>% select(date, cnt = all_of(series))
   
   dates_extent <- c(last_date - (n_days - 1), last_date)
-    
+  
   dta <- dta %>% 
     filter(between(date, dates_extent[1], dates_extent[2])) %>% 
     tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
@@ -454,7 +528,7 @@ linear_trend <- function(dta, series, last_date, n_days = 12, ma_window = 3, min
 }
 
 
-lst_dta_ecdc <- dta_ecdc %>% 
+lst_dta_jhu <- dta_jhu %>% 
   multisplit("iso_a3")
 
 
@@ -462,16 +536,16 @@ lst_dta_ecdc <- dta_ecdc %>%
 
 lst_mdl_cases_14d <- list()
 
-for(i in names(lst_dta_ecdc)){
-  mdl <- linear_trend(dta = lst_dta_ecdc[[i]], series = 'cases', n_days = 14, last_date = date_max_report)
+for(i in names(lst_dta_jhu)){
+  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'cases', n_days = 14, last_date = date_max_report)
   lst_mdl_cases_14d[[i]] <- mdl
 }
 
 
 lst_mdl_deaths_14d <- list()
 
-for(i in names(lst_dta_ecdc)){
-  mdl <- linear_trend(dta = lst_dta_ecdc[[i]], series = 'deaths', n_days = 14, last_date = date_max_report)
+for(i in names(lst_dta_jhu)){
+  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'deaths', n_days = 14, last_date = date_max_report)
   lst_mdl_deaths_14d[[i]] <- mdl
 }
 
@@ -480,16 +554,16 @@ for(i in names(lst_dta_ecdc)){
 
 lst_mdl_cases_30d <- list()
 
-for(i in names(lst_dta_ecdc)){
-  mdl <- linear_trend(dta = lst_dta_ecdc[[i]], series = 'cases', n_days = 30, last_date = date_max_report)
+for(i in names(lst_dta_jhu)){
+  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'cases', n_days = 30, last_date = date_max_report)
   lst_mdl_cases_30d[[i]] <- mdl
 }
 
 
 lst_mdl_deaths_30d <- list()
 
-for(i in names(lst_dta_ecdc)){
-  mdl <- linear_trend(dta = lst_dta_ecdc[[i]], series = 'deaths', n_days = 30, last_date = date_max_report)
+for(i in names(lst_dta_jhu)){
+  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'deaths', n_days = 30, last_date = date_max_report)
   lst_mdl_deaths_30d[[i]] <- mdl
 }
 
@@ -498,11 +572,11 @@ for(i in names(lst_dta_ecdc)){
 ```{r, eval = FALSE}
 # To plot both cases and deaths into a single graphic plot
 country_six_plots2 <- function(dta_all, dta_long, dta_short, date_max) {
-    
+  
   # Parameters
   main_colour  <- c(cases = '#1A62A3', deaths = '#e10000')
   date_min     <- dta_all %>% filter(cnt != 0) %>% pull(date) %>% min()
-
+  
   
   # Plots
   plot_all <- ggplot(dta_all, aes(x = date, y = cnt)) + 
@@ -572,12 +646,12 @@ lst_preds_deaths_14d <- lapply(lst_mdl_deaths_14d, function (x) x[['preds']])
 
 country_list <- df_countries
 
-for(i in names(lst_dta_ecdc)){
+for(i in names(lst_dta_jhu)){
   
   #i = 'USA'
   name_country <- country_list %>% filter(iso_a3 == i) %>% pull(country) %>% gsub(" ", "_", .)
-
-  dta_all <- lst_dta_ecdc[[i]] %>% 
+  
+  dta_all <- lst_dta_jhu[[i]] %>% 
     select(date, cases, deaths) %>% 
     pivot_longer(-date, names_to = 'obs', values_to = 'cnt')
   
@@ -601,7 +675,7 @@ for(i in names(lst_dta_ecdc)){
          width = 9,
          dpi = 320)
 }
-  
+
 ```
 
 
@@ -610,7 +684,7 @@ for(i in names(lst_dta_ecdc)){
 ```{r, fig.widht = 6, fig.height = 6}
 
 # Cumulative case count
-tbl_case_count_30days <- dta_ecdc %>% 
+tbl_case_count_30days <- dta_jhu %>% 
   filter(between(date, left = date_max_report-29, right = date_max_report)) %>% 
   group_by(iso_a3, region, country) %>% 
   summarise(cases = sum(cases, na.rm = TRUE)) %>% 
@@ -656,7 +730,7 @@ ggplot(data = tbl_30days) +
 ```{r, fig.widht = 6, fig.height = 6}
 
 # Cumulative count cases
-tbl_case_count_14days <- dta_ecdc %>% 
+tbl_case_count_14days <- dta_jhu %>% 
   filter(between(date, left = date_max_report-13, right = date_max_report)) %>% 
   group_by(iso_a3, region, country) %>% 
   summarise(cases = sum(cases, na.rm = TRUE)) %>% 
