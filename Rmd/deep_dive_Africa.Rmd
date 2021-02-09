@@ -1042,8 +1042,9 @@ ggsave(file.path(path.local.deepdive.Africa, paste0('map_cases_trends', '_', wee
        dpi = 320)
 ```
 
-## Epidemic curves
 
+
+## Epidemic curves
 
 ```{r}
 iso_a3_increasing <- tbl_coeff_cases_30d %>% 
