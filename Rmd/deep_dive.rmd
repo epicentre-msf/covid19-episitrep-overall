@@ -113,10 +113,18 @@ dta_ecdc <- dta_ecdc %>%
   filter(between(date, left = NULL, 
                  right = date_max_report))
 
-## Grouping regions
 
-grp_region_NW <- c('Northern Africa', 'Western Africa')
-grp_region_EMS <- c('Eastern Africa', 'Middle Africa', 'Southern Africa')
+# Define lims
+xlim_continent <- switch(params$continent,
+       "Africa" = c(-25, 60),
+       "Europe" = c(-30, 80),
+       "Americas" = c(-160, -30))
+
+ylim_continent <- switch(params$continent,
+       "Africa" = c(-35, 40),
+       "Europe" = c(28, 73),
+       "Americas" = c(-70, 90))
+
 
 
 ## CASES Incidence proportion
@@ -375,16 +383,7 @@ sf_case_inc <- df_countries %>%
   ) %>% 
   st_as_sf()
 
-# Define lims
-xlim <- switch(params$continent,
-       "Africa" = c(-25, 60),
-       "Europe" = c(-30, 80),
-       "Americas" = c(-160, -30))
 
-ylim <- switch(params$continent,
-       "Africa" = c(-35, 40),
-       "Europe" = c(28, 73),
-       "Americas" = c(-70, 90))
 
 # ggplot(sf_case_inc) + 
 #   geom_sf(aes(fill = inc_brks), size = .1) + 
@@ -414,8 +413,8 @@ map_case_inc <- ggplot(sf_case_inc) +
       label.position = "bottom",
       title.position = 'top')) + 
   coord_sf(
-    xlim = xlim, 
-    ylim = ylim, 
+    xlim = xlim_continent, 
+    ylim = ylim_continent, 
     expand = FALSE,
     datum = NA) + 
   labs(title = 'Overall') + 
@@ -455,8 +454,8 @@ map_case_inc_2weeks <- ggplot(sf_case_inc_2weeks) +
       label.position = "bottom",
       title.position = 'top')) + 
   coord_sf(
-    xlim = c(-25, 60), 
-    ylim = c(-35, 40), 
+    xlim = xlim__continent, 
+    ylim = ylim__continent,
     expand = FALSE,
     datum = NA) + 
   labs(title = 'Last 14 days') + 
@@ -660,8 +659,8 @@ map_case_trend_30d <- ggplot(sf_case_trend_30d) +
       label.position = "bottom",
       title.position = 'top')) + 
   coord_sf(
-    xlim = c(-25, 60), 
-    ylim = c(-35, 40), 
+    xlim = xlim__continent, 
+    ylim = ylim__continent, 
     expand = FALSE,
     datum = NA) + 
   labs(title = 'Last 30 days') + 
@@ -686,8 +685,8 @@ map_case_trend_14d <- ggplot(sf_case_trend_14d) +
       label.position = "bottom",
       title.position = 'top')) + 
   coord_sf(
-    xlim = c(-25, 60), 
-    ylim = c(-35, 40), 
+    xlim = xlim__continent, 
+    ylim = ylim__continent, 
     expand = FALSE, 
     datum = NA) + 
   labs(title = 'Last 12 days') + 
@@ -810,7 +809,9 @@ country_six_plots2 <- function(dta_all, dta_long, dta_short, date_max_report) {
     geom_ribbon(aes(ymin = lwr, ymax = upr, fill = obs), alpha = 0.4) + 
     geom_line(aes(y = fit, colour = obs), size = 1) + 
     scale_fill_manual(values = main_colour) + 
-    scale_x_date(limits = c(min(dta_long$date), max(dta_long$date)), date_labels = "%d-%b") +
+    scale_x_date(limits = c(min(dta_long$date), 
+                            max(dta_long$date)), 
+                 date_labels = "%d-%b") +
     xlab('') + 
     ylab(paste0('frequency and fitted values')) + 
     labs(subtitle = paste('Last', (max(dta_long$date) - min(dta_long$date) + 1), 'days')) + 
