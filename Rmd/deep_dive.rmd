@@ -522,7 +522,7 @@ ggplot(tbl_case_inc_vs_inc_2weeks %>% filter(last2weeks != 0)) +
 # Trends
 
 
-```{r}
+```{r linear-models}
 lst_dta_jhu <- dta_jhu %>% 
   multisplit("iso_a3")
 
@@ -578,7 +578,7 @@ for(i in names(lst_dta_jhu)){
 ```
 
 
-```{r}
+```{r tbl-coeffs}
 # -- Lists of predictions
 lst_preds_cases_30d <- lapply(lst_mdl_cases_30d, function (x) x[['preds']])
 lst_preds_cases_14d <- lapply(lst_mdl_cases_14d, function (x) x[['preds']])
@@ -623,7 +623,7 @@ tbl_coeff_deaths_14d <- lapply(lst_mdl_deaths_14d, function (x) x[['coeffs']]) %
 
 ## Map
 
-```{r}
+```{r maps-trends}
 
 sf_case_trend_30d <- df_countries %>% 
   select(iso_a3, country) %>% 
@@ -717,7 +717,7 @@ ggsave(file.path(path.local.deepdive, paste0('map_cases_trends', '_',
 
 ## Epidemic curves
 
-```{r}
+```{r fig-epicurves}
 iso_a3_increasing <- tbl_coeff_cases_30d %>% 
   filter(trend == 'Increasing') %>% 
   pull(iso_a3)
@@ -747,7 +747,7 @@ ggsave(file.path(path.local.deepdive, paste0('epicurves', '_', week_report, '.pn
 ```
 
 
-```{r}
+```{r fig-preds}
 
 tbl_preds_cases_30d <- lapply(lst_mdl_cases_30d, function (x) x[['preds']]) %>% 
   tibble::enframe(name = "iso_a3") %>% 
