@@ -583,3 +583,77 @@ plot_coeff <- function(dta, name, series = "cases") {
                               gp = gpar(fontface = 'bold')))
   
 }
+
+
+
+
+
+linear_trend_deepdive <- function(dta, 
+                                  series, 
+                                  last_date, 
+                                  n_days, 
+                                  ma_window = 3, 
+                                  min_sum = 30){
+  
+  dta <- dta %>% select(date, cnt = all_of(series))
+  
+  dates_extent <- c(last_date - (n_days - 1), last_date)
+  
+  dta <- dta %>% 
+    filter(between(date, dates_extent[1], dates_extent[2])) %>% 
+    tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
+                                    max(date, na.rm = TRUE), by = 1), 
+                    fill = list(cnt = NA_real_))
+  
+  
+  # Moving average
+  dta$ma <- forecast::ma(dta$cnt, order = ma_window)
+  dta$ma <- na_if(dta$ma, 0) # Replace 0 values as NA
+  
+  
+  # Empty matrix of predictions
+  m_preds <- matrix(data = NA, 
+                    nrow = dim(dta)[1], 
+                    ncol = 3, 
+                    dimnames = list(c(1:dim(dta)[1]), c('fit', 'lwr', 'upr')))
+  
+  
+  # Run model with conditions
+  if (dim(dta)[1] > ma_window & sum(dta$cnt, na.rm = TRUE) > min_sum) {
+    
+    mdl <- lm(log(ma) ~ date, data = dta)
+    
+    preds <- exp(predict(mdl, interval = 'confidence'))
+    
+    matched_rows <- match(rownames(preds), rownames(m_preds))
+    matched_cols <- match(colnames(preds), colnames(m_preds))
+    m_preds[matched_rows, matched_cols] <- preds
+    
+    tbl_preds <- tibble(date = seq.Date(from = dates_extent[1], to = dates_extent[2], by = 1), 
+                        cnt  = dta$cnt, 
+                        ma   = dta$ma, 
+                        fit  = as.double(m_preds[, 'fit']), 
+                        lwr  = as.double(m_preds[, 'lwr']), 
+                        upr  = as.double(m_preds[, 'upr']))
+    
+    mdl_coeffs <- tibble(coeff = coefficients(mdl)[[2]], 
+                         lwr   = confint(mdl)[2,1], 
+                         upr   = confint(mdl)[2,2])
+    
+  } else {
+    mdl <- NA_character_
+    
+    tbl_preds <- tibble(date = seq.Date(from = dates_extent[1], to = dates_extent[2], by = 1), 
+                        cnt  = dta$cnt, 
+                        ma   = dta$ma, 
+                        fit  = as.double(m_preds[, 'fit']), 
+                        lwr  = as.double(m_preds[, 'lwr']), 
+                        upr  = as.double(m_preds[, 'upr']))
+    
+    mdl_coeffs <- tibble(coeff = NA_real_, 
+                         lwr   = NA_real_, 
+                         upr   = NA_real_)
+  }
+  
+  return(list(mdl = mdl, preds = tbl_preds, coeffs = mdl_coeffs))
+}
