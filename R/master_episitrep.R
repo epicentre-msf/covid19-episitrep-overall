@@ -24,6 +24,7 @@ get_geo_data(path = path.local.data, force = FALSE)
 # ---- Run analyses ----
 # === === === === === === === === 
 
+# World
 file_out_worldwide <- paste0(week_report, '_', 'episitrep_worldwide_analyses', '.html')
 
 rmarkdown::render(
@@ -32,7 +33,7 @@ rmarkdown::render(
   output_dir  = path.local.week)
 
 
-
+# MSF data
 file_out_msf <- paste0(week_report, '_', 'episitrep_msf_level_analysis', '.html')
 
 rmarkdown::render(
@@ -41,6 +42,7 @@ rmarkdown::render(
   output_dir  = path.local.week)
 
 
+# Sections
 oc_list <- list("OCP", "OCA", "OCB", "OCBA", "OCG")
 purrr::walk(oc_list, 
             ~rmarkdown::render(
@@ -84,19 +86,30 @@ print(my_doc, target = file.path(path.local.week, glue("draft_EpiSitrep_world_Co
 # === === === === === === 
 # ---- Run Deepdives ----
 # === === === === === ===  
-file_out_deepdive_africa <- paste0(week_report, '_', 'deepdive_Africa', '.html')
+# file_out_deepdive_africa <- paste0(week_report, '_', 'deepdive_Africa', '.html')
 
-rmarkdown::render(
-  input = file.path(path.Rmd, 'deep_dive_Africa.Rmd'), 
-  output_file = file_out_deepdive_africa,
-  output_dir  = path.local.week)
-
-
+# rmarkdown::render(
+#   input = file.path(path.Rmd, 'deep_dive_Africa.Rmd'), 
+#   output_file = file_out_deepdive_africa,
+#   output_dir  = path.local.week)
 
 
 # === === === === === === === === === ===
-# ---- Copy outputs to public folder ----
+# ---- Plots continent & countries ----
 # === === === === === === === === === === 
+source(here::here('R', 'run_multiplot_world_continent.R'), encoding = 'UTF-8')
+source(here::here('R', 'run_multiplot_country.R'), encoding = 'UTF-8')
+
+
+
+
+
+# Copy outputs to various locations ---------------------------------------
+
+
+# === === === === === === === === === === ===
+# ---- Copy outputs to GIS unit sharepoint  ----
+# === === === === === === === === === === ===
 
 ## Copy table of trends to GIS Unit sharepoint
 file.copy(
@@ -104,6 +117,11 @@ file.copy(
   to = file.path(sharepoint.parent.dir, 'MSF', 'GIS @ MSF - EPI csv data'), 
   overwrite = TRUE)
 
+
+
+# === === === === === === === === === ===
+# ---- Copy outputs to public folder ----
+# === === === === === === === === === === 
 
 # --- Worldwide analysis
 ## Copy to archive
@@ -164,8 +182,6 @@ file.copy(
 )
 
 
-
-
 # --- OC sitreps
 ## Copy to archive
 purrr::walk(oc_list, 
@@ -188,7 +204,24 @@ purrr::walk(oc_list,
 
 
 
+# === === === === === === === === === === ===
+# ---- Copy outputs to non public cfolder ---
+# === === === === === === === === === === ===
+
+# path.sharepoint.sitrep.week <- file.path(path.sharepoint.sitrep,
+#                                     week_report)
+# 
+# if (!exists(path.sharepoint.sitrep.week)){
+#   dir.create(path.sharepoint.sitrep.week, showWarnings = FALSE, recursive = TRUE)
+# }
 
 
+file.copy(path.local.week, 
+          path.sharepoint.sitrep, 
+          recursive = TRUE)
 
 
+  
+  
+
+  

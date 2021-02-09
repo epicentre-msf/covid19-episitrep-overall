@@ -322,8 +322,11 @@ my_doc <- add_end_section_2columns()
 
 
 
+# En vrac (for reference, to be deleted later) --------
+
 
 my_doc <- add_heading2("EN VRAC")
+
 
 # TABLE STATUS PATIENTS
 my_doc <- add_table(
@@ -332,6 +335,75 @@ my_doc <- add_table(
   folder = 'msf',
   width = 16.93 * cm_to_in,
   height = 23.02 * cm_to_in) 
+
+
+# Graph CFR BY AGE-GROUP
+my_doc <- add_figure(
+  object_name = paste0('dots_cfr_agegroup', '_', week_report, '.png'),
+  figure_title = "Case fatality risk by age groups among Covide-19 confirmed patients",
+  folder = 'msf',
+  width = 8.97 * cm_to_in,
+  height = 5.57 * cm_to_in)
+
+
+# TABLE COMORBIDITIES
+my_doc <- add_table(
+  object_name = paste0('gtbl_comcond_status', '_', week_report, '.png'),
+  table_title = 'Frequency and percentage of comorbidities or underlying conditions among patients consulted/admitted',
+  folder = 'msf',
+  width = 15.61 * cm_to_in,
+  height = 9.45 * cm_to_in)
+
+
+# TABLE SYMPTOMS
+my_doc <- add_table(
+  object_name = paste0('gtbl_sympt_all', '_', week_report, '.png'),
+  table_title = 'Frequency and percentage of signs and symptoms of patients consulted/admitted',
+  folder = 'msf',
+  width = 17.45 * cm_to_in,
+  height = 9.45 * cm_to_in)
+
+
+
+# TABLE CFR ALL PATIENTS
+# --- --- --- --- --- --- 
+my_doc <- add_table(
+  object_name = paste0('gtbl_cfr_status_continent', '_', week_report, '.png'),
+  table_title = 'Case fatality risk in MSF facilities, by covid19 status and continent',
+  folder = 'msf',
+  width = 8.87 * cm_to_in,
+  height = 3.08 * cm_to_in)
+
+
+
+# GRAPH AGE PYRAMID CONFRMED
+my_doc <- add_figure(
+  object_name = paste0('pyramid_age_sex_confirmed_continent', '_', week_report, '.png'),
+  figure_title = "Age pyramid of Covid-confirmed patients consulted/ admitted in MSF facilities, by continent",
+  folder = 'msf',
+  width = 8.57 * cm_to_in,
+  height = 8.57 * cm_to_in)
+
+
+
+# GRAPH  AGE PYRAMID ALL PATIENTS
+my_doc <- add_figure(
+  object_name = paste0('pyramid_age_sex_all_continent', '_', week_report, '.png'),
+  figure_title = "Age pyramid of patients consulted/admitted in MSF facilities, by continent",
+  folder = 'msf',
+  width = 8.57 * cm_to_in,
+  height = 8.57 * cm_to_in)
+
+
+
+# TABLE PATIENT CHARACTERISTICS
+my_doc <- add_table(
+  object_name = paste0('gtbl_general', '_', week_report, '.png'),
+  table_title = glue('Patient characteristics in MSF facilities, by covid19 status'),
+  folder = 'msf',
+  width = 9.17 * cm_to_in,
+  height = 5.49 * cm_to_in) # size may need to be adapted with the increase of the number of countries
+
 
 
 
@@ -353,18 +425,8 @@ my_doc <- add_table(
 #   folder = 'msf',
 #   width = 8.37 * cm_to_in,
 #   height = 5.58 * cm_to_in)
-
-
-
-# Graph CFR BY AGE-GROUP
-my_doc <- add_figure(
-  object_name = paste0('dots_cfr_agegroup', '_', week_report, '.png'),
-  figure_title = "Case fatality risk by age groups among Covide-19 confirmed patients",
-  folder = 'msf',
-  width = 8.97 * cm_to_in,
-  height = 5.57 * cm_to_in)
-
-
+#   
+#   
 
 
 # --- --- --- --- --- --- 
@@ -404,74 +466,3 @@ my_doc <- add_figure(
 #   height = 11.92 * cm_to_in)
 # 
 # my_doc <- add_par_normal('')
-
-
-
-
-# TABLE COMORBIDITIES
-my_doc <- add_table(
-  object_name = paste0('gtbl_comcond_status', '_', week_report, '.png'),
-  table_title = 'Frequency and percentage of comorbidities or underlying conditions among patients consulted/admitted',
-  folder = 'msf',
-  width = 15.61 * cm_to_in,
-  height = 9.45 * cm_to_in)
-
-
-# TABLE SYMPTOMS
-my_doc <- add_table(
-  object_name = paste0('gtbl_sympt_all', '_', week_report, '.png'),
-  table_title = 'Frequency and percentage of signs and symptoms of patients consulted/admitted',
-  folder = 'msf',
-  width = 17.45 * cm_to_in,
-  height = 9.45 * cm_to_in)
-
-
-
-# Text CFR all patients
-# --- --- --- --- --- --- 
-my_doc <- add_par_normal(
-  sprintf("%s confirmed, probable, or suspected cases with known outcome (cured/died) died, which gives a case fatality risk (CFR) of %s%%. Figure 7 shows the evolution of death numbers and of CFR across the continents.",
-          Words(nb_msf_conf_prob_susp_who_died),
-          round(cfr_confirmed_probable_suspected * 100, digits = 1)))
-my_doc <- add_par_normal('')
-
-
-# TABLE CFR ALL PATIENTS
-# --- --- --- --- --- --- 
-my_doc <- add_table(
-  object_name = paste0('gtbl_cfr_status_continent', '_', week_report, '.png'),
-  table_title = 'Case fatality risk in MSF facilities, by covid19 status and continent',
-  folder = 'msf',
-  width = 8.87 * cm_to_in,
-  height = 3.08 * cm_to_in)
-
-
-
-# GRAPH AGE PYRAMID CONFRMED
-my_doc <- add_figure(
-  object_name = paste0('pyramid_age_sex_confirmed_continent', '_', week_report, '.png'),
-  figure_title = "Age pyramid of Covid-confirmed patients consulted/ admitted in MSF facilities, by continent",
-  folder = 'msf',
-  width = 8.57 * cm_to_in,
-  height = 8.57 * cm_to_in)
-
-
-
-
-# GRAPH  AGE PYRAMID ALL PATIENTS
-my_doc <- add_figure(
-  object_name = paste0('pyramid_age_sex_all_continent', '_', week_report, '.png'),
-  figure_title = "Age pyramid of patients consulted/admitted in MSF facilities, by continent",
-  folder = 'msf',
-  width = 8.57 * cm_to_in,
-  height = 8.57 * cm_to_in)
-
-
-
-# TABLE PATIENT CHARACTERISTICS
-my_doc <- add_table(
-  object_name = paste0('gtbl_general', '_', week_report, '.png'),
-  table_title = glue('Patient characteristics in MSF facilities, by covid19 status'),
-  folder = 'msf',
-  width = 9.17 * cm_to_in,
-  height = 5.49 * cm_to_in) # size may need to be adapted with the increase of the number of countries
