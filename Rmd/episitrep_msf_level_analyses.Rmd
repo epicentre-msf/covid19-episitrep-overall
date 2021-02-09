@@ -122,12 +122,18 @@ dta_linelist_with_aggregated <- dta_linelist %>%
             select(continent, region, country, site_name, iso_a3, OC, epi_week_consultation, ind_MSF_covid_status = covid_status) %>% 
             mutate(
               country = paste(country, '(*)'), 
-              site_name = paste(site_name, '(*)')))
+              site_name = paste(site_name, '(*)'))) %>% 
+  mutate(continent = case_when(
+      country == "Cote d'Ivoire (*)" ~ 'Africa', 
+      country == "Democratic Republic of Congo (*)" ~ 'Africa',
+      country == "Palestine (*)" ~ "Asia",
+      TRUE ~ continent))
 
 
 tbl_aggregated_expanded_with_dates <- dta_aggregated_expanded %>% 
   distinct(sheet, OC, country, site_name) %>% 
   full_join(dta_project_aggregated_dates, by = 'sheet') %>% 
+  
     mutate(
     country = case_when(
       country == 'DRC' ~ 'Democratic Republic of the Congo', 
@@ -183,7 +189,6 @@ nb_msf_confirmed <- sum(dta_linelist_with_aggregated$ind_MSF_covid_status == 'Co
 nb_msf_probable  <- sum(dta_linelist_with_aggregated$ind_MSF_covid_status == 'Probable' , na.rm = TRUE)
 nb_msf_suspected <- sum(dta_linelist_with_aggregated$ind_MSF_covid_status == 'Suspected', na.rm = TRUE)
 
-
 nb_msf_confirmed_linelist <- sum(dta_linelist$ind_MSF_covid_status == 'Confirmed', na.rm = TRUE)
 
 nb_msf_confirmed_with_comorbidity <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' & ind_Comcond_count > 0, na.rm = TRUE))
@@ -195,6 +200,11 @@ nb_msf_conf_prob_susp_who_died <- with(dta_linelist, sum(ind_MSF_covid_status %i
 nb_msf_conf_above65 <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' & age_in_years >=65 & ind_outcome_patcourse_status %in% c('Cured', 'Died'), na.rm = TRUE))
 
 nb_msf_conf_above65_who_died <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' & age_in_years >=65 & ind_outcome_patcourse_status == 'Died', na.rm = TRUE))
+
+nb_msf_conf_known_outcome <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' & ind_outcome_patcourse_status %in% c('Cured', 'Died'), na.rm = TRUE))
+
+nb_msf_conf_who_died <- with(dta_linelist, sum(ind_MSF_covid_status == 'Confirmed' & ind_outcome_patcourse_status == 'Died', na.rm = TRUE))
+
 
 median_age_all <- dta_linelist %>% 
   pull(age_in_years) %>% 
@@ -2213,6 +2223,7 @@ gtbl_age_sex_outcome %>%
 # function tbl_prop in utils_vis.R
 
 dta_cfr_age <- dta_linelist %>% 
+  filter(ind_MSF_covid_status == "Confirmed") %>% 
   mutate(age_5gp = fct_explicit_na(age_5gp)) 
 
 tbl_cfr_age <- levels(dta_cfr_age$age_5gp) %>% 
@@ -2226,7 +2237,8 @@ tbl_cfr_age <- levels(dta_cfr_age$age_5gp) %>%
   filter(ind_outcome_patcourse_status == 'Died') 
 
 
-dta_cfr_sex <- dta_linelist %>% 
+dta_cfr_sex <- dta_linelist %>%
+   filter(ind_MSF_covid_status == "Confirmed") %>% 
   mutate(sex = factor(patinfo_sex, levels = c('F', 'M'), labels = c('Females', 'Males'))) %>% 
   mutate(sex = fct_explicit_na(sex)) 
 
@@ -2241,7 +2253,8 @@ tbl_cfr_sex <- levels(dta_cfr_sex$sex) %>%
   filter(ind_outcome_patcourse_status == 'Died') 
 
 # ---  ---  ---  ---  ---  ---  ---  ---  ---  --- 
-dta_cfr_comorbidities <- dta_linelist # %>% 
+dta_cfr_comorbidities <- dta_linelist %>% 
+   filter(ind_MSF_covid_status == "Confirmed")# %>% 
 #  filter(ind_Comcond_count < 9) # This was a temporal rapid solution to remove cases with ALL comorbidities that might be a recording error (used only in week 50-2020)
 # ---  ---  ---  ---  ---  ---  ---  ---  ---  --- 
 
