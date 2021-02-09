@@ -90,6 +90,7 @@ my_doc <- add_end_section_continuous()
 my_doc <- add_par_normal(
   sprintf("Since the beginning of the epidemic, countries presenting the highest cumulative incidences are in North and South America, Europe, and Middle East (Figure 2)."))
 
+
 tbl_inc_cum_30d_ago <- dta_jhu %>% 
   group_by(iso_a3, country, continent, region) %>% 
   arrange(date) %>% 

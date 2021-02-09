@@ -405,3 +405,105 @@ df_labels_comcond <- data.frame(
 #}
 
 
+
+
+
+prepare_ecdc_data_geofacet <- function(data,
+                                       iso = NULL) {
+  
+  library(dplyr)
+  library(countrycode)
+  
+  data <- data %>% 
+    dplyr::mutate(date = as.Date(dateRep, format = "%d/%m/%Y")) %>% 
+    dplyr::select(-dateRep) %>% 
+    dplyr::rename(geoid = geoId, 
+                  country = countriesAndTerritories, 
+                  cases = cases_weekly, 
+                  deaths = deaths_weekly, 
+                  population_2019 = popData2019,
+                  iso_a3 = countryterritoryCode) %>% 
+    dplyr::arrange(date) %>%
+    dplyr::mutate_at(dplyr::vars(cases, deaths), ~ifelse(. < 0, 0L, .)) %>% 
+    
+    dplyr::mutate(
+      geoid = dplyr::case_when(
+        country == "United_Kingdom" ~ "GB",
+        country == "Greece" ~ "GR",
+        country == "French_Polynesia" ~ "PF",
+        country == "Namibia" ~ "NA",
+        TRUE ~ geoid),
+      
+      iso_a3 = dplyr::case_when(
+        country == 'Kosovo' ~ 'XKX',
+        country == 'Anguilla' ~ 'AIA',
+        country == 'Bonaire, Saint Eustatius and Saba' ~ 'BES',
+        country == 'Falkland Islands (Malvinas)' ~ 'FLK',
+        country == 'Montserrat' ~ 'MSR',
+        country == 'Taiwan' ~ 'TWN',
+        country == 'Western Sahara' ~ 'ESH',
+        country == 'Cruise Ship' ~ NA_character_,
+        TRUE ~ iso_a3)
+    ) %>% 
+    dplyr::rename(country_ecdc = country) %>% 
+    dplyr::mutate(
+      country = countrycode::countrycode(iso_a3, 
+                                         origin = "iso3c", 
+                                         destination = "country.name",
+                                         custom_match = c(XKX = "Kosovo" )),
+      
+      # Improve country names
+      country = dplyr::case_when(
+        country == "Congo - Kinshasa" ~ "Democratic Republic of the Congo", 
+        country == "Congo - Brazzaville" ~ "Republic of the Congo",
+        country_ecdc == 'Cases_on_an_international_conveyance_Japan' ~ 'Cruise Ship',
+        is.na(country) ~ gsub('_', ' ', country_ecdc),
+        TRUE ~ country),
+      
+      continent = suppressWarnings(countrycode::countrycode(iso_a3, 
+                                                            origin = 'iso3c', 
+                                                            destination = 'continent',
+                                                            custom_match = c(XKX = "Kosovo" ))), 
+      region = suppressWarnings(countrycode::countrycode(iso_a3, 
+                                                         origin = "iso3c", 
+                                                         destination = "region",
+                                                         custom_match = c(XKX = "Kosovo" ))),
+      # 
+      # iso_a3 = suppressWarnings(countrycode::countrycode(iso_a3, 
+      #                                                    origin = "iso3c", 
+      #                                                    destination = "iso3c")),
+      source = "ECDC"
+    )
+  
+  if (!is.null(iso)) {    
+    data <- filter(data, iso_a3 == iso)
+    
+    if (nrow(data) == 0) {
+      warning(paste("No data found for country", country))
+    }
+    
+  }
+  
+  data <- data %>% 
+    complete(
+      date = full_seq(date, period = 7),
+      nesting(
+        country_ecdc,
+        geoid,
+        country,
+        continent,
+        region,
+        iso_a3,
+        source,
+        population_2019
+      ),
+      fill = list(cases = NA, deaths = NA)
+    ) %>%
+    dplyr::select(date, country_ecdc:geoid, country:iso_a3, cases, deaths, population_2019, source)
+  
+  
+  return(data)
+}
+
+
+

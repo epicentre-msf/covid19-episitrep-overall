@@ -22,37 +22,48 @@ knitr::opts_chunk$set(cache = FALSE,
                       message = FALSE, 
                       encoding = "UTF-8")
 
+
 source(here::here('R', 'setup.R'), encoding = 'UTF-8')
-
-library(treemap)
-library(patchwork)
-
 source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
 source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
 
+# Packages
+library(tidyverse)
+library(treemap)
+library(patchwork)
+library(countrycode)
+library(geofacet)
+library(glue)
+library(slider)
 
-date_min <- NULL
-date_max <- as.Date('2021-01-03')
-week_report <- ISOweek::ISOweek(date_max) %>% gsub("W","w", .)
 
+# Set dates
+dates_and_week <- set_date_frame(create_folders = TRUE)
+
+date_min_report <- dates_and_week[[1]]
+date_max_report <- dates_and_week[[2]]
+week_report     <- dates_and_week[[3]]
+
+# Set paths
 set_paths(path.local, week_report)
-path.local.deepdive.Africa <- file.path(path.local.worldwide, 'deepdive_Africa')
-dir.create(path.local.deepdive.Africa, showWarnings = FALSE, recursive = TRUE) 
-
-
+path.local.deepdive.Africa <- file.path(path.local.worldwide,
+                                        'deepdive_Africa')
+if(!exists(path.local.deepdive.Africa)) {
+  dir.create(path.local.deepdive.Africa, showWarnings = FALSE, recursive = TRUE)
+}
 ```
+
 
 ```{r upload-data, include = FALSE}
 
-dta <- get_owid_jhcsse() %>% 
-  tidyr::drop_na(iso_a3) %>% 
-  filter(between(date, left = NULL, right = date_max))
+## --- ECDC data
+dta_ecdc <- covidutils::get_ecdc_data()
 
 
-## --- ECDC Covid data
-dta_ecdc <- get_owid_jhcsse() %>% 
+## --- JHU Covid data
+dta_jhu <- get_owid_jhcsse() %>% 
   tidyr::drop_na(iso_a3) %>% 
-  filter(between(date, left = NULL, right = date_max) & (continent == 'Africa'))
+  filter(between(date, left = NULL, right = date_max_report) & (continent == 'Africa'))
 
 
 ## --- Population data
@@ -60,9 +71,11 @@ df_countries <- readRDS(file.path(path.local.data, paste0('df_countries','.RDS')
   filter(continent == 'Africa') %>% 
   left_join(readRDS(file.path(path.local.data, paste0('df_pop_country','.RDS'))))
 
+
 # sf Robinson projection
 sf_robinson <- readRDS(file.path(path.local.data, paste0('sf_world','.RDS'))) %>% 
   filter(continent == 'Africa')
+
 
 ## --- GIS data - Mercator projection
 sf_mercator <- rnaturalearth::ne_countries(type = "countries", returnclass = "sf") %>% 
@@ -80,6 +93,11 @@ sf_mercator <- rnaturalearth::ne_countries(type = "countries", returnclass = "sf
 
 ```{r prepare-data, include = FALSE}
 
+dta_ecdc <- dta_ecdc %>% 
+   prepare_ecdc_data_geofacet() %>% 
+  drop_na(iso_a3) %>% 
+  filter(between(date, left = NULL, right = date_max_report))
+
 ## Grouping regions
 
 grp_region_NW <- c('Northern Africa', 'Western Africa')
@@ -88,7 +106,7 @@ grp_region_EMS <- c('Eastern Africa', 'Middle Africa', 'Southern Africa')
 
 ## CASES Incidence proportion
 
-tbl_cases_prop <- dta_ecdc %>% 
+tbl_cases_prop <- dta_jhu %>% 
   group_by(country) %>% 
   summarise(
     n = sum(cases)) %>% 
@@ -96,8 +114,8 @@ tbl_cases_prop <- dta_ecdc %>%
   mutate(
    p = n/pop * 100)
 
-tbl_cases_prop_30d <- dta_ecdc %>% 
-  filter(between(date, left = date_max - 29, right = date_max)) %>%
+tbl_cases_prop_30d <- dta_jhu %>% 
+  filter(between(date, left = date_max_report - 29, right = date_max_report)) %>%
   group_by(country) %>% 
   summarise(
     n_30d = sum(cases)) %>% 
@@ -108,8 +126,8 @@ tbl_cases_prop_30d <- dta_ecdc %>%
   select(region, country, n, p, n_30d, p_30d)
 
 
-tbl_cases_prop_2w <- dta_ecdc %>% 
-  filter(between(date, left = date_max - 13, right = date_max)) %>%
+tbl_cases_prop_2w <- dta_jhu %>% 
+  filter(between(date, left = date_max_report - 13, right = date_max_report)) %>%
   group_by(country) %>% 
   summarise(
     n_2w = sum(cases)) %>% 
@@ -122,7 +140,7 @@ tbl_cases_prop_2w <- dta_ecdc %>%
 
 ## DEATHS Incidence proportion
 
-tbl_deaths_prop <- dta_ecdc %>% 
+tbl_deaths_prop <- dta_jhu %>% 
   group_by(country) %>% 
   summarise(
     n = sum(deaths)) %>% 
@@ -130,8 +148,8 @@ tbl_deaths_prop <- dta_ecdc %>%
   mutate(
    p = n/pop * 100)
 
-tbl_deaths_prop_2w <- dta_ecdc %>% 
-  filter(between(date, left = date_max - 13, right = date_max)) %>%
+tbl_deaths_prop_2w <- dta_jhu %>% 
+  filter(between(date, left = date_max_report - 13, right = date_max_report)) %>%
   group_by(country) %>% 
   summarise(
     n_2w = sum(deaths)) %>% 
@@ -144,7 +162,7 @@ tbl_deaths_prop_2w <- dta_ecdc %>%
 ```
 
 
-Data source: [JHU CSSE data](https://github.com/owid/covid-19-data/tree/master/public/data) updated until `r format(date_max, '%d %B %Y')`
+Data source: [JHU CSSE data](https://github.com/owid/covid-19-data/tree/master/public/data) updated until `r format(date_max_report, '%d %B %Y')`
 
 **How to read the treemaps**
 
@@ -260,7 +278,7 @@ ggplot(tbl_cases_prop %>% filter(n != 0)) +
 
 ### Treemap deaths `r combine_words(grp_region_NW)`
 
-```{r, fig.cap = paste("TREEMAP: Total number and incidence proportion of associated deaths per country in", combine_words(grp_region_NW))}
+```{r, fig.cap = paste("TREEMAP: Total number and incidence proportion of associated deaths per country in", combine_words(grp_region_NW)), include=FALSE, eval=FALSE}
 
 tbl_deaths_prop %>% 
   filter(region %in% grp_region_NW) %>% 
@@ -275,7 +293,7 @@ tbl_deaths_prop %>%
 
 ```
 
-```{r, include = FALSE}
+```{r, include=FALSE, eval=FALSE}
 
 png(filename = file.path(path.local.deepdive.Africa, "treemap_deaths_prop_NW.png"), width = 900, height = 600, res = 144)
 tbl_deaths_prop %>% 
@@ -295,7 +313,7 @@ dev.off()
 
 ### Treemap deaths `r combine_words(grp_region_EMS)`
 
-```{r, fig.cap = paste("TREEMAP: Total number and incidence proportion of associated deaths per country in", combine_words(grp_region_EMS))}
+```{r, fig.cap = paste("TREEMAP: Total number and incidence proportion of associated deaths per country in", combine_words(grp_region_EMS)), include=FALSE, eval=FALSE}
 
 tbl_deaths_prop %>% 
   filter(region %in% grp_region_EMS) %>% 
@@ -310,7 +328,7 @@ tbl_deaths_prop %>%
 
 ```
 
-```{r, include = FALSE}
+```{r, include=FALSE, eval=FALSE}
 
 png(filename = file.path(path.local.deepdive.Africa, "treemap_deaths_prop_EMS.png"), width = 900, height = 600, res = 144)
 tbl_deaths_prop %>% 
@@ -525,7 +543,7 @@ ggsave(file.path(path.local.deepdive.Africa, paste0('scatter_plot_prop_prop_30d'
 
 ### Treemap cases `r combine_words(grp_region_NW)`
 
-```{r, fig.cap = paste("Number of confirmed cases since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_NW))}
+```{r, fig.cap = paste("Number of confirmed cases since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_NW)), include=FALSE, eval=FALSE}
 
 tbl_cases_prop_2w %>% 
   filter(region %in% grp_region_NW) %>% 
@@ -540,8 +558,7 @@ tbl_cases_prop_2w %>%
 
 ```
 
-```{r, include = FALSE}
-
+```{r, include = FALSE, eval=FALSE}
 png(filename = file.path(path.local.deepdive.Africa, "treemap_cases_cases_NW_14d.png"), width = 900, height = 600, res = 144)
 tbl_cases_prop_2w %>% 
   filter(region %in% grp_region_NW) %>% 
@@ -598,7 +615,7 @@ dev.off()
 
 ### Treemap deaths `r combine_words(grp_region_NW)`
 
-```{r, fig.cap = paste("Number of confirmed associated deaths since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_NW))}
+```{r, fig.cap = paste("Number of confirmed associated deaths since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_NW)), include=FALSE, eval=FALSE}
 
 tbl_deaths_prop_2w %>% 
   filter(region %in% grp_region_NW) %>% 
@@ -615,7 +632,7 @@ tbl_deaths_prop_2w %>%
 
 ### Treemap deaths `r combine_words(grp_region_EMS)`
 
-```{r, fig.cap = paste("Number of confirmed associated deaths since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_EMS))}
+```{r, fig.cap = paste("Number of confirmed associated deaths since the beginning of the epidemic and in the last 14 days per country in", combine_words(grp_region_EMS)), include=FALSE, eval=FALSE}
 
 tbl_deaths_prop_2w %>% 
   filter(region %in% grp_region_EMS) %>% 
@@ -849,9 +866,8 @@ linear_trend <- function(dta, series, last_date, n_days, ma_window = 3, min_sum 
 ```
 
 
-
 ```{r}
-lst_dta_ecdc <- dta_ecdc %>% 
+lst_dta_jhu <- dta_jhu %>% 
   multisplit("iso_a3")
 
 
@@ -859,16 +875,16 @@ lst_dta_ecdc <- dta_ecdc %>%
 
 lst_mdl_cases_14d <- list()
 
-for(i in names(lst_dta_ecdc)){
-  mdl <- linear_trend(dta = lst_dta_ecdc[[i]], series = 'cases', n_days = 12, last_date = date_max)
+for(i in names(lst_dta_jhu)){
+  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'cases', n_days = 12, last_date = date_max_report)
   lst_mdl_cases_14d[[i]] <- mdl
 }
 
 
 lst_mdl_deaths_14d <- list()
 
-for(i in names(lst_dta_ecdc)){
-  mdl <- linear_trend(dta = lst_dta_ecdc[[i]], series = 'deaths', n_days = 12, last_date = date_max)
+for(i in names(lst_dta_jhu)){
+  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'deaths', n_days = 12, last_date = date_max_report)
   lst_mdl_deaths_14d[[i]] <- mdl
 }
 
@@ -877,20 +893,21 @@ for(i in names(lst_dta_ecdc)){
 
 lst_mdl_cases_30d <- list()
 
-for(i in names(lst_dta_ecdc)){
-  mdl <- linear_trend(dta = lst_dta_ecdc[[i]], series = 'cases', n_days = 30, last_date = date_max)
+for(i in names(lst_dta_jhu)){
+  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'cases', n_days = 30, last_date = date_max_report)
   lst_mdl_cases_30d[[i]] <- mdl
 }
 
 
 lst_mdl_deaths_30d <- list()
 
-for(i in names(lst_dta_ecdc)){
-  mdl <- linear_trend(dta = lst_dta_ecdc[[i]], series = 'deaths', n_days = 30, last_date = date_max)
+for(i in names(lst_dta_jhu)){
+  mdl <- linear_trend(dta = lst_dta_jhu[[i]], series = 'deaths', n_days = 30, last_date = date_max_report)
   lst_mdl_deaths_30d[[i]] <- mdl
 }
 
 ```
+
 
 ```{r}
 # -- Lists of predictions
@@ -1027,16 +1044,17 @@ ggsave(file.path(path.local.deepdive.Africa, paste0('map_cases_trends', '_', wee
 
 ## Epidemic curves
 
+
 ```{r}
 iso_a3_increasing <- tbl_coeff_cases_30d %>% 
   filter(trend == 'Increasing') %>% 
   pull(iso_a3)
 
-dta_ecdc_increasing <- dta_ecdc %>% 
+dta_jhu_increasing <- dta_jhu %>% 
   filter(iso_a3 %in% iso_a3_increasing)
 
 
-epicurves <- ggplot(dta_ecdc_increasing, aes(x = date, y = cases)) + 
+epicurves <- ggplot(dta_jhu_increasing, aes(x = date, y = cases)) + 
     facet_wrap(~country, scales = "free_y", ncol = 4) + 
     geom_col(fill = '#1A62A3') + 
     scale_x_date(breaks = '2 months', date_labels = "%b-%Y") +
@@ -1090,11 +1108,11 @@ ggsave(file.path(path.local.deepdive.Africa, paste0('preds', '_', week_report, '
 
 ```{r, eval = FALSE}
 # To plot both cases and deaths into a single graphic plot
-country_six_plots2 <- function(dta_all, dta_long, dta_short, date_max) {
+country_six_plots2 <- function(dta_all, dta_long, dta_short, date_max_report) {
     
   # Parameters
   main_colour  <- c(cases = '#1A62A3', deaths = '#e10000')
-  date_min     <- dta_all %>% filter(cnt != 0) %>% pull(date) %>% min()
+  date_min_report     <- dta_all %>% filter(cnt != 0) %>% pull(date) %>% min()
 
   
   # Plots
@@ -1103,7 +1121,7 @@ country_six_plots2 <- function(dta_all, dta_long, dta_short, date_max) {
     geom_col(aes(colour = obs, fill = obs)) + 
     scale_colour_manual(values = main_colour) + 
     scale_fill_manual(values = main_colour) + 
-    scale_x_date(limits = c(date_min, NA), breaks = '2 months', date_labels = "%b-%Y") +
+    scale_x_date(limits = c(date_min_report, NA), breaks = '2 months', date_labels = "%b-%Y") +
     xlab('') + 
     ylab('frequency') + 
     labs(subtitle = 'Since the first cases reported') + 
@@ -1154,3 +1172,59 @@ country_six_plots2 <- function(dta_all, dta_long, dta_short, date_max) {
   return(multiplot)
 }
 ```
+
+### Geofacet
+
+```{r}
+df_data_africa <- dta_ecdc %>% 
+  filter(continent == "Africa", 
+         date >= as.Date("2020-03-01")) %>% 
+  rename(code = geoid) %>% 
+  mutate(cases_per_100000   = cases/population_2019*1e5, 
+         deaths_per_million = deaths/population_2019*1e6) %>% 
+  pivot_longer(cols = c(cases, deaths, cases_per_100000,
+                        deaths_per_million), 
+               names_to = "count", 
+               values_to = "value_raw") %>% 
+  group_by(code, count) %>% 
+  arrange(date) %>% 
+  mutate(value_ma = slide_dbl(value_raw, 
+                              mean, 
+                              .before = 1, 
+                              .after = 1)) %>% 
+  ungroup()
+
+df_code_data <- df_data_africa %>% 
+  distinct(country_ecdc, country, code, iso_a3)
+
+
+# Correct country code for Namibia in geofacet grid
+africa_countries_grid1[africa_countries_grid1$code == "NAM", "code"] <- "NA"
+
+
+### Plot
+my_count <- c("cases", "deaths", "cases_per_100000", "deaths_per_million")
+my_scales <- c("free_y", "fixed")
+conditions <- tidyr::crossing(my_count, my_scales)
+
+
+
+map2(.x = conditions$my_count,
+     .y = conditions$my_scales,
+     ~ {geofacet_plot(df_data_africa, 
+                      .count = .x, 
+                      continent = "Africa", 
+                      my_grid = "africa_countries_grid1",
+                      scales = .y,
+                      angle = 90)  %>% 
+         ggsave(file = file.path(path.local.deepdive.Africa,
+                                 glue('geofacet_{.x}_{.y}_{week_report}.png')),
+                width = 14, 
+                height = 12)
+       
+     }
+)
+
+
+```
+

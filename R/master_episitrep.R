@@ -83,7 +83,17 @@ print(my_doc, target = file.path(path.local.week, glue("draft_EpiSitrep_world_Co
 
 
 
- 
+# === === === === === === 
+# ---- Run Deepdives ----
+# === === === === === ===  
+# file_out_deepdive_africa <- paste0(week_report, '_', 'deepdive_Africa', '.html')
+
+# rmarkdown::render(
+#   input = file.path(path.Rmd, 'deep_dive_Africa.Rmd'), 
+#   output_file = file_out_deepdive_africa,
+#   output_dir  = path.local.week)
+
+
 # === === === === === === === === === ===
 # ---- Plots continent & countries ----
 # === === === === === === === === === === 
