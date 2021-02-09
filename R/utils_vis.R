@@ -1119,11 +1119,33 @@ print_plot <- function(x){
 
 
 
+# Geofacted plots -------------------------------------
+
+
+#' Generate a geofaceted plot for a given grid
+#'
+#' @param data The dataset. Note: should contain a code column
+#'  that correspond to the code columns of the grid.
+#' @param .count A character vector indicating which type of data should
+#' be ploted. Can take the values cases, deaths, cases_per_100000 
+#' and deaths_per_million.
+#' @param continent The name of the continent (or region) to be 
+#' pasted in the title.
+#' @param my_grid A dataframe containing the grid for geofacetting 
+#' the countries. Columns typically are row, col, code, names.
+#' @param scales A character vector indicating whether the y-scales 
+#' should be free or fixed.
+#' @param angle Integer for the x-axis angle.
+#'
+#' @return A geofaceted plot (ggplot2 and geofacet)
+#' @export
+#'
+#' @examples
 geofacet_plot <- function(data, 
                           .count = c("cases", "deaths", "cases_per_100000",
                                      "deaths_per_million"),
                           continent = "",
-                          my_grid = "africa_countries_grid1",
+                          grid = "africa_countries_grid1",
                           scales = "fixed", 
                           angle = 45) {
   
@@ -1139,8 +1161,8 @@ geofacet_plot <- function(data,
     geom_line(aes(y = value_ma), colour = "grey20", size = 1) +
     # geom_smooth(aes(y = value_raw), 
     # se = FALSE, colour = "grey20") +
-    facet_geo(~code,
-              grid = my_grid,
+    facet_geo(~ code,
+              grid = grid,
               label = "name", 
               scales = scales) +
     
@@ -1155,6 +1177,52 @@ geofacet_plot <- function(data,
                                      vjust = 1)) +
     labs(title = glue("COVID-19 {count_label} in {continent}"),
          subtitle = "", caption = "Data from ECDC")
+}
+
+
+#' Generate all graphs for a continent/region
+#' 
+#' For each region, generate the graphs  for "cases", "deaths", 
+#' "cases_per_100000","deaths_per_million", both with fixed and free_y 
+#' scales.
+#'
+#' @param data 
+#' @param continent 
+#' @param grid 
+#' @param names_paths 
+#' @param width 
+#' @param height 
+#' 
+#' @inheritParams geofacet_plot
+#' @return All graphs for a continent/region
+#' @export
+#'
+#' @examples
+geofacet_plot_all <- function(data,
+                              continent,
+                              grid,
+                              names_paths,
+                              width = 12,
+                              height = 10){
   
+  my_count   <- c("cases", "deaths", "cases_per_100000", "deaths_per_million")
+  my_scales  <- c("free_y", "fixed")
+  conditions <- tidyr::crossing(my_count, my_scales)
   
+  purrr::map2(.x = conditions$my_count,
+              .y = conditions$my_scales,
+              ~ {
+                geofacet_plot(data    = data,
+                              .count = .x, 
+                              continent = my_continent,
+                              grid   = grid,
+                              scales = .y,
+                              angle  = 90)  %>% 
+                  
+                  ggsave(file = file.path(path.local.geofacet,
+                                          glue('geofacet_{.x}_{.y}_{names_paths}_{week_report}.png')),
+                         width  = width, 
+                         height = height)
+              }
+  )
 }
