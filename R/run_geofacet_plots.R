@@ -97,6 +97,9 @@ dta_south_east_asia <- dta_ecdc %>%
 dta_africa <- dta_ecdc %>% 
   filter(continent == "Africa")
 
+dta_europe <- dta_ecdc %>% 
+  filter(continent == "Europe")
+
 
 
 
@@ -133,8 +136,15 @@ africa_countries_grid1[africa_countries_grid1$code == "NAM", "code"] <- "NA"
 grid_africa <- africa_countries_grid1
 
 
+# Europe
+shp_europe <- sf_mercator %>%
+  filter(continent == "Europe")
 
-
+grid_europe <- grid_auto(shp_europe, 
+                                  names = "country",
+                                  codes = "iso_a2",
+                                  seed = 1) %>% 
+  select(name = name_country, code = code_iso_a2, row, col)
 
 
 
@@ -145,19 +155,23 @@ grid_africa <- africa_countries_grid1
 
 list_data <- list(dta_south_america, 
                   dta_south_east_asia,
-                  dta_africa)
+                  dta_africa,
+                  dta_europe)
 
 list_names <- list("South & Central America",
                    "South & East Asia",
-                   "Africa")
+                   "Africa",
+                   "Europe")
 
 list_names_path <- list("south_central_america",
                         "south_east_asia",
-                        "africa")
+                        "africa",
+                        "europe")
 
 list_grid <- list(grid_south_america,
                   grid_south_east_asia,
-                  grid_africa)
+                  grid_africa,
+                  grid_europe)
 
 pmap(list(list_data,
           list_names,
