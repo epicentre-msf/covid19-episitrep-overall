@@ -116,14 +116,16 @@ dta_ecdc <- dta_ecdc %>%
 
 # Define lims
 xlim_continent <- switch(params$continent,
-       "Africa" = c(-25, 60),
-       "Europe" = c(-30, 80),
-       "Americas" = c(-160, -30))
+       "Africa"   = c(-25, 60),
+       "Europe"   = c(-30, 80),
+       "Americas" = c(-160, -30),
+       "Asia"     = c(20, 170))
 
 ylim_continent <- switch(params$continent,
-       "Africa" = c(-35, 40),
-       "Europe" = c(28, 73),
-       "Americas" = c(-70, 90))
+       "Africa"   = c(-35, 40),
+       "Europe"   = c(28, 73),
+       "Americas" = c(-70, 90),
+       "Asia"     = c(-20, 90))
 
 
 
@@ -385,15 +387,15 @@ sf_case_inc <- df_countries %>%
 
 
 
-# ggplot(sf_case_inc) + 
-#   geom_sf(aes(fill = inc_brks), size = .1) + 
+# ggplot(sf_case_inc) +
+#   geom_sf(aes(fill = inc_brks), size = .1) +
 #    coord_sf(
-#     xlim = c(-160, -30), 
-#     ylim = c(-70, 90), 
+#     xlim = c(20, 170),
+#     ylim = c(-20, 90),
 #     expand = FALSE,
-#     datum = NA) + 
-#   labs(title = 'Overall') 
-# 
+#     datum = NA) +
+#   labs(title = 'Overall')
+
 
 
 
