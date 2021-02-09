@@ -86,12 +86,27 @@ print(my_doc, target = file.path(path.local.week, glue("draft_EpiSitrep_world_Co
 # === === === === === === 
 # ---- Run Deepdives ----
 # === === === === === ===  
-# file_out_deepdive_africa <- paste0(week_report, '_', 'deepdive_Africa', '.html')
+file_out_deepdive_africa <- paste0(week_report, '_', 'deepdive_Africa', '.html')
 
-# rmarkdown::render(
-#   input = file.path(path.Rmd, 'deep_dive_Africa.Rmd'), 
-#   output_file = file_out_deepdive_africa,
-#   output_dir  = path.local.week)
+rmarkdown::render(
+  input = file.path(path.Rmd, 'deep_dive_Africa.Rmd'),
+  output_file = file_out_deepdive_africa,
+  output_dir  = path.local.week)
+
+
+# Simplified deepdive for all continents
+continent_list <- list("Africa", "Americas", "Asia", "Europe")
+
+purrr::walk(continent_list, 
+            ~rmarkdown::render(
+              input       = file.path(path.Rmd, 'deep_dive.Rmd'), 
+              output_file = glue::glue("{week_report}_deepdive_{.}.html"),
+              output_dir  = path.local.week.deepdive,
+              params = list(continent = .))
+)
+
+
+
 
 
 # === === === === === === === === === ===
