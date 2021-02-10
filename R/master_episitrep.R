@@ -1,6 +1,13 @@
 # === === === === === === === === 
 # ---- Prepare environment ----
 # === === === === === === === === 
+
+# Set locale on French computer
+if (Sys.getlocale(category = "LC_TIME") == "French_France.1252") {
+  Sys.setlocale(category = "LC_ALL", locale = "en_GB.UTF-8")
+  Sys.setenv(LANG = "en_GB.UTF-8") 
+}
+
 source(here::here('R', 'setup.R'), encoding = 'UTF-8')
 source(file.path(path.R, "utils_get_data.R")  , encoding = "UTF-8")
 source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
