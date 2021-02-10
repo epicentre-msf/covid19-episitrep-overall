@@ -1215,7 +1215,7 @@ map2(.x = conditions$my_count,
      ~ {geofacet_plot(df_data_africa, 
                       .count = .x, 
                       continent = "Africa", 
-                      my_grid = "africa_countries_grid1",
+                      grid = "africa_countries_grid1",
                       scales = .y,
                       angle = 90)  %>% 
          ggsave(file = file.path(path.local.deepdive.Africa,

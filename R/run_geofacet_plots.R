@@ -32,7 +32,6 @@ if(!exists(path.local.geofacet)) {
 }
 
 
-
 # Get & prepare data --------------------------------------------
 
 ## --- ECDC data
@@ -177,14 +176,12 @@ pmap(list(list_data,
           list_names,
           list_grid,
           list_names_path),
-     ~ {geofacet_plot_all(my_data = ..1,
-                          my_continent = ..2,
-                          my_grid = ..3,
-                          my_names_path = ..4
-                          )
-       }, 
-     my_width = 12, 
-     my_height = 10
+     ~ {geofacet_plot_all(data = ..1,
+                          continent = ..2,
+                          grid = ..3,
+                          names_path = ..4)}, 
+     width = 12, 
+     height = 10
 )
 
 

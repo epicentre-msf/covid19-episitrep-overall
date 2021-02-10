@@ -1214,7 +1214,7 @@ geofacet_plot_all <- function(data,
               ~ {
                 geofacet_plot(data    = data,
                               .count = .x, 
-                              continent = my_continent,
+                              continent = continent,
                               grid   = grid,
                               scales = .y,
                               angle  = 90)  %>% 
