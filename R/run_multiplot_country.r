@@ -53,7 +53,9 @@ dir.create(path.local.worldwide.graphs.country_growth_rates,
 
 lst_dta_jhu <- rds_jhu %>% 
   tidyr::drop_na(iso_a3) %>% 
-  filter(between(date, left = NULL, right = date_max_report)) %>% 
+  filter(between(date, 
+                 left = date_min_report, 
+                 right = date_max_report)) %>% 
   multisplit("iso_a3")
 
 
@@ -73,20 +75,25 @@ lst_coeffs_deaths <- trend_models$lst_coeffs_deaths
 # --- Plot SIX graphs with counts of cases and deaths and trend with two different period lengths 
 
 # To filter which countries to plot 
-country_list <- df_countries %>% filter(iso_a3 != "HKG")
+country_list <- df_countries %>% 
+  filter(iso_a3 != "HKG") %>% 
+  arrange(iso_a3)
 
 # Loop of plots
 for (i in country_list$iso_a3){
-  print(i)
+  
   name_country <- country_list %>% 
     filter(iso_a3 == i) %>%
     pull(country) %>% gsub(" ", "_", .)
   
+  print(paste(i , name_country))
+
   plots <- country_six_plots(country_iso = i)
-  ggsave(file.path(path.local.worldwide.graphs.country_trends, 
-                   glue("trends_{name_country}_{week_report}.png")), 
-         plot = plots, 
-         scale = 1, 
+  
+  ggsave(file.path(path.local.worldwide.graphs.country_trends,
+                   glue("trends_{name_country}_{week_report}.png")),
+         plot = plots,
+         scale = 1,
          width = 9,
          dpi = 320)
 }

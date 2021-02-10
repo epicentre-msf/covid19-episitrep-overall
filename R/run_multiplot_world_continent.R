@@ -1,3 +1,6 @@
+# --- --- --- --- --- --- --- --- --- --- --- --- 
+# --- LOOPS to plot graphs for each continent 
+# --- --- --- --- --- --- --- --- --- --- --- --- 
 
 
 # Setup -------------------------------------------------------------------
@@ -7,6 +10,12 @@
 # source(file.path(path.R, 'utils_management.R'), encoding = 'UTF-8')
 # source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
 source(file.path(path.R, 'utils_modelling.R') , encoding = 'UTF-8')
+
+# dates_and_week <- set_date_frame(create_folders = TRUE)
+# 
+# date_min_report <- dates_and_week[[1]]
+# date_max_report <- dates_and_week[[2]]
+# week_report     <- dates_and_week[[3]]
 
 
 ##### Paths #####
