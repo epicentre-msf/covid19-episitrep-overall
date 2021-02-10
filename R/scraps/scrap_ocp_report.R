@@ -657,9 +657,9 @@ gtsave(gtbl_cfr_severity_continent_F,
 
 
 
-DATA <- dta_linelist %>% 
+DATA_cured_died <- dta_linelist %>% 
   filter(OC == "OCP",
-         # merge_oxygen == "Yes",
+         merge_oxygen == "Yes",
          ind_outcome_patcourse_status %in% c('Cured', 'Died')) %>% 
   select(continent, MSF_severity, ind_outcome_patcourse_status, patinfo_sex) 
 
