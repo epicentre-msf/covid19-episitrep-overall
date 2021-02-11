@@ -1136,6 +1136,12 @@ print_plot <- function(x){
 #' @param scales A character vector indicating whether the y-scales 
 #' should be free or fixed.
 #' @param angle Integer for the x-axis angle.
+#' @param label_size An integer that defines the text size in 
+#' facet lables
+#' @param data_source A string that describe the source of data
+#' (to be used in the caption)
+#' @param colour_raw A string to define the colour of raw data
+#'
 #'
 #' @return A geofaceted plot (ggplot2 and geofacet)
 #' @export
@@ -1147,7 +1153,10 @@ geofacet_plot <- function(data,
                           continent = "",
                           grid = "africa_countries_grid1",
                           scales = "fixed", 
-                          angle = 45) {
+                          angle = 45,
+                          label_size = 7,
+                          data_source = "ECDC",
+                          colour_raw = "steelblue") {
   
   .count <- match.arg(.count)
   count_label <- .count %>% 
@@ -1156,8 +1165,8 @@ geofacet_plot <- function(data,
   data <- data %>% 
     filter(count == .count)
   
-  ggplot(data, aes(x = date)) + 
-    geom_line(aes(y = value_raw), colour = "steelblue") +
+    ggplot(data, aes(x = date)) + 
+    geom_line(aes(y = value_raw), colour = colour_raw) +
     geom_line(aes(y = value_ma), colour = "grey20", size = 1) +
     # geom_smooth(aes(y = value_raw), 
     # se = FALSE, colour = "grey20") +
@@ -1171,12 +1180,16 @@ geofacet_plot <- function(data,
     scale_x_date("", 
                  date_breaks = "2 months", 
                  date_labels = "%b") + 
-    theme(strip.text.x = element_text(size = 6), 
+    theme(strip.text.x = element_text(size = label_size,
+                                      face = "bold"), 
           axis.text.x = element_text(angle = angle, 
                                      hjust = 1, 
-                                     vjust = 1)) +
+                                     vjust = 1),
+          panel.grid.minor = element_blank()) +
+    
     labs(title = glue("COVID-19 {count_label} in {continent}"),
-         subtitle = "", caption = "Data from ECDC")
+         subtitle = "", 
+         caption = glue("Data from {data_source}"))
 }
 
 
@@ -1203,7 +1216,9 @@ geofacet_plot_all <- function(data,
                               grid,
                               names_paths,
                               width = 12,
-                              height = 10){
+                              height = 10,
+                              data_source = "ECDC",
+                              colour_raw = "steelblue"){
   
   my_count   <- c("cases", "deaths", "cases_per_100000", "deaths_per_million")
   my_scales  <- c("free_y", "fixed")
@@ -1220,7 +1235,7 @@ geofacet_plot_all <- function(data,
                               angle  = 90)  %>% 
                   
                   ggsave(file = file.path(path.local.geofacet,
-                                          glue('geofacet_{.x}_{.y}_{names_paths}_{week_report}.png')),
+                                          glue('{names_paths}_geofacet_{.x}_{.y}_{week_report}.png')),
                          width  = width, 
                          height = height)
               }
