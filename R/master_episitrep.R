@@ -91,7 +91,7 @@ print(my_doc, target = file.path(path.local.week, glue("draft_EpiSitrep_world_Co
 
 
 # === === === === === === 
-# ---- Run Deepdives ----
+# ---- Deepdives ----
 # === === === === === ===  
 file_out_deepdive_africa <- paste0(week_report, '_', 'deepdive_Africa', '.html')
 
