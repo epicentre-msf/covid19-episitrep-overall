@@ -90,13 +90,17 @@ dta_south_central_america <- dta_ecdc %>%
   filter(country != "Mexico")
 
 
-dta_south_east_asia <- dta_ecdc %>% 
-  filter(continent == "Asia",
-         region != "East Asia & Pacific")
+# dta_south_east_asia <- dta_ecdc %>% 
+#   filter(continent == "Asia",
+#          region != "East Asia & Pacific")
+
+dta_asia <- dta_ecdc %>% 
+  filter(continent == "Asia")
 
 
 dta_africa <- dta_ecdc %>% 
   filter(continent == "Africa")
+
 
 dta_europe <- dta_ecdc %>% 
   filter(continent == "Europe")
@@ -112,11 +116,11 @@ shp_south_central_america <- sf_mercator %>%
   filter(continent == "Americas",
          region != "Northern America")
 
-grid_south_central_america <- grid_auto(shp_south_central_america, 
-                                names = "country",
-                                codes = "iso_a2",
-                                seed = 1) %>% 
-  select(name = name_country, code = code_iso_a2, row, col)
+# grid_south_central_america <- grid_auto(shp_south_central_america, 
+#                                 names = "country",
+#                                 codes = "iso_a2",
+#                                 seed = 1) %>% 
+#   select(name = name_country, code = code_iso_a2, row, col)
 
 
 
@@ -131,15 +135,28 @@ grid_south_central_america <- data.frame(
 
 
 # Asie du sud
-shp_south_east_asia <- sf_mercator %>%
-  filter(continent == "Asia",
-         region != "East Asia & Pacific")
+# shp_south_east_asia <- sf_mercator %>%
+#   filter(continent == "Asia",
+#          # region != "East Asia & Pacific"
+#   )
+# 
+# grid_south_east_asia <- grid_auto(shp_south_east_asia, 
+#                                   names = "country",
+#                                   codes = "iso_a2",
+#                                   seed = 1) %>% 
+#   select(name = name_country, code = code_iso_a2, row, col)
+# 
 
-grid_south_east_asia <- grid_auto(shp_south_east_asia, 
-                                  names = "country",
-                                  codes = "iso_a2",
-                                  seed = 1) %>% 
-  select(name = name_country, code = code_iso_a2, row, col)
+
+grid_asia <- data.frame(
+  name = c("Russia", "Dem. Rep. Korea", "Georgia", "Kyrgyzstan", "Kazakhstan", "Japan", "Republic of Korea", "Mongolia", "Cyprus", "Turkey", "Armenia", "Turkmenistan", "Uzbekistan", "Tajikistan", "Azerbaijan", "Taiwan", "China", "Syria", "Afghanistan", "Bhutan", "Nepal", "Iran", "Lebanon", "Iraq", "Kuwait", "Palestine", "Israel", "Pakistan", "Bangladesh", "Myanmar", "Lao PDR", "Jordan", "Qatar", "Saudi Arabia", "United Arab Emirates", "India", "Thailand", "Cambodia", "Vietnam", "Yemen", "Oman", "Sri Lanka", "Philippines", "Brunei Darussalam", "Malaysia", "Indonesia", "Timor-Leste"),
+  code = c("RU", "KP", "GE", "KG", "KZ", "JP", "KR", "MN", "CY", "TR", "AM", "TM", "UZ", "TJ", "AZ", "TW", "CN", "SY", "AF", "BT", "NP", "IR", "LB", "IQ", "KW", "PS", "IL", "PK", "BD", "MM", "LA", "JO", "QA", "SA", "AE", "IN", "TH", "KH", "VN", "YE", "OM", "LK", "PH", "BN", "MY", "ID", "TL"),
+  row = c(1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 7, 7, 7),
+  col = c(9, 13, 3, 7, 6, 14, 13, 11, 1, 2, 3, 5, 6, 7, 4, 13, 12, 3, 7, 9, 8, 6, 2, 4, 5, 2, 3, 7, 9, 10, 11, 4, 6, 5, 6, 8, 11, 12, 13, 5, 6, 9, 14, 13, 12, 13, 14),
+  stringsAsFactors = FALSE
+)
+
+
 
 
 # Africa
@@ -152,9 +169,9 @@ shp_europe <- sf_mercator %>%
   filter(continent == "Europe")
 
 grid_europe <- grid_auto(shp_europe, 
-                                  names = "country",
-                                  codes = "iso_a2",
-                                  seed = 1) %>% 
+                         names = "country",
+                         codes = "iso_a2",
+                         seed = 1) %>% 
   select(name = name_country, code = code_iso_a2, row, col)
 
 
@@ -162,48 +179,41 @@ grid_europe <- grid_auto(shp_europe,
 ### Plot
 
 list_data <- list(dta_south_central_america, 
-                  dta_south_east_asia,
+                  dta_asia,
                   dta_africa,
                   dta_europe)
 
-list_names <- list("South & Central America",
-                   "South & East Asia",
-                   "Africa",
-                   "Europe")
 
-list_names_path <- list("south_central_america",
-                        "south_east_asia",
-                        "africa",
-                        "europe")
+vec_names <- c("South & Central America",
+               "Asia",
+               "Africa",
+               "Europe")
+
+vec_names_path <- c("south_central_america",
+                    "asia",
+                    "africa",
+                    "europe")
 
 list_grid <- list(grid_south_central_america,
-                  grid_south_east_asia,
+                  grid_asia,
                   grid_africa,
                   grid_europe)
 
-pmap(list(list_data,
-          list_names,
-          list_grid,
-          list_names_path),
-<<<<<<< Updated upstream
-     ~ {geofacet_plot_all(my_data = ..1,
-                          my_continent = ..2,
-                          my_grid = ..3,
-                          my_names_path = ..4
-                          )
-       }, 
-     my_width = 12, 
-     my_height = 10
-=======
-     ~ {geofacet_plot_all(data = ..1,
-                          continent = ..2,
-                          grid = ..3,
-                          names_path = ..4,
-                          data_source = "ECDC",
-                          colour_raw = "#f04042")}, 
-     width = 12, 
-     height = 10
->>>>>>> Stashed changes
+
+THE_TABLE <- tibble(names_paths = vec_names_path,
+                    continent  = vec_names,
+                    width      = c(12, 20, 12, 12),
+                    height     =  c(10, 8, 10, 10),
+                    data       = list_data,
+                    grid       = list_grid) %>% 
+  filter(continent == "Asia")
+
+
+
+
+pmap(THE_TABLE, geofacet_plot_all, 
+     data_source = "ECDC",
+     colour_raw = "#f04042"
 )
 
 
