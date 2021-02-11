@@ -84,9 +84,10 @@ sf_mercator <- rnaturalearth::ne_countries(type = "countries",
 
 # Continent data ---------------------------------------
 
-dta_south_america <- dta_ecdc %>% 
+dta_south_central_america <- dta_ecdc %>% 
   filter(continent == "Americas",
-         region != "North America")
+         region != "North America") %>% 
+  filter(country != "Mexico")
 
 
 dta_south_east_asia <- dta_ecdc %>% 
@@ -107,16 +108,26 @@ dta_europe <- dta_ecdc %>%
 
 
 # Amérique du Sud et centrale
-shp_south_america <- sf_mercator %>%
+shp_south_central_america <- sf_mercator %>%
   filter(continent == "Americas",
          region != "Northern America")
 
-grid_south_america <- grid_auto(shp_south_america, 
+grid_south_central_america <- grid_auto(shp_south_central_america, 
                                 names = "country",
                                 codes = "iso_a2",
                                 seed = 1) %>% 
   select(name = name_country, code = code_iso_a2, row, col)
 
+
+
+grid_south_central_america <- data.frame(
+  name = c("Bahamas", "Puerto Rico", "Dom. Rep.", "Haiti", "Cuba", "Mexico", "Jamaica", "Belize", "Guatemala", "Honduras", "El Salvador", "Nicaragua", "Costa Rica", "Panama", "Trinid. & Tob.", "Venezuela", "Colombia", "Guyana", "Suriname", "Ecuador", "Brazil", "Peru", "Bolivia", "Paraguay", "Chile", "Uruguay", "Argentina", "Falkland Isl."),
+  code = c("BS", "PR", "DO", "HT", "CU", "MX", "JM", "BZ", "GT", "HN", "SV", "NI", "CR", "PA", "TT", "VE", "CO", "GY", "SR", "EC", "BR", "PE", "BO", "PY", "CL", "UY", "AR", "FK"),
+  row = c(1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 5, 5, 5, 6, 6, 6, 6, 7, 7, 8, 8, 8, 9, 9, 9, 10),
+  col = c(6, 7, 7, 6, 5, 1, 5, 3, 1, 2, 1, 2, 2, 3, 6, 5, 4, 6, 7, 4, 7, 4, 5, 6, 4, 6, 5, 5),
+  stringsAsFactors = FALSE
+) %>% 
+  filter(name != "Mexico")
 
 
 # Asie du sud
@@ -150,10 +161,7 @@ grid_europe <- grid_auto(shp_europe,
 
 ### Plot
 
-
-
-
-list_data <- list(dta_south_america, 
+list_data <- list(dta_south_central_america, 
                   dta_south_east_asia,
                   dta_africa,
                   dta_europe)
@@ -168,7 +176,7 @@ list_names_path <- list("south_central_america",
                         "africa",
                         "europe")
 
-list_grid <- list(grid_south_america,
+list_grid <- list(grid_south_central_america,
                   grid_south_east_asia,
                   grid_africa,
                   grid_europe)
@@ -177,6 +185,7 @@ pmap(list(list_data,
           list_names,
           list_grid,
           list_names_path),
+<<<<<<< Updated upstream
      ~ {geofacet_plot_all(my_data = ..1,
                           my_continent = ..2,
                           my_grid = ..3,
@@ -185,6 +194,16 @@ pmap(list(list_data,
        }, 
      my_width = 12, 
      my_height = 10
+=======
+     ~ {geofacet_plot_all(data = ..1,
+                          continent = ..2,
+                          grid = ..3,
+                          names_path = ..4,
+                          data_source = "ECDC",
+                          colour_raw = "#f04042")}, 
+     width = 12, 
+     height = 10
+>>>>>>> Stashed changes
 )
 
 
