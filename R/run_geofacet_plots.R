@@ -37,7 +37,7 @@ if(!exists(path.local.geofacet)) {
 
 ## --- ECDC data
 dta_ecdc <- covidutils::get_ecdc_data()
-
+dta_jhu <- get_owid_jhcsse()
 
 # Prepare data
 dta_ecdc <- dta_ecdc %>% 
@@ -59,6 +59,11 @@ dta_ecdc <- dta_ecdc %>%
                               .before = 1, 
                               .after = 1)) %>% 
   ungroup()
+
+
+
+
+
 
 
 ## --- GIS data - Mercator projection
@@ -95,7 +100,7 @@ dta_south_central_america <- dta_ecdc %>%
 #          region != "East Asia & Pacific")
 
 dta_asia <- dta_ecdc %>% 
-  filter(continent == "Asia")
+  filter(continent == "Asia" | country == "Russia")
 
 
 dta_africa <- dta_ecdc %>% 
@@ -200,18 +205,17 @@ list_grid <- list(grid_south_central_america,
                   grid_europe)
 
 
-THE_TABLE <- tibble(names_paths = vec_names_path,
-                    continent  = vec_names,
-                    width      = c(12, 20, 12, 12),
-                    height     =  c(10, 8, 10, 10),
-                    data       = list_data,
-                    grid       = list_grid) %>% 
-  filter(continent == "Asia")
+dta_all <- tibble(names_paths = vec_names_path,
+                    continent   = vec_names,
+                    width       = c(12, 20, 12, 12),
+                    height      = c(10, 8, 10, 10),
+                    data        = list_data,
+                    grid        = list_grid) 
 
 
 
-
-pmap(THE_TABLE, geofacet_plot_all, 
+pmap(dta_all, 
+     geofacet_plot_all, 
      data_source = "ECDC",
      colour_raw = "#f04042"
 )
