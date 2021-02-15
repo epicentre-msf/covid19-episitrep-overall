@@ -42,7 +42,7 @@ dta_ecdc <- covidutils::get_ecdc_data()
 
 # Prepare data
 dta_ecdc <- dta_ecdc %>% 
-  prepare_ecdc_data_geofacet() %>% 
+  prepare_ecdc_geodata_geofacet() %>% 
   filter(between(date, left = NULL, right = date_max_report)) %>% 
   mutate(cases_per_100000   = cases/population_2019 * 1e5, 
          deaths_per_million = deaths/population_2019 * 1e6) %>% 

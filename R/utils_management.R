@@ -408,7 +408,7 @@ df_labels_comcond <- data.frame(
 
 
 
-prepare_ecdc_data_geofacet <- function(data,
+prepare_ecdc_geodata_geofacet <- function(data,
                                        iso = NULL) {
   
   library(dplyr)
