@@ -37,17 +37,15 @@ if(!exists(path.local.geofacet)) {
 
 ## --- ECDC data
 dta_ecdc <- covidutils::get_ecdc_data()
-dta_jhu <- get_owid_jhcsse()
+
+
 
 # Prepare data
 dta_ecdc <- dta_ecdc %>% 
   prepare_ecdc_data_geofacet() %>% 
-  drop_na(iso_a3) %>% 
   filter(between(date, left = NULL, right = date_max_report)) %>% 
-  
-  rename(code = geoid) %>% 
-  mutate(cases_per_100000   = cases/population_2019*1e5, 
-         deaths_per_million = deaths/population_2019*1e6) %>% 
+  mutate(cases_per_100000   = cases/population_2019 * 1e5, 
+         deaths_per_million = deaths/population_2019 * 1e6) %>% 
   pivot_longer(cols = c(cases, deaths, cases_per_100000,
                         deaths_per_million), 
                names_to = "count", 
@@ -61,6 +59,9 @@ dta_ecdc <- dta_ecdc %>%
   ungroup()
 
 
+
+## --- JHU data
+dta_jhu  <- get_owid_jhcsse()
 
 
 
