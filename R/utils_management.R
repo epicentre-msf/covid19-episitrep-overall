@@ -508,3 +508,45 @@ prepare_ecdc_geodata_geofacet <- function(data,
 
 
 
+prepare_jhu_geodata_geofacet <- function(data,
+                                         iso = NULL) {
+  
+  library(dplyr)
+  library(countrycode)
+  
+  
+  data <- data %>% 
+    tidyr::drop_na(iso_a3) %>% 
+    dplyr::mutate(
+      source = "JHU",
+      date   = as.Date(date, format = "%d/%m/%Y"),
+      country_infered = suppressWarnings(countrycode::countrycode(iso_a3, 
+                                                                  origin = 'iso3c', 
+                                                                  destination = 'country.name',
+                                                                  custom_match = c(XKX = "Kosovo" ))),
+      
+    code = suppressWarnings(countrycode::countrycode(
+          iso_a3, 
+          origin = "iso3c", 
+          destination = "iso2c",
+          custom_match = c(XKX = "Kosovo" )))
+      
+    ) %>% 
+    dplyr::arrange(date) %>%
+    dplyr::mutate_at(dplyr::vars(cases, deaths), ~ifelse(. < 0, 0L, .))
+  
+  
+  if (!is.null(iso)) {    
+    data <- filter(data, iso_a3 == iso)
+    
+    if (nrow(data) == 0) {
+      warning(paste("No data found for country", country))
+    }
+    
+  }
+  
+  return(data)
+}
+
+
+
