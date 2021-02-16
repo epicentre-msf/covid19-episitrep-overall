@@ -321,7 +321,7 @@ country_plot <- function(country_iso, series, lst_dta = lst_jhu, model = 'linear
                      deaths_linear  = model_cnt_deaths_linear, 
                      cases_poisson  = model_cnt_cases_poisson, 
                      deaths_poisson = model_cnt_deaths_poisson)
-
+  
   mld_par <- mld_list[[5]]
   dates_extent <- c(mld_par[[1]][1], mld_par[[1]][2])
   
@@ -331,12 +331,12 @@ country_plot <- function(country_iso, series, lst_dta = lst_jhu, model = 'linear
     select(date, obs = all_of(series))
   
   dta_mdl <- tibble(dta_obs %>% 
-                          filter(between(date, 
-                                         left = dates_extent[1],  
-                                         right = dates_extent[2])), 
-                        fit = mdl$fit, 
-                        lwr = mdl$lwr, 
-                        upr = mdl$upr)
+                      filter(between(date, 
+                                     left = dates_extent[1],  
+                                     right = dates_extent[2])), 
+                    fit = mdl$fit, 
+                    lwr = mdl$lwr, 
+                    upr = mdl$upr)
   
   obs_max <- max(dta_obs$obs, na.rm = TRUE)
   
@@ -381,11 +381,11 @@ country_duo_plots <- function(series, country_iso, lst_dta = lst_jhu, model = 'l
   
   grid.arrange(country_plot(country_iso = country_iso, series = series, model = model)[[1]], 
                country_plot(country_iso = country_iso, series = series, model = model)[[2]],
-             ncol = 2, 
-             top = textGrob(paste(glue('Covid-19 cases and deaths and trend estimations in {name_country}'), 
-                                  glue('Data until {format(date_max_report, "%d %B %Y")}'), 
-                                  sep = "\n"), 
-                            gp = gpar(fontface = 'bold')))
+               ncol = 2, 
+               top = textGrob(paste(glue('Covid-19 cases and deaths and trend estimations in {name_country}'), 
+                                    glue('Data until {format(date_max_report, "%d %B %Y")}'), 
+                                    sep = "\n"), 
+                              gp = gpar(fontface = 'bold')))
 }
 
 
@@ -1165,7 +1165,7 @@ geofacet_plot <- function(data,
   data <- data %>% 
     filter(count == .count)
   
-    ggplot(data, aes(x = date)) + 
+  ggplot(data, aes(x = date)) + 
     geom_line(aes(y = value_raw), colour = colour_raw) +
     geom_line(aes(y = value_ma), colour = "grey20", size = 1) +
     # geom_smooth(aes(y = value_raw), 
@@ -1193,6 +1193,93 @@ geofacet_plot <- function(data,
 }
 
 
+
+# Sometime the RAM on my computer was not enough to run the function
+# on the JHU data in long format, so I made a wide version.
+geofacet_plot_wide <- function(data, 
+                               .count = "cases",
+                               continent = "",
+                               grid   = "africa_countries_grid1",
+                               scales = "fixed", 
+                               angle  = 45,
+                               label_size = 7,
+                               data_source = "ECDC",
+                               colour_raw  = "back",
+                               colour_ma   = "#f04042",
+                               mov_av = FALSE) {
+  
+  # c("cases", "deaths", "cases_per_100000",
+  #   "deaths_per_million")
+  
+  # .count <- match.arg(.count)
+  
+  count_label <- .count %>%
+    str_replace_all("_", " ")
+  
+  
+  data$value_raw <- data[[.count]]
+  
+  
+  # If one wants to add moving average to the raw data
+  if (isTRUE(mov_av)) {
+    data <- data %>% 
+      group_by(iso_a3) %>% 
+      arrange(date) %>% 
+      mutate(value_ma = slide_dbl(value_raw, 
+                                  mean, 
+                                  .before = 7, 
+                                  .after = 7,
+                                  .complete = TRUE)) %>% 
+      ungroup() 
+  }
+  
+  
+  
+  plot <- ggplot(data, aes(x = date)) +
+    # Raw data
+    geom_line(aes(y = value_raw), 
+              # size = 1,
+              colour = colour_raw) +
+    
+    # geom_smooth(aes(y = value_raw), 
+    # se = FALSE, colour = "grey20") +
+    facet_geo(~ code,
+              grid = grid,
+              label = "name", 
+              scales = scales) +
+    
+    theme_bw() + 
+    ylab("") + 
+    scale_x_date("", 
+                 date_breaks = "2 months", 
+                 date_labels = "%b") + 
+    theme(strip.text.x = element_text(size = label_size,
+                                      face = "bold"), 
+          axis.text.x = element_text(angle = angle, 
+                                     hjust = 1, 
+                                     vjust = 1),
+          panel.grid.minor = element_blank()) +
+    
+    labs(title = glue("COVID-19 {count_label} in {continent}"),
+         subtitle = "", 
+         caption = glue("Data from {data_source}"))
+  
+  
+  if (isTRUE(mov_av)) {
+    plot <- plot +
+      geom_line(aes(y = value_ma), 
+                colour = colour_ma, 
+                size = 0.5,
+                # alpha = 0.7
+      )
+  }
+  
+  return(plot)
+  
+}
+
+
+
 #' Generate all graphs for a continent/region
 #' 
 #' For each region, generate the graphs  for "cases", "deaths", 
@@ -1217,8 +1304,11 @@ geofacet_plot_all <- function(data,
                               names_paths,
                               width = 12,
                               height = 10,
-                              data_source = "ECDC",
-                              colour_raw = "steelblue"){
+                              label_size = 7,
+                              data_source = "JHU",
+                              colour_raw  = "steelblue",
+                              colour_ma   = "black",
+                              mov_av      = TRUE){
   
   my_count   <- c("cases", "deaths", "cases_per_100000", "deaths_per_million")
   my_scales  <- c("free_y", "fixed")
@@ -1227,17 +1317,25 @@ geofacet_plot_all <- function(data,
   purrr::map2(.x = conditions$my_count,
               .y = conditions$my_scales,
               ~ {
-                geofacet_plot(data    = data,
-                              .count = .x, 
-                              continent = my_continent,
-                              grid   = grid,
-                              scales = .y,
-                              angle  = 90)  %>% 
+                geofacet_plot_wide(data    = data,
+                                   .count  = .x, 
+                                   continent = continent,
+                                   grid   = grid,
+                                   scales = .y,
+                                   angle  = 90,
+                                   label_size = label_size,
+                                   data_source = data_source,
+                                   colour_raw  = colour_raw,
+                                   colour_ma   = colour_ma,
+                                   mov_av      = mov_av)  %>% 
                   
                   ggsave(file = file.path(path.local.geofacet,
-                                          glue('{names_paths}_geofacet_{.x}_{.y}_{week_report}.png')),
+                                          glue::glue('{names_paths}_geofacet_{.x}_{.y}_{week_report}.png')),
                          width  = width, 
                          height = height)
               }
   )
 }
+
+
+
