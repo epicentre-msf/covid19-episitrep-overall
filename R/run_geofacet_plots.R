@@ -32,7 +32,6 @@ if(!exists(path.local.geofacet)) {
 }
 
 
-
 # Get & prepare data --------------------------------------------
 
 ## --- ECDC data
@@ -225,8 +224,7 @@ dta_all_60d <- tibble(names_paths = vec_names_path,
 pmap(dta_all_60d,
      geofacet_plot_all, 
      data_source = "JHU",
-     colour_raw = "#f04042"
-)
+     colour_raw = "#f04042")
 
 
 

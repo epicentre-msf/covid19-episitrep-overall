@@ -657,9 +657,9 @@ gtsave(gtbl_cfr_severity_continent_F,
 
 
 
-DATA <- dta_linelist %>% 
+DATA_cured_died <- DATA %>% 
   filter(OC == "OCP",
-         # merge_oxygen == "Yes",
+         merge_oxygen == "Yes",
          ind_outcome_patcourse_status %in% c('Cured', 'Died')) %>% 
   select(continent, MSF_severity, ind_outcome_patcourse_status, patinfo_sex) 
 
@@ -672,7 +672,8 @@ dta_linelist %>%
             p_dead_sur_curedNdead = round(n_dead / (n_dead + n_cured), 2),
             p_dead_sur_tot = round(n_dead / n_visits_hospi, 2))
 
-DATA %>% 
+
+DATA_cured_died %>% 
   group_by(continent, patinfo_sex, MSF_severity) %>% 
   summarise(n_tot = n(),
             n_dead = sum(ind_outcome_patcourse_status == "Died", na.rm = TRUE),
@@ -681,11 +682,11 @@ DATA %>%
   select(continent, patinfo_sex, MSF_severity, conca) %>% 
   pivot_wider(names_from = patinfo_sex,
               values_from = conca) %>% 
-  arrange(continent, MSF_severity )
+  arrange(continent, MSF_severity)
 
 
 
-DATA %>% 
+DATA_cured_died %>% 
   group_by(continent, patinfo_sex) %>% 
   summarise(n_tot = n(),
             n_dead = sum(ind_outcome_patcourse_status == "Died", na.rm = TRUE),

@@ -18,6 +18,7 @@ editor_options:
 <!-- Setup and uploading functions -->
 ```{r setup, include = FALSE}
 
+
 # Set environment
 if (!exists('path.root')) {
   source(here::here('R', 'setup.r'), encoding = 'UTF-8')

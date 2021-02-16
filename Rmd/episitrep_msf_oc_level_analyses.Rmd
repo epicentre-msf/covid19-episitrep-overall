@@ -32,7 +32,10 @@ editor_options:
 
 ```{r setup, warning = FALSE, message = FALSE, include = FALSE}
 
-# Sys.setlocale(category = "LC_TIME", locale="en_GB.UTF-8")
+if(Sys.getlocale(category = "LC_TIME") == "French_France.1252") {
+  Sys.setlocale(category = "LC_TIME", locale = "C")
+  Sys.setenv(LANG = "en_GB.UTF-8") 
+}
 
 if (!exists('path.root')) {
   source(here::here('R', 'setup.r'), encoding = 'UTF-8')

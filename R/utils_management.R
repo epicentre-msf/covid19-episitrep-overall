@@ -36,6 +36,7 @@ set_date_frame <- function(date_min = NULL, date_max = NULL, week_suffix = NULL,
   path.local.msf.tables <<- file.path(path.local.msf, 'tables')
 
   path.local.week.oc    <<- file.path(path.local.week, "oc")
+  path.local.week.deepdive <<- file.path(path.local.worldwide.graphs, "deepdive")
 
 
   # path.local.msf.oc        <<- file.path(path.local.week.oc, 'msf')
@@ -57,6 +58,7 @@ set_date_frame <- function(date_min = NULL, date_max = NULL, week_suffix = NULL,
     dir.create(path.local.msf.tables, showWarnings = FALSE, recursive = TRUE)
 
     dir.create(path.local.week.oc,       showWarnings = FALSE, recursive = TRUE)
+    dir.create(path.local.week.deepdive, showWarnings = FALSE, recursive = TRUE)
     # dir.create(path.local.msf.oc,        showWarnings = FALSE, recursive = TRUE)
     # dir.create(path.local.msf.data.oc,   showWarnings = FALSE, recursive = TRUE)
     # dir.create(path.local.msf.graphs.oc, showWarnings = FALSE, recursive = TRUE)

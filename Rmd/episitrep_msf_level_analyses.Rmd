@@ -17,6 +17,11 @@ editor_options:
 <!-- Setup environment and upload functions -->
 ```{r setup, warning = FALSE, message = FALSE, include = FALSE}
 
+if(Sys.getlocale(category = "LC_TIME") == "French_France.1252") {
+  Sys.setlocale(category = "LC_TIME", locale = "C")
+  Sys.setenv(LANG = "en_GB.UTF-8") 
+}
+
 knitr::opts_chunk$set(cache = FALSE,
                       echo = FALSE,
                       tidy = TRUE,

@@ -1,6 +1,13 @@
 # === === === === === === === === 
 # ---- Prepare environment ----
 # === === === === === === === === 
+
+# Set locale on French computer
+if (Sys.getlocale(category = "LC_TIME") == "French_France.1252") {
+  Sys.setlocale(category = "LC_ALL", locale = "en_GB.UTF-8")
+  Sys.setenv(LANG = "en_GB.UTF-8") 
+}
+
 source(here::here('R', 'setup.R'), encoding = 'UTF-8')
 source(file.path(path.R, "utils_get_data.R")  , encoding = "UTF-8")
 source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
@@ -84,33 +91,55 @@ print(my_doc, target = file.path(path.local.week, glue("draft_EpiSitrep_world_Co
 
 
 # === === === === === === 
-# ---- Run Deepdives ----
+# ---- Deepdives ----
 # === === === === === ===  
-# file_out_deepdive_africa <- paste0(week_report, '_', 'deepdive_Africa', '.html')
+file_out_deepdive_africa <- paste0(week_report, '_', 'deepdive_Africa', '.html')
 
-# rmarkdown::render(
-#   input = file.path(path.Rmd, 'deep_dive_Africa.Rmd'), 
-#   output_file = file_out_deepdive_africa,
-#   output_dir  = path.local.week)
+rmarkdown::render(
+  input = file.path(path.Rmd, 'deep_dive_Africa.Rmd'),
+  output_file = file_out_deepdive_africa,
+  output_dir  = path.local.week)
+
+
+# Simplified deepdive for all continents
+continent_list <- list("Africa", "Americas", "Asia", "Europe")
+
+purrr::walk(continent_list, 
+            ~rmarkdown::render(
+              input       = file.path(path.Rmd, 'deep_dive.Rmd'), 
+              output_file = glue::glue("{week_report}_deepdive_{.}.html"),
+              output_dir  = path.local.week.deepdive,
+              params = list(continent = .))
+)
+
+
+
 
 
 # === === === === === === === === === ===
 # ---- Plots continent & countries ----
 # === === === === === === === === === === 
-source(here::here('R', 'run_geofacet_plots.R'), encoding = 'UTF-8')
-source(here::here('R', 'run_multiplot_world_continent.R'), encoding = 'UTF-8')
-source(here::here('R', 'run_multiplot_country.R'), encoding = 'UTF-8')
+
+# Note: the scripts run in a new environment, child to this one so as to 
+# not interfere with each other.
+source(here::here('R', 'run_geofacet_plots.R'), encoding = 'UTF-8',
+       local = new.env(parent = .GlobalEnv))
+
+source(here::here('R', 'run_multiplot_world_continent.R'), 
+       encoding = 'UTF-8', local = new.env(parent = .GlobalEnv))
 
 
+source(here::here('R', 'run_multiplot_country.R'), encoding = 'UTF-8',
+       local = new.env(parent = .GlobalEnv))
 
 
-
-# Copy outputs to various locations ---------------------------------------
 
 
 # === === === === === === === === === === ===
-# ---- Copy outputs to GIS unit sharepoint  ----
+# ---- Copy outputs to various locations ----
 # === === === === === === === === === === ===
+
+# GIS unit sharepoint --------------------------------------
 
 ## Copy table of trends to GIS Unit sharepoint
 file.copy(
@@ -120,11 +149,10 @@ file.copy(
 
 
 
-# === === === === === === === === === ===
-# ---- Copy outputs to public folder ----
-# === === === === === === === === === === 
+# Public folder ---------------------------------------
 
-# --- Worldwide analysis
+
+###### Worldwide analyses ######
 ## Copy to archive
 file.copy(
   from = file.path(path.local.week, file_out_worldwide),
@@ -138,8 +166,7 @@ file.copy(
   overwrite = TRUE
 )
 
-
-# --- Worldwide tables summary
+###### Worldwide tables summary ######
 ## Copy to archive
 file.copy(
   from = file.path(path.local.worldwide.tables, paste0(week_report, '_', 'world_summary_cases_deaths.html')), 
@@ -154,7 +181,8 @@ file.copy(
 )
 
 
-# --- MSF data analysis
+###### MSF data analysis ######
+
 ## Copy to archive
 file.copy(
   from = file.path(path.local.week, file_out_msf),
@@ -168,7 +196,7 @@ file.copy(
   overwrite = TRUE
 )
 
-# --- MSF summary table 
+###### MSF summary table ######
 ## Copy to archive
 file.copy(
   from = file.path(path.local.msf.tables, paste0(week_report, '_', 'SUMMARY-TABLE_MSF-sites_by_patients_Covid-status.html')), 
@@ -183,7 +211,7 @@ file.copy(
 )
 
 
-# --- OC sitreps
+###### OC ######
 ## Copy to archive
 purrr::walk(oc_list, 
             ~ file.copy(
@@ -205,9 +233,7 @@ purrr::walk(oc_list,
 
 
 
-# === === === === === === === === === === ===
-# ---- Copy outputs to non public cfolder ---
-# === === === === === === === === === === ===
+# Non public folder ---------------------------------------
 
 # path.sharepoint.sitrep.week <- file.path(path.sharepoint.sitrep,
 #                                     week_report)
@@ -216,7 +242,7 @@ purrr::walk(oc_list,
 #   dir.create(path.sharepoint.sitrep.week, showWarnings = FALSE, recursive = TRUE)
 # }
 
-
+# Copy the whole local X week directory in the sharepoint.
 file.copy(path.local.week, 
           path.sharepoint.sitrep, 
           recursive = TRUE)
