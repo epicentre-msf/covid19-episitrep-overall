@@ -410,7 +410,7 @@ df_labels_comcond <- data.frame(
 
 
 
-prepare_ecdc_data_geofacet <- function(data,
+prepare_ecdc_geodata_geofacet <- function(data,
                                        iso = NULL) {
   
   library(dplyr)
@@ -419,7 +419,7 @@ prepare_ecdc_data_geofacet <- function(data,
   data <- data %>% 
     dplyr::mutate(date = as.Date(dateRep, format = "%d/%m/%Y")) %>% 
     dplyr::select(-dateRep) %>% 
-    dplyr::rename(geoid = geoId, 
+    dplyr::rename(code = geoId, 
                   country = countriesAndTerritories, 
                   cases = cases_weekly, 
                   deaths = deaths_weekly, 
@@ -429,12 +429,12 @@ prepare_ecdc_data_geofacet <- function(data,
     dplyr::mutate_at(dplyr::vars(cases, deaths), ~ifelse(. < 0, 0L, .)) %>% 
     
     dplyr::mutate(
-      geoid = dplyr::case_when(
+      code = dplyr::case_when(
         country == "United_Kingdom" ~ "GB",
         country == "Greece" ~ "GR",
         country == "French_Polynesia" ~ "PF",
         country == "Namibia" ~ "NA",
-        TRUE ~ geoid),
+        TRUE ~ code),
       
       iso_a3 = dplyr::case_when(
         country == 'Kosovo' ~ 'XKX',
@@ -475,7 +475,8 @@ prepare_ecdc_data_geofacet <- function(data,
       #                                                    origin = "iso3c", 
       #                                                    destination = "iso3c")),
       source = "ECDC"
-    )
+    ) %>% 
+    drop_na(iso_a3)
   
   if (!is.null(iso)) {    
     data <- filter(data, iso_a3 == iso)
@@ -491,7 +492,7 @@ prepare_ecdc_data_geofacet <- function(data,
       date = full_seq(date, period = 7),
       nesting(
         country_ecdc,
-        geoid,
+        code,
         country,
         continent,
         region,
@@ -501,8 +502,50 @@ prepare_ecdc_data_geofacet <- function(data,
       ),
       fill = list(cases = NA, deaths = NA)
     ) %>%
-    dplyr::select(date, country_ecdc:geoid, country:iso_a3, cases, deaths, population_2019, source)
+    dplyr::select(date, country_ecdc:code, country:iso_a3, cases, deaths, population_2019, source)
   
+  
+  return(data)
+}
+
+
+
+prepare_jhu_geodata_geofacet <- function(data,
+                                         iso = NULL) {
+  
+  library(dplyr)
+  library(countrycode)
+  
+  
+  data <- data %>% 
+    tidyr::drop_na(iso_a3) %>% 
+    dplyr::mutate(
+      source = "JHU",
+      date   = as.Date(date, format = "%d/%m/%Y"),
+      country_infered = suppressWarnings(countrycode::countrycode(iso_a3, 
+                                                                  origin = 'iso3c', 
+                                                                  destination = 'country.name',
+                                                                  custom_match = c(XKX = "Kosovo" ))),
+      
+    code = suppressWarnings(countrycode::countrycode(
+          iso_a3, 
+          origin = "iso3c", 
+          destination = "iso2c",
+          custom_match = c(XKX = "Kosovo" )))
+      
+    ) %>% 
+    dplyr::arrange(date) %>%
+    dplyr::mutate_at(dplyr::vars(cases, deaths), ~ifelse(. < 0, 0L, .))
+  
+  
+  if (!is.null(iso)) {    
+    data <- filter(data, iso_a3 == iso)
+    
+    if (nrow(data) == 0) {
+      warning(paste("No data found for country", country))
+    }
+    
+  }
   
   return(data)
 }
