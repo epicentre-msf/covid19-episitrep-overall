@@ -421,8 +421,8 @@ prepare_ecdc_geodata_geofacet <- function(data,
     dplyr::select(-dateRep) %>% 
     dplyr::rename(code = geoId, 
                   country = countriesAndTerritories, 
-                  cases = cases_weekly, 
-                  deaths = deaths_weekly, 
+                  # cases = cases_weekly, 
+                  # deaths = deaths_weekly, 
                   population_2019 = popData2019,
                   iso_a3 = countryterritoryCode) %>% 
     dplyr::arrange(date) %>%
@@ -487,22 +487,23 @@ prepare_ecdc_geodata_geofacet <- function(data,
     
   }
   
-  data <- data %>% 
-    complete(
-      date = full_seq(date, period = 7),
-      nesting(
-        country_ecdc,
-        code,
-        country,
-        continent,
-        region,
-        iso_a3,
-        source,
-        population_2019
-      ),
-      fill = list(cases = NA, deaths = NA)
-    ) %>%
-    dplyr::select(date, country_ecdc:code, country:iso_a3, cases, deaths, population_2019, source)
+  # data <- data %>% 
+  #   complete(
+  #     date = full_seq(date, period = 7),
+  #     nesting(
+  #       country_ecdc,
+  #       code,
+  #       country,
+  #       continent,
+  #       region,
+  #       iso_a3,
+  #       source,
+  #       population_2019
+  #     ),
+  #     fill = list(cases = NA, deaths = NA)
+  #   )
+    
+    data <- data %>% dplyr::select(date, country_ecdc, code, country:iso_a3, cases, deaths, population_2019, source)
   
   
   return(data)

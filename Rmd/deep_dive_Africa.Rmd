@@ -94,7 +94,7 @@ sf_mercator <- rnaturalearth::ne_countries(type = "countries", returnclass = "sf
 ```{r prepare-data, include = FALSE}
 
 dta_ecdc <- dta_ecdc %>% 
-   prepare_ecdc_data_geofacet() %>% 
+   prepare_ecdc_geodata_geofacet() %>% 
   drop_na(iso_a3) %>% 
   filter(between(date, left = NULL, right = date_max_report))
 
