@@ -2,11 +2,6 @@
 # ---- Prepare environment ----
 # === === === === === === === === 
 
-# Set locale on French computer
-if (Sys.getlocale(category = "LC_TIME") == "French_France.1252") {
-  Sys.setlocale(category = "LC_ALL", locale = "en_GB.UTF-8")
-  Sys.setenv(LANG = "en_GB.UTF-8") 
-}
 
 source(here::here('R', 'setup.R'), encoding = 'UTF-8')
 source(file.path(path.R, "utils_get_data.R")  , encoding = "UTF-8")
@@ -51,6 +46,7 @@ rmarkdown::render(
 
 # Sections
 oc_list <- list("OCP", "OCA", "OCB", "OCBA", "OCG")
+oc_list <- list("OCB")
 purrr::walk(oc_list, 
             ~rmarkdown::render(
               input       = file.path(path.Rmd, 'episitrep_msf_oc_level_analyses.Rmd'), 
@@ -127,7 +123,6 @@ source(here::here('R', 'run_geofacet_plots.R'), encoding = 'UTF-8',
 
 source(here::here('R', 'run_multiplot_world_continent.R'), 
        encoding = 'UTF-8', local = new.env(parent = .GlobalEnv))
-
 
 source(here::here('R', 'run_multiplot_country.R'), encoding = 'UTF-8',
        local = new.env(parent = .GlobalEnv))
