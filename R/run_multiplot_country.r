@@ -8,7 +8,7 @@
 
 # source(here::here('R',   'setup.R'),            encoding = 'UTF-8')
 # source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
-# source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
+source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
 
 # dates_and_week <- set_date_frame(create_folders = FALSE)
 # date_min_report <- dates_and_week[[1]]
@@ -59,6 +59,11 @@ lst_dta_jhu <- rds_jhu %>%
   multisplit("iso_a3")
 
 
+df_countries <- df_countries %>% 
+  inner_join(rds_jhu %>% select(iso_a3) %>% distinct(),
+             by = "iso_a3")
+
+
 model_cnt_cases_linear_short <- trend_models$model_cnt_cases_linear_short
 model_cnt_cases_linear_long  <- trend_models$model_cnt_cases_linear_long
 
@@ -86,16 +91,19 @@ for (i in country_list$iso_a3){
     filter(iso_a3 == i) %>%
     pull(country) %>% gsub(" ", "_", .)
   
-  print(paste(i , name_country))
+  print(paste(i, name_country))
 
-  plots <- country_six_plots(country_iso = i)
+    plots <- country_six_plots(country_iso = i,
+                               lst_dta = lst_dta_jhu, 
+                               countries = df_countries)
+    
+    ggsave(file.path(path.local.worldwide.graphs.country_trends,
+                     glue("trends_{name_country}_{week_report}.png")),
+           plot = plots,
+           scale = 1,
+           width = 9,
+           dpi = 320)
   
-  ggsave(file.path(path.local.worldwide.graphs.country_trends,
-                   glue("trends_{name_country}_{week_report}.png")),
-         plot = plots,
-         scale = 1,
-         width = 9,
-         dpi = 320)
 }
 
 
@@ -113,7 +121,7 @@ for (i in country_list$iso_a3){
     pull(country) %>% 
     gsub(" ", "_", .)
   
-  temp_plot <- country_plot_coeff('cases' , i)
+  temp_plot <- country_plot_coeff('cases', i)
   
   ggsave(file.path(path.local.worldwide.graphs.country_growth_rates, 
                    glue("growth_rates_{name_country}_{week_report}.png")), 
