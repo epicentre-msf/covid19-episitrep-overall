@@ -93,6 +93,7 @@ dta_weekly_aggregated <- dta_weekly_aggregated %>%
   filter(!project %in% c('Lesvos-Moria',                  # Report linelist
                          'Lesvos-Moria Ped',              # Report linelist
                          'Quito-Fixed & mobile brigades', # grouped the whole activity in a single week
+                         'Quito',
                          'Palong Khali'))                 # Report linelist
 
 

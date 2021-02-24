@@ -1,7 +1,7 @@
 ---
 title: "Covid-19 MSF data analysis - OC level"
 params:
-  OC: OCP
+  OC: OCB
 author:
   - name: Francesco Grandesso
     url: mailto:francesco.GRANDESSO@epicentre.msf.org
@@ -161,7 +161,7 @@ dta_weekly_aggregated <- dta_weekly_aggregated %>%
 
 ### Expand the aggregated
 dta_aggregated_expanded <- dta_weekly_aggregated %>%
-  filter(!project %in% c('Lesvos-Moria', 'Lesvos-Moria Ped')) %>%
+  filter(!project %in% c('Lesvos-Moria', 'Lesvos-Moria Ped', "Quito")) %>%
   select(-week) %>%
   mutate(
     date = as.Date(date),

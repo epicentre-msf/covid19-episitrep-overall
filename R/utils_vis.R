@@ -488,7 +488,9 @@ country_four_plots <- function(country_iso, lst_dta = lst_jhu, model = 'linear')
 #' @export
 #'
 #' @examples
-country_six_plots <- function(country_iso, lst_dta = lst_dta_jhu, countries = df_countries) {
+country_six_plots <- function(country_iso, 
+                              lst_dta = lst_dta_jhu, 
+                              countries = df_countries) {
   
   # Parameters
   main_colour  <- c(cases = '#1A62A3', deaths = '#e10000')
