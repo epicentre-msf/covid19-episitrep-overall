@@ -86,7 +86,7 @@ my_doc %<>%
 
 # 3
 my_doc <- add_par_normal(
-  sprintf("The weekly evolution of patients consulted by covid19 status is shown in Figure 5 below. The continent with the higher number of patients is Asia, though a lot were seen for triage only. The majority of Asian cases are classified as probable due to testing access difficulties. In Europe, most cases were cared for during the first surge of cases. After a decrease in the other continents over the course of the summer, the reported numbers are now stable in the last weeks."))
+  sprintf("The weekly evolution of patients consulted by covid19 status is shown in Figure 5 below. The continent with the higher number of patients is Asia, though a lot were seen for triage only. The majority of Asian cases are classified as probable due to testing access difficulties. In Europe, most cases were cared for during the first surge of cases. After a decrease in the other continents over the course of the summer 2020, the reported numbers are now stable in the last weeks."))
 
 
 my_doc <- add_end_section_2columns()
