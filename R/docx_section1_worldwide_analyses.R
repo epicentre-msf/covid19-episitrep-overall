@@ -1,6 +1,6 @@
 
 # --- --- --- --- --- --- --- 
-# I. Worldwide analysis
+# I. Worldwide analysis ------------------------------------
 # --- --- --- --- --- --- --- 
 
 # Heading 1
@@ -10,7 +10,7 @@ my_doc <- add_heading1(heading_text = 'Worldwide analysis')
 
 
 # --- --- --- --- --- --- --- 
-# COUNT CASES
+# COUNT CASES ---------------
 # --- --- --- --- --- --- --- 
 
 ## - Heading 2
@@ -72,6 +72,19 @@ my_doc <- add_par_normal(
 
 
 
+my_doc <- add_par_normal(
+  sprintf("%s reported increasing trend while notifying over 10,000 cases in the last 12 days.
+          In Africa, %s reported increasing trend and more than 1,000 cases.", 
+          tbl_countries_increasing_cases %>% filter(cases_12d >= 10000) %>% 
+            arrange(desc(coeff)) %>% pull(country) %>% combine_words(),
+          tbl_countries_increasing_cases %>% filter(cases_12d >= 1000, continent == "Africa") %>% 
+            arrange(desc(coeff)) %>% pull(country) %>% combine_words()
+  ))
+
+
+
+
+
 my_doc <- add_end_section_2columns()
 
 
@@ -104,7 +117,7 @@ tbl_inc_cum_30d_ago <- dta_jhu %>%
     cases_ip_before = cases / pop * 100000)
 
 
-country_over1000_30d <- select(tbl_inc_prop, iso_a3 : country, case_ip_now = cases_ip) %>% 
+country_over1000_cases_30d <- select(tbl_inc_prop, iso_a3 : country, case_ip_now = cases_ip) %>% 
   left_join(select(tbl_inc_cum_30d_ago, iso_a3, cases_ip_before)) %>% 
   filter(cases_ip_before < 1000,
          case_ip_now >= 1000) 
@@ -112,7 +125,7 @@ country_over1000_30d <- select(tbl_inc_prop, iso_a3 : country, case_ip_now = cas
 
 my_doc <- add_par_normal(
   sprintf("During the last month, %s reached the threshold of 1,000 confirmed cases per 100,000 population (1%%).", 
-          country_over1000_30d %>% pull(country) %>% combine_words()
+          country_over1000_cases_30d %>% pull(country) %>% combine_words()
           )
   )
 
@@ -131,7 +144,7 @@ my_doc <- add_end_section_2columns(widths = c(7 * cm_to_in, 10 * cm_to_in))
 
 
 # --- --- --- --- --- --- --- 
-# COUNT DEATHS
+# COUNT DEATHS ---------
 # --- --- --- --- --- --- --- 
 
 ## - Heading 
@@ -143,13 +156,57 @@ my_doc <- add_end_section_continuous()
 ## - Text
 # --- --- --- --- --- --- --- 
 # 1
+
+deaths_30d_ago <- dta_jhu %>% 
+  group_by(iso_a3, country, continent, region) %>% 
+  arrange(date) %>% 
+  filter(between(date, 
+                 left = date_min_report,
+                 right = date_max_report - 29)) %>% 
+  summarise(cum_deaths_30d_ago = sum(deaths, na.rm = TRUE)) 
+
+
+tbl_death_count_thresholds <- tbl_death_count %>% 
+  select(iso_a3, cum_deaths_today = deaths) %>% 
+  left_join(deaths_30d_ago, by = "iso_a3") %>% 
+  mutate(
+    threshold_10000 = case_when(
+      cum_deaths_30d_ago < 10000 & cum_deaths_today > 10000 ~ TRUE,
+      TRUE ~ FALSE),
+    threshold_100000 = case_when(
+      cum_deaths_30d_ago < 100000 & cum_deaths_today > 100000 ~ TRUE,
+      TRUE ~ FALSE)
+  )
+
+list_countries_100000 <- tbl_death_count_thresholds %>% 
+  filter(threshold_100000) %>% 
+  pull(country) 
+
+list_countries_100000 <- ifelse(length(list_countries_100000) == 0, "no country", combine_words(list_countries_100000))
+
+list_countries_10000 <- tbl_death_count_thresholds %>% 
+  filter(threshold_10000) %>% 
+  pull(country) 
+
+list_countries_10000 <- ifelse(length(list_countries_10000) == 0, "no country", combine_words(list_countries_10000))
+
+
+
 my_doc <- add_par_normal(
-  sprintf("Countries that reported the highest numbers of Covid-19 associated deaths are the USA, Brazil, India, Mexico as well as some countries in Europe, South America and Middle-East. XXX_NAME_OF_THE_COUNTRIES crossed the 10,000 Covid19 associated deaths mark in the last four weeks (Figure 3 - Deaths count)."))
+  sprintf("Countries that reported the highest numbers of Covid-19 associated deaths are the USA, Brazil, India, Mexico as well as some countries in Europe, South America and Middle-East. In the past month, %s crossed the 100,000 Covid19 associated deaths mark, and %s crossed the 10,000 death mark (Figure 3 - Deaths count).",
+          list_countries_100000,
+          list_countries_10000))
+
 
 # 2
 my_doc <- add_par_normal(
-  sprintf("%s countries reported an increasing trend in death compared to XXX four weeks ago (Figure 3 – Trends in deaths).", 
+  sprintf("%s countries reported an increasing trend in death compared to four weeks ago (Figure 3 – Trends in deaths).", 
   length(call_countries_increasing('deaths')) %>% Words()))
+
+
+
+
+
 
 # 3
 my_doc <- my_doc %<>% 

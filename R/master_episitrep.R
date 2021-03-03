@@ -51,7 +51,6 @@ rmarkdown::render(
 
 # Sections
 oc_list <- list("OCP", "OCA", "OCB", "OCBA", "OCG")
-oc_list <- list("OCB")
 purrr::walk(oc_list, 
             ~rmarkdown::render(
               input       = file.path(path.Rmd, 'episitrep_msf_oc_level_analyses.Rmd'), 
