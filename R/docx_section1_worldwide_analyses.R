@@ -89,9 +89,6 @@ my_doc <- add_par_normal(
   )
 
 
-
-
-
 my_doc <- add_end_section_2columns()
 
 
@@ -111,6 +108,11 @@ my_doc <- add_par_normal(
   sprintf("Since the beginning of the epidemic, countries presenting the highest cumulative incidences are in North and South America, Europe, and Middle East (Figure 2)."))
 
 
+
+## Country reaching incidence thresholds within last month
+## Thresshold 10 00 or 100 000
+
+# Situation 30 days ago
 tbl_inc_cum_30d_ago <- dta_jhu %>% 
   group_by(iso_a3, country, continent, region) %>% 
   arrange(date) %>% 
@@ -123,9 +125,11 @@ tbl_inc_cum_30d_ago <- dta_jhu %>%
   mutate(
     cases_ip_before = cases / pop * 100000)
 
-
-country_over1000_cases_30d <- select(tbl_inc_prop, iso_a3 : country, case_ip_now = cases_ip) %>% 
-  left_join(select(tbl_inc_cum_30d_ago, iso_a3, cases_ip_before)) %>% 
+country_over1000_cases_30d <- tbl_inc_prop %>% 
+  select(iso_a3 : country, 
+         case_ip_now = cases_ip) %>% 
+  left_join(select(tbl_inc_cum_30d_ago, iso_a3, cases_ip_before), 
+            by = "iso_a3") %>% 
   filter(cases_ip_before < 1000,
          case_ip_now >= 1000) 
  
@@ -135,6 +139,7 @@ my_doc <- add_par_normal(
           country_over1000_cases_30d %>% pull(country) %>% combine_words()
           )
   )
+
 
 
 ## - Map Case Incidence
