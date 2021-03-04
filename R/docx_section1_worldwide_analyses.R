@@ -14,15 +14,14 @@ my_doc <- add_heading1(heading_text = 'Worldwide analysis')
 # --- --- --- --- --- --- --- 
 
 ## - Heading 2
-my_doc <- add_heading2(heading_text = 'Number and trends of Covid-19 cases') 
-
-
+my_doc <- add_heading2(heading_text = 'Number and trends of Covid-19 cases')
 my_doc <- add_end_section_continuous()
 
 
 ## - Text 
 # --- --- --- --- --- --- --- 
-# 1
+
+## Total cases and deaths worldwide
 my_doc <- add_par_normal(
   sprintf("As of the %s, %s Covid-19 cases and %s Covid-19 associated deaths were reported worldwide. The number of cases and deaths in the last %s days were %s and %s respectively.", 
           format(max(dta_jhu$date), "%d %B %Y"), 
@@ -42,8 +41,9 @@ my_doc <- add_par_normal(
 #          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(1000, Inf, "cases") %>% length() %>% Words(), 
 #          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(1000, Inf, "cases") %>% combine_words()))
 
-# 3
 
+
+## Number of countries with increasing trend (12 days)
 my_doc <- add_par_normal(
   sprintf('%s countries reported an increasing trend (compared to XXX last month) (Figure 1) (see ', 
   call_countries_increasing('cases') %>% length() %>% Words())) %>% 
@@ -58,7 +58,8 @@ my_doc <- add_par_normal(
 
 my_doc <- add_end_section_2columns()
 
-# 4
+
+## Number of countries with increasing trend per continent (12 days)
 my_doc <- add_par_normal(
   sprintf('%s countries had an increasing trend in Africa (%s), %s countries in Asia (%s), %s countries in the Americas (%s), %s countries in Europe (%s).', 
   call_countries_increasing("cases", "Africa") %>% length() %>% Words(), 
@@ -103,7 +104,7 @@ my_doc <- add_end_section_continuous()
 
 
 
-# 5 - Incidence
+# 5 - Cumulative incidence worldwide
 my_doc <- add_par_normal(
   sprintf("Since the beginning of the epidemic, countries presenting the highest cumulative incidences are in North and South America, Europe, and Middle East (Figure 2)."))
 
@@ -150,7 +151,6 @@ my_doc <- add_figure_map_world(
   height = 4.5 * cm_to_in
   )
 
-
 my_doc <- add_end_section_2columns(widths = c(7 * cm_to_in, 10 * cm_to_in))
 
 
@@ -167,8 +167,17 @@ my_doc <- add_end_section_continuous()
 
 ## - Text
 # --- --- --- --- --- --- --- 
-# 1
 
+## 1 Cumulative deaths (general)
+my_doc <- add_par_normal(
+sprintf("Countries that reported the highest numbers of Covid-19 associated deaths are the USA, Brazil, India, Mexico as well as some countries in Europe, South America and Middle-East."))
+
+
+
+## Countries crossing cumulative death threshold in last month
+## Threshold 10 000 and 100 000.
+
+# Situation 30 days ago (cumulative deaths per country)
 deaths_30d_ago <- dta_jhu %>% 
   group_by(iso_a3, country, continent, region) %>% 
   arrange(date) %>% 
@@ -190,33 +199,32 @@ tbl_death_count_thresholds <- tbl_death_count %>%
       TRUE ~ FALSE)
   )
 
-list_countries_100000 <- tbl_death_count_thresholds %>% 
-  filter(threshold_100000) %>% 
-  pull(country) 
 
-list_countries_100000 <- ifelse(length(list_countries_100000) == 0, "no country", combine_words(list_countries_100000))
+list_countries_100000 <- tbl_death_count_thresholds %>% 
+  filter(threshold_100000) %>% pull(country) 
+
+list_countries_100000 <- ifelse(length(list_countries_100000) == 0, 
+                                "no country", 
+                                combine_words(list_countries_100000))
 
 list_countries_10000 <- tbl_death_count_thresholds %>% 
-  filter(threshold_10000) %>% 
-  pull(country) 
+  filter(threshold_10000) %>% pull(country) 
 
-list_countries_10000 <- ifelse(length(list_countries_10000) == 0, "no country", combine_words(list_countries_10000))
-
+list_countries_10000 <- ifelse(length(list_countries_10000) == 0, 
+                               "no country", 
+                               combine_words(list_countries_10000))
 
 
 my_doc <- add_par_normal(
-  sprintf("Countries that reported the highest numbers of Covid-19 associated deaths are the USA, Brazil, India, Mexico as well as some countries in Europe, South America and Middle-East. In the past month, %s crossed the 100,000 Covid19 associated deaths mark, and %s crossed the 10,000 death mark (Figure 3 - Deaths count).",
+  sprintf("In the past month, %s crossed the 100,000 Covid19 associated deaths mark, and %s crossed the 10,000 death mark (Figure 3 - Deaths count).",
           list_countries_100000,
           list_countries_10000))
 
 
-# 2
+## Number of countries witn increasing death trend
 my_doc <- add_par_normal(
   sprintf("%s countries reported an increasing trend in death compared to four weeks ago (Figure 3 – Trends in deaths).", 
   length(call_countries_increasing('deaths')) %>% Words()))
-
-
-
 
 
 
@@ -233,7 +241,7 @@ my_doc <- my_doc %<>%
 my_doc <- add_end_section_2columns()
 
 
-## - Map
+## - Map trend in deaths
 my_doc <- add_figure_map_world_grid(
   object_name  = glue('map_world_death_count_trend_grid_{week_report}.png'), 
   figure_title = glue('Mapping of Covid-19 associated deaths counts and trends, period from {format(date_max_report - (period_trend - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} (12 days)'))
