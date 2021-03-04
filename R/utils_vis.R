@@ -127,7 +127,7 @@ call_countries_doubling <- function(est, continent_name = NULL,
     selected_tbl <- tbl_dta
   }
   
-  selected_tbl <- filter(selected_tbl, !!est < threshold)
+  selected_tbl <- filter(selected_tbl, !!est < threshold, !!est >= 0)
   selected_tbl <- arrange(selected_tbl, desc(!!est))
   
   called_countries <- pull(selected_tbl, 'country')

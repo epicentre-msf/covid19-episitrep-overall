@@ -250,7 +250,7 @@ my_doc <- add_figure_map_world_grid(
 
 
 # --- --- --- --- --- --- --- 
-# DOUBLING TIME 
+# DOUBLING TIME -----------------
 # --- --- --- --- --- --- --- 
 
 ## - Heading
@@ -286,7 +286,8 @@ my_doc <- add_par_normal(
   sprintf("As a result, a sharp increasing of cases (doubling time of less than 12 days) is observed in %s countries this week, compared to XXX four weeks ago (Figure 4 and Table 1).", 
           length(call_countries_doubling('cases_est'))))
 
-# 2
+## Countries with doubling time in cases
+## 
 my_doc <- add_par_normal(
   sprintf("This week %s reported a doubling time in cases of less than 8 days. The other countries with a doubling time in cases of less than 12 days are %s.",
           combine_words(call_countries_doubling('cases_est', threshold = 8)), 
