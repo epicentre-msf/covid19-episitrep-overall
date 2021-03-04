@@ -71,15 +71,22 @@ my_doc <- add_par_normal(
   call_countries_increasing("cases", "Europe") %>% combine_words()))
 
 
-
+# Countries with increasing trend in the 12 last days, and more
+#  than 10 000 cases within the 12 last days. 
+#  World + Africa
 my_doc <- add_par_normal(
   sprintf("%s reported increasing trend while notifying over 10,000 cases in the last 12 days.
           In Africa, %s reported increasing trend and more than 1,000 cases.", 
-          tbl_countries_increasing_cases %>% filter(cases_12d >= 10000) %>% 
+          
+          tbl_countries_increasing_cases %>% 
+            filter(trend == "Increasing", cases_12d >= 10000) %>% 
             arrange(desc(coeff)) %>% pull(country) %>% combine_words(),
-          tbl_countries_increasing_cases %>% filter(cases_12d >= 1000, continent == "Africa") %>% 
+          
+          tbl_countries_increasing_cases %>% 
+            filter(trend == "Increasing", cases_12d >= 1000, continent == "Africa") %>% 
             arrange(desc(coeff)) %>% pull(country) %>% combine_words()
-  ))
+          )
+  )
 
 
 
