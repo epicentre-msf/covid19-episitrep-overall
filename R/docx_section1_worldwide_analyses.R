@@ -1,3 +1,8 @@
+if (Sys.getlocale(category = "LC_TIME") == "French_France.1252") {
+  Sys.setlocale(category = "LC_TIME", locale = "English_United Kingdom.1252")
+  Sys.setenv(LANG = "en_GB.UTF-8") 
+}
+
 
 # --- --- --- --- --- --- --- 
 # I. Worldwide analysis ------------------------------------
