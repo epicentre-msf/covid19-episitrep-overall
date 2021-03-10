@@ -15,7 +15,7 @@ editor_options:
 ```{r setup, include = FALSE}
 
 if(Sys.getlocale(category = "LC_TIME") == "French_France.1252") {
-  Sys.setlocale(category = "LC_TIME", locale = "C")
+  Sys.setlocale(category = "LC_TIME", locale = "English_United Kingdom.1252")
   Sys.setenv(LANG = "en_GB.UTF-8") 
 }
 
@@ -52,6 +52,7 @@ library(slider)
 dates_and_week <- set_date_frame(create_folders = TRUE)
 
 date_min_report <- dates_and_week[[1]]
+date_min_report <- as.Date("2020-01-22")
 date_max_report <- dates_and_week[[2]]
 week_report     <- dates_and_week[[3]]
 
@@ -78,7 +79,7 @@ dta_ecdc <- covidutils::get_ecdc_data()
 ## --- JHU Covid data
 dta_jhu <- get_owid_jhcsse() %>% 
   tidyr::drop_na(iso_a3) %>% 
-  filter(between(date, left = NULL, right = date_max_report),
+  filter(between(date, left = date_min_report, right = date_max_report),
          (continent == params$continent))
 
 

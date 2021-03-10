@@ -173,7 +173,7 @@ my_doc <- add_end_section_continuous()
 ## - Text
 # --- --- --- --- --- --- --- 
 
-## 1 Cumulative deaths (general)
+## Cumulative deaths (general)
 my_doc <- add_par_normal(
 sprintf("Countries that reported the highest numbers of Covid-19 associated deaths are the USA, Brazil, India, Mexico as well as some countries in Europe, South America and Middle-East."))
 
@@ -226,10 +226,26 @@ my_doc <- add_par_normal(
           list_countries_10000))
 
 
-## Number of countries witn increasing death trend
+## Number of countries with increasing death trend
 my_doc <- add_par_normal(
   sprintf("%s countries reported an increasing trend in death compared to four weeks ago (Figure 3 – Trends in deaths).", 
   length(call_countries_increasing('deaths')) %>% Words()))
+
+
+
+## Countries with increasing trend and more than 1000 deaths in last 12 days
+list_country_deaths_10000 <- tbl_countries_increasing_deaths %>% 
+  filter(trend == "Increasing", deaths_12d >= 10000) %>% 
+  arrange(desc(coeff)) %>% pull(country)
+
+list_country_deaths_10000 <- ifelse(length(list_country_deaths_10000) == 0, 
+                                    "No country", 
+                                    combine_words(list_country_deaths_10000))
+
+add_par_normal(
+  sprintf("%s reported an increasing trend in deaths while notifying more than 1,000 deaths in the last 12 days.", 
+          list_country_deaths_10000))
+
 
 
 

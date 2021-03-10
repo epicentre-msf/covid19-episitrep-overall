@@ -37,7 +37,7 @@ if(!exists(path.local.geofacet)) {
 ## --- ECDC data
 dta_ecdc <- covidutils::get_ecdc_data() %>% 
   prepare_ecdc_geodata_geofacet() %>% 
-  filter(between(date, left = NULL, right = date_max_report)) %>% 
+  filter(between(date, left = date_min_report, right = date_max_report)) %>% 
   mutate(cases_per_100000   = cases/population_2019 * 1e5, 
          deaths_per_million = deaths/population_2019 * 1e6) %>% 
   pivot_longer(cols = c(cases, deaths, cases_per_100000,

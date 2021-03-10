@@ -183,7 +183,7 @@ tbl_severity_confirmed <- dta_severity %>%
 
 
 my_doc <- add_par_normal(
-  sprintf("Table 2 describes the levels of severity found in patients consulted/admitted in MSF facilities, according to their Covid19 status. Though there was a lot of missing data for this variable, overall, %s%% of all patients (%s%% of confirmed) received were assessed to be in a severe or critical state.",
+  sprintf("Table 2 describes the levels of severity found in patients consulted/admitted in MSF facilities, according to their Covid19 status. Though there was a lot of missing data for this variable, overall %s%% of all patients (%s%% of confirmed) received were assessed to be in a severe or critical state.",
           tbl_severity_all %>% pull(p_sc) %>% round(1),
           tbl_severity_confirmed %>% pull(p_sc) %>% round(1)
   )
