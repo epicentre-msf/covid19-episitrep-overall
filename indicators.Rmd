@@ -9,9 +9,18 @@ editor_options:
 
 ```{r setup, include=FALSE}
 
-source(here::here('R', 'setup.R'), encoding = 'UTF-8')
-
 knitr::opts_chunk$set(echo = TRUE)
+#source(here::here('R', 'setup.R'), encoding = 'UTF-8')
+library(knitr)
+# Create the path to NCovEpi Sharepoint
+OS <- Sys.info()[['sysname']]
+
+sharepoint.parent.dir <- dplyr::case_when(
+  OS == "Windows" ~ "D:", 
+  OS == "Darwin" ~ "~")
+
+path.sharepoint <- file.path(sharepoint.parent.dir, 'MSF', 'GRP-EPI-COVID-19 - NCoVEpi')
+
 
 dta <- readr::read_rds(max(fs::dir_ls(file.path(path.sharepoint, 'data', 'linelist', 'world'), regexp = "[.]rds$")))
 
@@ -42,15 +51,15 @@ missing values: not recoded
 
 #### Covid Status
 
-linelist variable: `MSF_covid_status`  
-values: `r paste(sort(unique(dta$MSF_covid_status)), collapse = ", ")`  
-missing values: recoded as 'Unknown'
+linelist variable: `ind_MSF_covid_status`  
+values: `r paste(sort(unique(dta$ind_MSF_covid_status)), collapse = ", ")`  
+missing values: recoded as '(Unknown)'
 
 #### Admission
 
-linelist variables: `patcourse_admit` and `outcome_patcourse_admit`  
-values: `r paste(sort(unique(dta$patcourse_admit)), collapse = ", ")`  
-missing values: recoded as 'Unknown'
+linelist variables: `patcourse_admit` and `outcome_patcourse_admit` merged as `merge_admit`  
+values: `r paste(sort(unique(dta$merge_admit)), collapse = ", ")`  
+missing values: recoded as '(Unknown)'
 
 
 #### Visit Type
@@ -59,11 +68,17 @@ linelist variable: `MSF_visit_type`
 values: `r paste(sort(unique(dta$MSF_visit_type)), collapse = ", ")`  
 missing values: not recoded
 
+#### Severity
+
+linelist variable: `MSF_severity`  
+values: `r paste(sort(unique(dta$MSF_severity)), collapse = ", ")`  
+missing values: not recoded
+
 #### Final Outcome
 
-linelist variable: `outcome_patcourse_status`  
-values: `r paste(sort(unique(dta$outcome_patcourse_status)), collapse = ", ")`  
-missing values: recoded as 'Pending/Unknown'
+linelist variable: `ind_outcome_patcourse_status`  
+values: `r paste(sort(unique(dta$ind_outcome_patcourse_status)), collapse = ", ")`  
+missing values: recoded as '(Pending/Unknown)'
 
 #### Onset to admission delay (days)
 
@@ -84,15 +99,18 @@ There is a series of variables that record the same information reported at pati
 
 #### Proportion Admitted
 
-linelist variable: `patcourse_admit`  
-numerator: sum of `patcourse_admit == "Yes"`  
-denominator: sum of `patcourse_admit == "Yes" or "No"`
+linelist variable: `merge_admit`  
+numerator: sum of `merge_admit == "Yes"`  
+denominator: sum of `merge_admit == "Yes" or "No"`
 
 #### CFR (case fatality risk)
 
-linelist variable: `outcome_patcourse_status`  
-numerator: sum of `outcome_patcourse_status == "Died"`  
-denominator: sum of `outcome_patcourse_status == "Cured" or "Died"`
+Calculated on hospitalised patients only.
+
+filter: `merge_admit == "Yes"`  
+linelist variable: `ind_outcome_patcourse_status`  
+numerator: sum of `ind_outcome_patcourse_status == "Died"`  
+denominator: sum of `ind_outcome_patcourse_status == "Cured" or "Died" or "Sent back home"`
 
 #### Symptom Prevelance
 
@@ -102,15 +120,15 @@ denominator: sum of `MSF_symptom_* == "Yes" or "No"`
 
 #### Comorbidity Prevelance
 
-linelist variable: `Comcond_*` (multiple columns)  
-numerator: sum of `Comcond_* == "Yes"`  
-denominator: sum of `Comcond_* == "Yes" or "No"`
+linelist variable: `ind_Comcond_*` (multiple columns)  
+numerator: sum of `ind_Comcond_* == "Yes"`  
+denominator: sum of `ind_Comcond_* == "Yes" or "No"`
 
 ## Common Filters
 
 Prior to computing indicators, it is common to filter the data to either confirmed, or confirmed, probable and suspect patients only. Please refer to the analysis plan for details on what filters are used in each table or graphic.
 
-- `MSF_covid_status == "Confirmed"`
-- `MSF_covid_status %in% c("Confirmed", "Probable", "Suspect")`
+- `ind_MSF_covid_status == "Confirmed"`
+- `ind_MSF_covid_status %in% c("Confirmed", "Probable", "Suspect")`
 
 <br>
