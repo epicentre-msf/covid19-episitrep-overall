@@ -2289,8 +2289,6 @@ tbl_cfr_comorbidities <- unique(dta_cfr_comorbidities$ind_Comcond_count) %>%
 
 
 tbl_cfr_age_sex_comorbidities <- tbl_cfr_age %>% 
-  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died','Sent back home'),
-         merge_admit == "Yes") %>%  
   rename(var = age_5gp) %>% 
   mutate(label_var = 'Age (years)') %>% 
   add_row(tbl_cfr_sex %>% 
@@ -2403,13 +2401,13 @@ cfr_confirmed_3_comorbidities <- tbl_cfr_comorbidities %>%
 
 dta_cfr_comcond <- dta_linelist %>% 
   filter(ind_Comcond_count < 9) %>% # This is a temporal rapid solution to remove cases with ALL comorbidities that might be a recording error
-  select(continent, ind_MSF_covid_status, ind_outcome_patcourse_status, ind_Comcond_count, ind_Comcond_01, starts_with('ind_Comcond_'), ind_MSF_hiv_status, ind_MSF_hypertension, ind_MSF_tb_active, ind_MSF_malaria, ind_MSF_malnutrition, ind_MSF_smoking) %>% 
+  select(continent, ind_MSF_covid_status, ind_outcome_patcourse_status, ind_Comcond_count, ind_Comcond_01, starts_with('ind_Comcond_'), merge_admit, ind_MSF_hiv_status, ind_MSF_hypertension, ind_MSF_tb_active, ind_MSF_malaria, ind_MSF_malnutrition, ind_MSF_smoking) %>% 
   mutate(
     ind_Comcond_other = case_when(
       !is.na(ind_Comcond_other) ~ 'Yes', 
       TRUE ~ NA_character_)) %>% 
   filter(ind_MSF_covid_status == 'Confirmed', ind_outcome_patcourse_status %in% c('Cured', 'Died', 'Sent back home'),
-         merge_amit == "Yes") %>% 
+         merge_admit == "Yes") %>% 
   pivot_longer(-c(ind_MSF_covid_status, ind_outcome_patcourse_status, continent, ind_Comcond_count, ind_Comcond_01), names_to = "type_comorbidity") %>%
   mutate(
     type_comorbidity = factor(type_comorbidity, levels = df_labels_comcond$levels, labels = df_labels_comcond$labels)) %>% 

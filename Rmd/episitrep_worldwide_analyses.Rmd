@@ -1912,3 +1912,4 @@ rm(list = lsf.str())
 save.image(file.path(path.local.worldwide.data, paste0('episitrep_worldwide_analyses', '_', week_report, '.RData')))
 
 ```
+

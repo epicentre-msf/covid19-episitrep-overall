@@ -372,7 +372,7 @@ prepare_msf_dta_comcond <- function(dta){
     select(continent, ind_MSF_covid_status, ind_outcome_patcourse_status,
            starts_with('Comcond_'), ind_MSF_hiv_status, ind_MSF_hypertension,
            ind_MSF_tb_active, ind_MSF_malaria, ind_MSF_malnutrition,
-           ind_MSF_smoking, ind_Comcond_count, ind_Comcond_01) %>%
+           ind_MSF_smoking, ind_Comcond_count, ind_Comcond_01, merge_admit) %>%
     select(-c(Comcond_present, Comcond_pregt))
 
   return(dta)

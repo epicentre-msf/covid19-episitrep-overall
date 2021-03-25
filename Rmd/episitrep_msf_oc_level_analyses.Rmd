@@ -1,7 +1,7 @@
 ---
 title: "Covid-19 MSF data analysis - OC level"
 params:
-  OC: OCB
+  OC: OCP
 author:
   - name: Francesco Grandesso
     url: mailto:francesco.GRANDESSO@epicentre.msf.org
@@ -1563,8 +1563,9 @@ gtbl_MSF_severity_confirmed_continent %>%
 # DONE by Francesco
 
 dta_cfr_status <- dta_linelist %>%
-  select(continent, ind_MSF_covid_status, ind_outcome_patcourse_status) %>%
-  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died'))
+  select(continent, ind_MSF_covid_status, merge_admit, ind_outcome_patcourse_status) %>%
+  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died','Sent back home'),
+       merge_admit == "Yes")
 
 tbl_cfr_status_continent <- levels(dta_cfr_status$ind_MSF_covid_status) %>%
   map_df(~{
@@ -1647,8 +1648,8 @@ gtsave(gtbl_cfr_status_continent,
 
 gtbl_cfr_status_continent %>%
   tab_header(
-    title = 'Case-fatality risk by Covid status and continent among patients an MSF supported Covid-19 health service',
-    subtitle = 'In the denominator only patients with outcome as recovered or died'
+    title = 'Case-fatality risk by Covid status and continent among admitted patients an MSF supported Covid-19 health service',
+    subtitle = 'In the denominator only patients with outcome as recovered, sent back home or died'
   )
 
 
@@ -1656,7 +1657,7 @@ gtbl_cfr_status_continent %>%
 cfr_confirmed_probable_suspected <- dta_linelist %>%
   select(ind_MSF_covid_status, ind_outcome_patcourse_status) %>%
   filter(ind_MSF_covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
-  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died'), ) %>%
+  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died', 'Sent back home'), ) %>%
   summarise(cfr = mean(ind_outcome_patcourse_status == 'Died')) %>%
   pull()
 ```
@@ -2005,7 +2006,9 @@ gtbl_age_sex_outcome %>%
 # function tbl_prop in utils_vis.R
 
 dta_cfr_age <- dta_linelist %>%
-  mutate(age_5gp = fct_explicit_na(age_5gp))
+  mutate(age_5gp = fct_explicit_na(age_5gp)) %>% 
+  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died','Sent back home'),
+       merge_admit == "Yes")
 
 tbl_cfr_age <- levels(dta_cfr_age$age_5gp) %>%
   map_df(~{
@@ -2019,6 +2022,8 @@ tbl_cfr_age <- levels(dta_cfr_age$age_5gp) %>%
 
 
 dta_cfr_sex <- dta_linelist %>%
+  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died','Sent back home'),
+       merge_admit == "Yes") %>% 
   mutate(sex = factor(patinfo_sex, levels = c('F', 'M'), labels = c('Females', 'Males'))) %>%
   mutate(sex = fct_explicit_na(sex))
 
@@ -2033,8 +2038,11 @@ tbl_cfr_sex <- levels(dta_cfr_sex$sex) %>%
   filter(ind_outcome_patcourse_status == 'Died')
 
 dta_cfr_comorbidities <- dta_linelist %>%
+  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died','Sent back home'),
+       merge_admit == "Yes") %>% 
   mutate(ind_Comcond_count = as.factor(ind_Comcond_count)) %>%
   mutate(ind_Comcond_count = fct_explicit_na(ind_Comcond_count))
+
 
 tbl_cfr_comorbidities <- levels(dta_cfr_comorbidities$ind_Comcond_count) %>%
   map_df(~{
@@ -2057,6 +2065,7 @@ tbl_cfr_age_sex_comorbidities <- tbl_cfr_age %>%
   add_row(tbl_cfr_comorbidities %>%
             rename(var = ind_Comcond_count) %>%
             mutate(label_var = 'Number of comorbidities'))
+
 
 gtbl_cfr_age_sex_comorbidities <- tbl_cfr_age_sex_comorbidities %>%
   gt(rowname_col = "var",
@@ -2129,7 +2138,7 @@ gtsave(gtbl_cfr_age_sex_comorbidities,
 
 gtbl_cfr_age_sex_comorbidities %>%
   tab_header(
-    title = 'Case fatality risk by age, sex and number of comorbidities'
+    title = 'Case fatality risk by age, sex and number of comorbidities of admitted patients'
   )
 
 
@@ -2250,7 +2259,7 @@ gtbl_outcome_admission %>%
 ```{r tbl-cfr-status-hospi-icu-oxy-venti}
 dta_cfr_status_hospi_icu <- dta_linelist %>%
   filter(ind_MSF_covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
-  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died')) %>%
+  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died', 'Sent back home')) %>%
   # filter(merge_admit != "(Unknown)") %>%
   select(ind_MSF_covid_status, merge_admit, ind_outcome_patcourse_status, merge_icu, merge_oxygen,
          merge_vent) %>%
@@ -2407,7 +2416,8 @@ dta_cfr_comcond <- prepare_msf_dta_comcond(dta_linelist) %>%
       !is.na(Comcond_other) ~ 'Yes',
       TRUE ~ NA_character_)) %>%
   filter(ind_MSF_covid_status == 'Confirmed', 
-         ind_outcome_patcourse_status %in% c('Cured', 'Died')) %>%
+         ind_outcome_patcourse_status %in% c('Cured', 'Died','Sent back home'),
+       merge_admit == "Yes") %>%
   pivot_longer(-c(ind_MSF_covid_status, ind_outcome_patcourse_status, 
                   continent, ind_Comcond_count, ind_Comcond_01, Comcond_count,
                   Comcond_01), 
@@ -2498,7 +2508,7 @@ gtsave(gtbl_cfr_type_comcond,
 
 gtbl_cfr_type_comcond %>%
   tab_header(
-    title = 'Case fatality risk by type of comorbidities among confirmed patients'
+    title = 'Case fatality risk by type of comorbidities among admitted, confirmed patients'
   )
 ```
 
@@ -2510,7 +2520,10 @@ age_labs <- c("0-9", "10-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70-7
 
 df_MSF_severity <- dta_linelist %>%
   mutate(age_group = cut(age_in_years, breaks = age_cut, labels = age_labs, right = FALSE, include.lowest = TRUE)) %>%
-  filter(!is.na(age_group), ind_MSF_covid_status == "Confirmed") %>%
+  filter(!is.na(age_group), 
+         ind_MSF_covid_status == "Confirmed",
+         ind_outcome_patcourse_status %in% c('Cured', 'Died','Sent back home'),
+       merge_admit == "Yes") %>%
   group_by(age_group) %>%
   summarize(
     n = n(),
@@ -2519,8 +2532,8 @@ df_MSF_severity <- dta_linelist %>%
     p_hosp = n_hosp / n_hosp_known,
     p_hosp_low95 = as.numeric(binom.test(n_hosp, n_hosp_known)$conf.int)[1],
     p_hosp_upp95 = as.numeric(binom.test(n_hosp, n_hosp_known)$conf.int)[2],
-    n_died = sum(ind_outcome_patcourse_status == "Died", na.rm = TRUE),
-    n_died_known = sum(ind_outcome_patcourse_status %in% c("Died", "Cured"), na.rm = TRUE),
+    n_died = sum(ind_outcome_patcourse_status == "Died" & merge_admit == "Yes", na.rm = TRUE),
+    n_died_known = sum(ind_outcome_patcourse_status %in% c("Died", "Cured", "Sent back home") & merge_admit == "Yes", na.rm = TRUE),
     p_died_low95 = as.numeric(binom.test(n_died, n_died_known)$conf.int)[1],
     p_died_upp95 = as.numeric(binom.test(n_died, n_died_known)$conf.int)[2],
     p_died = n_died / n_died_known,
@@ -2543,7 +2556,7 @@ dots_cfr_agegroup <- ggplot(df_MSF_severity, aes(x = age_group)) +
   geom_linerange(aes(ymin = p_died_low95, ymax = p_died_upp95)) +
   geom_text(aes(label = died_lab, y = p_died_upp95 + 0.02), size = 4.2) +
   scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1), labels = scales::percent_format(accuracy = 1), sec.axis = dup_axis(name = NULL)) +
-  labs(x = "Age Group", y = "CFR", caption = "CFR = deaths / known outcomes (cured + died)\nLine range shows binomial 95% confidence intervals")
+  labs(x = "Age Group", y = "CFR", caption = "CFR = deaths / known outcomes (cured + died + sent back home) among the admitted\nLine range shows binomial 95% confidence intervals")
 
 ggsave(file.path(path.local.msf.graphs.oc, paste0('dots_cfr_agegroup', '_', week_report, '.png')),
        plot = dots_cfr_agegroup,
@@ -2583,7 +2596,8 @@ latest_2_epiweeks <- max_2(dta_linelist$epi_week_consultation)
 tbl_cfr_epiweek_prop <- dta_linelist %>%
   filter(
     ind_MSF_covid_status %in% c("Confirmed", "Suspected", "Probable"),
-    ind_outcome_patcourse_status %in% c("Cured", "Died"),
+    ind_outcome_patcourse_status %in% c("Cured", "Died", "Sent back home"),
+    merge_admit == "Yes",
     !epi_week_consultation %in% latest_2_epiweeks
   ) %>%
   drop_na(epi_week_consultation) %>%
@@ -2598,7 +2612,8 @@ tbl_cfr_epiweek_prop <- dta_linelist %>%
 tbl_cfr_epiweek <- dta_linelist %>%
   filter(
     ind_MSF_covid_status %in% c("Confirmed", "Suspected", "Probable"),
-    ind_outcome_patcourse_status %in% c("Cured", "Died"),
+    ind_outcome_patcourse_status %in% c("Cured", "Died", "Sent back home"),
+    merge_admit == "Yes",
     !epi_week_consultation %in% latest_2_epiweeks
   ) %>%
   count(epi_week_consultation, ind_outcome_patcourse_status) %>%
@@ -2616,7 +2631,7 @@ line_cfr_week <- ggplot(tbl_cfr_epiweek, aes(epi_week_consultation, n)) +
             key_glyph = "timeseries", size = 1) +
   scale_x_date(name = "Week of Admission", date_breaks = "2 weeks", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .),
                expand = expansion(mult = c(0.01, 0.01))) + #, labels = function(x) format(x, "%b-%Y")
-  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Case Fatality Risk", labels = scales::percent_format(accuracy = 1)),
+  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Case Fatality Risk (admitted)", labels = scales::percent_format(accuracy = 1)),
                      expand = expansion(mult = c(0, 0.02))) +
   ggthemes::scale_fill_tableau(palette = "Tableau 20") +
   labs(y = "Patients", colour = NULL, fill = "Outcome", caption = "Latest 2 weeks omitted for data completeness purposes") +
@@ -2645,7 +2660,8 @@ latest_2_epiweeks <- max_2(dta_linelist$epi_week_consultation)
 tbl_cfr_epiweek_continent_prop <- dta_linelist %>%
   filter(
     ind_MSF_covid_status %in% c("Confirmed", "Suspected", "Probable"),
-    ind_outcome_patcourse_status %in% c("Cured", "Died"),
+    ind_outcome_patcourse_status %in% c("Cured", "Died", "Sent back home"),
+    merge_admit == "Yes",
     !epi_week_consultation %in% latest_2_epiweeks
   ) %>%
   group_by(continent, epi_week_consultation) %>%
@@ -2659,7 +2675,8 @@ tbl_cfr_epiweek_continent_prop <- dta_linelist %>%
 tbl_cfr_epiweek_continent <- dta_linelist %>%
   filter(
     ind_MSF_covid_status %in% c("Confirmed", "Suspected", "Probable"),
-    ind_outcome_patcourse_status %in% c("Cured", "Died"),
+    ind_outcome_patcourse_status %in% c("Cured", "Died", "Sent back home"),
+    merge_admit == "Yes",
     !epi_week_consultation %in% latest_2_epiweeks
   ) %>%
   count(continent, epi_week_consultation, ind_outcome_patcourse_status) %>%
@@ -2678,7 +2695,7 @@ line_cfr_week_continent <- ggplot(tbl_cfr_epiweek_continent, aes(epi_week_consul
             key_glyph = "timeseries", size = 1) +
   scale_x_date(name = "Week of Admission", date_breaks = "3 weeks", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .),
                expand = expansion(mult = c(0.01, 0.01))) + #, labels = function(x) format(x, "%b-%Y")
-  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Case Fatality Risk", labels = scales::percent_format(accuracy = 1)),
+  scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Case Fatality Risk (admitted)", labels = scales::percent_format(accuracy = 1)),
                      expand = expansion(mult = c(0, 0.02))) +
   ggthemes::scale_fill_tableau(palette = "Tableau 20") +
   labs(y = "Patients", colour = NULL, fill = "Outcome", caption = "Latest 2 weeks omitted for data completeness purposes") +
