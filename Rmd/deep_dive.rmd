@@ -365,14 +365,14 @@ ggsave(file.path(path.local.deepdive, paste0('scatter_plot_prop_prop_30d', '_', 
 
 
 
-# During the last 14 days
+# During the last 12 days
 
-## Overall incidence proportions _versus_ incidence proportions in the last 14 days
+## Overall incidence proportions _versus_ incidence proportions in the last 12 days
 
 ### Map
 
 <!-- Map of overall incidence proportion -->
-```{r maps-incidence-proportions, fig.cap = "MAP: Overall incidence proportion of cases and recent incidence proportions of cases (last 14 days)"}
+```{r maps-incidence-proportions, fig.cap = "MAP: Overall incidence proportion of cases and recent incidence proportions of cases (last 12 days)"}
 
 ## Breaks for incidence
 breaks_inc <- c(0, 0.01, 0.1, 1, Inf)
@@ -467,7 +467,7 @@ map_case_inc_2weeks <- ggplot(sf_case_inc_2weeks) +
     ylim = ylim_continent,
     expand = FALSE,
     datum = NA) + 
-  labs(title = 'Last 14 days') + 
+  labs(title = 'Last 12 days') + 
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5), 
         axis.text.x = element_blank(), 
@@ -493,7 +493,7 @@ ggsave(file.path(path.local.deepdive, paste0('map_case_inc', '_', week_report, '
 
 ### Scatter plots
 
-```{r, fig.cap = paste("SCATTER PLOT: Overall incidence proportion of cases and recent incidence proportions of cases in the last 14 days")}
+```{r, fig.cap = paste("SCATTER PLOT: Overall incidence proportion of cases and recent incidence proportions of cases in the last 12 days")}
 
 tbl_case_inc_vs_inc_2weeks <- tbl_cases_prop_2w %>% 
   select(region, country, overall = p, last2weeks = p_2w)
@@ -517,9 +517,9 @@ ggplot(tbl_case_inc_vs_inc_2weeks %>% filter(last2weeks != 0)) +
                      labels = scales::label_percent(scale = 1)) + 
   labs(
     colour = 'Region', 
-    caption = paste0("Countries with zero count in the last 14 days: \n", txt_countries_zero_count), 
+    caption = paste0("Countries with zero count in the last 12 days: \n", txt_countries_zero_count), 
     x = "Incidence proportion since the beginning of the epidemic %\n(log scale)",
-    y = "Incidence proportion in the last 14 days %\n(log scale)") + 
+    y = "Incidence proportion in the last 12 days %\n(log scale)") + 
   theme_light() + 
   theme(
     plot.caption = element_text(hjust = 0, face = "italic"), 
@@ -561,27 +561,27 @@ for(i in names(lst_dta_jhu)){
 
 
 
-# -- Linear model trends - last 14 days 
+# -- Linear model trends - last 12 days 
 
-lst_mdl_cases_14d <- list()
+lst_mdl_cases_12d <- list()
 
 for(i in names(lst_dta_jhu)){
   mdl <- linear_trend_deepdive(dta = lst_dta_jhu[[i]], 
                                series = 'cases', 
                                n_days = 12, 
                                last_date = date_max_report)
-  lst_mdl_cases_14d[[i]] <- mdl
+  lst_mdl_cases_12d[[i]] <- mdl
 }
 
 
-lst_mdl_deaths_14d <- list()
+lst_mdl_deaths_12d <- list()
 
 for(i in names(lst_dta_jhu)){
   mdl <- linear_trend_deepdive(dta = lst_dta_jhu[[i]], 
                                series = 'deaths', 
                                n_days = 12, 
                                last_date = date_max_report)
-  lst_mdl_deaths_14d[[i]] <- mdl
+  lst_mdl_deaths_12d[[i]] <- mdl
 }
 
 ```
@@ -590,10 +590,10 @@ for(i in names(lst_dta_jhu)){
 ```{r tbl-coeffs}
 # -- Lists of predictions
 lst_preds_cases_30d <- lapply(lst_mdl_cases_30d, function (x) x[['preds']])
-lst_preds_cases_14d <- lapply(lst_mdl_cases_14d, function (x) x[['preds']])
+lst_preds_cases_12d <- lapply(lst_mdl_cases_12d, function (x) x[['preds']])
 
 lst_preds_deaths_30d <- lapply(lst_mdl_deaths_30d, function (x) x[['preds']])
-lst_preds_deaths_14d <- lapply(lst_mdl_deaths_14d, function (x) x[['preds']])
+lst_preds_deaths_12d <- lapply(lst_mdl_deaths_12d, function (x) x[['preds']])
 
 
 tbl_coeff_cases_30d <- lapply(lst_mdl_cases_30d, function (x) x[['coeffs']]) %>% 
@@ -608,7 +608,7 @@ tbl_coeff_cases_30d <- lapply(lst_mdl_cases_30d, function (x) x[['coeffs']]) %>%
       factor(levels = c('Increasing', 'Stable', 'Declining')))
 
 
-tbl_coeff_cases_14d <- lapply(lst_mdl_cases_14d, function (x) x[['coeffs']]) %>% 
+tbl_coeff_cases_12d <- lapply(lst_mdl_cases_12d, function (x) x[['coeffs']]) %>% 
   tibble::enframe(name = "iso_a3") %>% 
   unnest(cols = c(value)) %>% 
   mutate(
@@ -623,7 +623,7 @@ tbl_coeff_deaths_30d <- lapply(lst_mdl_deaths_30d, function (x) x[['coeffs']]) %
   tibble::enframe(name = "iso_a3") %>% 
   unnest(cols = c(value))
 
-tbl_coeff_deaths_14d <- lapply(lst_mdl_deaths_14d, function (x) x[['coeffs']]) %>% 
+tbl_coeff_deaths_12d <- lapply(lst_mdl_deaths_12d, function (x) x[['coeffs']]) %>% 
   tibble::enframe(name = "iso_a3") %>% 
   unnest(cols = c(value))
 
@@ -643,9 +643,9 @@ sf_case_trend_30d <- df_countries %>%
   st_as_sf()
 
 
-sf_case_trend_14d <- df_countries %>% 
+sf_case_trend_12d <- df_countries %>% 
   select(iso_a3, country) %>% 
-  left_join(tbl_coeff_cases_14d) %>% 
+  left_join(tbl_coeff_cases_12d) %>% 
   full_join(
     select(sf_mercator, iso_a3),
     by = "iso_a3") %>% 
@@ -680,7 +680,7 @@ map_case_trend_30d <- ggplot(sf_case_trend_30d) +
         legend.position = "bottom")
 
 
-map_case_trend_14d <- ggplot(sf_case_trend_14d) + 
+map_case_trend_12d <- ggplot(sf_case_trend_12d) + 
   geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
   scale_fill_manual(
     name = NULL, 
@@ -710,7 +710,7 @@ map_case_trend_14d <- ggplot(sf_case_trend_14d) +
 
 ## Combine maps
 map_cases_trends <- map_case_trend_30d + 
-  map_case_trend_14d + 
+  map_case_trend_12d + 
   plot_layout(ncol = 2, guides = 'collect') & theme(legend.position = 'bottom')
 
 map_cases_trends
