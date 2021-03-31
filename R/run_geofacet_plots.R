@@ -35,22 +35,22 @@ if(!exists(path.local.geofacet)) {
 # Get & prepare data --------------------------------------------
 
 ## --- ECDC data
-dta_ecdc <- covidutils::get_ecdc_data() %>% 
-  prepare_ecdc_geodata_geofacet() %>% 
-  filter(between(date, left = date_min_report, right = date_max_report)) %>% 
-  mutate(cases_per_100000   = cases/population_2019 * 1e5, 
-         deaths_per_million = deaths/population_2019 * 1e6) %>% 
-  pivot_longer(cols = c(cases, deaths, cases_per_100000,
-                        deaths_per_million), 
-               names_to = "count", 
-               values_to = "value_raw") %>% 
-  group_by(code, count) %>% 
-  arrange(date) %>% 
-  mutate(value_ma = slide_dbl(value_raw, 
-                              mean, 
-                              .before = 1, 
-                              .after = 1)) %>% 
-  ungroup()
+# dta_ecdc <- covidutils::get_ecdc_data() %>% 
+#   prepare_ecdc_geodata_geofacet() %>% 
+#   filter(between(date, left = date_min_report, right = date_max_report)) %>% 
+#   mutate(cases_per_100000   = cases/population_2019 * 1e5, 
+#          deaths_per_million = deaths/population_2019 * 1e6) %>% 
+#   pivot_longer(cols = c(cases, deaths, cases_per_100000,
+#                         deaths_per_million), 
+#                names_to = "count", 
+#                values_to = "value_raw") %>% 
+#   group_by(code, count) %>% 
+#   arrange(date) %>% 
+#   mutate(value_ma = slide_dbl(value_raw, 
+#                               mean, 
+#                               .before = 1, 
+#                               .after = 1)) %>% 
+#   ungroup()
 
 
 
@@ -192,38 +192,38 @@ prepare_continent_data <- function(data) {
 
 # Plot JHU - all -------------------------------------------
 
-dta_all <- tibble(names_paths = vec_names_path,
-                  continent   = vec_names,
-                  width       = c(12, 20, 12, 25),
-                  height      = c(10, 8, 10, 10),
-                  data        = prepare_continent_data(dta_jhu),
-                  grid        = list_grid) 
+# Data since the begining
+# dta_all <- tibble(names_paths = vec_names_path,
+#                   continent   = vec_names,
+#                   width       = c(12, 20, 12, 25),
+#                   height      = c(10, 8, 10, 10),
+#                   data        = prepare_continent_data(dta_jhu),
+#                   grid        = list_grid) 
+# 
+# pmap(dta_all,
+#      geofacet_plot_all, 
+#      data_source = "JHU",
+#      colour_raw = "#f04042"
+# )
 
 
-pmap(dta_all,
+
+
+# Plot JHU - 60 days ------------------------------------------------
+
+dta_60d <- tibble(names_paths = vec_names_path,
+                  continent = vec_names,
+                  width     = c(12, 20, 12, 25),
+                  height    = c(10, 8, 10, 10),
+                  data      = prepare_continent_data(dta_jhu %>% 
+                                                       filter(date >= lubridate::today() - 30)),
+                  grid      = list_grid) 
+
+
+pmap(dta_60d,
      geofacet_plot_all, 
-     data_source = "JHU",
-     colour_raw = "#f04042"
-)
-
-
-
-
-
-# Plot ------------------------------------------------
-
-dta_all_60d <- tibble(names_paths = vec_names_path,
-                  continent   = vec_names,
-                  width       = c(12, 20, 12, 25),
-                  height      = c(10, 8, 10, 10),
-                  data        = prepare_continent_data(dta_jhu %>% 
-                                                         filter(date >= lubridate::today() - 60)),
-                  grid        = list_grid) 
-
-
-pmap(dta_all_60d,
-     geofacet_plot_all, 
-     data_source = "JHU",
+     data_source = "JHU_60days",
+     nb_days = "60d",
      colour_raw = "#f04042")
 
 
