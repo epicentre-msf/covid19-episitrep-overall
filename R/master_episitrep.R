@@ -93,12 +93,12 @@ print(my_doc, target = file.path(path.local.week, glue("draft_EpiSitrep_world_Co
 # === === === === === === 
 # ---- Deepdives ----
 # === === === === === ===  
-file_out_deepdive_africa <- paste0(week_report, '_', 'deepdive_Africa', '.html')
-
-rmarkdown::render(
-  input = file.path(path.Rmd, 'deep_dive_Africa.Rmd'),
-  output_file = file_out_deepdive_africa,
-  output_dir  = path.local.week)
+# file_out_deepdive_africa <- paste0(week_report, '_', 'deepdive_Africa', '.html')
+# 
+# rmarkdown::render(
+#   input = file.path(path.Rmd, 'deep_dive_Africa.Rmd'),
+#   output_file = file_out_deepdive_africa,
+#   output_dir  = path.local.week)
 
 
 # Simplified deepdive for all continents
@@ -141,6 +141,7 @@ source(here::here('R', 'run_multiplot_country.R'), encoding = 'UTF-8',
 # GIS unit sharepoint --------------------------------------
 
 ## Copy table of trends to GIS Unit sharepoint
+## https://msfintl.sharepoint.com/sites/msfintlcommunities/GIS/Geoapp/Forms/AllItems.aspx?id=%2Fsites%2Fmsfintlcommunities%2FGIS%2FGeoapp%2FC%2E%20Geoapps%2F1%2DStandard%2FOCG%2DWRL%2DCoronavirus%2FResources%2DData%2FOps%2FEPI%20csv%20data&p=true&originalPath=aHR0cHM6Ly9tc2ZpbnRsLnNoYXJlcG9pbnQuY29tLzpmOi9zL21zZmludGxjb21tdW5pdGllcy9HSVMvRWdTRXJudzkyanhMbDM3S293OXhhYjBCa3AyMEMwWlZSa2g5ZXZmOHktcWQ3UT9ydGltZT16VWdORkVUMDJFZw
 file.copy(
   from = file.path(path.local.week, 'worldwide', 'tables', paste0('epi-case-trends-', week_report, '.csv')),
   to = file.path(sharepoint.parent.dir, 'MSF', 'GIS @ MSF - EPI csv data'), 
