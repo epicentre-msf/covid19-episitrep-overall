@@ -208,10 +208,10 @@ plot_map_world_count <- function(tbl_dta, series){
 plot_map_world_trend <- function(tbl_dta, 
                                  series, 
                                  model_for_trends = 'linear', 
-                                 plot_palette = RdAmGn
+                                 plot_palette = RdAmGn,
+                                 
                                  ){
   # continent = NULL
-  # 
   RdAmGn <- c('#D95F02', '#E6AB02', '#1B9E77') # Three-colours palette (Red-Amber-Green) colour-blind safe
   
   legend_title <- switch(series, 
@@ -231,7 +231,7 @@ plot_map_world_trend <- function(tbl_dta,
   #                            "Europe"   = c(-30, 80),
   #                            "Americas" = c(-160, -30),
   #                            "Asia"     = c(20, 170))
-  #   
+  # 
   #   ylim_continent <- switch(continent,
   #                            "Africa"   = c(-35, 40),
   #                            "Europe"   = c(28, 73),
@@ -1363,6 +1363,7 @@ geofacet_plot_all <- function(data,
                               height = 10,
                               label_size = 7,
                               data_source = "JHU",
+                              nb_days     = "60d",
                               colour_raw  = "steelblue",
                               colour_ma   = "black",
                               mov_av      = TRUE){
@@ -1387,7 +1388,7 @@ geofacet_plot_all <- function(data,
                                    mov_av      = mov_av)  %>% 
                   
                   ggsave(file = file.path(path.local.geofacet,
-                                          glue::glue('{names_paths}_geofacet_{.x}_{.y}_{week_report}.png')),
+                                          glue::glue('{names_paths}_geofacet_{.x}_{.y}_{week_report}_{nb_days}.png')),
                          width  = width, 
                          height = height)
               }
