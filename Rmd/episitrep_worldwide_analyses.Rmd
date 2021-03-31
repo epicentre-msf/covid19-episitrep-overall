@@ -1193,7 +1193,7 @@ scatter_plot_inc_Asia <- scatter_plot_inc(tbl_inc_prop_all_and_30d %>% filter(co
 
 
 ggsave(file.path(path.local.worldwide.graphs, paste0('scatter_plot_inc_Asia_30-days', '_', week_report, '.png')), 
-         plot = scatter_plot_inc_Africa + labs(title = NULL), 
+         plot = scatter_plot_inc_Asia + labs(title = NULL), 
          width = 15 * cm_to_in, 
          height = 15 * cm_to_in, 
          scale = 1, 
