@@ -898,7 +898,6 @@ gtbl_age_sex_continent
 
 ### Sex ratio
 ```{r}
-
 tbl_sex_ratio <- dta_linelist %>% 
   select(continent, patinfo_sex) %>% 
   mutate(sex = factor(patinfo_sex, levels = c('M', 'F'), labels = c('Male', 'Female')) %>% fct_explicit_na(na_level = "(Unknown)")) %>% 

@@ -243,6 +243,10 @@ This section will present **information of completeness of data** (number of MSF
 
 At the date the required data are not yet available. And this section will be updated as soon as they will be available.
 
+Additional graphics and tables are also available at the [Epicentre COVID-19 Epi Dashboard](https://reports.msf.net/public/covid19/).
+
+Reports of previous weeks are available [here](https://reports.msf.net/secure/app_direct/covid19-additional-analysis/additional_episitrep_outputs_oc/archives/).
+
 <!-- Some figure outputs to be used in the text -->
 ```{r numbers, include = FALSE}
 nb_msf_sites_linelist   <- length(unique(dta_linelist$site_name))              # Nb of sites using the linelist
