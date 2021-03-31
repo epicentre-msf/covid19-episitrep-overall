@@ -10,19 +10,18 @@ calibri_10_bold_orange <- fp_text(font.family = "Calibri",
 
 
 # --- --- --- --- --- --- --- --- --- 
-# II. MSF level analyses - Heading
+####### II. MSF level analyses - Heading ####### 
 # --- --- --- --- --- --- --- --- ---
 
 my_doc <- add_heading1('Analysis at MSF level') 
 
-
 my_doc <- add_end_section_continuous()
 
 
-# WHAT WE EXPECT
+##  DESCRIPTION OF FOLLOWING SECTION ----------
 # --- --- --- --- --- --- 
 
-##  What we expect - Heading
+## Heading
 my_doc %<>% 
   body_add_fpar(style = 'Description', 
                 fpar(ftext("This section analyses data reported by MSF in the reporting system created by Epicentre and distributed to MSF projects. OCs are highly encouraged to send updated linelist exports on a weekly basis by Tuesdays nights to the following email address (EPI-COVID19-DATA@epicentre.msf.org) (please respect your OC guidelines by discussing with identified surveillance focal point).", 
@@ -48,13 +47,12 @@ my_doc %<>%
 
 
 # === === === === === === 
-# OVERVIEW
+# OVERVIEW --------------
 # === === === === === === 
 
 ## Heading 
 # --- --- --- --- --- --- 
 my_doc <- add_heading2('Overview of the updated MSF linelists')
-
 my_doc <- add_end_section_continuous()
 
 
@@ -73,7 +71,6 @@ my_doc <- add_par_normal(
           Words(nb_msf_sites_aggregated)))
 
 # 2
-
 my_doc %<>% 
   body_add_par(style = 'Normal', 
                value = ('Last week data may not be fully complete if projects did not report on time. Detailed data by project is available ')) %>% 
@@ -88,13 +85,12 @@ my_doc %<>%
 my_doc <- add_par_normal(
   sprintf("The weekly evolution of patients consulted by covid19 status is shown in Figure 5 below. The continent with the higher number of patients is Asia, though a lot were seen for triage only. The majority of Asian cases are classified as probable due to testing access difficulties. In Europe, most cases were cared for during the first surge of cases. After a decrease in the other continents over the course of the summer 2020, the reported numbers are now stable in the last weeks."))
 
-
 my_doc <- add_end_section_2columns()
 
 
 
 
-# Histogram  
+# Histogram weekly evolution 
 my_doc <- add_figure(
   object_name  = glue("hist_epicurve_status_continent_{week_report}.png"), 
   figure_title = glue('Weekly evolution of the total number of patients seen in MSF facilities by covid19 status and by continent (individual and aggregated data are displayed)'), 
@@ -104,7 +100,7 @@ my_doc <- add_figure(
 
 
 # === === === === === === === 
-# PATIENTS' CHARACTERISTICS
+# PATIENTS' CHARACTERISTICS -------------
 # === === === === === === === 
 
 my_doc <- add_heading2("Characteristics of patients consulted or admitted in MSF facilities")
@@ -130,11 +126,53 @@ my_doc <- add_par_normal(
 
 # 2
 my_doc <- add_par_normal(
-  sprintf("Patients consulted/admitted to MSF facilities had median age of %s years. The male/female ratio was %s among all Covid19-related patients and %s (%s%%) patients reported at least one comorbidity. The most frequent comorbidities recorded are hypertension, diabetes, respiratory diseases and malaria. Hypertension and diabetes were more frequent in confirmed cases than in cases proved negative (Not a case).", 
+  sprintf("Patients consulted/admitted to MSF facilities had median age of %s years. The male/female ratio was %s among all Covid19-related patients and %s (%s%%) patients reported at least one comorbidity.", 
           median(dta_linelist$age_in_years, na.rm = TRUE),
           tbl_sex_ratio %>% pull(ratio_mf) %>% last() %>% round(., 2), 
           sum(dta_linelist$ind_Comcond_01), 
           format_percent(sum(dta_linelist$ind_Comcond_01)/count(dta_linelist)) %>% pull())) 
+
+
+# Most frequent commorbidities
+
+frequent_comorbidities <- dta_comcond %>% 
+  select(-continent, -ind_outcome_patcourse_status, -ind_MSF_covid_status) %>% 
+  pivot_longer(ind_Comcond_preg:ind_MSF_smoking,
+               names_to = "comorbidity_type",
+               values_to = "comorbidity_present") %>%
+  group_by(comorbidity_type) %>% 
+  summarise(n_tot = n(),
+            n_yes = sum(comorbidity_present == "Yes", na.rm = TRUE),
+            perc_all = 100 * n_yes / n_tot) %>% 
+  arrange(-perc_all) %>% 
+  filter(perc_all >= 3.00) %>% 
+  pull(comorbidity_type)
+
+my_doc <- add_par_normal(
+  sprintf("The most frequent comorbidities recorded are %s.", 
+          frequent_comorbidities %>% combine_words())) 
+
+
+# Commorbidities cases vs non cases
+comorbidities_C_vs_NC <- dta_comcond %>% 
+  select(-continent, -ind_outcome_patcourse_status) %>% 
+  filter(ind_MSF_covid_status %in% c("Confirmed", "Not a case")) %>%
+  pivot_longer(ind_Comcond_preg:ind_MSF_smoking,
+               names_to = "comorbidity_type",
+               values_to = "comorbidity_present") %>%
+  group_by(comorbidity_type, ind_MSF_covid_status) %>% 
+  summarise(n_tot = n(),
+            n_yes = sum(comorbidity_present == "Yes", na.rm = TRUE),
+            perc_all = 100 * n_yes / n_tot) %>% 
+  pivot_wider(id_cols     = comorbidity_type,
+              names_from  = ind_MSF_covid_status,
+              values_from = perc_all) %>% 
+  arrange(-Confirmed) %>% 
+  filter(Confirmed > 1.5 * `Not a case`) %>% pull(comorbidity_type)
+
+my_doc <- add_par_normal(
+  sprintf("%s were more frequent in confirmed cases than in cases proved negative (Not a case).", 
+          comorbidities_C_vs_NC %>% combine_words())) 
 
 
 my_doc <- add_end_section_2columns()
@@ -155,11 +193,11 @@ my_doc <- add_end_section_continuous()
 
 
 
-# - Text symptoms
+## - Text symptoms -------
 # --- --- --- --- --- --- 
-# 1
+
 my_doc <- add_par_normal(
-  sprintf("There is not a clear pattern of symptoms that allows to differentiate confirmed and non-cases. Loss of smell and taste is more frequent among confirmed cases, although a non-negligible proportion of non-cases present these symptoms. Aches and headache also seemed more frequent in confirmed cases."))
+  sprintf("There is not a clear pattern of symptoms that allows to differentiate confirmed and non-cases. Loss of smell and taste is more frequent among confirmed cases, although a non-negligible proportion of non-cases present these  Chills, nose congestion and vomiting appeared less frequent in confirmed cases than in negative patients."))
 
 
 dta_severity <- dta_linelist %>% 
@@ -220,7 +258,6 @@ my_doc <- add_end_section_2columns()
 
 
 
-
 my_doc <- add_figure(
   object_name  = paste0('hist_fatality_continent', '_', week_report, '.png'), 
   figure_title = "Weekly evolution of number of died and cured admitted patients, by continent (all status) ", 
@@ -235,7 +272,7 @@ my_doc <- add_end_section_continuous()
 
 
 # --- --- --- --- --- --- 
-# ANALYSES CONFIRMED
+# ANALYSES CONFIRMED -----------
 # --- --- --- --- --- --- 
 
 
@@ -262,7 +299,7 @@ my_doc <- add_par_normal(
 
 
 my_doc <- add_par_normal(
-  sprintf("In MSF facilities, %s%% of confirmed cases with known outcome died, including %s%% in over 65 years of age. The median age among deceased patients was %s years (stable in the last weeks). The proportion of patients who died largely varied with the number of comorbidities declared (Table 5). CFR starts increasing from the 40-49 years old category, to reach over XXX%% in patients over 80 years old", 
+  sprintf("In MSF facilities, %s%% of confirmed cases with known outcome died, including %s%% in over 65 years of age. The median age among deceased patients was %s years (stable in the last weeks). The proportion of patients who died largely varied with the number of comorbidities declared (Table 5). CFR starts increasing from the 40-49 years old category, to reach about 60%% in patients over 80 years old", 
           round(nb_msf_conf_who_died / nb_msf_conf_known_outcome * 100, digits = 1), 
           round(nb_msf_conf_above65_who_died / nb_msf_conf_above65 * 100, digits = 1), 
           median_age_confirmed_died))
@@ -277,13 +314,38 @@ my_doc <- add_table(
   height = 4 * cm_to_in)
 
 
-
+# Delay at admission
 my_doc <- add_par_normal(
   sprintf("The overall delay between onset and consultation/admission (median number of days) was %s days. The overall length of stay (median number of days) was %s days.", 
           median(dta_delay$delay_before_consultation),
           median(dta_length_stay$MSF_length_stay)))
 
 
+# CFR by commorbidity type
+cfr_c <- tbl_cfr_type_comcond %>% 
+  select(type_comorbidity, p_Total) %>% 
+  mutate(p_Total = round(100 * p_Total, 0))
+
+my_doc <- add_par_normal(
+  sprintf("Table 6 presents the case fatality among confirmed cases according to the types of comorbidity (patients with known cured or died outcome in the denominator)."))
+
+my_doc <- add_par_normal(
+  sprintf("Respiratory diseases (CFR s%%), renal diseases (s%%), diabetes (s%%) and hypertension (s%%) and are the comorbidities associated with the highest case fatality.",
+          cfr_c %>% filter(type_comorbidity == "Respiratory (including chronic lung diseases)") %>% 
+            pull(p_Total),
+          cfr_c %>% filter(type_comorbidity == "Renal") %>% pull(p_Total),
+          cfr_c %>% filter(type_comorbidity == "Diabetes") %>% pull(p_Total),
+          cfr_c %>% filter(type_comorbidity == "Hypertension") %>% pull(p_Total)
+  ))
+
+ 
+my_doc <- add_par_normal(
+  sprintf("About 5%% of those presenting with malaria died. In Africa, CFR appeared lower for some comorbidities than in other continents, notably for cardiovascular disease/hypertension and diabetes."))
+
+
+
+
+# Table major care procedures confirmed
 my_doc <- add_table(
   object_name = paste0('gtbl_care', '_', week_report, '.png'), 
   table_title = 'Major patient’s care procedures by location (confirmed patients)', 
