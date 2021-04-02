@@ -1,5 +1,5 @@
 # === === === === === === === === 
-# ---- Prepare environment ----
+# Prepare environment ----
 # === === === === === === === ===
 #  
 if (Sys.getlocale(category = "LC_TIME") == "French_France.1252") {
@@ -17,7 +17,7 @@ source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
 # The right-censoring create also the week value and the folders where to save the outputs
 dates_and_week <- set_date_frame(create_folders = TRUE)
 
-date_min_report <- dates_and_week[[1]]
+# date_min_report <- dates_and_week[[1]]
 date_min_report <- as.Date("2020-01-22")
 date_max_report <- dates_and_week[[2]]
 week_report     <- dates_and_week[[3]]
@@ -28,10 +28,34 @@ get_geo_data(path = path.local.data, force = FALSE)
 
 
 # === === === === === === === === 
-# ---- Run analyses ----
+# ANALYSES ----
 # === === === === === === === === 
 
-# World
+# The world level html report contains figures generates in the
+# deepdives and in the geofacet script. This is why they are 
+# ran first
+
+
+## Deepdives -----------------------------------------------
+
+# Simplified deepdive for all continents
+continent_list <- list("Africa", "Americas", "Asia", "Europe")
+# continent_list <- list( "Asia")
+purrr::walk(continent_list, 
+            ~rmarkdown::render(
+              input       = file.path(path.Rmd, 'deep_dive.Rmd'), 
+              output_file = glue::glue("{week_report}_deepdive_{.}.html"),
+              output_dir  = path.local.week.deepdive,
+              params = list(continent = .))
+)
+
+
+## Geofacets -----------------------------------------------
+source(here::here('R', 'run_geofacet_plots.R'), encoding = 'UTF-8',
+       local = new.env(parent = .GlobalEnv))
+
+
+## World level ---------------------------------------------------
 file_out_worldwide <- paste0(week_report, '_', 'episitrep_worldwide_analyses', '.html')
 
 rmarkdown::render(
@@ -40,7 +64,7 @@ rmarkdown::render(
   output_dir  = path.local.week)
 
 
-# MSF data
+## MSF data ------------------------------------------------
 file_out_msf <- paste0(week_report, '_', 'episitrep_msf_level_analysis', '.html')
 
 rmarkdown::render(
@@ -49,7 +73,7 @@ rmarkdown::render(
   output_dir  = path.local.week)
 
 
-# Sections
+## OC level ------------------------------------------------
 oc_list <- list("OCP", "OCA", "OCB", "OCBA", "OCG")
 purrr::walk(oc_list, 
             ~rmarkdown::render(
@@ -62,9 +86,24 @@ purrr::walk(oc_list,
             
 
 
-# === === === === === === === ===  ===  
-# ---- Edit and save docx file ----
-# === === === === === === === ===  === 
+
+## Plots continent & countries -----------------------------
+
+
+# Note: the scripts run in a new environment, child to this one so as to 
+# not interfere with each other.
+source(here::here('R', 'run_multiplot_world_continent.R'), 
+       encoding = 'UTF-8', local = new.env(parent = .GlobalEnv))
+
+source(here::here('R', 'run_multiplot_country.R'), encoding = 'UTF-8',
+       local = new.env(parent = .GlobalEnv))
+
+
+
+
+# === === === === === === === === 
+# SITREP ----
+# === === === === === === === === 
 
 load(file.path(path.local.worldwide.data, paste0('episitrep_worldwide_analyses', '_', week_report, '.RData')))
 load(file.path(path.local.msf.data, paste0('episitrep_msf_level_analyses', '_', week_report, '.RData'))) 
@@ -90,55 +129,17 @@ print(my_doc, target = file.path(path.local.week, glue("draft_EpiSitrep_world_Co
 
 
 
-# === === === === === === 
-# ---- Deepdives ----
-# === === === === === ===  
-# file_out_deepdive_africa <- paste0(week_report, '_', 'deepdive_Africa', '.html')
-# 
-# rmarkdown::render(
-#   input = file.path(path.Rmd, 'deep_dive_Africa.Rmd'),
-#   output_file = file_out_deepdive_africa,
-#   output_dir  = path.local.week)
 
 
-# Simplified deepdive for all continents
-continent_list <- list("Africa", "Americas", "Asia", "Europe")
-
-purrr::walk(continent_list, 
-            ~rmarkdown::render(
-              input       = file.path(path.Rmd, 'deep_dive.Rmd'), 
-              output_file = glue::glue("{week_report}_deepdive_{.}.html"),
-              output_dir  = path.local.week.deepdive,
-              params = list(continent = .))
-)
-
-
-
-
-
-# === === === === === === === === === ===
-# ---- Plots continent & countries ----
-# === === === === === === === === === === 
-
-# Note: the scripts run in a new environment, child to this one so as to 
-# not interfere with each other.
-source(here::here('R', 'run_geofacet_plots.R'), encoding = 'UTF-8',
-       local = new.env(parent = .GlobalEnv))
-
-source(here::here('R', 'run_multiplot_world_continent.R'), 
-       encoding = 'UTF-8', local = new.env(parent = .GlobalEnv))
-
-source(here::here('R', 'run_multiplot_country.R'), encoding = 'UTF-8',
-       local = new.env(parent = .GlobalEnv))
 
 
 
 
 # === === === === === === === === === === ===
-# ---- Copy outputs to various locations ----
+# COPY OUTPUTS ----
 # === === === === === === === === === === ===
 
-# GIS unit sharepoint --------------------------------------
+## GIS unit sharepoint --------------------------------------
 
 ## Copy table of trends to GIS Unit sharepoint
 ## https://msfintl.sharepoint.com/sites/msfintlcommunities/GIS/Geoapp/Forms/AllItems.aspx?id=%2Fsites%2Fmsfintlcommunities%2FGIS%2FGeoapp%2FC%2E%20Geoapps%2F1%2DStandard%2FOCG%2DWRL%2DCoronavirus%2FResources%2DData%2FOps%2FEPI%20csv%20data&p=true&originalPath=aHR0cHM6Ly9tc2ZpbnRsLnNoYXJlcG9pbnQuY29tLzpmOi9zL21zZmludGxjb21tdW5pdGllcy9HSVMvRWdTRXJudzkyanhMbDM3S293OXhhYjBCa3AyMEMwWlZSa2g5ZXZmOHktcWQ3UT9ydGltZT16VWdORkVUMDJFZw
@@ -149,10 +150,10 @@ file.copy(
 
 
 
-# Public folder ---------------------------------------
+## Public folder -------------------------------------------
 
 
-###### Worldwide analyses ######
+### Worldwide analyses -------------------------------------
 ## Copy to archive
 file.copy(
   from = file.path(path.local.week, file_out_worldwide),
@@ -166,7 +167,7 @@ file.copy(
   overwrite = TRUE
 )
 
-###### Worldwide tables summary ######
+### Worldwide tables summary --------------------------------
 ## Copy to archive
 file.copy(
   from = file.path(path.local.worldwide.tables, paste0(week_report, '_', 'world_summary_cases_deaths.html')), 
@@ -181,7 +182,7 @@ file.copy(
 )
 
 
-###### MSF data analysis ######
+### MSF data analysis --------------------------------------
 
 ## Copy to archive
 file.copy(
@@ -196,7 +197,8 @@ file.copy(
   overwrite = TRUE
 )
 
-###### MSF summary table ######
+
+### MSF summary table --------------------------------------
 ## Copy to archive
 file.copy(
   from = file.path(path.local.msf.tables, paste0(week_report, '_', 'SUMMARY-TABLE_MSF-sites_by_patients_Covid-status.html')), 
@@ -211,7 +213,7 @@ file.copy(
 )
 
 
-###### OC ######
+### OC -----------------------------------------------------
 ## Copy to archive
 purrr::walk(oc_list, 
             ~ file.copy(
@@ -233,7 +235,7 @@ purrr::walk(oc_list,
 
 
 
-# Non public folder ---------------------------------------
+## Non public folder ---------------------------------------
 
 # path.sharepoint.sitrep.week <- file.path(path.sharepoint.sitrep,
 #                                     week_report)
