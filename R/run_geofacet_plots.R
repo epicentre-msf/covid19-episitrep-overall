@@ -25,32 +25,35 @@ library(covidutils)
 
 # Set paths
 set_paths(path.local, week_report)
-path.local.geofacet <- file.path(path.local.worldwide.graphs,
-                                 'geofacet_plots')
+path.local.geofacet <- file.path(path.local.week, 'geofacet_plots')
+path.local.geofacet.data <- file.path(path.local.geofacet, 'data')
+
 if(!exists(path.local.geofacet)) {
   dir.create(path.local.geofacet, showWarnings = FALSE, recursive = TRUE)
+  dir.create(path.local.geofacet.data, showWarnings = FALSE, recursive = TRUE)
+  
 }
 
 
 # Get & prepare data --------------------------------------------
 
 ## --- ECDC data
-# dta_ecdc <- covidutils::get_ecdc_data() %>% 
-#   prepare_ecdc_geodata_geofacet() %>% 
-#   filter(between(date, left = date_min_report, right = date_max_report)) %>% 
-#   mutate(cases_per_100000   = cases/population_2019 * 1e5, 
-#          deaths_per_million = deaths/population_2019 * 1e6) %>% 
-#   pivot_longer(cols = c(cases, deaths, cases_per_100000,
-#                         deaths_per_million), 
-#                names_to = "count", 
-#                values_to = "value_raw") %>% 
-#   group_by(code, count) %>% 
-#   arrange(date) %>% 
-#   mutate(value_ma = slide_dbl(value_raw, 
-#                               mean, 
-#                               .before = 1, 
-#                               .after = 1)) %>% 
-#   ungroup()
+dta_ecdc <- covidutils::get_ecdc_data() %>%
+  prepare_ecdc_geodata_geofacet() %>%
+  filter(between(date, left = date_min_report, right = date_max_report)) %>%
+  mutate(cases_per_100000   = cases/population_2019 * 1e5,
+         deaths_per_million = deaths/population_2019 * 1e6) %>%
+  pivot_longer(cols = c(cases, deaths, cases_per_100000,
+                        deaths_per_million),
+               names_to = "count",
+               values_to = "value_raw") %>%
+  group_by(code, count) %>%
+  arrange(date) %>%
+  mutate(value_ma = slide_dbl(value_raw,
+                              mean,
+                              .before = 1,
+                              .after = 1)) %>%
+  ungroup()
 
 
 
@@ -143,6 +146,7 @@ list_grid <- list(grid_south_central_america,
 
 # Labels ----------------------------------------------
 
+vec_filter_names <- c("Americas",  "Asia", "Africa",  "Europe")
 
 vec_names <- c("South & Central America",
                "Asia",
@@ -211,7 +215,8 @@ prepare_continent_data <- function(data) {
 
 # Plot JHU - 60 days ------------------------------------------------
 
-dta_60d <- tibble(names_paths = vec_names_path,
+dta_60d <- tibble(filter_names = vec_filter_names,
+                  names_paths  = vec_names_path,
                   continent = vec_names,
                   width     = c(12, 20, 12, 25),
                   height    = c(10, 8, 10, 10),
@@ -228,9 +233,10 @@ pmap(dta_60d,
 
 
 
+# Save data -------------------------------------------
 
-
-
+saveRDS(dta_60d,
+        file.path(path.local.geofacet.data, paste0('geofacet_data', '_', week_report, '.RData')))
 
 
 
