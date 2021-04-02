@@ -234,7 +234,7 @@ median_age_confirmed_by_sex <- dta_linelist %>%
     age_median = median(age_in_years, na.rm = TRUE))
 
 median_age_confirmed_died <- dta_linelist %>% 
-  filter(ind_MSF_covid_status == 'Confirmed' & ind_outcome_patcourse_status == 'Died') %>% 
+  filter(ind_MSF_covid_status == 'Confirmed' & ind_outcome_patcourse_status == 'Died') %>%
   pull(age_in_years) %>% 
   median(na.rm = TRUE)
 

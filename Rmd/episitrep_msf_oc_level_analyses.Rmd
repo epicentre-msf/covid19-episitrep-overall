@@ -102,10 +102,6 @@ caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF line
 ```
 
 
----
-subtitle: "Data as of week `r glue::glue("{format(date_max_report, '%V')}, ending {weekdays(date_max_report)} {format(date_max_report, '%d %B %Y')}")`"
----
-
 <!-- Import and manage data -->
 
 ```{r get-data, include = FALSE}
@@ -235,7 +231,9 @@ tbl_aggregated_expanded_with_dates <- dta_aggregated_expanded %>%
     site_name = paste(site_name, '(*)'))
 ```
 
-
+---
+subtitle: "Data as of week `r glue::glue("{format(date_max_report, '%V')}, ending {weekdays(date_max_report)} {format(date_max_report, '%d %B %Y')}")`"
+---
 
 # Overview `r params$OC`
 
@@ -245,7 +243,7 @@ At the date the required data are not yet available. And this section will be up
 
 Additional graphics and tables are also available at the [Epicentre COVID-19 Epi Dashboard](https://reports.msf.net/public/covid19/).
 
-Reports of previous weeks are available [here](https://reports.msf.net/secure/app_direct/covid19-additional-analysis/additional_episitrep_outputs_oc/archives/).
+Reports of previous weeks are available [here](https://reports.msf.net/secure/app_direct/covid19-additional-analysis/additional_episitrep_outputs_oc/archive/).
 
 <!-- Some figure outputs to be used in the text -->
 ```{r numbers, include = FALSE}
@@ -4801,7 +4799,6 @@ a <- left_join(tbl_plot1,
 
 
 ```{r echo=FALSE, message=FALSE, results ='asis', fig.width=5, fig.height=4}
-
 
 for(i in 1:nrow(a)){
   
