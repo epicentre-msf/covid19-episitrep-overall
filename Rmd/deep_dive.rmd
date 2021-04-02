@@ -1,7 +1,7 @@
 ---
 title: "Description of the Covid-19 epidemic in `r params$continent`"
 params:
-  continent: Africa
+  continent: Asia
 date: "`r format(Sys.Date(), '%d %B %Y')`"
 author: Francesco Grandesso Epicentre (MSF)
 output: 
@@ -79,18 +79,21 @@ dta_ecdc <- covidutils::get_ecdc_data()
 ## --- JHU Covid data
 dta_jhu <- get_owid_jhcsse() %>% 
   tidyr::drop_na(iso_a3) %>% 
+  mutate(continent = ifelse(country == "Russia", "Asia", continent)) %>% 
   filter(between(date, left = date_min_report, right = date_max_report),
          (continent == params$continent))
 
 
 ## --- Population data
 df_countries <- readRDS(file.path(path.local.data, paste0('df_countries','.RDS'))) %>% 
+   mutate(continent = ifelse(country == "Russia", "Asia", continent)) %>% 
   filter(continent == params$continent) %>% 
   left_join(readRDS(file.path(path.local.data, paste0('df_pop_country','.RDS'))))
 
 
 # sf Robinson projection
-sf_robinson <- readRDS(file.path(path.local.data, paste0('sf_world','.RDS'))) %>% 
+sf_robinson <- readRDS(file.path(path.local.data, paste0('sf_world','.RDS'))) %>%
+   mutate(continent = ifelse(country == "Russian Federation", "Asia", continent)) %>% 
   filter(continent == params$continent)
 
 
@@ -107,6 +110,9 @@ sf_mercator <- rnaturalearth::ne_countries(type = "countries", returnclass = "sf
   dplyr::filter(stringr::str_detect(country, "Antarctic", negate = TRUE)) %>% 
   cbind(sf::st_coordinates(suppressWarnings(sf::st_centroid(., of_largest_polygon = TRUE)))) %>% 
   dplyr::rename(lon = X, lat = Y) 
+
+
+# readRDS(file.path(path.local.geofacet.data, paste0('geofacet_data', '_', week_report, '.RData')))
 
 ```
 
@@ -709,8 +715,7 @@ map_case_trend_12d <- ggplot(sf_case_trend_12d) +
 
 
 ## Combine maps
-map_cases_trends <- map_case_trend_30d + 
-  map_case_trend_12d + 
+map_cases_trends <- map_case_trend_30d + map_case_trend_12d + 
   plot_layout(ncol = 2, guides = 'collect') & theme(legend.position = 'bottom')
 
 map_cases_trends

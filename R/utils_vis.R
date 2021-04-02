@@ -208,9 +208,7 @@ plot_map_world_count <- function(tbl_dta, series){
 plot_map_world_trend <- function(tbl_dta, 
                                  series, 
                                  model_for_trends = 'linear', 
-                                 plot_palette = RdAmGn,
-                                 
-                                 ){
+                                 plot_palette = RdAmGn){
   # continent = NULL
   RdAmGn <- c('#D95F02', '#E6AB02', '#1B9E77') # Three-colours palette (Red-Amber-Green) colour-blind safe
   
