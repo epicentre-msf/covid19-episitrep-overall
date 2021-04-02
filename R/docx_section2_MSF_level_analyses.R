@@ -134,45 +134,19 @@ my_doc <- add_par_normal(
 
 
 # Most frequent commorbidities
-
-frequent_comorbidities <- dta_comcond %>% 
-  select(-continent, -ind_outcome_patcourse_status, -ind_MSF_covid_status) %>% 
-  pivot_longer(ind_Comcond_preg:ind_MSF_smoking,
-               names_to = "comorbidity_type",
-               values_to = "comorbidity_present") %>%
-  group_by(comorbidity_type) %>% 
-  summarise(n_tot = n(),
-            n_yes = sum(comorbidity_present == "Yes", na.rm = TRUE),
-            perc_all = 100 * n_yes / n_tot) %>% 
-  arrange(-perc_all) %>% 
-  filter(perc_all >= 3.00) %>% 
-  pull(comorbidity_type)
-
 my_doc <- add_par_normal(
   sprintf("The most frequent comorbidities recorded are %s.", 
-          frequent_comorbidities %>% combine_words())) 
+          tbl_comcond_status %>% 
+            filter(100 * p_Total >= 3.00) %>% 
+            pull(type_comorbidity) %>% combine_words())) 
 
 
 # Commorbidities cases vs non cases
-comorbidities_C_vs_NC <- dta_comcond %>% 
-  select(-continent, -ind_outcome_patcourse_status) %>% 
-  filter(ind_MSF_covid_status %in% c("Confirmed", "Not a case")) %>%
-  pivot_longer(ind_Comcond_preg:ind_MSF_smoking,
-               names_to = "comorbidity_type",
-               values_to = "comorbidity_present") %>%
-  group_by(comorbidity_type, ind_MSF_covid_status) %>% 
-  summarise(n_tot = n(),
-            n_yes = sum(comorbidity_present == "Yes", na.rm = TRUE),
-            perc_all = 100 * n_yes / n_tot) %>% 
-  pivot_wider(id_cols     = comorbidity_type,
-              names_from  = ind_MSF_covid_status,
-              values_from = perc_all) %>% 
-  arrange(-Confirmed) %>% 
-  filter(Confirmed > 1.5 * `Not a case`) %>% pull(comorbidity_type)
-
 my_doc <- add_par_normal(
   sprintf("%s were more frequent in confirmed cases than in cases proved negative (Not a case).", 
-          comorbidities_C_vs_NC %>% combine_words())) 
+          tbl_comcond_status %>% 
+            filter(p_Confirmed > 1.5 * `p_Not a case`)  %>% 
+            pull(type_comorbidity) %>% combine_words())) 
 
 
 my_doc <- add_end_section_2columns()
@@ -196,10 +170,12 @@ my_doc <- add_end_section_continuous()
 ## - Text symptoms -------
 # --- --- --- --- --- --- 
 
+###TODO
 my_doc <- add_par_normal(
   sprintf("There is not a clear pattern of symptoms that allows to differentiate confirmed and non-cases. Loss of smell and taste is more frequent among confirmed cases, although a non-negligible proportion of non-cases present these  Chills, nose congestion and vomiting appeared less frequent in confirmed cases than in negative patients."))
 
 
+# Severity
 dta_severity <- dta_linelist %>% 
   mutate(
     MSF_severity = factor(MSF_severity, levels = c('Mild', 'Moderate', 'Severe', 'Critical'))
@@ -227,9 +203,12 @@ my_doc <- add_par_normal(
   )
 )
 
+
+# CFR
 tbl_cfr_global <- dta_cfr_status %>% 
   filter(ind_MSF_covid_status %in% c("Confirmed", "Suspected", "Probable"),
-         ind_outcome_patcourse_status %in% c("Cured", "Died")) %>% 
+         ind_outcome_patcourse_status %in% c("Cured", "Died", 'Sent back home'),
+         merge_admit == "Yes") %>% 
   summarise(n_tot = n(),
             n_died =  sum(ind_outcome_patcourse_status == 'Died', 
                           na.rm = TRUE),
@@ -298,11 +277,27 @@ my_doc <- add_par_normal(
           tbl_care_vent %>% filter(merge_vent == 'Yes') %>% pull(p_Total) %>% format_percent(digits = 1)))
 
 
+dta_cfr <- dta_linelist %>% 
+  filter(ind_MSF_covid_status == 'Confirmed',
+         ind_outcome_patcourse_status %in% c('Cured', 'Died', "Sent back home"),
+         merge_admit == "Yes")
+  
+dta_age_median <- dta_linelist %>% 
+  filter(ind_MSF_covid_status == 'Confirmed',
+         ind_outcome_patcourse_status == 'Died',
+         merge_admit == "Yes") %>% 
+  pull(age_in_years) %>% 
+  median(na.rm = TRUE)
+
 my_doc <- add_par_normal(
-  sprintf("In MSF facilities, %s%% of confirmed cases with known outcome died, including %s%% in over 65 years of age. The median age among deceased patients was %s years (stable in the last weeks). The proportion of patients who died largely varied with the number of comorbidities declared (Table 5). CFR starts increasing from the 40-49 years old category, to reach about 60%% in patients over 80 years old", 
-          round(nb_msf_conf_who_died / nb_msf_conf_known_outcome * 100, digits = 1), 
-          round(nb_msf_conf_above65_who_died / nb_msf_conf_above65 * 100, digits = 1), 
-          median_age_confirmed_died))
+  sprintf("In MSF facilities, %s%% of confirmed cases with known outcome died, including %s%% in over 65 years of age. The median age among deceased patients was %s years (stable in the last weeks). The proportion of patients who died largely varied with the number of comorbidities declared (Table 5). CFR starts increasing from the 40-49 years old category, to reach over 40%% in patients over 80 years old", 
+          dta_cfr %>% 
+            summarise(p_died = round(100 * sum(ind_outcome_patcourse_status == "Died", na.rm = TRUE) / n(), 1)), 
+          
+          dta_cfr %>% 
+            filter(age_in_years >= 65) %>% 
+            summarise(p_died = round(100 * sum(ind_outcome_patcourse_status == "Died", na.rm = TRUE) / n(), 1)), 
+          dta_age_median))
 
 
 
@@ -330,7 +325,7 @@ my_doc <- add_par_normal(
   sprintf("Table 6 presents the case fatality among confirmed cases according to the types of comorbidity (patients with known cured or died outcome in the denominator)."))
 
 my_doc <- add_par_normal(
-  sprintf("Respiratory diseases (CFR s%%), renal diseases (s%%), diabetes (s%%) and hypertension (s%%) and are the comorbidities associated with the highest case fatality.",
+  sprintf("Respiratory diseases (CFR %s%%), renal diseases (%s%%), diabetes (%s%%) and hypertension (%s%%) and are the comorbidities associated with the highest case fatality.",
           cfr_c %>% filter(type_comorbidity == "Respiratory (including chronic lung diseases)") %>% 
             pull(p_Total),
           cfr_c %>% filter(type_comorbidity == "Renal") %>% pull(p_Total),
