@@ -1233,8 +1233,8 @@ geofacet_plot <- function(data,
     theme_bw() + 
     ylab("") + 
     scale_x_date("", 
-                 date_breaks = "2 months", 
-                 date_labels = "%b") + 
+                 date_breaks = "1 week", 
+                 date_labels = "%W") + 
     theme(strip.text.x = element_text(size = label_size,
                                       face = "bold"), 
           axis.text.x = element_text(angle = angle, 
@@ -1256,10 +1256,10 @@ geofacet_plot_wide <- function(data,
                                continent = "",
                                grid   = "africa_countries_grid1",
                                scales = "fixed", 
-                               angle  = 45,
+                               angle  = 0,
                                label_size = 7,
-                               data_source = "ECDC",
-                               colour_raw  = "back",
+                               data_source = "JHU",
+                               colour_raw  = "black",
                                colour_ma   = "#f04042",
                                mov_av = FALSE) {
   
@@ -1306,8 +1306,8 @@ geofacet_plot_wide <- function(data,
     theme_bw() + 
     ylab("") + 
     scale_x_date("", 
-                 date_breaks = "2 months", 
-                 date_labels = "%b") + 
+                 date_breaks = "1 week", 
+                 date_labels = "%W") + 
     theme(strip.text.x = element_text(size = label_size,
                                       face = "bold"), 
           axis.text.x = element_text(angle = angle, 
@@ -1368,6 +1368,10 @@ geofacet_plot_all <- function(data,
   
   my_count   <- c("cases", "deaths", "cases_per_100000", "deaths_per_million")
   my_scales  <- c("free_y", "fixed")
+
+  # my_count   <- c("cases")
+  # my_scales  <- c("free_y", "fixed")
+  
   conditions <- tidyr::crossing(my_count, my_scales)
   
   purrr::map2(.x = conditions$my_count,
@@ -1385,7 +1389,7 @@ geofacet_plot_all <- function(data,
                                    colour_ma   = colour_ma,
                                    mov_av      = mov_av)  %>% 
                   
-                  ggsave(file = file.path(path.local.geofacet,
+                  ggsave(file = file.path(path.local.geofacet, continent,
                                           glue::glue('{names_paths}_geofacet_{.x}_{.y}_{week_report}_{nb_days}.png')),
                          width  = width, 
                          height = height)

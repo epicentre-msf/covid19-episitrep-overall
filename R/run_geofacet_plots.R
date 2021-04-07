@@ -27,11 +27,18 @@ library(covidutils)
 set_paths(path.local, week_report)
 path.local.geofacet <- file.path(path.local.week, 'geofacet_plots')
 path.local.geofacet.data <- file.path(path.local.geofacet, 'data')
+path.local.geofacet.americas <- file.path(path.local.geofacet, 'Americas')
+path.local.geofacet.asia     <- file.path(path.local.geofacet, 'Asia')
+path.local.geofacet.europe   <- file.path(path.local.geofacet, 'Europe')
+path.local.geofacet.africa   <- file.path(path.local.geofacet, 'Africa')
 
 if(!exists(path.local.geofacet)) {
   dir.create(path.local.geofacet, showWarnings = FALSE, recursive = TRUE)
   dir.create(path.local.geofacet.data, showWarnings = FALSE, recursive = TRUE)
-  
+  dir.create(path.local.geofacet.americas, showWarnings = FALSE, recursive = TRUE)
+  dir.create(path.local.geofacet.asia, showWarnings = FALSE, recursive = TRUE)
+  dir.create(path.local.geofacet.europe, showWarnings = FALSE, recursive = TRUE)
+  dir.create(path.local.geofacet.africa, showWarnings = FALSE, recursive = TRUE)
 }
 
 
@@ -94,21 +101,18 @@ sf_mercator <- rnaturalearth::ne_countries(type = "countries",
 # Generate grids --------------------------------------
 
 
-# Amérique du Sud et centrale
-shp_south_central_america <- sf_mercator %>%
-  filter(continent == "Americas",
-         region != "Northern America")
+# Amériques
+shp_americas <- sf_mercator %>%
+  filter(continent == "Americas")
 
 
-grid_south_central_america <- data.frame(
-  name = c("Bahamas", "Puerto Rico", "Dom. Rep.", "Haiti", "Cuba", "Mexico", "Jamaica", "Belize", "Guatemala", "Honduras", "El Salvador", "Nicaragua", "Costa Rica", "Panama", "Trinid. & Tob.", "Venezuela", "Colombia", "Guyana", "Suriname", "Ecuador", "Brazil", "Peru", "Bolivia", "Paraguay", "Chile", "Uruguay", "Argentina", "Falkland Isl."),
-  code = c("BS", "PR", "DO", "HT", "CU", "MX", "JM", "BZ", "GT", "HN", "SV", "NI", "CR", "PA", "TT", "VE", "CO", "GY", "SR", "EC", "BR", "PE", "BO", "PY", "CL", "UY", "AR", "FK"),
-  row = c(1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 5, 5, 5, 6, 6, 6, 6, 7, 7, 8, 8, 8, 9, 9, 9, 10),
-  col = c(6, 7, 7, 6, 5, 1, 5, 3, 1, 2, 1, 2, 2, 3, 6, 5, 4, 6, 7, 4, 7, 4, 5, 6, 4, 6, 5, 5),
+grid_americas <- data.frame(
+  name = c("Canada", "Bahamas", "Puerto Rico", "United States", "Dom. Rep.", "Haiti", "Cuba", "Mexico", "Jamaica", "Belize", "Guatemala", "Honduras", "El Salvador", "Nicaragua", "Costa Rica", "Panama", "Trinid. Tob.", "Venezuela", "Colombia", "Guyana", "Suriname", "Ecuador", "Brazil", "Peru", "Bolivia", "Paraguay", "Chile", "Uruguay", "Argentina", "Falkland Isl."),
+  code = c("CA", "BS", "PR", "US", "DO", "HT", "CU", "MX", "JM", "BZ", "GT", "HN", "SV", "NI", "CR", "PA", "TT", "VE", "CO", "GY", "SR", "EC", "BR", "PE", "BO", "PY", "CL", "UY", "AR", "FK"),
+  row = c(1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 7, 8, 8, 9, 9, 9, 10, 10, 10, 11),
+  col = c(1, 6, 7, 1, 7, 6, 5, 1, 5, 3, 1, 2, 1, 2, 2, 3, 6, 5, 4, 6, 7, 4, 7, 4, 5, 6, 4, 6, 5, 5),
   stringsAsFactors = FALSE
-) %>% 
-  filter(name != "Mexico")
-
+)
 
 
 grid_asia <- data.frame(
@@ -129,16 +133,22 @@ grid_africa <- africa_countries_grid1
 shp_europe <- sf_mercator %>%
   filter(continent == "Europe")
 
-grid_europe <- grid_auto(shp_europe, 
-                         names = "country",
-                         codes = "iso_a2",
-                         seed = 1) %>% 
-  select(name = name_country, code = code_iso_a2, row, col)
+grid_europe <- data.frame(
+  name = c("Iceland", "Finland", "Norway", "Sweden", "Estonia", "Latvia", "Russian Federation", "Lithuania", "Poland", "Denmark", "Netherlands", "Belarus", "Belgium", "Ireland", "United Kingdom", "Germany", "Czech Republic", "Slovakia", "Ukraine", "Romania", "Hungary", "Austria", "France", "Luxembourg", "Switzerland", "Moldova", "Slovenia", "Italy", "Spain", "Portugal", "Croatia", "Serbia", "Bulgaria", "Montenegro", "Bosnia and Herzegovina", "Albania", "Macedonia", "Greece"),
+  code = c("IS", "FI", "NO", "SE", "EE", "LV", "RU", "LT", "PL", "DK", "NL", "BY", "BE", "IE", "GB", "DE", "CZ", "SK", "UA", "RO", "HU", "AT", "FR", "LU", "CH", "MD", "SI", "IT", "ES", "PT", "HR", "RS", "BG", "ME", "BA", "AL", "MK", "GR"),
+  row = c(1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 7, 7, 8, 8, 9),
+  col = c(1, 7, 5, 6, 10, 9, 11, 8, 6, 5, 4, 9, 4, 2, 3, 5, 6, 7, 9, 8, 7, 6, 3, 4, 5, 9, 6, 4, 2, 1, 7, 8, 9, 8, 7, 8, 7, 7),
+  stringsAsFactors = FALSE
+)
+
+# grid_europe <- grid_auto(shp_europe, 
+#                          names = "country",
+#                          codes = "iso_a2",
+#                          seed = 1) %>% 
+#   select(name = name_country, code = code_iso_a2, row, col)
 
 
-
-
-list_grid <- list(grid_south_central_america,
+list_grid <- list(grid_americas,
                   grid_asia,
                   grid_africa,
                   grid_europe)
@@ -146,14 +156,12 @@ list_grid <- list(grid_south_central_america,
 
 # Labels ----------------------------------------------
 
-vec_filter_names <- c("Americas",  "Asia", "Africa",  "Europe")
-
-vec_names <- c("South & Central America",
+vec_names <- c("Americas",
                "Asia",
                "Africa",
                "Europe")
 
-vec_names_path <- c("south_central_america",
+vec_names_path <- c("americas",
                     "asia",
                     "africa",
                     "europe")
@@ -164,25 +172,19 @@ vec_names_path <- c("south_central_america",
 
 prepare_continent_data <- function(data) {
   
-  dta_south_central_america <- data %>% 
-    filter(continent == "Americas",
-           region != "North America") %>% 
-    filter(country != "Mexico")
-  
-  
+  dta_america <- data %>% 
+    filter(continent == "Americas")
   
   dta_asia <- data %>% 
     filter(continent == "Asia" | country == "Russia")
   
-  
   dta_africa <- data %>% 
     filter(continent == "Africa")
-  
   
   dta_europe <- data %>% 
     filter(continent == "Europe")
   
-  list_data <- list(dta_south_central_america, 
+  list_data <- list(dta_america, 
                     dta_asia,
                     dta_africa,
                     dta_europe)
@@ -211,21 +213,18 @@ prepare_continent_data <- function(data) {
 # )
 
 
-
-
 # Plot JHU - 60 days ------------------------------------------------
 
-dta_60d <- tibble(filter_names = vec_filter_names,
-                  names_paths  = vec_names_path,
+dta_60d <- tibble(names_paths  = vec_names_path,
                   continent = vec_names,
-                  width     = c(12, 20, 12, 25),
-                  height    = c(10, 8, 10, 10),
+                  width     = c(13, 20, 12, 15),
+                  height    = c(13, 8, 10, 10),
                   data      = prepare_continent_data(dta_jhu %>% 
                                                        filter(date >= lubridate::today() - 30)),
                   grid      = list_grid) 
 
 
-pmap(dta_60d,
+pmap(dta_60d %>% filter(continent == "Europe"),
      geofacet_plot_all, 
      data_source = "JHU_60days",
      nb_days = "60d",
@@ -234,7 +233,6 @@ pmap(dta_60d,
 
 
 # Save data -------------------------------------------
-
 saveRDS(dta_60d,
         file.path(path.local.geofacet.data, paste0('geofacet_data', '_', week_report, '.RData')))
 
