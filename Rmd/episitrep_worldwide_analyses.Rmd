@@ -1907,29 +1907,42 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_doubling_grid', 
 ```{r map-deepdives, message=FALSE, results='asis'}
 continent_list <- list("Africa", "Americas", "Asia", "Europe")
 
-if(dir.exists(here(path.local.week.deepdive, "Africa"))) {
+if(dir.exists(here(path.local.week.deepdive, "Africa")) &
+   dir.exists(here(path.local.geofacet, "Europe"))) {
   
   cat('\n#', "Continent trends", '\n')
   
   for (i in continent_list) {
     
-    if(file.exists(here(path.local.week.deepdive, i, glue::glue("map_cases_trends_{week_report}.png")))) {
+    if(file.exists(here(path.local.week.deepdive, i,
+                        glue::glue("map_cases_trends_{week_report}.png")))) {
       
       cat('\n')
       cat('\n##', i, '\n')
       
-      path_i <- here(path.local.week.deepdive, i, glue::glue("map_cases_trends_{week_report}.png"))
       
-     
-    cat(paste0("![](", path_i, ")"), "\n")
+      cat(paste0("![](", 
+                 here(path.local.week.deepdive, i,
+                      glue::glue("map_cases_trends_{week_report}.png")), 
+                 ")"), "\n")
+      
+      cat(paste0("![](", 
+                 here(path.local.geofacet, i, 
+                    glue::glue('{i}_geofacet_cases_free_y_{week_report}_60d.png')), 
+                 ")"), "\n")
+      
+      cat(paste0("![](", 
+                 here(path.local.geofacet, i,
+                      glue::glue('{i}_geofacet_cases_fixed_{week_report}_60d.png')), 
+                 ")"), "\n")
       
       cat('\n')
       cat('\n')
     }
-    
   }
 }
 ```
+
 
 
 

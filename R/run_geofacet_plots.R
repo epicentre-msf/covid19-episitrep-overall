@@ -161,10 +161,10 @@ vec_names <- c("Americas",
                "Africa",
                "Europe")
 
-vec_names_path <- c("americas",
-                    "asia",
-                    "africa",
-                    "europe")
+vec_names_path <- c("Americas",
+                    "Asia",
+                    "Africa",
+                    "Europe")
 
 
 
@@ -224,7 +224,7 @@ dta_60d <- tibble(names_paths  = vec_names_path,
                   grid      = list_grid) 
 
 
-pmap(dta_60d %>% filter(continent == "Europe"),
+pmap(dta_60d,
      geofacet_plot_all, 
      data_source = "JHU_60days",
      nb_days = "60d",
