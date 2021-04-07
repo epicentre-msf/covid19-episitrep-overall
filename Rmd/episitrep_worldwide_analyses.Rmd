@@ -80,7 +80,6 @@ subtitle: "Data as of week `r glue::glue("{format(date_max_report, '%V')}, endin
 # === === === === === === === 
 
 dta_jhu <- get_owid_jhcsse()
-
 saveRDS(dta_jhu, file.path(path.local.worldwide.data, 'dta_jhu.RDS'))
 
 # JHU data right censored until date_max
@@ -1903,6 +1902,35 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_doubling_grid', 
        height = 3)
 
 ```
+
+
+```{r map-deepdives, message=FALSE, results='asis'}
+continent_list <- list("Africa", "Americas", "Asia", "Europe")
+
+if(dir.exists(here(path.local.week.deepdive, "Africa"))) {
+  
+  cat('\n#', "Continent trends", '\n')
+  
+  for (i in continent_list) {
+    
+    if(file.exists(here(path.local.week.deepdive, i, glue::glue("map_cases_trends_{week_report}.png")))) {
+      
+      cat('\n')
+      cat('\n##', i, '\n')
+      
+      path_i <- here(path.local.week.deepdive, i, glue::glue("map_cases_trends_{week_report}.png"))
+      
+     
+    cat(paste0("![](", path_i, ")"), "\n")
+      
+      cat('\n')
+      cat('\n')
+    }
+    
+  }
+}
+```
+
 
 
 <!-- Save results -->
