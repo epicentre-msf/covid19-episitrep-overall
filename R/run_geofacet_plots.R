@@ -45,6 +45,7 @@ if(!exists(path.local.geofacet)) {
 # Get & prepare data --------------------------------------------
 
 ## --- ECDC data
+# still needed to get country population data
 dta_ecdc <- covidutils::get_ecdc_data() %>%
   prepare_ecdc_geodata_geofacet() %>%
   filter(between(date, left = date_min_report, right = date_max_report)) %>%
@@ -66,6 +67,7 @@ dta_ecdc <- covidutils::get_ecdc_data() %>%
 
 
 ## --- JHU data
+# For case and death data
 dta_jhu  <- get_owid_jhcsse() %>% 
   prepare_jhu_geodata_geofacet() %>% 
   # filter(between(date, left = NULL, right = date_max_report)) %>% 
@@ -100,12 +102,6 @@ sf_mercator <- rnaturalearth::ne_countries(type = "countries",
 
 # Generate grids --------------------------------------
 
-
-# Amériques
-shp_americas <- sf_mercator %>%
-  filter(continent == "Americas")
-
-
 grid_americas <- data.frame(
   name = c("Canada", "Bahamas", "Puerto Rico", "United States", "Dom. Rep.", "Haiti", "Cuba", "Mexico", "Jamaica", "Belize", "Guatemala", "Honduras", "El Salvador", "Nicaragua", "Costa Rica", "Panama", "Trinid. Tob.", "Venezuela", "Colombia", "Guyana", "Suriname", "Ecuador", "Brazil", "Peru", "Bolivia", "Paraguay", "Chile", "Uruguay", "Argentina", "Falkland Isl."),
   code = c("CA", "BS", "PR", "US", "DO", "HT", "CU", "MX", "JM", "BZ", "GT", "HN", "SV", "NI", "CR", "PA", "TT", "VE", "CO", "GY", "SR", "EC", "BR", "PE", "BO", "PY", "CL", "UY", "AR", "FK"),
@@ -130,9 +126,6 @@ grid_africa <- africa_countries_grid1
 
 
 # Europe
-shp_europe <- sf_mercator %>%
-  filter(continent == "Europe")
-
 grid_europe <- data.frame(
   name = c("Iceland", "Finland", "Norway", "Sweden", "Estonia", "Latvia", "Russian Federation", "Lithuania", "Poland", "Denmark", "Netherlands", "Belarus", "Belgium", "Ireland", "United Kingdom", "Germany", "Czech Republic", "Slovakia", "Ukraine", "Romania", "Hungary", "Austria", "France", "Luxembourg", "Switzerland", "Moldova", "Slovenia", "Italy", "Spain", "Portugal", "Croatia", "Serbia", "Bulgaria", "Montenegro", "Bosnia and Herzegovina", "Albania", "Macedonia", "Greece"),
   code = c("IS", "FI", "NO", "SE", "EE", "LV", "RU", "LT", "PL", "DK", "NL", "BY", "BE", "IE", "GB", "DE", "CZ", "SK", "UA", "RO", "HU", "AT", "FR", "LU", "CH", "MD", "SI", "IT", "ES", "PT", "HR", "RS", "BG", "ME", "BA", "AL", "MK", "GR"),
@@ -141,13 +134,8 @@ grid_europe <- data.frame(
   stringsAsFactors = FALSE
 )
 
-# grid_europe <- grid_auto(shp_europe, 
-#                          names = "country",
-#                          codes = "iso_a2",
-#                          seed = 1) %>% 
-#   select(name = name_country, code = code_iso_a2, row, col)
 
-
+# Gather grids in list
 list_grid <- list(grid_americas,
                   grid_asia,
                   grid_africa,
@@ -156,20 +144,20 @@ list_grid <- list(grid_americas,
 
 # Labels ----------------------------------------------
 
+# To use in figure titles
 vec_names <- c("Americas",
                "Asia",
                "Africa",
                "Europe")
 
+# To use in file names
 vec_names_path <- c("Americas",
                     "Asia",
                     "Africa",
                     "Europe")
 
 
-
 # Continent data ---------------------------------------
-
 prepare_continent_data <- function(data) {
   
   dta_america <- data %>% 
@@ -196,6 +184,27 @@ prepare_continent_data <- function(data) {
 
 
 
+
+# Plot JHU - 60 days ------------------------------------------------
+
+# Gather everything in a dataframe
+dta_60d <- tibble(names_paths  = vec_names_path,
+                  continent = vec_names,
+                  width     = c(13, 20, 12, 15),
+                  height    = c(13, 8, 10, 10),
+                  data      = prepare_continent_data(dta_jhu %>% 
+                                                       filter(date >= lubridate::today() - 30)),
+                  grid      = list_grid) 
+
+
+# Make all plot
+purrr::pmap(dta_60d,              # data
+     geofacet_plot_all,    # function
+     data_source = "JHU_60days",   # function options...
+     nb_days = "60d",
+     colour_raw = "#f04042")
+
+
 # Plot JHU - all -------------------------------------------
 
 # Data since the begining
@@ -211,24 +220,6 @@ prepare_continent_data <- function(data) {
 #      data_source = "JHU",
 #      colour_raw = "#f04042"
 # )
-
-
-# Plot JHU - 60 days ------------------------------------------------
-
-dta_60d <- tibble(names_paths  = vec_names_path,
-                  continent = vec_names,
-                  width     = c(13, 20, 12, 15),
-                  height    = c(13, 8, 10, 10),
-                  data      = prepare_continent_data(dta_jhu %>% 
-                                                       filter(date >= lubridate::today() - 30)),
-                  grid      = list_grid) 
-
-
-pmap(dta_60d,
-     geofacet_plot_all, 
-     data_source = "JHU_60days",
-     nb_days = "60d",
-     colour_raw = "#f04042")
 
 
 
