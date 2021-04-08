@@ -49,6 +49,7 @@ source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
 dates_and_week <- set_date_frame(create_folders = TRUE)
 
 date_min_report <- dates_and_week[[1]]
+date_min_report <- as.Date("2020-01-22")
 date_max_report <- dates_and_week[[2]]
 week_report     <- dates_and_week[[3]]
 
@@ -79,13 +80,12 @@ subtitle: "Data as of week `r glue::glue("{format(date_max_report, '%V')}, endin
 # === === === === === === === 
 
 dta_jhu <- get_owid_jhcsse()
-
 saveRDS(dta_jhu, file.path(path.local.worldwide.data, 'dta_jhu.RDS'))
 
 # JHU data right censored until date_max
 dta_jhu_right_censored <- dta_jhu %>% 
   tidyr::drop_na(iso_a3) %>% 
-  filter(between(date, left = NULL, right = date_max_report))
+  filter(between(date, left = date_min_report, right = date_max_report))
 
 # JHU split data in a list of countries with iso_a3 as key
 lst_dta_jhu <- dta_jhu_right_censored %>% 
@@ -1192,7 +1192,7 @@ scatter_plot_inc_Asia <- scatter_plot_inc(tbl_inc_prop_all_and_30d %>% filter(co
 
 
 ggsave(file.path(path.local.worldwide.graphs, paste0('scatter_plot_inc_Asia_30-days', '_', week_report, '.png')), 
-         plot = scatter_plot_inc_Africa + labs(title = NULL), 
+         plot = scatter_plot_inc_Asia + labs(title = NULL), 
          width = 15 * cm_to_in, 
          height = 15 * cm_to_in, 
          scale = 1, 
@@ -1309,8 +1309,8 @@ tbl_doubling <- tbl_case_doubling_time %>%
   rename(cases_est = est, cases_lwr = lwr, cases_upr = upr) %>% 
 
   full_join(tbl_death_doubling_time %>% 
-  filter(!is.na(country)) %>% 
-  rename(deaths_est = est, deaths_lwr = lwr, deaths_upr = upr)) %>% 
+              filter(!is.na(country)) %>% 
+              rename(deaths_est = est, deaths_lwr = lwr, deaths_upr = upr)) %>% 
   right_join(full_join(tbl_case_increasing_trend %>% select(iso_a3, trend_cases = trend), 
                        tbl_death_increasing_trend %>% select(iso_a3, trend_deaths = trend)))
 
@@ -1904,6 +1904,52 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_doubling_grid', 
 ```
 
 
+```{r map-deepdives, message=FALSE, results='asis'}
+continent_list <- list("Africa", "Americas", "Asia", "Europe")
+
+if(dir.exists(here(path.local.week.deepdive, "Africa"))) {
+  
+  cat('\n#', "Continent cases trends", '\n')
+  
+  for (i in continent_list) {
+    
+    if(file.exists(here(path.local.week.deepdive, i,
+                        glue::glue("map_cases_trends_{week_report}.png")))) {
+      
+      cat('\n')
+      cat('\n##', i, '\n')
+      
+      
+      cat(paste0("![](", 
+                 here(path.local.week.deepdive, i,
+                      glue::glue("map_cases_trends_{week_report}.png")), 
+                 ")"), "\n")
+      
+            cat(paste0("![](", 
+                 here(path.local.week.deepdive, i,
+                      glue::glue("preds_{week_report}.png")), 
+                 ")"), "\n")
+      
+      # cat(paste0("![](", 
+      #            here(path.local.geofacet, i, 
+      #               glue::glue('{i}_geofacet_cases_free_y_{week_report}_60d.png')), 
+      #            ")"), "\n")
+      # 
+      # cat(paste0("![](", 
+      #            here(path.local.geofacet, i,
+      #                 glue::glue('{i}_geofacet_cases_fixed_{week_report}_60d.png')), 
+      #            ")"), "\n")
+      
+      cat('\n')
+      cat('\n')
+    }
+  }
+}
+```
+
+
+
+
 <!-- Save results -->
 ```{r save-results, include = FALSE}
 
@@ -1911,3 +1957,4 @@ rm(list = lsf.str())
 save.image(file.path(path.local.worldwide.data, paste0('episitrep_worldwide_analyses', '_', week_report, '.RData')))
 
 ```
+

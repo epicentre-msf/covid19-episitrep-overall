@@ -1,6 +1,12 @@
 
 rm(list = ls())
 
+# If problems using renv to restore session
+# renv::install("officer", repos='http://cran.rstudio.com/')
+# install.packages("whatever", dependencies = TRUE, repos = 'http://cran.rstudio.com/')
+
+
+
 
 # Load packages -----
 library(here)

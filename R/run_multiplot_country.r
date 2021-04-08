@@ -81,7 +81,13 @@ lst_coeffs_deaths <- trend_models$lst_coeffs_deaths
 
 # To filter which countries to plot 
 country_list <- df_countries %>% 
-  filter(iso_a3 != "HKG") %>% 
+  filter(iso_a3 != "HKG",
+         iso_a3 != "FSM",
+         iso_a3 != "MHL",
+         iso_a3 != "TJK",
+         iso_a3 != "TZA",
+         iso_a3 != "VAT",
+         iso_a3 != "VUT") %>% 
   arrange(iso_a3)
 
 # Loop of plots
@@ -89,7 +95,8 @@ for (i in country_list$iso_a3){
   
   name_country <- country_list %>% 
     filter(iso_a3 == i) %>%
-    pull(country) %>% gsub(" ", "_", .)
+    pull(country) %>% gsub(" ", "_", .) %>% gsub("_\\(country\\)", "", .)
+    
   
   print(paste(i, name_country))
 

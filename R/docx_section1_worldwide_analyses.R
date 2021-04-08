@@ -1,6 +1,11 @@
+if (Sys.getlocale(category = "LC_TIME") == "French_France.1252") {
+  Sys.setlocale(category = "LC_TIME", locale = "English_United Kingdom.1252")
+  Sys.setenv(LANG = "en_GB.UTF-8") 
+}
+
 
 # --- --- --- --- --- --- --- 
-# I. Worldwide analysis
+# I. Worldwide analysis ------------------------------------
 # --- --- --- --- --- --- --- 
 
 # Heading 1
@@ -10,19 +15,18 @@ my_doc <- add_heading1(heading_text = 'Worldwide analysis')
 
 
 # --- --- --- --- --- --- --- 
-# COUNT CASES
+# COUNT CASES ---------------
 # --- --- --- --- --- --- --- 
 
 ## - Heading 2
-my_doc <- add_heading2(heading_text = 'Number and trends of Covid-19 cases') 
-
-
+my_doc <- add_heading2(heading_text = 'Number and trends of Covid-19 cases')
 my_doc <- add_end_section_continuous()
 
 
 ## - Text 
 # --- --- --- --- --- --- --- 
-# 1
+
+## Total cases and deaths worldwide
 my_doc <- add_par_normal(
   sprintf("As of the %s, %s Covid-19 cases and %s Covid-19 associated deaths were reported worldwide. The number of cases and deaths in the last %s days were %s and %s respectively.", 
           format(max(dta_jhu$date), "%d %B %Y"), 
@@ -31,6 +35,7 @@ my_doc <- add_par_normal(
           period_trend, 
           n_cases_12d, 
           n_deaths_12d))
+
 
 # 2
 #my_doc <- add_par_normal(
@@ -42,8 +47,9 @@ my_doc <- add_par_normal(
 #          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(1000, Inf, "cases") %>% length() %>% Words(), 
 #          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(1000, Inf, "cases") %>% combine_words()))
 
-# 3
 
+
+## Number of countries with increasing trend (12 days)
 my_doc <- add_par_normal(
   sprintf('%s countries reported an increasing trend (compared to XXX last month) (Figure 1) (see ', 
   call_countries_increasing('cases') %>% length() %>% Words())) %>% 
@@ -53,27 +59,10 @@ my_doc <- add_par_normal(
                hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/addtional_episitrep_outputs_worldwide/") %>%
   
   slip_in_text(style = 'Normal char',
-               str = '). Trends calculated on the last 30 days are available in the full worldwide analysis report.')
+               str = '). Trends calculated on the last 30 days are available in the full worldwide analysis report (see html report).')
   
 
 my_doc <- add_end_section_2columns()
-
-# 4
-my_doc <- add_par_normal(
-  sprintf('%s countries had an increasing trend in Africa (%s), %s countries in Asia (%s), %s countries in the Americas (%s), %s countries in Europe (%s).', 
-  call_countries_increasing("cases", "Africa") %>% length() %>% Words(), 
-  call_countries_increasing("cases", "Africa") %>% combine_words(), 
-  call_countries_increasing("cases", "Asia") %>% length(), 
-  call_countries_increasing("cases", "Asia") %>% combine_words(), 
-  call_countries_increasing("cases", "Americas") %>% length(), 
-  call_countries_increasing("cases", "Americas") %>% combine_words(),
-  call_countries_increasing("cases", "Europe") %>% length(), 
-  call_countries_increasing("cases", "Europe") %>% combine_words()))
-
-
-
-my_doc <- add_end_section_2columns()
-
 
 
 
@@ -86,11 +75,45 @@ my_doc <- add_end_section_continuous()
 
 
 
-# 5 - Incidence
+## Number of countries with increasing trend per continent (12 days)
+my_doc <- add_par_normal(
+  sprintf('%s countries had an increasing trend in Africa (%s), %s countries in Asia (%s), %s countries in the Americas (%s), %s countries in Europe (%s).', 
+  call_countries_increasing("cases", "Africa") %>% length() %>% Words(), 
+  call_countries_increasing("cases", "Africa") %>% combine_words(), 
+  call_countries_increasing("cases", "Asia") %>% length(), 
+  call_countries_increasing("cases", "Asia") %>% combine_words(), 
+  call_countries_increasing("cases", "Americas") %>% length(), 
+  call_countries_increasing("cases", "Americas") %>% combine_words(),
+  call_countries_increasing("cases", "Europe") %>% length(), 
+  call_countries_increasing("cases", "Europe") %>% combine_words()))
+
+
+# Countries with increasing trend in the 12 last days, and more
+#  than 10 000 cases within the 12 last days. 
+#  World + Africa
+my_doc <- add_par_normal(
+  sprintf("%s reported increasing trend while notifying over 10,000 cases in the last 12 days.
+          In Africa, %s reported increasing trend and more than 1,000 cases.", 
+          tbl_countries_increasing_cases %>% 
+            filter(trend == "Increasing", cases_12d >= 10000) %>% 
+            arrange(desc(coeff)) %>% pull(country) %>% combine_words(),
+          tbl_countries_increasing_cases %>% 
+            filter(trend == "Increasing", cases_12d >= 1000, continent == "Africa") %>% 
+            arrange(desc(coeff)) %>% pull(country) %>% combine_words()))
+
+
+# Cumulative incidence worldwide
 my_doc <- add_par_normal(
   sprintf("Since the beginning of the epidemic, countries presenting the highest cumulative incidences are in North and South America, Europe, and Middle East (Figure 2)."))
 
+my_doc <- add_end_section_2columns()
 
+
+
+## Country reaching incidence thresholds for cases within last month
+## Thresshold 10 00 or 100 000
+
+# Situation 30 days ago
 tbl_inc_cum_30d_ago <- dta_jhu %>% 
   group_by(iso_a3, country, continent, region) %>% 
   arrange(date) %>% 
@@ -103,18 +126,20 @@ tbl_inc_cum_30d_ago <- dta_jhu %>%
   mutate(
     cases_ip_before = cases / pop * 100000)
 
-
-country_over1000_30d <- select(tbl_inc_prop, iso_a3 : country, case_ip_now = cases_ip) %>% 
-  left_join(select(tbl_inc_cum_30d_ago, iso_a3, cases_ip_before)) %>% 
+country_over1000_cases_30d <- tbl_inc_prop %>% 
+  select(iso_a3, case_ip_now = cases_ip) %>% 
+  left_join(select(tbl_inc_cum_30d_ago, iso_a3, cases_ip_before), 
+            by = "iso_a3") %>% 
   filter(cases_ip_before < 1000,
          case_ip_now >= 1000) 
  
 
 my_doc <- add_par_normal(
   sprintf("During the last month, %s reached the threshold of 1,000 confirmed cases per 100,000 population (1%%).", 
-          country_over1000_30d %>% pull(country) %>% combine_words()
+          country_over1000_cases_30d %>% pull(country) %>% combine_words()
           )
   )
+
 
 
 ## - Map Case Incidence
@@ -125,13 +150,13 @@ my_doc <- add_figure_map_world(
   height = 4.5 * cm_to_in
   )
 
-
 my_doc <- add_end_section_2columns(widths = c(7 * cm_to_in, 10 * cm_to_in))
 
 
 
+
 # --- --- --- --- --- --- --- 
-# COUNT DEATHS
+# COUNT DEATHS ---------
 # --- --- --- --- --- --- --- 
 
 ## - Heading 
@@ -142,14 +167,82 @@ my_doc <- add_end_section_continuous()
 
 ## - Text
 # --- --- --- --- --- --- --- 
-# 1
-my_doc <- add_par_normal(
-  sprintf("Countries that reported the highest numbers of Covid-19 associated deaths are the USA, Brazil, India, Mexico as well as some countries in Europe, South America and Middle-East. XXX_NAME_OF_THE_COUNTRIES crossed the 10,000 Covid19 associated deaths mark in the last four weeks (Figure 3 - Deaths count)."))
 
-# 2
+## Cumulative deaths (general)
 my_doc <- add_par_normal(
-  sprintf("%s countries reported an increasing trend in death compared to XXX four weeks ago (Figure 3 – Trends in deaths).", 
+sprintf("Countries that reported the highest numbers of Covid-19 associated deaths are the USA, Brazil, India, Mexico as well as some countries in Europe, South America and Middle-East."))
+
+
+
+## Countries crossing cumulative death threshold in last month
+## Threshold 10 000 and 100 000.
+
+# Situation 30 days ago (cumulative deaths per country)
+deaths_30d_ago <- dta_jhu %>% 
+  group_by(iso_a3, country, continent, region) %>% 
+  arrange(date) %>% 
+  filter(between(date, 
+                 left = date_min_report,
+                 right = date_max_report - 29)) %>% 
+  summarise(cum_deaths_30d_ago = sum(deaths, na.rm = TRUE)) 
+
+
+tbl_death_count_thresholds <- tbl_death_count %>% 
+  select(iso_a3, cum_deaths_today = deaths) %>% 
+  left_join(deaths_30d_ago, by = "iso_a3") %>% 
+  mutate(
+    threshold_10000 = case_when(
+      cum_deaths_30d_ago < 10000 & cum_deaths_today > 10000 ~ TRUE,
+      TRUE ~ FALSE),
+    threshold_100000 = case_when(
+      cum_deaths_30d_ago < 100000 & cum_deaths_today > 100000 ~ TRUE,
+      TRUE ~ FALSE)
+  )
+
+
+list_countries_100000 <- tbl_death_count_thresholds %>% 
+  filter(threshold_100000) %>% pull(country) 
+
+list_countries_100000 <- ifelse(length(list_countries_100000) == 0, 
+                                "no country", 
+                                combine_words(list_countries_100000))
+
+list_countries_10000 <- tbl_death_count_thresholds %>% 
+  filter(threshold_10000) %>% pull(country) 
+
+list_countries_10000 <- ifelse(length(list_countries_10000) == 0, 
+                               "no country", 
+                               combine_words(list_countries_10000))
+
+
+my_doc <- add_par_normal(
+  sprintf("In the past month, %s crossed the 100,000 Covid19 associated deaths mark, and %s crossed the 10,000 death mark (Figure 3 - Deaths count).",
+          list_countries_100000,
+          list_countries_10000))
+
+
+## Number of countries with increasing death trend
+my_doc <- add_par_normal(
+  sprintf("%s countries reported an increasing trend in death compared to four weeks ago (Figure 3 – Trends in deaths).", 
   length(call_countries_increasing('deaths')) %>% Words()))
+
+
+
+## Countries with increasing trend and more than 1000 deaths in last 12 days
+list_country_deaths_10000 <- tbl_countries_increasing_deaths %>% 
+  filter(trend == "Increasing", deaths_12d >= 10000) %>% 
+  arrange(desc(coeff)) %>% pull(country)
+
+list_country_deaths_10000 <- ifelse(length(list_country_deaths_10000) == 0, 
+                                    "No country", 
+                                    combine_words(list_country_deaths_10000))
+
+add_par_normal(
+  sprintf("%s reported an increasing trend in deaths while notifying more than 1,000 deaths in the last 12 days.", 
+          list_country_deaths_10000))
+
+
+
 
 # 3
 my_doc <- my_doc %<>% 
@@ -164,7 +257,7 @@ my_doc <- my_doc %<>%
 my_doc <- add_end_section_2columns()
 
 
-## - Map
+## - Map trend in deaths
 my_doc <- add_figure_map_world_grid(
   object_name  = glue('map_world_death_count_trend_grid_{week_report}.png'), 
   figure_title = glue('Mapping of Covid-19 associated deaths counts and trends, period from {format(date_max_report - (period_trend - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} (12 days)'))
@@ -173,16 +266,13 @@ my_doc <- add_figure_map_world_grid(
 
 
 # --- --- --- --- --- --- --- 
-# DOUBLING TIME 
+# DOUBLING TIME -----------------
 # --- --- --- --- --- --- --- 
 
 ## - Heading
 my_doc <- add_heading2(heading_text = 'Doubling time in cases and deaths') 
 my_doc <- add_end_section_continuous()
 
-## - Text
-# --- --- --- --- --- --- --- 
-# 1
 
 #my_doc <- my_doc %<>% 
 #  body_add_par(style = 'Normal', 
@@ -206,10 +296,10 @@ my_doc <- my_doc %<>%
 
 
 my_doc <- add_par_normal(
-  sprintf("As a result, a sharp increasing of cases (doubling time of less than 12 days) is observed in %s countries this week, compared to XXX four weeks ago (Figure 4 and Table 1).", 
+  sprintf("As a result, a sharp increase of cases (doubling time of less than 12 days) is observed in %s countries this week, compared to XXX a month ago (Figure 4 and Table 1).", 
           length(call_countries_doubling('cases_est'))))
 
-# 2
+## Countries with doubling time in cases
 my_doc <- add_par_normal(
   sprintf("This week %s reported a doubling time in cases of less than 8 days. The other countries with a doubling time in cases of less than 12 days are %s.",
           combine_words(call_countries_doubling('cases_est', threshold = 8)), 
@@ -226,7 +316,7 @@ my_doc <- add_end_section_2columns()
 
 
 
-## - Map
+## - Map doubling time cases and deaths
 my_doc <- add_figure_map_world_grid(
   object_name  = glue('map_world_doubling_grid_{week_report}.png'),
   figure_title = glue("Doubling time of cases and associated deaths estimated in the last {period_trend} days (only countries with increasing trends are displayed)"),
@@ -236,7 +326,7 @@ my_doc <- add_figure_map_world_grid(
 # my_doc <- add_par_normal('')
 
 
-## - Table
+## - Table countries with doubling time < 12 days
 my_doc <- add_table(
   object_name = glue("gtbl_cfr_doubling_rank_{week_report}.png"), 
   table_title = glue("Countries with estimated doubling time of cases or deaths of less than {threshold_doubling_time} days"), 
@@ -245,6 +335,10 @@ my_doc <- add_table(
   height = 13.5 * cm_to_in)
 
 my_doc <- add_end_section_continuous()
+
+
+
+
 
 # 5
 #my_doc <- add_par_normal(

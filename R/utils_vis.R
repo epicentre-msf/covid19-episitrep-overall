@@ -127,7 +127,7 @@ call_countries_doubling <- function(est, continent_name = NULL,
     selected_tbl <- tbl_dta
   }
   
-  selected_tbl <- filter(selected_tbl, !!est < threshold)
+  selected_tbl <- filter(selected_tbl, !!est < threshold, !!est >= 0)
   selected_tbl <- arrange(selected_tbl, desc(!!est))
   
   called_countries <- pull(selected_tbl, 'country')
@@ -205,8 +205,11 @@ plot_map_world_count <- function(tbl_dta, series){
 
 
 
-plot_map_world_trend <- function(tbl_dta, series, model_for_trends = 'linear', plot_palette = RdAmGn){
-  
+plot_map_world_trend <- function(tbl_dta, 
+                                 series, 
+                                 model_for_trends = 'linear', 
+                                 plot_palette = RdAmGn){
+  # continent = NULL
   RdAmGn <- c('#D95F02', '#E6AB02', '#1B9E77') # Three-colours palette (Red-Amber-Green) colour-blind safe
   
   legend_title <- switch(series, 
@@ -219,37 +222,87 @@ plot_map_world_trend <- function(tbl_dta, series, model_for_trends = 'linear', p
   
   series <- sym(series)
   
+  # if(!is.null(continent)) {
+  #   # Define lims
+  #   xlim_continent <- switch(continent,
+  #                            "Africa"   = c(-25, 60),
+  #                            "Europe"   = c(-30, 80),
+  #                            "Americas" = c(-160, -30),
+  #                            "Asia"     = c(20, 170))
+  # 
+  #   ylim_continent <- switch(continent,
+  #                            "Africa"   = c(-35, 40),
+  #                            "Europe"   = c(28, 73),
+  #                            "Americas" = c(-70, 90),
+  #                            "Asia"     = c(-20, 90))
+  # }
+  
+  
   sf_dta <- tbl_dta %>% 
-    select(c(iso_a3 : !!series), all_of(vars_trends(model_for_trends))) %>% 
+    select(c(iso_a3 : !!series), all_of(vars_trends(model_for_trend))) %>% 
     inner_join(
       select(sf_world, iso_a3),
       by = "iso_a3"
     ) %>% 
     st_as_sf()
   
+  # if(!is.null(continent)) {
+  #   sf_dta <- sf_dta %>% filter(continent == continent)
+  # }
+  
+  
   labels <- sf_dta %>% as_tibble() %>% pull(trend) %>% levels()
   
   plot_map <- ggplot(sf_dta) + 
-    geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
-    coord_sf(datum = NA) +
+      geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
+      coord_sf(datum = NA) +
     scale_x_continuous(expand = c(0, 0)) +
-    scale_y_continuous(expand = c(0, 0)) +
-    scale_fill_manual(
-      name = legend_title, 
-      values = plot_palette, 
-      drop = FALSE, 
-      guide = guide_legend(
-        keyheight = unit(3, units = "mm"),
-        keywidth = unit(50 / length(labels), units = "mm"),
-        title.hjust = 0.5,
-        nrow = 1,
-        label.position = "bottom",
-        title.position = 'top')) +
-    labs(title = plot_title, caption = caption_world_map) +
-    theme_minimal() +
-    theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom",
-          plot.margin = margin(0, 0, 0, 0, "pt"))
-  
+      scale_y_continuous(expand = c(0, 0)) +
+      scale_fill_manual(
+        name = legend_title, 
+        values = plot_palette, 
+        drop = FALSE, 
+        guide = guide_legend(
+          keyheight = unit(3, units = "mm"),
+          keywidth = unit(50 / length(labels), units = "mm"),
+          title.hjust = 0.5,
+          nrow = 1,
+          label.position = "bottom",
+          title.position = 'top')) +
+      labs(title = plot_title, caption = caption_world_map) +
+      theme_minimal() +
+      theme(plot.title = element_text(hjust = 0.5), 
+            legend.position = "bottom",
+            plot.margin = margin(0, 0, 0, 0, "pt"))
+
+    # plot_map 
+    # ggplot(sf_dta) + 
+    #   geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
+    #   scale_fill_manual(
+    #     name = NULL, 
+    #     values = RdAmGn, 
+    #     drop = FALSE, 
+    #     guide = guide_legend(
+    #       keyheight = unit(3, units = "mm"),
+    #       keywidth = unit(70 / length(labels), units = "mm"),
+    #       title.hjust = 0.5,
+    #       nrow = 1,
+    #       label.position = "bottom",
+    #       title.position = 'top')) + 
+    #   coord_sf(
+    #     crs = 3395,
+    #     xlim = xlim_continent, 
+    #     ylim = ylim_continent, 
+    #     expand = FALSE,
+    #     # datum = NA
+    #     ) + 
+    #   labs(title = 'Last 30 days') + 
+    #   theme_light() +
+    #   theme(plot.title = element_text(hjust = 0.5), 
+    #         axis.text.x = element_blank(), 
+    #         axis.text.y = element_blank(), 
+    #         legend.position = "bottom")
+       
   return(plot_map)
   
 }
@@ -1180,8 +1233,8 @@ geofacet_plot <- function(data,
     theme_bw() + 
     ylab("") + 
     scale_x_date("", 
-                 date_breaks = "2 months", 
-                 date_labels = "%b") + 
+                 date_breaks = "1 week", 
+                 date_labels = "%W") + 
     theme(strip.text.x = element_text(size = label_size,
                                       face = "bold"), 
           axis.text.x = element_text(angle = angle, 
@@ -1203,10 +1256,10 @@ geofacet_plot_wide <- function(data,
                                continent = "",
                                grid   = "africa_countries_grid1",
                                scales = "fixed", 
-                               angle  = 45,
+                               angle  = 0,
                                label_size = 7,
-                               data_source = "ECDC",
-                               colour_raw  = "back",
+                               data_source = "JHU",
+                               colour_raw  = "black",
                                colour_ma   = "#f04042",
                                mov_av = FALSE) {
   
@@ -1253,8 +1306,8 @@ geofacet_plot_wide <- function(data,
     theme_bw() + 
     ylab("") + 
     scale_x_date("", 
-                 date_breaks = "2 months", 
-                 date_labels = "%b") + 
+                 date_breaks = "1 week", 
+                 date_labels = "%W") + 
     theme(strip.text.x = element_text(size = label_size,
                                       face = "bold"), 
           axis.text.x = element_text(angle = angle, 
@@ -1308,12 +1361,17 @@ geofacet_plot_all <- function(data,
                               height = 10,
                               label_size = 7,
                               data_source = "JHU",
+                              nb_days     = "60d",
                               colour_raw  = "steelblue",
                               colour_ma   = "black",
                               mov_av      = TRUE){
   
   my_count   <- c("cases", "deaths", "cases_per_100000", "deaths_per_million")
   my_scales  <- c("free_y", "fixed")
+
+  # my_count   <- c("cases")
+  # my_scales  <- c("free_y", "fixed")
+  
   conditions <- tidyr::crossing(my_count, my_scales)
   
   purrr::map2(.x = conditions$my_count,
@@ -1331,8 +1389,8 @@ geofacet_plot_all <- function(data,
                                    colour_ma   = colour_ma,
                                    mov_av      = mov_av)  %>% 
                   
-                  ggsave(file = file.path(path.local.geofacet,
-                                          glue::glue('{names_paths}_geofacet_{.x}_{.y}_{week_report}.png')),
+                  ggsave(file = file.path(path.local.geofacet, continent,
+                                          glue::glue('{names_paths}_geofacet_{.x}_{.y}_{week_report}_{nb_days}.png')),
                          width  = width, 
                          height = height)
               }

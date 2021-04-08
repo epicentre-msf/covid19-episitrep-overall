@@ -35,10 +35,10 @@ set_date_frame <- function(date_min = NULL, date_max = NULL, week_suffix = NULL,
   path.local.msf.graphs <<- file.path(path.local.msf, 'graphs')
   path.local.msf.tables <<- file.path(path.local.msf, 'tables')
 
-  path.local.week.oc    <<- file.path(path.local.week, "oc")
-  path.local.week.deepdive <<- file.path(path.local.worldwide.graphs, "deepdive")
-
-
+  path.local.week.oc       <<- file.path(path.local.week, "oc")
+  path.local.week.deepdive <<- file.path(path.local.week, "deepdive")
+  path.local.geofacet      <<- file.path(path.local.week, 'geofacet_plots')
+  
   # path.local.msf.oc        <<- file.path(path.local.week.oc, 'msf')
   # path.local.msf.data.oc   <<- file.path(path.local.week.oc, 'data')
   # path.local.msf.graphs.oc <<- file.path(path.local.week.oc, 'graphs')
@@ -59,6 +59,7 @@ set_date_frame <- function(date_min = NULL, date_max = NULL, week_suffix = NULL,
 
     dir.create(path.local.week.oc,       showWarnings = FALSE, recursive = TRUE)
     dir.create(path.local.week.deepdive, showWarnings = FALSE, recursive = TRUE)
+    dir.create(path.local.geofacet, showWarnings = FALSE, recursive = TRUE)
     # dir.create(path.local.msf.oc,        showWarnings = FALSE, recursive = TRUE)
     # dir.create(path.local.msf.data.oc,   showWarnings = FALSE, recursive = TRUE)
     # dir.create(path.local.msf.graphs.oc, showWarnings = FALSE, recursive = TRUE)
@@ -372,7 +373,7 @@ prepare_msf_dta_comcond <- function(dta){
     select(continent, ind_MSF_covid_status, ind_outcome_patcourse_status,
            starts_with('Comcond_'), ind_MSF_hiv_status, ind_MSF_hypertension,
            ind_MSF_tb_active, ind_MSF_malaria, ind_MSF_malnutrition,
-           ind_MSF_smoking, ind_Comcond_count, ind_Comcond_01) %>%
+           ind_MSF_smoking, ind_Comcond_count, ind_Comcond_01, merge_admit) %>%
     select(-c(Comcond_present, Comcond_pregt))
 
   return(dta)
