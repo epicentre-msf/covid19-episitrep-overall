@@ -100,7 +100,7 @@ sf_mercator <- rnaturalearth::ne_countries(type = "countries",
 
 
 
-# Generate grids --------------------------------------
+# Define grids --------------------------------------
 
 grid_americas <- data.frame(
   name = c("Canada", "Bahamas", "Puerto Rico", "United States", "Dom. Rep.", "Haiti", "Cuba", "Mexico", "Jamaica", "Belize", "Guatemala", "Honduras", "El Salvador", "Nicaragua", "Costa Rica", "Panama", "Trinid. Tob.", "Venezuela", "Colombia", "Guyana", "Suriname", "Ecuador", "Brazil", "Peru", "Bolivia", "Paraguay", "Chile", "Uruguay", "Argentina", "Falkland Isl."),
@@ -197,7 +197,7 @@ dta_60d <- tibble(names_paths  = vec_names_path,
                   grid      = list_grid) 
 
 
-# Make all plot
+# Make all plots
 purrr::pmap(dta_60d,              # data
      geofacet_plot_all,    # function
      data_source = "JHU_60days",   # function options...

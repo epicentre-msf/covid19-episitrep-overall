@@ -229,15 +229,15 @@ ggsave(file.path(path.local.msf.graphs.oc.extras, paste0('pyramid_age_sex_all_co
 
 # Sur le dernier mois
 missing_age_sex_last_month <- DATA %>%
-  filter(MSF_date_consultation >= as.Date("2021-01-23"),
-         MSF_date_consultation <= as.Date("2021-02-23")) %>% 
+  filter(MSF_date_consultation >= lubridate::today() - 30,
+         MSF_date_consultation <= lubridate::today()) %>% 
   summarise(age = sum(is.na(age_in_years)), 
             patinfo_sex = sum(is.na(patinfo_sex)))
 
 
 tbl_pyramid_continent_last_month <- DATA %>%
-  filter(MSF_date_consultation >= as.Date("2021-01-23"),
-         MSF_date_consultation <= as.Date("2021-02-23")) %>% 
+  filter(MSF_date_consultation >= lubridate::today() - 30,
+         MSF_date_consultation <= lubridate::today()) %>% 
   drop_na(patinfo_sex, age_in_years) %>%
   count(patinfo_sex, age_9gp) %>%
   mutate(n = if_else(patinfo_sex == "M", -n, n))
@@ -678,8 +678,8 @@ gtsave(gtbl_cfr_severity_continent_F,
 # Sur le dernier mois
 
 dta_cfr_severity_last_month <- DATA %>%
-  filter(MSF_date_consultation >= as.Date("2021-01-23"),
-         MSF_date_consultation <= as.Date("2021-02-23")) %>% 
+  filter(MSF_date_consultation >= lubridate::today() - 30,
+         MSF_date_consultation <= lubridate::today()) %>% 
   select(continent, MSF_severity, ind_outcome_patcourse_status, patinfo_sex) %>%
   filter(ind_outcome_patcourse_status %in% c('Cured', 'Died')) %>% 
   mutate(MSF_severity = as.factor(MSF_severity))
