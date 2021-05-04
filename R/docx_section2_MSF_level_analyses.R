@@ -135,7 +135,7 @@ my_doc <- add_par_normal(
 
 # Most frequent commorbidities
 my_doc <- add_par_normal(
-  sprintf("The most frequent comorbidities recorded are %s. ###SMOKING & POSTPARTUM EXCLUDED", 
+  sprintf("The most frequent comorbidities recorded are %s. ###SMOKING and POSTPARTUM EXCLUDED", 
           tbl_comcond_status %>% 
             filter(100 * p_Total >= 3.00) %>% 
             filter(!type_comorbidity %in% c("Smoking", "Post-partum ")) %>% 
@@ -144,12 +144,8 @@ my_doc <- add_par_normal(
 
 # Commorbidities cases vs non cases
 my_doc <- add_par_normal(
-  sprintf("%s were more frequent in confirmed cases than in cases proved negative (Not a case).", 
-          tbl_comcond_status %>% 
-            filter(p_Confirmed > 1.5 * `p_Not a case`)  %>% 
-            filter(!type_comorbidity %in% c("Smoking", "Post-partum ")) %>% 
-            pull(type_comorbidity) %>% combine_words())) 
-
+  sprintf("Diabetes and hypertension were more frequent in confirmed cases than in cases proved negative (Not a case), on the contrary to malaria which was less frequent in confirmed cases."
+          )) 
 
 my_doc <- add_end_section_2columns()
 
@@ -385,6 +381,33 @@ my_doc <- add_end_section_2columns()
 
 
 my_doc <- add_heading2("EN VRAC")
+
+
+body_add_table(my_doc,
+               
+               tbl_comcond_status %>% 
+                 filter(!type_comorbidity %in% c("Smoking", "Post-partum")) %>% 
+                 mutate(pourc_total = p_Total * 100) %>% 
+                 select(type_comorbidity, pourc_total) %>% 
+                 arrange(-pourc_total),
+               
+               alignment = "left"
+)
+
+
+body_add_table(my_doc,
+               
+               tbl_comcond_status %>% 
+                 filter(!type_comorbidity %in% c("Smoking", "Post-partum")) %>% 
+                 select(type_comorbidity, p_Total, `p_Not a case`, p_Confirmed) %>% 
+                 mutate(ratio_conf_sur_nc = p_Confirmed / `p_Not a case`) %>% 
+                 arrange(-ratio_conf_sur_nc),
+               
+               alignment = "left"
+               )
+               
+               
+
 
 
 # TABLE STATUS PATIENTS
