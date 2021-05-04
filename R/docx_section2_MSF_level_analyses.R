@@ -383,6 +383,7 @@ my_doc <- add_end_section_2columns()
 my_doc <- add_heading2("EN VRAC")
 
 
+# Pourcentage comorbidités total
 body_add_table(my_doc,
                
                tbl_comcond_status %>% 
@@ -394,7 +395,7 @@ body_add_table(my_doc,
                alignment = "left"
 )
 
-
+# Comorbidités confirmés et nons cas
 body_add_table(my_doc,
                
                tbl_comcond_status %>% 
@@ -406,8 +407,30 @@ body_add_table(my_doc,
                alignment = "left"
                )
                
+# Pourcentage symptomes total
+body_add_table(my_doc,
                
+               tbl_sympt_status %>% 
+                 mutate(pourc_total = p_Total * 100) %>% 
+                 select(type_symptom , pourc_total) %>% 
+                 arrange(-pourc_total),
+               
+               alignment = "left"
+)
 
+
+# Symptomes confirmés vs non cas
+body_add_table(my_doc,
+               
+               tbl_sympt_status %>% 
+                 select(type_symptom, p_Total, `p_Not a case`, p_Confirmed) %>% 
+                 mutate(ratio_conf_sur_nc = p_Confirmed / `p_Not a case`) %>% 
+                 arrange(-ratio_conf_sur_nc),
+               
+               alignment = "left"
+)
+
+               
 
 
 # TABLE STATUS PATIENTS
