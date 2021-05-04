@@ -135,9 +135,10 @@ my_doc <- add_par_normal(
 
 # Most frequent commorbidities
 my_doc <- add_par_normal(
-  sprintf("The most frequent comorbidities recorded are %s.", 
+  sprintf("The most frequent comorbidities recorded are %s. ###SMOKING & POSTPARTUM EXCLUDED", 
           tbl_comcond_status %>% 
             filter(100 * p_Total >= 3.00) %>% 
+            filter(!type_comorbidity %in% c("Smoking", "Post-partum ")) %>% 
             pull(type_comorbidity) %>% combine_words())) 
 
 
@@ -146,6 +147,7 @@ my_doc <- add_par_normal(
   sprintf("%s were more frequent in confirmed cases than in cases proved negative (Not a case).", 
           tbl_comcond_status %>% 
             filter(p_Confirmed > 1.5 * `p_Not a case`)  %>% 
+            filter(!type_comorbidity %in% c("Smoking", "Post-partum ")) %>% 
             pull(type_comorbidity) %>% combine_words())) 
 
 
