@@ -384,6 +384,7 @@ my_doc <- add_heading2("EN VRAC")
 
 
 # Pourcentage comorbidités total
+
 body_add_table(my_doc,
                
                tbl_comcond_status %>% 
@@ -392,8 +393,9 @@ body_add_table(my_doc,
                  select(type_comorbidity, pourc_total) %>% 
                  arrange(-pourc_total),
                
-               alignment = "left"
-)
+               style = 'Table Grid',
+               first_row = TRUE,
+               first_column = TRUE)
 
 # Comorbidités confirmés et nons cas
 body_add_table(my_doc,
@@ -404,7 +406,9 @@ body_add_table(my_doc,
                  mutate(ratio_conf_sur_nc = p_Confirmed / `p_Not a case`) %>% 
                  arrange(-ratio_conf_sur_nc),
                
-               alignment = "left"
+               style = 'Table Grid',
+               first_row = TRUE,
+               first_column = TRUE
                )
                
 # Pourcentage symptomes total
@@ -415,7 +419,9 @@ body_add_table(my_doc,
                  select(type_symptom , pourc_total) %>% 
                  arrange(-pourc_total),
                
-               alignment = "left"
+               style = 'Table Grid',
+               first_row = TRUE,
+               first_column = TRUE
 )
 
 
@@ -427,7 +433,9 @@ body_add_table(my_doc,
                  mutate(ratio_conf_sur_nc = p_Confirmed / `p_Not a case`) %>% 
                  arrange(-ratio_conf_sur_nc),
                
-               alignment = "left"
+               style = 'Table Grid',
+               first_row = TRUE,
+               first_column = TRUE
 )
 
                
