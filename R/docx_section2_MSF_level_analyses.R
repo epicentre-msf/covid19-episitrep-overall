@@ -397,6 +397,9 @@ body_add_table(my_doc,
                first_row = TRUE,
                first_column = TRUE)
 
+body_add_par(my_doc, " ")
+body_add_par(my_doc, " ")
+
 # Comorbidités confirmés et nons cas
 body_add_table(my_doc,
                
@@ -410,7 +413,10 @@ body_add_table(my_doc,
                first_row = TRUE,
                first_column = TRUE
                )
-               
+              
+body_add_par(my_doc, " ")
+body_add_par(my_doc, " ")
+
 # Pourcentage symptomes total
 body_add_table(my_doc,
                
@@ -424,6 +430,8 @@ body_add_table(my_doc,
                first_column = TRUE
 )
 
+body_add_par(my_doc, " ")
+body_add_par(my_doc, " ")
 
 # Symptomes confirmés vs non cas
 body_add_table(my_doc,
@@ -439,7 +447,8 @@ body_add_table(my_doc,
 )
 
                
-
+body_add_par(my_doc, " ")
+body_add_par(my_doc, " ")
 
 # TABLE STATUS PATIENTS
 my_doc <- add_table(
