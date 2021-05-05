@@ -166,6 +166,7 @@ dta_aggregated_expanded <- dta_weekly_aggregated %>%
     country = case_when(
       country == 'DRC' ~ 'Democratic Republic of the Congo',
       country == "Côte d'Ivoire" ~ 'Côte d’Ivoire',
+      country == "DRC" ~ "Democratic Republic of Congo",
       TRUE ~ country)) %>%
   left_join(df_countries, by = 'country') %>%
   pivot_longer(cols = c('confirmed', 'probable', 'suspected', 'non_cases', 'unknown'),
