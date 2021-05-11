@@ -7,7 +7,7 @@
 linear_model_cnt <- function(series, 
                              lst_dta, 
                              last_date, 
-                             time_unit_extent = 12, 
+                             time_unit_extent = 14, 
                              ma_window = 3, 
                              min_sum = 30){
   
@@ -93,7 +93,10 @@ linear_model_cnt <- function(series,
 #' Filter to a time frame defined by time_unit_extent
 #' Model data for each country using a linear regression of the cumulative count
 
-linear_model_cml <- function(series, lst_dta, last_date, time_unit_extent = 12, min_sum = 100){
+linear_model_cml <- function(series, lst_dta, 
+                             last_date, 
+                             time_unit_extent = 14, 
+                             min_sum = 100){
   
   dates_extent <- c(last_date - (time_unit_extent - 1), last_date)
   
@@ -160,7 +163,12 @@ linear_model_cml <- function(series, lst_dta, last_date, time_unit_extent = 12, 
 # Model data for each country based on a quasipoisson regression
 # (quasipoisson distribution is used mostly because of the zero values)
 
-quasipoisson_model_cnt <- function(series, lst_dta, last_date, time_unit_extent = 12, ma_window = 3, min_sum = 30){
+quasipoisson_model_cnt <- function(series, 
+                                   lst_dta, 
+                                   last_date, 
+                                   time_unit_extent = 14, 
+                                   ma_window = 3, 
+                                   min_sum = 30){
   
   # The Model (quasipoisson regression)
 
@@ -241,7 +249,10 @@ quasipoisson_model_cnt <- function(series, lst_dta, last_date, time_unit_extent 
 #' smoodthing using a predefined window 
 #' Then making a linear regression
 
-quasipoisson_model_cml <- function(series, lst_dta, last_date, time_unit_extent = 12, min_sum = 100){
+quasipoisson_model_cml <- function(series, lst_dta, 
+                                   last_date, 
+                                   time_unit_extent = 14, 
+                                   min_sum = 100){
   
   dates_extent <- c(last_date - (time_unit_extent - 1), last_date)
   
@@ -427,13 +438,13 @@ ts_coeff <- function(series,
 
 
 
-get_trend_models <- function(lst_jhu = lst_dta_jhu, 
+get_trend_models <- function(lst_jhu  = lst_dta_jhu, 
                              date_max = date_max_report, 
-                             periods_trends = c(12, 30), 
-                             local_path = path.local.worldwide.data, 
-                             file_name = 'trends_models.RDS', 
+                             periods_trends = c(14, 30), 
+                             local_path     = path.local.worldwide.data, 
+                             file_name   = 'trends_models.RDS', 
                              last_update = last_update_dta_jhu, 
-                             force = FALSE) {
+                             force       = FALSE) {
   
   make_new_models <- ifelse(!file.exists(file.path(local_path, file_name)) | force, TRUE, FALSE)
   
@@ -606,75 +617,75 @@ plot_coeff <- function(dta, name, series = "cases") {
 
 
 
-linear_trend_deepdive <- function(dta, 
-                                  series, 
-                                  last_date, 
-                                  n_days, 
-                                  ma_window = 3, 
-                                  min_sum = 30){
-  
-  dta <- dta %>% select(date, cnt = all_of(series))
-  
-  dates_extent <- c(last_date - (n_days - 1), last_date)
-  
-  dta <- dta %>% 
-    filter(between(date, dates_extent[1], dates_extent[2])) %>% 
-    tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
-                                    max(date, na.rm = TRUE), by = 1), 
-                    fill = list(cnt = NA_real_))
-  
-  
-  # Moving average
-  dta$ma <- forecast::ma(dta$cnt, order = ma_window)
-  dta$ma <- na_if(dta$ma, 0) # Replace 0 values as NA
-  
-  
-  # Empty matrix of predictions
-  m_preds <- matrix(data = NA, 
-                    nrow = dim(dta)[1], 
-                    ncol = 3, 
-                    dimnames = list(c(1:dim(dta)[1]), c('fit', 'lwr', 'upr')))
-  
-  
-  # Run model with conditions
-  if (dim(dta)[1] > ma_window & sum(dta$cnt, na.rm = TRUE) > min_sum) {
-    
-    mdl <- lm(log(ma) ~ date, data = dta)
-    
-    preds <- exp(predict(mdl, interval = 'confidence'))
-    
-    matched_rows <- match(rownames(preds), rownames(m_preds))
-    matched_cols <- match(colnames(preds), colnames(m_preds))
-    m_preds[matched_rows, matched_cols] <- preds
-    
-    tbl_preds <- tibble(date = seq.Date(from = dates_extent[1], to = dates_extent[2], by = 1), 
-                        cnt  = dta$cnt, 
-                        ma   = dta$ma, 
-                        fit  = as.double(m_preds[, 'fit']), 
-                        lwr  = as.double(m_preds[, 'lwr']), 
-                        upr  = as.double(m_preds[, 'upr']))
-    
-    mdl_coeffs <- tibble(coeff = coefficients(mdl)[[2]], 
-                         lwr   = confint(mdl)[2,1], 
-                         upr   = confint(mdl)[2,2])
-    
-  } else {
-    mdl <- NA_character_
-    
-    tbl_preds <- tibble(date = seq.Date(from = dates_extent[1], to = dates_extent[2], by = 1), 
-                        cnt  = dta$cnt, 
-                        ma   = dta$ma, 
-                        fit  = as.double(m_preds[, 'fit']), 
-                        lwr  = as.double(m_preds[, 'lwr']), 
-                        upr  = as.double(m_preds[, 'upr']))
-    
-    mdl_coeffs <- tibble(coeff = NA_real_, 
-                         lwr   = NA_real_, 
-                         upr   = NA_real_)
-  }
-  
-  return(list(mdl = mdl, preds = tbl_preds, coeffs = mdl_coeffs))
-}
+# linear_trend_deepdive <- function(dta, 
+#                                   series, 
+#                                   last_date, 
+#                                   n_days, 
+#                                   ma_window = 3, 
+#                                   min_sum = 30){
+#   
+#   dta <- dta %>% select(date, cnt = all_of(series))
+#   
+#   dates_extent <- c(last_date - (n_days - 1), last_date)
+#   
+#   dta <- dta %>% 
+#     filter(between(date, dates_extent[1], dates_extent[2])) %>% 
+#     tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
+#                                     max(date, na.rm = TRUE), by = 1), 
+#                     fill = list(cnt = NA_real_))
+#   
+#   
+#   # Moving average
+#   dta$ma <- forecast::ma(dta$cnt, order = ma_window)
+#   dta$ma <- na_if(dta$ma, 0) # Replace 0 values as NA
+#   
+#   
+#   # Empty matrix of predictions
+#   m_preds <- matrix(data = NA, 
+#                     nrow = dim(dta)[1], 
+#                     ncol = 3, 
+#                     dimnames = list(c(1:dim(dta)[1]), c('fit', 'lwr', 'upr')))
+#   
+#   
+#   # Run model with conditions
+#   if (dim(dta)[1] > ma_window & sum(dta$cnt, na.rm = TRUE) > min_sum) {
+#     
+#     mdl <- lm(log(ma) ~ date, data = dta)
+#     
+#     preds <- exp(predict(mdl, interval = 'confidence'))
+#     
+#     matched_rows <- match(rownames(preds), rownames(m_preds))
+#     matched_cols <- match(colnames(preds), colnames(m_preds))
+#     m_preds[matched_rows, matched_cols] <- preds
+#     
+#     tbl_preds <- tibble(date = seq.Date(from = dates_extent[1], to = dates_extent[2], by = 1), 
+#                         cnt  = dta$cnt, 
+#                         ma   = dta$ma, 
+#                         fit  = as.double(m_preds[, 'fit']), 
+#                         lwr  = as.double(m_preds[, 'lwr']), 
+#                         upr  = as.double(m_preds[, 'upr']))
+#     
+#     mdl_coeffs <- tibble(coeff = coefficients(mdl)[[2]], 
+#                          lwr   = confint(mdl)[2,1], 
+#                          upr   = confint(mdl)[2,2])
+#     
+#   } else {
+#     mdl <- NA_character_
+#     
+#     tbl_preds <- tibble(date = seq.Date(from = dates_extent[1], to = dates_extent[2], by = 1), 
+#                         cnt  = dta$cnt, 
+#                         ma   = dta$ma, 
+#                         fit  = as.double(m_preds[, 'fit']), 
+#                         lwr  = as.double(m_preds[, 'lwr']), 
+#                         upr  = as.double(m_preds[, 'upr']))
+#     
+#     mdl_coeffs <- tibble(coeff = NA_real_, 
+#                          lwr   = NA_real_, 
+#                          upr   = NA_real_)
+#   }
+#   
+#   return(list(mdl = mdl, preds = tbl_preds, coeffs = mdl_coeffs))
+# }
 
 
 
