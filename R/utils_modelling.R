@@ -657,3 +657,75 @@ linear_trend_deepdive <- function(dta,
   
   return(list(mdl = mdl, preds = tbl_preds, coeffs = mdl_coeffs))
 }
+
+
+
+#' Get model prediction deepdive
+#'
+#' @param df a list of dataframes (on df for each country)
+#' @param time_unit_extent the number of days to include
+#' @param min_sum what should be the minimum number of cases
+#' to run the model
+#' @param ma_window the number of days on which to calculate
+#' the moving average 
+#' @param var cases or deaths?
+#'
+#' @return
+#' @export
+#'
+#' @examples
+get_preds <- function(df,
+                      time_unit_extent = 30,
+                      min_sum = 30,
+                      ma_window = 3){
+  
+  
+  # filter data to date range of interest
+  last_date <- max(df$date, na.rm = TRUE) - 2
+  dates_extent <- c(last_date - (time_unit_extent - 1), last_date)
+  
+  df1 <- df %>%
+    dplyr::filter(dplyr::between(date, dates_extent[1], dates_extent[2])) %>%
+    tidyr::complete(
+      date = seq.Date(min(date, na.rm = TRUE), max(date, na.rm = TRUE), by = 1),
+      fill = list(cases = NA_real_, deaths = NA_real_)
+    )
+  
+  # Compute moving average
+  df1 <- df1 %>% 
+    group_by(country) %>% 
+    mutate(ma0 = as.numeric(forecast::ma(cases, order = ma_window)),
+           ma = dplyr::na_if(ma0, 0)) %>% 
+    ungroup()  
+  
+  
+  
+  if (nrow(df1) > ma_window & sum(df1[[var]], na.rm = TRUE) > min_sum) {
+    
+    # Run linear model and get predicated values and confidence intervals
+    df2 <- df1 %>% 
+      nest(data = -country) %>% 
+      mutate(fit = map(data, ~lm(log(ma) ~ date, data = .)),
+             augmented = map(fit, broom::augment, interval = 'confidence')) %>% 
+      unnest(augmented) %>% 
+      mutate(exp_fitted = exp(.fitted),
+             exp_lower = exp(.lower),
+             exp_upper = exp(.upper),
+             check_counts_ma = exp(`log(ma)`)) %>%
+      select(-fit, -data,
+             -starts_with("."), -`log(ma)`)
+  } else {
+    
+    df2 <- df1 %>% 
+      nest(data = -c(country, date)) %>% 
+      select(-data) %>% 
+      mutate(exp_fitted  = NA_real_, 
+             exp_lower  = NA_real_,
+             exp_upper   = NA_real_,
+             check_counts_ma  = NA_real_) %>% 
+      select(country, date, everything())
+  }
+  
+  return(df2)
+}
+
