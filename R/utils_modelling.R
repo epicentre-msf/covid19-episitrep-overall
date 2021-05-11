@@ -4,7 +4,12 @@
 #' Smoothing using moving average with a parameterable time-window (in days)
 #' Model time-series using a linear regression
 
-linear_model_cnt <- function(series, lst_dta, last_date, time_unit_extent = 12, ma_window = 3, min_sum = 30){
+linear_model_cnt <- function(series, 
+                             lst_dta, 
+                             last_date, 
+                             time_unit_extent = 12, 
+                             ma_window = 3, 
+                             min_sum = 30){
   
   
   dates_extent <- c(last_date - (time_unit_extent - 1), last_date)
@@ -354,7 +359,11 @@ make_doubling_time <- function(tbl_coeffs) {
 
 
 
-ts_coeff <- function(series, lst_dta, time_unit_extent = 5, ma_window = 3, min_sum = 30){
+ts_coeff <- function(series, 
+                     lst_dta, 
+                     time_unit_extent = 5, 
+                     ma_window = 3, 
+                     min_sum = 30){
   
   lst_coeffs  <- list()
   
@@ -418,7 +427,13 @@ ts_coeff <- function(series, lst_dta, time_unit_extent = 5, ma_window = 3, min_s
 
 
 
-get_trend_models <- function(lst_jhu = lst_dta_jhu, date_max = date_max_report, periods_trends = c(12, 30), local_path = path.local.worldwide.data, file_name = 'trends_models.RDS', last_update = last_update_dta_jhu, force = FALSE) {
+get_trend_models <- function(lst_jhu = lst_dta_jhu, 
+                             date_max = date_max_report, 
+                             periods_trends = c(12, 30), 
+                             local_path = path.local.worldwide.data, 
+                             file_name = 'trends_models.RDS', 
+                             last_update = last_update_dta_jhu, 
+                             force = FALSE) {
   
   make_new_models <- ifelse(!file.exists(file.path(local_path, file_name)) | force, TRUE, FALSE)
   
@@ -490,7 +505,10 @@ get_trend_models <- function(lst_jhu = lst_dta_jhu, date_max = date_max_report, 
 }
 
 
-ts_coeff_single <- function(dta, series = "cases", time_unit_extent = 5, ma_window = 3, min_sum = 30){
+ts_coeff_single <- function(dta, series = "cases", 
+                            time_unit_extent = 5, 
+                            ma_window = 3, 
+                            min_sum = 30){
   
   dta <- dta %>% 
     tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
