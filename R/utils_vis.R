@@ -207,10 +207,19 @@ plot_map_world_count <- function(tbl_dta, series){
 
 plot_map_world_trend <- function(tbl_dta, 
                                  series, 
-                                 model_for_trends = 'linear', 
-                                 plot_palette = RdAmGn){
+                                 # model_for_trends = 'linear', 
+                                 # plot_palette = RdAmGn
+                                 ){
   # continent = NULL
-  RdAmGn <- c('#D95F02', '#E6AB02', '#1B9E77') # Three-colours palette (Red-Amber-Green) colour-blind safe
+  # RdAmGn <- c('#D95F02', '#E6AB02', '#1B9E77') # Three-colours palette (Red-Amber-Green) colour-blind safe
+  
+  # Prepare colour palette
+  values <- scico::scico(5, palette = "vikO", 
+                         begin = .2, end = .8, 
+                         direction = -1) %>% 
+    purrr::set_names( c("Increasing", "Likely increasing", 
+                        "Stable", "Likely decreasing", "Decreasing"))
+  
   
   legend_title <- switch(series, 
                          cases  = 'Trends of case count', 
@@ -222,90 +231,98 @@ plot_map_world_trend <- function(tbl_dta,
   
   series <- sym(series)
   
-  # if(!is.null(continent)) {
-  #   # Define lims
-  #   xlim_continent <- switch(continent,
-  #                            "Africa"   = c(-25, 60),
-  #                            "Europe"   = c(-30, 80),
-  #                            "Americas" = c(-160, -30),
-  #                            "Asia"     = c(20, 170))
-  # 
-  #   ylim_continent <- switch(continent,
-  #                            "Africa"   = c(-35, 40),
-  #                            "Europe"   = c(28, 73),
-  #                            "Americas" = c(-70, 90),
-  #                            "Asia"     = c(-20, 90))
-  # }
-  
-  
+
   sf_dta <- tbl_dta %>% 
-    select(c(iso_a3 : !!series), all_of(vars_trends(model_for_trend))) %>% 
     inner_join(
       select(sf_world, iso_a3),
       by = "iso_a3"
     ) %>% 
     st_as_sf()
   
-  # if(!is.null(continent)) {
-  #   sf_dta <- sf_dta %>% filter(continent == continent)
-  # }
-  
-  
-  labels <- sf_dta %>% as_tibble() %>% pull(trend) %>% levels()
-  
-  plot_map <- ggplot(sf_dta) + 
-      geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
-      coord_sf(datum = NA) +
-    scale_x_continuous(expand = c(0, 0)) +
-      scale_y_continuous(expand = c(0, 0)) +
-      scale_fill_manual(
-        name = legend_title, 
-        values = plot_palette, 
-        drop = FALSE, 
-        guide = guide_legend(
-          keyheight = unit(3, units = "mm"),
-          keywidth = unit(50 / length(labels), units = "mm"),
-          title.hjust = 0.5,
-          nrow = 1,
-          label.position = "bottom",
-          title.position = 'top')) +
-      labs(title = plot_title, caption = caption_world_map) +
-      theme_minimal() +
-      theme(plot.title = element_text(hjust = 0.5), 
-            legend.position = "bottom",
-            plot.margin = margin(0, 0, 0, 0, "pt"))
 
-    # plot_map 
-    # ggplot(sf_dta) + 
-    #   geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
-    #   scale_fill_manual(
-    #     name = NULL, 
-    #     values = RdAmGn, 
-    #     drop = FALSE, 
-    #     guide = guide_legend(
-    #       keyheight = unit(3, units = "mm"),
-    #       keywidth = unit(70 / length(labels), units = "mm"),
-    #       title.hjust = 0.5,
-    #       nrow = 1,
-    #       label.position = "bottom",
-    #       title.position = 'top')) + 
-    #   coord_sf(
-    #     crs = 3395,
-    #     xlim = xlim_continent, 
-    #     ylim = ylim_continent, 
-    #     expand = FALSE,
-    #     # datum = NA
-    #     ) + 
-    #   labs(title = 'Last 30 days') + 
-    #   theme_light() +
-    #   theme(plot.title = element_text(hjust = 0.5), 
-    #         axis.text.x = element_blank(), 
-    #         axis.text.y = element_blank(), 
-    #         legend.position = "bottom")
-       
+  plot_map <- ggplot(sf_dta) + 
+    geom_sf(aes(fill = trend_cases), 
+            size = .1, alpha = 0.8) + 
+    coord_sf(datum = NA) +
+    
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0)) +
+    scale_fill_manual(
+      name = legend_title, 
+      values = values, 
+      drop = FALSE, 
+      guide = guide_legend(
+        keyheight = unit(3, units = "mm"),
+        keywidth = unit(50 / length(labels), units = "mm"),
+        title.hjust = 0.5,
+        nrow = 1,
+        label.position = "bottom",
+        title.position = 'top')) +
+    labs(title   = plot_title, 
+         caption = caption_world_map) +
+    theme_minimal() +
+    theme(plot.title      = element_text(hjust = 0.5, face = "bold"), 
+          legend.position = "bottom",
+          plot.margin     = margin(0, 0, 0, 0, "pt"))
+  
+   
   return(plot_map)
   
 }
+
+# if(!is.null(continent)) {
+#   # Define lims
+#   xlim_continent <- switch(continent,
+#                            "Africa"   = c(-25, 60),
+#                            "Europe"   = c(-30, 80),
+#                            "Americas" = c(-160, -30),
+#                            "Asia"     = c(20, 170))
+# 
+#   ylim_continent <- switch(continent,
+#                            "Africa"   = c(-35, 40),
+#                            "Europe"   = c(28, 73),
+#                            "Americas" = c(-70, 90),
+#                            "Asia"     = c(-20, 90))
+# }
+
+
+
+# select(c(iso_a3 : !!series), all_of(vars_trends(model_for_trend))) %>% 
+
+# if(!is.null(continent)) {
+#   sf_dta <- sf_dta %>% filter(continent == continent)
+# }
+
+# labels <- sf_dta %>% as_tibble() %>% pull(trend_cases) %>% levels()
+# 
+# plot_map 
+# ggplot(sf_dta) + 
+#   geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
+#   scale_fill_manual(
+#     name = NULL, 
+#     values = RdAmGn, 
+#     drop = FALSE, 
+#     guide = guide_legend(
+#       keyheight = unit(3, units = "mm"),
+#       keywidth = unit(70 / length(labels), units = "mm"),
+#       title.hjust = 0.5,
+#       nrow = 1,
+#       label.position = "bottom",
+#       title.position = 'top')) + 
+#   coord_sf(
+#     crs = 3395,
+#     xlim = xlim_continent, 
+#     ylim = ylim_continent, 
+#     expand = FALSE,
+#     # datum = NA
+#     ) + 
+#   labs(title = 'Last 30 days') + 
+#   theme_light() +
+#   theme(plot.title = element_text(hjust = 0.5), 
+#         axis.text.x = element_blank(), 
+#         axis.text.y = element_blank(), 
+#         legend.position = "bottom")
+
 
 
 plot_cfr_ma <- function(dta){
