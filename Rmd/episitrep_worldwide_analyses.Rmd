@@ -171,10 +171,23 @@ threshold_doubling_time <- 14
 
 # Get linear trends and coeffs at 14days
 tbl_trend_30d <- covidutils::get_trends(dta_jhu, 
-                                        time_unit_extent = 30)
+                                        time_unit_extent = 30) %>% 
+  mutate(trend_cases = factor(trend_cases, levels = c("Increasing", "Likely increasing", 
+                                                      "Stable", 
+                                                      "Likely decreasing", "Decreasing")),
+         trend_deaths = factor(trend_deaths, levels = c("Increasing", "Likely increasing", 
+                                                      "Stable", 
+                                                      "Likely decreasing", "Decreasing")))
+  
 
 tbl_trend_14d <- covidutils::get_trends(dta_jhu, 
-                                        time_unit_extent = 14)
+                                        time_unit_extent = 14) %>% 
+  mutate(trend_cases = factor(trend_cases, levels = c("Increasing", "Likely increasing", 
+                                                      "Stable", 
+                                                      "Likely decreasing", "Decreasing")),
+         trend_deaths = factor(trend_deaths, levels = c("Increasing", "Likely increasing", 
+                                                      "Stable", 
+                                                      "Likely decreasing", "Decreasing")))
 ```
 
 <!-- Main data frames used in the analysis -->
@@ -365,17 +378,26 @@ write.csv(tbl_case_trend,
 # 12 days
 # Note: the tbl_case_count (raw data) has the sum since the beginning
 # Note: the data used for the model does not include the last two days (usually incomplete)
-tbl_trend <- tbl_case_count %>% 
+tbl_case_trend_new <- tbl_case_count %>% 
   select(-brks) %>% 
   left_join(tbl_trend_14d %>% 
               rename(cases_model = cases), 
-            by = c("iso_a3", "continent", "region", "country"))
+            by = c("iso_a3", "continent", "region", "country")) %>% 
+  select(-contains("death"))
 
-tbl_trend_30d <- tbl_case_count %>% 
+
+write.csv(tbl_case_trend_new, 
+          file.path(path.local.worldwide.tables, paste0('tbl_case_trend_new', '_', week_report, '.csv')), 
+          na = "", 
+          row.names = FALSE, 
+          fileEncoding = "UTF-8")
+
+tbl_case_trend_new30_d <- tbl_case_count %>% 
   select(-brks) %>% 
   left_join(tbl_trend_30d %>% 
               rename(cases_model = cases), 
-            by = c("iso_a3", "continent", "region", "country"))
+            by = c("iso_a3", "continent", "region", "country")) %>% 
+  select(-contains("death"))
 
 ```
 
@@ -392,12 +414,16 @@ tbl_case_trend %>%
 
 <!-- TABLE - Countries with increasing trend in number of cases -->
 ```{r list-increasing-trends, include = FALSE}
-
 tbl_case_increasing_trend <- tbl_case_trend %>% 
   select(c(iso_a3 : cases), all_of(vars_trends(model_for_trend))) %>% 
   filter(trend == 'Increasing') %>% 
   arrange(continent, desc(coeff))
 
+# New trends
+tbl_case_increasing_trend_new <- tbl_case_trend_new %>% 
+ filter(trend_cases  %in% c('Increasing', "Likely increasing")) %>% 
+  arrange(continent, desc(trend_cases_coeff)) %>% 
+  select(-contains("death"))
 ```
 
 
@@ -426,7 +452,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_case_count_14d',
        dpi = 320)
 
 
-map_world_case_trend <- plot_map_world_trend(tbl_case_trend, 'cases') + 
+map_world_case_trend <- plot_map_world_trend(tbl_case_trend_new, "cases") + 
   labs(title = 'Case trend (14 days)')
 
 ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_case_trend', '_', week_report, '.png')), 
