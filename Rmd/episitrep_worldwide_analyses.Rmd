@@ -413,7 +413,7 @@ tbl_case_trend %>%
 ```
 
 <!-- TABLE - Countries with increasing trend in number of cases -->
-```{r list-increasing-trends, include = FALSE}
+```{r list-increasing-trends-cases, include = FALSE}
 tbl_case_increasing_trend <- tbl_case_trend %>% 
   select(c(iso_a3 : cases), all_of(vars_trends(model_for_trend))) %>% 
   filter(trend == 'Increasing') %>% 
@@ -503,7 +503,9 @@ tbl_countries_increasing_cases <- tbl_case_trend %>%
   select(c(iso_a3 : cases), all_of(vars_trends(model_for_trend))) %>% 
   left_join(tbl_case_count_30d %>% select(iso_a3, cases_30d = cases), by = 'iso_a3') %>% 
   left_join(tbl_case_count_14d %>% select(iso_a3, cases_14d = cases), by = 'iso_a3') %>% 
-  left_join(tbl_case_trend_30d %>% select(iso_a3, coeff_30d = l_cnt_30d_coeff, lwr_30d = l_cnt_30d_lwr, upr_30d = l_cnt_30d_upr, trend_30d = trend_linear_30d), by = 'iso_a3') %>%
+  left_join(tbl_case_trend_30d %>% select(iso_a3, coeff_30d = l_cnt_30d_coeff, 
+                                          lwr_30d = l_cnt_30d_lwr, upr_30d = l_cnt_30d_upr,
+                                          trend_30d = trend_linear_30d), by = 'iso_a3') %>%
   filter(trend == 'Increasing' | trend_30d == 'Increasing') %>% 
   select(-c(iso_a3, region)) %>% 
   arrange(continent, desc(coeff)) %>% 
@@ -638,7 +640,7 @@ map_world_death_count + labs(title = NULL)
 
 ## Deaths trends
 <!-- TABLE - Trend in number of deaths -->
-```{r}
+```{r tbl-death-trend}
 
 # This table display trends estimated in the last 30 days (only count linear models)
 
@@ -671,15 +673,51 @@ write.csv(tbl_death_trend,
           row.names = FALSE, 
           fileEncoding = "UTF-8")
 
+
+############################################################
+### New trends ###
+
+# 12 days
+# Note: the tbl_case_count (raw data) has the sum since the beginning
+# Note: the data used for the model does not include the last two days (usually incomplete)
+tbl_death_trend_new <- tbl_death_count %>% 
+  select(-brks) %>% 
+  left_join(tbl_trend_14d %>% 
+              rename(deaths_model = deaths), 
+            by = c("iso_a3", "continent", "region", "country")) %>% 
+  select(-contains("cases"))
+
+
+write.csv(tbl_death_trend_new, 
+          file.path(path.local.worldwide.tables, paste0('tbl_death_trend_new', '_', week_report, '.csv')), 
+          na = "", 
+          row.names = FALSE, 
+          fileEncoding = "UTF-8")
+
+tbl_death_trend_new30_d <- tbl_death_count %>% 
+  select(-brks) %>% 
+  left_join(tbl_trend_30d %>% 
+              rename(deaths_model = deaths), 
+            by = c("iso_a3", "continent", "region", "country")) %>% 
+  select(-contains("cases"))
+
+
+
 ```
 
 <!-- TABLE - Countries with increasing trend in number of deaths -->
-```{r tbl-deaths-increasing-trend}
+```{r list-increasing-deaths-cases}
 
 tbl_death_increasing_trend <- tbl_death_trend %>% 
   select(c(iso_a3 : deaths), all_of(vars_trends(model_for_trend))) %>% 
   filter(trend == 'Increasing') %>% 
   arrange(continent, desc(coeff))
+
+# New trends
+tbl_death_increasing_trend_new <- tbl_death_trend_new %>% 
+ filter(trend_deaths  %in% c('Increasing', "Likely increasing")) %>% 
+  arrange(continent, desc(trend_deaths_coeff)) %>% 
+  select(-contains("cases"))
 
 ```
 
