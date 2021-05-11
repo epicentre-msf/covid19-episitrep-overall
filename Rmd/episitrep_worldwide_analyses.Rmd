@@ -745,7 +745,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_death_count_14d'
        scale = 1, 
        dpi = 320)
 
-map_world_death_trend <- plot_map_world_trend(tbl_death_trend, 'deaths') + 
+map_world_death_trend <- plot_map_world_trend(tbl_death_trend_new, 'deaths') + 
   labs(title = 'Death trend (14 days)')
 
 ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_death_trend', '_', week_report, '.png')), 
