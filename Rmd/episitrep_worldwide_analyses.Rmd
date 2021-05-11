@@ -164,6 +164,17 @@ model_for_doubling <- 'linear' # for doubling time
 
 threshold_doubling_time <- 14
 
+
+############################################################
+
+### New trends ###
+
+# Get linear trends and coeffs at 14days
+tbl_trend_30d <- covidutils::get_trends(dta_jhu, 
+                                        time_unit_extent = 30)
+
+tbl_trend_14d <- covidutils::get_trends(dta_jhu, 
+                                        time_unit_extent = 14)
 ```
 
 <!-- Main data frames used in the analysis -->
@@ -188,20 +199,24 @@ labels_deaths <- label_breaks(breaks_deaths) %>% gsub("\\<0-1\\>", "0", .)
 tbl_case_count <- dta_jhu_right_censored %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(cases = sum(cases, na.rm = TRUE)) %>% 
-  mutate(brks = cut(cases, breaks_cases, labels = labels_cases, include.lowest = TRUE, right = FALSE)) %>% 
+  mutate(brks = cut(cases, breaks_cases, labels = labels_cases, 
+                    include.lowest = TRUE, right = FALSE)) %>% 
   ungroup()
 
 # Summary table of cases in the last 30 days 
 tbl_case_count_30d <- dta_jhu_right_censored %>% 
-  filter(between(date, left = date_max_report-29, right = date_max_report)) %>% 
+  filter(between(date, left = date_max_report - 29, 
+                 right = date_max_report)) %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(cases = sum(cases, na.rm = TRUE)) %>% 
-  mutate(brks = cut(cases, breaks_cases, labels = labels_cases, include.lowest = TRUE, right = FALSE)) %>% 
+  mutate(brks = cut(cases, breaks_cases, labels = labels_cases, 
+                    include.lowest = TRUE, right = FALSE)) %>% 
   ungroup()
 
 # Summary table of cases in the last 14 days 
 tbl_case_count_14d <- dta_jhu_right_censored %>% 
-  filter(between(date, left = date_max_report - 11, right = date_max_report)) %>% 
+  filter(between(date, left = date_max_report - 13, 
+                 right = date_max_report)) %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(cases = sum(cases, na.rm = TRUE)) %>% 
   mutate(brks = cut(cases, breaks_cases, labels = labels_cases, include.lowest = TRUE, right = FALSE)) %>% 
@@ -220,18 +235,22 @@ tbl_death_count <- dta_jhu_right_censored %>%
 
 # Summary table of deaths in the last 30 days 
 tbl_death_count_30d <- dta_jhu_right_censored %>% 
-  filter(between(date, left = date_max_report-29, right = date_max_report)) %>% 
+  filter(between(date, left = date_max_report - 29, 
+                 right = date_max_report)) %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(deaths = sum(deaths, na.rm = TRUE)) %>% 
-  mutate(brks = cut(deaths, breaks_deaths, labels = labels_deaths, include.lowest = TRUE, right = FALSE)) %>% 
+  mutate(brks = cut(deaths, breaks_deaths, labels = labels_deaths, 
+                    include.lowest = TRUE, right = FALSE)) %>% 
   ungroup()
 
 # Summary table of deaths in the last 14 days 
 tbl_death_count_14d <- dta_jhu_right_censored %>% 
-  filter(between(date, left = date_max_report-11, right = date_max_report)) %>% 
+  filter(between(date, left = date_max_report - 13, 
+                 right = date_max_report)) %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(deaths = sum(deaths, na.rm = TRUE)) %>% 
-  mutate(brks = cut(deaths, breaks_deaths, labels = labels_deaths, include.lowest = TRUE, right = FALSE)) %>% 
+  mutate(brks = cut(deaths, breaks_deaths, labels = labels_deaths, 
+                    include.lowest = TRUE, right = FALSE)) %>% 
   ungroup()
 
 
@@ -307,18 +326,20 @@ map_world_case_count + labs(title = NULL)
 
 coeff_vars <-  c("coeff", "lwr", "upr")
 
-tbl_case_trend_30d <- tbl_case_count_30d %>% 
-  select(-brks) %>% 
-  left_join(rename(model_cnt_cases_linear_long[[3]] , all_of(attach_prefix(coeff_vars, 'l_cnt_30d_')))) %>% 
+# 30 days
+tbl_case_trend_30d <- tbl_case_count_30d %>%
+  select(-brks) %>%
+  left_join(rename(model_cnt_cases_linear_long[[3]] , all_of(attach_prefix(coeff_vars, 'l_cnt_30d_')))) %>%
   mutate(
     trend_linear_30d = case_when(
-      l_cnt_30d_lwr > 0 ~ "Increasing", 
-      l_cnt_30d_upr < 0 ~ "Declining", 
-      l_cnt_30d_upr > 0 & l_cnt_30d_lwr < 0 ~ "Stable", 
-      TRUE ~ NA_character_) %>% 
+      l_cnt_30d_lwr > 0 ~ "Increasing",
+      l_cnt_30d_upr < 0 ~ "Declining",
+      l_cnt_30d_upr > 0 & l_cnt_30d_lwr < 0 ~ "Stable",
+      TRUE ~ NA_character_) %>%
       factor(levels = c('Increasing', 'Stable', 'Declining')))
 
-
+# 14 days
+# Note: the tbl_case_count (raw data) has the sum since the beginning 
 tbl_case_trend <- tbl_case_count %>% 
   select(-brks) %>% 
   left_join(rename(model_cnt_cases_linear_short[[3]] ,
@@ -336,6 +357,25 @@ write.csv(tbl_case_trend,
           na = "", 
           row.names = FALSE, 
           fileEncoding = "UTF-8")
+
+
+############################################################
+### New trends ###
+
+# 12 days
+# Note: the tbl_case_count (raw data) has the sum since the beginning
+# Note: the data used for the model does not include the last two days (usually incomplete)
+tbl_trend <- tbl_case_count %>% 
+  select(-brks) %>% 
+  left_join(tbl_trend_14d %>% 
+              rename(cases_model = cases), 
+            by = c("iso_a3", "continent", "region", "country"))
+
+tbl_trend_30d <- tbl_case_count %>% 
+  select(-brks) %>% 
+  left_join(tbl_trend_30d %>% 
+              rename(cases_model = cases), 
+            by = c("iso_a3", "continent", "region", "country"))
 
 ```
 
