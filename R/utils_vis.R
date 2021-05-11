@@ -206,8 +206,7 @@ plot_map_world_count <- function(tbl_dta, series){
 
 
 plot_map_world_trend <- function(tbl_dta, 
-                                 series, 
-                                 # model_for_trends = 'linear', 
+                                 series
                                  # plot_palette = RdAmGn
                                  ){
   # continent = NULL
@@ -229,7 +228,13 @@ plot_map_world_trend <- function(tbl_dta,
                        cases  = 'Trends in cases', 
                        deaths = 'Trends in deaths')
   
+  
+  plot_y <- switch(series, 
+                   cases  = "trend_cases", 
+                   deaths = "trend_deaths")
+  
   series <- sym(series)
+  
   
 
   sf_dta <- tbl_dta %>% 
@@ -240,8 +245,9 @@ plot_map_world_trend <- function(tbl_dta,
     st_as_sf()
   
 
-  plot_map <- ggplot(sf_dta) + 
-    geom_sf(aes(fill = trend_cases), 
+  plot_map
+  ggplot(sf_dta) + 
+    geom_sf(aes_string(fill = plot_y), 
             size = .1, alpha = 0.8) + 
     coord_sf(datum = NA) +
     
