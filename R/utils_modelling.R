@@ -706,11 +706,12 @@ plot_coeff <- function(dta, name, series = "cases") {
 get_preds <- function(df,
                       time_unit_extent = 30,
                       min_sum = 30,
-                      ma_window = 3){
+                      ma_window = 3,
+                      omit_past_day = 0){
   
   
   # filter data to date range of interest
-  last_date <- max(df$date, na.rm = TRUE) - 2
+  last_date <- max(df$date, na.rm = TRUE) - omit_past_day
   dates_extent <- c(last_date - (time_unit_extent - 1), last_date)
   
   df1 <- df %>%
@@ -729,7 +730,7 @@ get_preds <- function(df,
   
   
   
-  if (nrow(df1) > ma_window & sum(df1[[var]], na.rm = TRUE) > min_sum) {
+  if (nrow(df1) > ma_window & sum(df1[["cases"]], na.rm = TRUE) > min_sum) {
     
     # Run linear model and get predicated values and confidence intervals
     df2 <- df1 %>% 

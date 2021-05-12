@@ -70,7 +70,7 @@ dta_ecdc <- covidutils::get_ecdc_data() %>%
 # For case and death data
 dta_jhu  <- get_owid_jhcsse() %>% 
   prepare_jhu_geodata_geofacet() %>% 
-  # filter(between(date, left = NULL, right = date_max_report)) %>% 
+  filter(between(date, left = NULL, right = date_max_report)) %>% 
   left_join(dta_ecdc %>% 
               select(iso_a3, population_2019) %>% 
               distinct(),
