@@ -1420,4 +1420,53 @@ geofacet_plot_all <- function(data,
 }
 
 
+scatter_plot_inc <- function(tbl_inc, 
+                             var_x, 
+                             var_y, 
+                             label_log_x = TRUE, 
+                             label_log_y = TRUE){
+  
+  var_x <- sym(var_x)
+  var_y <- sym(var_y)
+  
+  temp_tbl <- tbl_inc %>% filter(!!var_x != 0)
+  countries_zero_count <- tbl_inc %>% filter(!!var_x == 0) %>% pull(country)
+  
+  txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
+  
+  
+  scatterplot <- ggplot(temp_tbl) + 
+    geom_point(aes(!!var_x, !!var_y, col = region)) + 
+    ggrepel::geom_text_repel(
+      data = temp_tbl,
+      aes(!!var_x, !!var_y, label = country, colour = region),
+      size = 3,
+      show.legend = FALSE) + 
+    labs(caption = paste0("Countries with zero count: ", txt_countries_zero_count, ".\n", caption_world_map), 
+         color = NULL) + 
+    theme_light()
+  
+  scatterplot <- if(label_log_x) {
+    scatterplot + 
+      scale_x_continuous(trans = 'log10', 
+                         breaks = scales::trans_breaks("log10", function(x) 10^x), 
+                         labels = scales::label_number_si()) + 
+      labs(x = paste(var_x, "(log scale)"))
+  } else {
+    scatterplot
+  }
+  
+  scatterplot <- if(label_log_y) {
+    scatterplot + 
+      scale_y_continuous(trans = 'log10', 
+                         breaks = scales::trans_breaks("log10", function(x) 10^x), 
+                         labels = scales::label_number_si()) + 
+      labs(y = paste(var_y, "(log scale)"))
+  } else {
+    scatterplot
+  }
+  
+  return(scatterplot)
+}
+
 
