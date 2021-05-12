@@ -403,9 +403,15 @@ tbl_case_trend_new30_d <- tbl_case_count %>%
 
 <!-- csv for MSF GIS -->
 ```{r csv-for-MSF-GIS, include = FALSE}
-tbl_case_trend %>% 
-  select(iso_a3, all_of(vars_trends(model_for_trend))) %>% 
-  select(iso = iso_a3, trend) %>% 
+# tbl_case_trend %>% 
+#   select(iso_a3, all_of(vars_trends(model_for_trend))) %>% 
+#   select(iso = iso_a3, trend) %>% 
+#   write.csv(file.path(path.local.worldwide.tables, paste0('epi-case-trends-', week_report, '.csv')), 
+#             row.names = FALSE, 
+#             fileEncoding = "UTF-8")
+
+tbl_case_trend_new %>% 
+  select(iso = iso_a3, trend =  trend_cases) %>% 
   write.csv(file.path(path.local.worldwide.tables, paste0('epi-case-trends-', week_report, '.csv')), 
             row.names = FALSE, 
             fileEncoding = "UTF-8")
@@ -443,6 +449,7 @@ tbl_case_increasing_trend_new <- tbl_case_trend_new %>%
 <!-- Map cases counts and trends in the last 14 days -->
 ```{r map-world-case-trend, fig.width = 8, fig.height = 10, fig.cap = glue('Cases count and trend during the period from {format(date_max_report - (period_trend - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} ({period_trend} days)')}
 
+# COUNTS
 map_world_case_count_14d <- plot_map_world_count(tbl_case_count_14d, 'cases') + 
   labs(title = 'Case count (14 days)')
 
@@ -451,7 +458,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_case_count_14d',
        scale = 1, 
        dpi = 320)
 
-
+# TRENDS
 map_world_case_trend <- plot_map_world_trend(tbl_case_trend_new, "cases") + 
   labs(title = 'Case trend (14 days)')
 
@@ -617,7 +624,6 @@ gtbl_countries_increasing_cases <- tbl_countries_increasing_cases %>%
     locations = cells_body(
       columns = vars(trend_cases_30d), 
       rows = trend_cases_30d == 'Decreasing ')) %>% 
-  
   
   
   tab_style(
@@ -797,6 +803,7 @@ tbl_death_increasing_trend_new <- tbl_death_trend_new %>%
 <!-- Map deaths counts and trends in the last 14 days -->
 ```{r map-world-deaths-trends, fig.width = 8, fig.height = 10, fig.cap = glue('Mapping of Covid-19 associated deaths and trends during the period from {format(date_max_report - (period_trend - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} ({period_trend} days)')}
 
+# COUNTS
 map_world_death_count_14d <- plot_map_world_count(tbl_death_count_14d, 'deaths') + 
   labs(title = 'Death count (14 days)')
 
@@ -805,6 +812,8 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_death_count_14d'
        scale = 1, 
        dpi = 320)
 
+
+# TRENDS
 map_world_death_trend <- plot_map_world_trend(tbl_death_trend_new, 'deaths') + 
   labs(title = 'Death trend (14 days)')
 
