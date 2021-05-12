@@ -542,7 +542,8 @@ lst_dta_jhu <- dta_jhu %>%
 
 # Get linear trends and coeffs at 14days
 tbl_coeff_14d <- covidutils::get_trends(dta_jhu, 
-                                        time_unit_extent = 14)
+                                        time_unit_extent = 14,
+                                        omit_past_days = 0)
 
 sf_trend_14d <- df_countries %>% 
   select(iso_a3, country) %>% 
@@ -559,7 +560,8 @@ sf_trend_14d <- df_countries %>%
 
 # Get linear trends and coeffs at 30 days
 tbl_coeff_30d <- covidutils::get_trends(dta_jhu,
-                                        time_unit_extent = 30)
+                                        time_unit_extent = 30,
+                                        omit_past_days = 0)
 
 sf_trend_30d <- df_countries %>% 
   select(iso_a3, country) %>% 
