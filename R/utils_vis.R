@@ -245,8 +245,7 @@ plot_map_world_trend <- function(tbl_dta,
     st_as_sf()
   
 
-  plot_map
-  ggplot(sf_dta) + 
+  plot_map <- ggplot(sf_dta) + 
     geom_sf(aes_string(fill = plot_y), 
             size = .1, alpha = 0.8) + 
     coord_sf(datum = NA) +
