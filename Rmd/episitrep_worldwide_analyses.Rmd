@@ -146,11 +146,14 @@ for (i in names(lst_tests)) {
 
 trend_models <- get_trend_models(lst_jhu = lst_dta_jhu, periods_trend = c(14, 30), force = FALSE)
 
+# Cases 30d and 14d
 model_cnt_cases_linear_short <- trend_models$model_cnt_cases_linear_short
 model_cnt_cases_linear_long  <- trend_models$model_cnt_cases_linear_long
 
+# Deaths 30d and 14d
 model_cnt_deaths_linear_short <- trend_models$model_cnt_deaths_linear_short
 model_cnt_deaths_linear_long  <- trend_models$model_cnt_deaths_linear_long
+
 
 lst_coeffs_cases  <- trend_models$lst_coeffs_cases
 lst_coeffs_deaths <- trend_models$lst_coeffs_deaths
@@ -162,7 +165,7 @@ period_trend <- trend_models$periods_trend[[1]]
 model_for_trend   <- 'linear' # for trends
 model_for_doubling <- 'linear' # for doubling time
 
-threshold_doubling_time <- 14
+threshold_doubling_time <- 12
 
 
 ############################################################
