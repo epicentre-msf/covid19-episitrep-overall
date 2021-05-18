@@ -61,9 +61,7 @@ caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF line
 palette_Reds4U <- c('#fcae91', '#fb6a4a','#de2d26', '#a50f15', '#969696')
 ```
 
----
-subtitle: "Data as of week `r glue::glue("{format(date_max_report, '%V')}, ending {weekdays(date_max_report)} {format(date_max_report, '%d %B %Y')}")`"
----
+
 
 <!-- Import and manage data -->
 ```{r get-data, include = FALSE}
@@ -108,6 +106,7 @@ dta_aggregated_expanded <- dta_weekly_aggregated %>%
       country == 'Palestine' ~ 'Palestine', 
       country == "Côte d'Ivoire" ~ "Cote d'Ivoire", 
       country == "Democratic Republic of the Congo" ~ "Democratic Republic of Congo",
+      country == "DRC" ~ "Democratic Republic of Congo",
       TRUE ~ country)) %>% 
   left_join(df_countries, by = 'country') %>% 
   pivot_longer(cols = c('confirmed', 'probable', 'suspected', 'non_cases', 'unknown'), names_to = 'covid_status') %>% 
@@ -159,6 +158,9 @@ tbl_aggregated_expanded_with_dates <- dta_aggregated_expanded %>%
 
 ```
 
+---
+subtitle: "Data as of week `r glue::glue("{format(date_max_report, '%V')}, ending {weekdays(date_max_report)} {format(date_max_report, '%d %B %Y')}")`"
+---
 
 # About this report
   This document presents tables, graphs and maps of the MSF Covid-19 linelists analyses (not much text). Most, but not all, of these analyses are presented and commented in the MSF Intersection Covid-19 EpiSitrep edited by Epicentre (for information on the EpiSitrep, please contact Anais.BROBAN@epicentre.msf.org).    

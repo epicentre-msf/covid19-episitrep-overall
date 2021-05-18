@@ -279,6 +279,16 @@ dta_cfr <- dta_linelist %>%
   filter(ind_MSF_covid_status == 'Confirmed',
          ind_outcome_patcourse_status %in% c('Cured', 'Died', "Sent back home"),
          merge_admit == "Yes")
+
+outcome_unknown <- dta_linelist %>% 
+  filter(ind_MSF_covid_status == 'Confirmed',
+         merge_admit == "Yes") %>% 
+  mutate(known_outcome = case_when(
+    ind_outcome_patcourse_status %in% c('Cured', 'Died', "Sent back home") ~ "Yes",
+    TRUE ~ "No")) %>% 
+  count(known_outcome) %>%
+  mutate(sum = sum(n),
+         p = n/sum)
   
 dta_age_median <- dta_linelist %>% 
   filter(ind_MSF_covid_status == 'Confirmed',
@@ -286,6 +296,8 @@ dta_age_median <- dta_linelist %>%
          merge_admit == "Yes") %>% 
   pull(age_in_years) %>% 
   median(na.rm = TRUE)
+
+
 
 my_doc <- add_par_normal(
   sprintf("In MSF facilities, %s%% of confirmed cases with known outcome died, including %s%% in over 65 years of age. The median age among deceased patients was %s years (stable in the last weeks). The proportion of patients who died largely varied with the number of comorbidities declared (Table 5). CFR starts increasing from the 40-49 years old category, to reach over 40%% in patients over 80 years old", 
