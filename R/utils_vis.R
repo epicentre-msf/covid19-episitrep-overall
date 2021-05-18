@@ -258,7 +258,7 @@ plot_map_world_trend <- function(tbl_dta,
       drop = FALSE, 
       guide = guide_legend(
         keyheight = unit(3, units = "mm"),
-        keywidth = unit(50 / length(labels), units = "mm"),
+        keywidth = unit(15 / length(labels), units = "mm"),
         title.hjust = 0.5,
         nrow = 1,
         label.position = "bottom",
