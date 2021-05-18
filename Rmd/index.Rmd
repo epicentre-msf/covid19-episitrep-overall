@@ -31,6 +31,7 @@ knitr::opts_chunk$set(echo = FALSE)
 - [Archive](episitreps/archive/)
 
 ### **Worldwide Overview** (updated weekly)
+- [Interactive Dashboard](https://reports.msf.net/public/covid19/) (updated daily)
 - [Full Report](addtional_episitrep_outputs_worldwide/)
 - [Summary Table](tables_world_summary/)
 - [Analysis Methods](analysis_methods_2020-08-20.html)
