@@ -174,23 +174,25 @@ threshold_doubling_time <- 14
 
 # Get linear trends and coeffs at 14days
 tbl_trend_30d <- covidutils::get_trends(dta_jhu, 
-                                        time_unit_extent = 30) %>% 
+                                        time_unit_extent = 30,
+                                        add_ci = TRUE) %>% 
   mutate(trend_cases = factor(trend_cases, levels = c("Increasing", "Likely increasing", 
                                                       "Stable", 
                                                       "Likely decreasing", "Decreasing")),
          trend_deaths = factor(trend_deaths, levels = c("Increasing", "Likely increasing", 
-                                                      "Stable", 
-                                                      "Likely decreasing", "Decreasing")))
-  
+                                                        "Stable", 
+                                                        "Likely decreasing", "Decreasing")))
+
 
 tbl_trend_14d <- covidutils::get_trends(dta_jhu, 
-                                        time_unit_extent = 14) %>% 
+                                        time_unit_extent = 14,
+                                        add_ci = TRUE) %>% 
   mutate(trend_cases = factor(trend_cases, levels = c("Increasing", "Likely increasing", 
                                                       "Stable", 
                                                       "Likely decreasing", "Decreasing")),
          trend_deaths = factor(trend_deaths, levels = c("Increasing", "Likely increasing", 
-                                                      "Stable", 
-                                                      "Likely decreasing", "Decreasing")))
+                                                        "Stable", 
+                                                        "Likely decreasing", "Decreasing")))
 ```
 
 <!-- Main data frames used in the analysis -->
