@@ -146,15 +146,15 @@ for (i in names(lst_tests)) {
 
 trend_models <- get_trend_models(lst_jhu = lst_dta_jhu, periods_trend = c(14, 30), force = FALSE)
 
-# Cases 30d and 14d
+# Cases 30d and 14d: trends AND doubling time
 model_cnt_cases_linear_short <- trend_models$model_cnt_cases_linear_short
 model_cnt_cases_linear_long  <- trend_models$model_cnt_cases_linear_long
 
-# Deaths 30d and 14d
+# Deaths 30d and 14d: trends AND doubling time
 model_cnt_deaths_linear_short <- trend_models$model_cnt_deaths_linear_short
 model_cnt_deaths_linear_long  <- trend_models$model_cnt_deaths_linear_long
 
-
+# For one graph, doubling time on a sliding window of dates since the begining.
 lst_coeffs_cases  <- trend_models$lst_coeffs_cases
 lst_coeffs_deaths <- trend_models$lst_coeffs_deaths
 
@@ -165,7 +165,7 @@ period_trend <- trend_models$periods_trend[[1]]
 model_for_trend   <- 'linear' # for trends
 model_for_doubling <- 'linear' # for doubling time
 
-threshold_doubling_time <- 12
+threshold_doubling_time <- 14
 
 
 ############################################################
@@ -623,10 +623,10 @@ gtbl_countries_increasing_cases <- tbl_countries_increasing_cases %>%
   
     tab_style(
     style = list(
-      cell_fill(color = "#345B8C" , alpha = 0.8)), 
+      cell_fill(color = "#345B8C", alpha = 0.8)), 
     locations = cells_body(
       columns = vars(trend_cases_30d), 
-      rows = trend_cases_30d == 'Decreasing ')) %>% 
+      rows = trend_cases_30d == 'Decreasing')) %>% 
   
   
   tab_style(
@@ -663,7 +663,7 @@ gtbl_countries_increasing_cases <- tbl_countries_increasing_cases %>%
       cell_fill(color = "#345B8C" , alpha = 0.8)), 
     locations = cells_body(
       columns = vars(trend_cases_14d), 
-      rows = trend_cases_14d == 'Decreasing ')) %>% 
+      rows = trend_cases_14d == 'Decreasing')) %>% 
   
   
   tab_options(
@@ -977,7 +977,7 @@ gtbl_countries_increasing_deaths <- tbl_countries_increasing_deaths %>%
       cell_fill(color = "#345B8C" , alpha = 0.8)), 
     locations = cells_body(
       columns = vars(trend_deaths_30d), 
-      rows = trend_deaths_30d == 'Decreasing ')) %>% 
+      rows = trend_deaths_30d == 'Decreasing')) %>% 
   
   
   tab_style(
@@ -1014,7 +1014,7 @@ gtbl_countries_increasing_deaths <- tbl_countries_increasing_deaths %>%
       cell_fill(color = "#345B8C" , alpha = 0.8)), 
     locations = cells_body(
       columns = vars(trend_deaths_14d), 
-      rows = trend_deaths_14d == 'Decreasing ')) %>% 
+      rows = trend_deaths_14d == 'Decreasing')) %>% 
   
   
   tab_options(
