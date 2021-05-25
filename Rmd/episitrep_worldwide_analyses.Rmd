@@ -162,7 +162,7 @@ period_trend <- trend_models$periods_trend[[1]]
 
 
 # Choice for models to be used
-model_for_trend   <- 'linear' # for trends
+model_for_trend    <- 'linear' # for trends
 model_for_doubling <- 'linear' # for doubling time
 
 threshold_doubling_time <- 14
@@ -197,6 +197,9 @@ tbl_trend_14d <- covidutils::get_trends(dta_jhu,
          trend_deaths = factor(trend_deaths, levels = c("Increasing", "Likely increasing", 
                                                         "Stable", 
                                                         "Likely decreasing", "Decreasing")))
+
+list(tbl_trend_14d = tbl_trend_14d, tbl_trend_30d = tbl_trend_30d) %>% 
+  saveRDS(., file = file.path(path.local.worldwide.data, "trends_models_new.RDS")) 
 ```
 
 <!-- Main data frames used in the analysis -->
@@ -474,7 +477,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_case_count_14d',
        dpi = 320)
 
 # TRENDS
-map_world_case_trend <- plot_map_world_trend(tbl_case_trend_new, "cases") + 
+map_world_case_trend <- plot_map_world_trend(tbl_case_trend, "cases") + 
   labs(title = 'Case trend (14 days)')
 
 ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_case_trend', '_', week_report, '.png')), 
@@ -1571,7 +1574,7 @@ labels <- label_breaks(breaks)
 df_doubling_cases <- tbl_case_doubling_time %>% 
   select(c(iso_a3:est), doubling_time = 'est') %>% 
   left_join(tbl_case_trend %>% 
-              select(iso_a3, trend = trend_linear), 
+              select(iso_a3, trend = trend_cases), 
             by = 'iso_a3') %>% 
   mutate(
     doubling_time = case_when(
@@ -1644,7 +1647,7 @@ A sharp increasing of deaths (doubling time of less than `r threshold_doubling_t
 df_doubling_deaths <- tbl_death_doubling_time %>% 
   select(c(iso_a3:deaths), doubling_time = 'est') %>% 
   left_join(tbl_death_trend %>% 
-              select(iso_a3, trend = trend_linear), 
+              select(iso_a3, trend = trend_deaths), 
             by = 'iso_a3') %>% 
   mutate(
     doubling_time = case_when(

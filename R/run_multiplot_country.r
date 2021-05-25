@@ -26,7 +26,10 @@ rds_jhu <- readRDS(file.path(path.local.worldwide.data, 'dta_jhu.RDS'))
 
 # Get trends
 trend_models <- readRDS(file.path(path.local.worldwide.data, 'trends_models.RDS'))
+trend_models_new <- readRDS(file.path(path.local.worldwide.data, 'trends_models_new.RDS'))
 
+
+trends_models_new.RDS
 # Countries list dataset
 df_countries <- readRDS(file.path(path.local.data, paste0('df_countries','.RDS')))
 
@@ -100,9 +103,8 @@ for (i in country_list$iso_a3){
     pull(country) %>% 
     gsub(" ", "_", .) %>% 
     gsub("_\\(country\\)", "", .)
-    
   
-  print(paste(i, name_country))
+  # print(paste(i, name_country))
 
     plots <- country_six_plots(country_iso = i,
                                lst_dta = lst_dta_jhu, 
