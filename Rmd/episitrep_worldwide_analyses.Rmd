@@ -387,7 +387,7 @@ coeff_vars <-  c("coeff", "lwr", "upr")
 # 12 days
 # Note: the tbl_case_count (raw data) has the sum since the beginning
 # Note: the data used for the model does not include the last two days (usually incomplete)
-tbl_case_trend_new <- tbl_case_count %>% 
+tbl_case_trend <- tbl_case_count %>% 
   select(-brks) %>% 
   left_join(tbl_trend_14d %>% 
               rename(cases_model = cases), 
@@ -395,13 +395,14 @@ tbl_case_trend_new <- tbl_case_count %>%
   select(-contains("death"), -contains("doubling"))
 
 
-write.csv(tbl_case_trend_new, 
-          file.path(path.local.worldwide.tables, paste0('tbl_case_trend_new', '_', week_report, '.csv')), 
+write.csv(tbl_case_trend, 
+          file.path(path.local.worldwide.tables, paste0('tbl_case_trend',
+                                                        '_', week_report, '.csv')), 
           na = "", 
           row.names = FALSE, 
           fileEncoding = "UTF-8")
 
-tbl_case_trend_new30_d <- tbl_case_count %>% 
+tbl_case_trend_30d <- tbl_case_count %>% 
   select(-brks) %>% 
   left_join(tbl_trend_30d %>% 
               rename(cases_model = cases), 
@@ -419,7 +420,7 @@ tbl_case_trend_new30_d <- tbl_case_count %>%
 #             row.names = FALSE, 
 #             fileEncoding = "UTF-8")
 
-tbl_case_trend_new %>% 
+tbl_case_trend %>% 
   select(iso = iso_a3, trend =  trend_cases) %>% 
   write.csv(file.path(path.local.worldwide.tables, paste0('epi-case-trends-', week_report, '.csv')), 
             row.names = FALSE, 
@@ -435,7 +436,7 @@ tbl_case_trend_new %>%
 #   arrange(continent, desc(coeff))
 
 # New trends
-tbl_case_increasing_trend <- tbl_case_trend_new %>% 
+tbl_case_increasing_trend <- tbl_case_trend %>% 
   filter(trend_cases  %in% c('Increasing', "Likely increasing")) %>% 
   arrange(continent, desc(trend_cases_coeff)) %>% 
   select(-contains("death"), -contains("doubling")) %>% 
@@ -760,21 +761,21 @@ map_world_death_count + labs(title = NULL)
 # 12 days
 # Note: the tbl_case_count (raw data) has the sum since the beginning
 # Note: the data used for the model does not include the last two days (usually incomplete)
-tbl_death_trend_new <- tbl_death_count %>% 
+tbl_death_trend <- tbl_death_count %>% 
   select(-brks) %>% 
   left_join(tbl_trend_14d %>% 
               rename(deaths_model = deaths), 
             by = c("iso_a3", "continent", "region", "country")) %>% 
-  select(-contains("cases"))
+  select(-contains("cases"), -contains("doubling"))
 
 
-write.csv(tbl_death_trend_new, 
-          file.path(path.local.worldwide.tables, paste0('tbl_death_trend_new', '_', week_report, '.csv')), 
+write.csv(tbl_death_trend, 
+          file.path(path.local.worldwide.tables, paste0('tbl_death_trend', '_', week_report, '.csv')), 
           na = "", 
           row.names = FALSE, 
           fileEncoding = "UTF-8")
 
-tbl_death_trend_new30_d <- tbl_death_count %>% 
+tbl_death_trend_30d <- tbl_death_count %>% 
   select(-brks) %>% 
   left_join(tbl_trend_30d %>% 
               rename(deaths_model = deaths), 
@@ -792,7 +793,7 @@ tbl_death_trend_new30_d <- tbl_death_count %>%
 #   arrange(continent, desc(coeff))
 
 # New trends
-tbl_death_increasing_trend <- tbl_death_trend_new %>% 
+tbl_death_increasing_trend <- tbl_death_trend %>% 
  filter(trend_deaths  %in% c('Increasing', "Likely increasing")) %>% 
   arrange(continent, desc(trend_deaths_coeff)) %>% 
   select(-contains("cases"), -contains("doubling")) %>% 
@@ -831,7 +832,7 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_death_count_14d'
 
 
 # TRENDS
-map_world_death_trend <- plot_map_world_trend(tbl_death_trend_new, 'deaths') + 
+map_world_death_trend <- plot_map_world_trend(tbl_death_trend, 'deaths') + 
   labs(title = 'Death trend (14 days)')
 
 ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_death_trend', '_', week_report, '.png')), 
@@ -1050,20 +1051,25 @@ gtbl_countries_increasing_deaths %>%
 tbl_summary_cases_deaths <- df_countries %>%
   left_join(select(tbl_case_count, iso_a3, cases)) %>%
   left_join(select(tbl_death_count, iso_a3, deaths)) %>%
-  left_join(select(tbl_case_trend, iso_a3, all_of(vars_trends(model_for_trend)))) %>%
+  left_join(tbl_case_trend) %>%
   mutate(
-    trend_cases_coeff = round(exp(coeff), digits = 2),
+    trend_cases_coeff = round(exp(trend_cases_coeff), digits = 2),
     trend_cases_ci = case_when(
-      is.na(coeff) ~ NA_character_,
-      TRUE ~ combine_ci(exp(lwr), exp(upr), digits = 2))) %>%
-  select(-one_of('coeff','lwr', 'upr', 'trend')) %>%
-  left_join(select(tbl_death_trend, iso_a3, all_of(vars_trends(model_for_trend)))) %>%
+      is.na(trend_cases_coeff) ~ NA_character_,
+      TRUE ~ combine_ci(exp(trend_cases_coeff_lwr95), 
+                        exp(trend_cases_coeff_upr95), digits = 2))) %>%
+  select(-one_of('trend_cases_coeff_lwr95', 
+                 'trend_cases_coeff_upr95', 'trend_cases', 
+                 "cases_model")) %>%
+  left_join(tbl_death_trend) %>%
   mutate(
-    trend_deaths_coeff = round(exp(coeff), digits = 2),
+    trend_deaths_coeff = round(exp(trend_deaths_coeff), digits = 2),
     trend_deaths_ci = case_when(
-      is.na(coeff) ~ NA_character_,
-      TRUE ~ combine_ci(exp(lwr), exp(upr), digits = 2))) %>%
-  select(-one_of('coeff','lwr', 'upr', 'trend')) %>%
+      is.na(trend_deaths_coeff) ~ NA_character_,
+      TRUE ~ combine_ci(exp(trend_deaths_coeff_lwr95), 
+                        exp(trend_deaths_coeff_upr95), digits = 2))) %>%
+  select(-one_of('trend_deaths_coeff_lwr95', 'trend_deaths_coeff_upr95', 
+                 'trend_deaths', "deaths_model")) %>%
   mutate(
     cfr = round(deaths / cases * 100, digits = 1)) %>%
   left_join(select(df_pop_country, iso_a3, pop)) %>%
@@ -1091,7 +1097,7 @@ gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>%
     deaths = 'Deaths', 
     cfr = html('naïve<br>CFR'),
     cases_ip = 'cases',
-    deaths_ip ='deaths', 
+    deaths_ip = 'deaths', 
     cases_14d = 'Cases', 
     deaths_14d = 'Deaths', 
     trend_cases_coeff  = 'Rate', 
