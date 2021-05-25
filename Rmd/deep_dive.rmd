@@ -36,7 +36,7 @@ if (!exists('path.root')) {
 
 source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
 source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
-source(file.path(path.R, "utils_modelling.R")       , encoding = "UTF-8")
+source(file.path(path.R, "utils_modelling.R") , encoding = "UTF-8")
 
 # Packages
 library(tidyverse)
@@ -607,7 +607,9 @@ values <- scico::scico(5, palette = "vikO",
 
 map_case_trend_14d <- ggplot(sf_trend_14d) + 
   geom_sf(aes(fill = trend_cases), 
-          size = 0.1, alpha = 0.8) + 
+          size = 0.1
+          # alpha = 0.8
+          ) + 
   scale_fill_manual(
     name = NULL, 
     values = values, 
