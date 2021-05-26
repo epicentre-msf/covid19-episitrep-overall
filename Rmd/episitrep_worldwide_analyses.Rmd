@@ -172,11 +172,11 @@ threshold_doubling_time <- 14
 
 ### New trends ###
 
-# Get linear trends and coeffs at 14days
-
+# Get linear trends and coeffs at 30 days
 
 tbl_trend_30d <- covidutils::get_trends(dta_jhu, 
                                         time_unit_extent = 30,
+                                        omit_past_days = 0,
                                         add_ci = TRUE) %>% 
   get_doubling_time() %>% 
   mutate(trend_cases = factor(trend_cases, levels = c("Increasing", "Likely increasing", 
@@ -187,8 +187,10 @@ tbl_trend_30d <- covidutils::get_trends(dta_jhu,
                                                         "Likely decreasing", "Decreasing")))
 
 
+# Get linear trends and coeffs at 14 days
 tbl_trend_14d <- covidutils::get_trends(dta_jhu, 
                                         time_unit_extent = 14,
+                                        omit_past_days = 0,
                                         add_ci = TRUE) %>% 
   get_doubling_time() %>% 
   mutate(trend_cases = factor(trend_cases, levels = c("Increasing", "Likely increasing", 
@@ -198,7 +200,21 @@ tbl_trend_14d <- covidutils::get_trends(dta_jhu,
                                                         "Stable", 
                                                         "Likely decreasing", "Decreasing")))
 
-list(tbl_trend_14d = tbl_trend_14d, tbl_trend_30d = tbl_trend_30d) %>% 
+
+tbl_preds_all <- get_all_preds(lst_dta_jhu)
+
+# Save
+list(tbl_trend_14d = tbl_trend_14d,
+     par_14d       = get_date_extent(dta_jhu, 
+                                     time_unit_extent = 14,
+                                     omit_past_days = 0), 
+     
+     tbl_trend_30d = tbl_trend_30d,
+     par_30d       = get_date_extent(dta_jhu, 
+                                     time_unit_extent = 30,
+                                     omit_past_days = 0),
+     
+     tbl_preds_all = tbl_preds_all) %>% 
   saveRDS(., file = file.path(path.local.worldwide.data, "trends_models_new.RDS")) 
 ```
 
@@ -244,7 +260,8 @@ tbl_case_count_14d <- dta_jhu_right_censored %>%
                  right = date_max_report)) %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(cases = sum(cases, na.rm = TRUE)) %>% 
-  mutate(brks = cut(cases, breaks_cases, labels = labels_cases, include.lowest = TRUE, right = FALSE)) %>% 
+  mutate(brks = cut(cases, breaks_cases, labels = labels_cases, 
+                    include.lowest = TRUE, right = FALSE)) %>% 
   ungroup()
 
 # --- --- --- --- --- 
@@ -255,7 +272,8 @@ tbl_case_count_14d <- dta_jhu_right_censored %>%
 tbl_death_count <- dta_jhu_right_censored %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(deaths = sum(deaths, na.rm = TRUE)) %>% 
-  mutate(brks = cut(deaths, breaks_deaths, labels = labels_deaths, include.lowest = TRUE, right = FALSE)) %>% 
+  mutate(brks = cut(deaths, breaks_deaths, labels = labels_deaths, 
+                    include.lowest = TRUE, right = FALSE)) %>% 
   ungroup()
 
 # Summary table of deaths in the last 30 days 
