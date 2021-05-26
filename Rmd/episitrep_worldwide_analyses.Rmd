@@ -201,7 +201,9 @@ tbl_trend_14d <- covidutils::get_trends(dta_jhu,
                                                         "Likely decreasing", "Decreasing")))
 
 
-tbl_preds_all <- get_all_preds(lst_dta_jhu)
+tbl_preds_all <- get_all_preds(lst_dta_jhu,
+                              long_trend = 30,
+                              short_trend = 14)
 
 # Save
 list(tbl_trend_14d = tbl_trend_14d,
