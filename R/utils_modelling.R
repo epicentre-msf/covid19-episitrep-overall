@@ -817,3 +817,28 @@ get_doubling_time <- function(df_trends,
 
 
 
+#' Get limits for trend regression
+#'
+#' @param df a dataframe with the data
+#' @param time_unit_extent the number of days to include
+#' @param omit_past_day should we remove some days before today? 
+#' Typically, in the sitrep scripts, it should be 0 because we only 
+#' consider data to the past Sunday. But may be non null for dashboard 
+#' scripts.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+get_date_extent <- function(df, 
+                            time_unit_extent = 14,
+                            omit_past_days = 0){
+  
+  last_date    <- max(df$date, na.rm = TRUE) - omit_past_days
+  dates_extent <- c(last_date - (time_unit_extent - 1), last_date)
+  
+  return(dates_extent)
+}
+
+
+
