@@ -826,10 +826,9 @@ get_doubling_time <- function(df_trends,
 #' consider data to the past Sunday. But may be non null for dashboard 
 #' scripts.
 #'
-#' @return
+#' @return a vector with the min and max date
 #' @export
-#'
-#' @examples
+
 get_date_extent <- function(df, 
                             time_unit_extent = 14,
                             omit_past_days = 0){
@@ -842,3 +841,55 @@ get_date_extent <- function(df,
 
 
 
+#' Get predictions for both cases and deaths, for the short trend
+#'  and long trend models
+#'
+#' @param df_list a list of dataframes (one dataframe = one country)
+#' @param short_trend number of days to keep for the short trend (e.g. 14)
+#' @param long_trend  number of days to keep for the long trend (e.g.30)
+#'
+#' @return a tibble in long format with cases and deaths, for 
+#' the two type of models
+#' @export
+
+get_all_preds <- function(df_list, short_trend, long_trend){
+  
+  tbl_preds_cases_30d <- df_list %>% 
+    map_dfr(get_preds, 
+            serie = "cases",
+            time_unit_extent = long_trend,
+            min_sum = 30,
+            ma_window = 3) %>% 
+    mutate(model = "long") 
+  
+  tbl_preds_deaths_30d <- df_list %>% 
+    map_dfr(get_preds, 
+            serie = "deaths",
+            time_unit_extent = long_trend,
+            min_sum = 30,
+            ma_window = 3) %>% 
+    mutate(model = "long") 
+  
+  tbl_preds_cases_14d <- df_list %>% 
+    map_dfr(get_preds, 
+            serie = "cases",
+            time_unit_extent = short_trend,
+            min_sum = 30,
+            ma_window = 3) %>% 
+    mutate(model = "short")
+  
+  tbl_preds_deaths_14d <- df_list %>% 
+    map_dfr(get_preds, 
+            serie = "deaths",
+            time_unit_extent = short_trend,
+            min_sum = 30,
+            ma_window = 3) %>% 
+    mutate(model = "short")
+  
+  all_preds <- rbind(tbl_preds_cases_30d,
+                     tbl_preds_deaths_30d,
+                     tbl_preds_cases_14d,
+                     tbl_preds_deaths_14d)
+  
+  return(all_preds)
+}
