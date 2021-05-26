@@ -563,75 +563,45 @@ country_four_plots <- function(country_iso, lst_dta = lst_jhu, model = 'linear')
 #' @export
 #'
 #' @examples
-country_six_plots <- function(country_iso, 
-                              lst_dta = lst_dta_jhu, 
-                              countries = df_countries) {
+
+country_six_plots <- function(lst_dta) {
   
   # Parameters
   main_colour  <- c(cases = '#1A62A3', deaths = '#e10000')
-  name_country <- countries %>% filter(iso_a3 == country_iso) %>% pull(country)
-  date_min     <- lst_dta[[country_iso]] %>% filter(cases != 0) %>% pull(date) %>% min()
-  
-  # Table observations
-  dta_obs <- lst_dta[[country_iso]] %>% 
-    select(date, cases, deaths) %>% 
-    pivot_longer(-date, names_to = 'obs', values_to = 'count')
-  
-  
-  # Table predictions
-  mdl_cases_short  <- model_cnt_cases_linear_short
-  mdl_cases_long   <- model_cnt_cases_linear_long
-  mdl_deaths_short <- model_cnt_deaths_linear_short
-  mdl_deaths_long  <- model_cnt_deaths_linear_long
-  
-  mld_par_short <- mdl_cases_short$par
-  dates_extent_short <- c(mld_par_short[[1]][1], mld_par_short[[1]][2])
-  
-  mld_par_long <- mdl_cases_long$par
-  dates_extent_long <- c(mld_par_long[[1]][1], mld_par_long[[1]][2])
+  name_country <- lst_dta %>% distinct(country)
+  name_country_save <- name_country %>% 
+    gsub(" ", "_", .) %>% 
+    gsub("_\\(country\\)", "", .)
+  date_min <- lst_dta %>% filter(obs == "cases", 
+                                 count != 0) %>% pull(date) %>% min()
+  dates_extent_short <- c(trend_models_new$par_14d[1], trend_models_new$par_14d[2])
+  dates_extent_long  <- c(trend_models_new$par_30d[1], trend_models_new$par_30d[2])
   
   
-  dta_cases_short <- lst_dta[[country_iso]] %>% 
-    select(date, count = cases) %>% 
-    mutate(
-      obs = 'cases') %>% 
+  # Prepare dataframe observation + predictions in the last 14 days for right pannel plot
+  dta_preds_short <- lst_dta %>%
     filter(between(date, dates_extent_short[1], dates_extent_short[2])) %>% 
-    tibble::add_column(mdl_cases_short[['preds']][[country_iso]])
+    filter(
+      # country == name_country,
+      model == "short")
   
-  dta_deaths_short <- lst_dta[[country_iso]] %>% 
-    select(date, count = deaths) %>% 
-    mutate(
-      obs = 'deaths') %>% 
-    filter(between(date, dates_extent_short[1], dates_extent_short[2])) %>% 
-    tibble::add_column(mdl_deaths_short[['preds']][[country_iso]]) 
-  
-  dta_mld_short <- rbind(dta_cases_short, dta_deaths_short)
-  
-  
-  dta_cases_long <- lst_dta[[country_iso]] %>% 
-    select(date, count = cases) %>% 
-    mutate(
-      obs = 'cases') %>% 
+  # Prepare dataframe observation + predictions in the last 30 days for middle pannel plot
+  dta_preds_long <- lst_dta %>%
     filter(between(date, dates_extent_long[1], dates_extent_long[2])) %>% 
-    tibble::add_column(mdl_cases_long[['preds']][[country_iso]])
-  
-  dta_deaths_long <- lst_dta[[country_iso]] %>% 
-    select(date, count = deaths) %>% 
-    mutate(
-      obs = 'deaths') %>% 
-    filter(between(date, dates_extent_long[1], dates_extent_long[2])) %>% 
-    tibble::add_column(mdl_deaths_long[['preds']][[country_iso]]) 
-  
-  dta_mld_long <- rbind(dta_cases_long, dta_deaths_long)
+    filter(
+      # country == name_country,
+      model == "long")
   
   
-  # Plots
-  plot_obs <- ggplot(dta_obs, aes(x = date, y = count)) + 
+  # Plots left pannel
+  plot_obs <- ggplot(lst_dta, aes(x = date, y = count)) + 
     facet_wrap(~obs, scales = "free_y", ncol = 1) + 
     geom_col(aes(colour = obs, fill = obs)) + 
     scale_colour_manual(values = main_colour) + 
     scale_fill_manual(values = main_colour) + 
-    scale_x_date(limits = c(date_min, NA), breaks = '2 months', date_labels = "%b-%Y") +
+    scale_x_date(limits = c(date_min, NA), 
+                 breaks = '2 months', 
+                 date_labels = "%b-%Y") +
     xlab('') + 
     ylab('frequency') + 
     labs(subtitle = 'Since the first cases reported') + 
@@ -640,52 +610,84 @@ country_six_plots <- function(country_iso,
           strip.text = element_text(size = 11))
   
   
-  plot_mdl_long <- ggplot(dta_mld_long, aes(x = date, y = count)) + 
+  # Plot middle pannel
+  plot_mdl_long <- ggplot(dta_preds_long, 
+                          aes(x = date, y = count)) + 
+    
     facet_wrap(~ obs, scales = "free_y", ncol = 1) + 
+    
     geom_point(aes(colour = obs), size = 2) + 
     scale_colour_manual(values = main_colour) + 
-    geom_ribbon(aes(ymin = lwr, ymax = upr, fill = obs), alpha = 0.4) + 
-    geom_line(aes(y = fit, colour = obs), size = 1) + 
+    
+    geom_ribbon(aes(ymin = exp_lower, 
+                    ymax = exp_upper, 
+                    fill = obs), alpha = 0.4) + 
+    geom_line(aes(y = exp_fitted , colour = obs), 
+              size = 1) + 
     scale_fill_manual(values = main_colour) + 
-    scale_x_date(limits = dates_extent_long, date_labels = "%d-%b") +
+    
+    scale_x_date(limits = dates_extent_long, 
+                 date_labels = "%d-%b") +
     xlab('') + 
     ylab(paste0('frequency and fitted values')) + 
     labs(subtitle = paste('Last', (dates_extent_long[[2]] - dates_extent_long[[1]] + 1), 'days')) + 
-    theme_light() + 
     theme_light() + 
     theme(legend.position = "none", 
           strip.text = element_text(size = 11))
   
   
-  plot_mdl_short <- ggplot(dta_mld_short, aes(x = date, y = count)) + 
+  # Plot right pannel
+  plot_mdl_short <- ggplot(dta_preds_long, 
+                           aes(x = date, y = count)) + 
+    
     facet_wrap(~ obs, scales = "free_y", ncol = 1) + 
+    
     geom_point(aes(colour = obs), size = 2) + 
     scale_colour_manual(values = main_colour) + 
-    geom_ribbon(aes(ymin = lwr, ymax = upr, fill = obs), alpha = 0.4) + 
-    geom_line(aes(y = fit, colour = obs), size = 1) + 
+    
+    geom_ribbon(aes(ymin = exp_lower, 
+                    ymax = exp_upper, 
+                    fill = obs), 
+                alpha = 0.4) + 
+    
+    geom_line(aes(y = exp_fitted, 
+                  colour = obs), size = 1) + 
+    
     scale_fill_manual(values = main_colour) + 
     scale_x_date(limits = dates_extent_short, breaks = '4 days', date_labels = "%d-%b") +
     xlab('') + 
     ylab(paste0('frequency and fitted values')) + 
     labs(subtitle = paste('Last', (dates_extent_short[[2]] - dates_extent_short[[1]] + 1), 'days')) + 
-    theme_light() + 
+    
     theme_light() + 
     theme(legend.position = "none", 
           strip.text = element_text(size = 11))
   
   
-  
-  ggarrange(plot_obs, 
-            plot_mdl_long, 
-            plot_mdl_short, 
-            ncol = 3, 
-            widths = c(2,1.4,1.1)) %>% 
+  # Arrange plots
+  combined_plot <- ggarrange(plot_obs, 
+                             plot_mdl_long, 
+                             plot_mdl_short, 
+                             ncol = 3, 
+                             widths = c(2,1.4,1.1)) %>% 
     
-    annotate_figure(top = text_grob(paste(glue('Covid-19 cases and deaths and trend estimations in {name_country}'), 
-                                          glue('Data until {format(date_max_report, "%d %B %Y")} (fitting with linear regression model)'), 
+    annotate_figure(top = text_grob(paste(glue::glue('Covid-19 cases and deaths and trend estimations in {name_country}'), 
+                                          glue::glue('Data until {format(date_max_report, "%d %B %Y")} (fitting with linear regression model)'), 
                                           sep = "\n"), 
                                     face = "bold", size = 14))
+  
+  
+  
+  ggsave(file.path(path.local.worldwide.graphs.country_trends,
+                   glue::glue("trends_{name_country_save}_{week_report}.png")),
+         plot = combined_plot,
+         scale = 1,
+         width = 9,
+         dpi = 320)
+  
+  return(combined_plot)
 }
+
 
 
 
