@@ -1,9 +1,5 @@
-################# PER PROJECT INTERSECTION  ################
+# Generate tables and figures for Scientific day 2021
 
-# Generate tables and figures for projects on intersection data
-# Just a run of what was in the OC level script but in intersection,
-# to explore and prepare a draft for the JS.
-# (hence tables and figures numbers that may appear random)
 
 # Setup -----------------------------------------------
 if (!exists('path.root')) {
@@ -59,7 +55,7 @@ load(file.path(path.local.msf.data,
 
 # Prepare data ----------------------------------------
 
-# Data for per project analysis: only the confirmed, probable and suspects
+# Data for analysis: only the confirmed, probable and suspects
 dta_linelist_regions <- dta_linelist %>%
   filter(ind_MSF_covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
   mutate(MSF_severity = ifelse(is.na(MSF_severity), 
@@ -89,16 +85,20 @@ colors_continent <- c()
 
 # SEVERITY --------------------------------------------
 
-## P + S + C -------------------------------------------
+## Epicurve -------------------------------------------
 
 dta_linelist_regions %>%
   group_by(continent, region_js, epi_week_admission, MSF_severity) %>%
+  summarise(n = n()) %>% 
   drop_na(epi_week_admission) %>%
   
   ggplot(aes(x = epi_week_admission,
-             fill   = MSF_severity)) +
+             y = n,
+             fill = MSF_severity)) +
   
-  geom_histogram(colour = "black") +
+  geom_col(
+    # colour = "white"
+    ) +
   
   # Personalise coulours
   scale_fill_manual(values = palette_Reds4U, 
