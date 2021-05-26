@@ -79,8 +79,65 @@ dta_linelist_regions <- dta_linelist %>%
          )) 
 
 
+
+dta_linelist_regions_aggregated <- dta_linelist_with_aggregated %>%
+  filter(ind_MSF_covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+  mutate(region_js = case_when(
+           continent == "Europe" ~ "Europe",
+           continent == "Africa" ~ "Africa",
+           continent == "Americas" ~ "Americas",
+           region    == "Western Asia" ~ "Middle East",
+           region    == "Central Asia" ~ "Asia",
+           region    == "Southern Asia" ~ "Asia",
+           TRUE ~ region
+         )) 
+
 colors_continent <- c()
 
+
+
+# EPICURVE CAS --------------------------------------------
+
+# Par continent
+
+dta_linelist_regions_aggregated %>% 
+  count(region_js, ind_MSF_covid_status, epi_week_consultation) %>% 
+  
+  ggplot(aes(x = epi_week_consultation, 
+             y = n, 
+             fill = ind_MSF_covid_status)) +
+  facet_wrap(vars(region_js), scales = 'free_y') +
+  geom_col() +
+  ggthemes::scale_fill_tableau(name = NULL, 
+                               palette = "Tableau 20") +
+  
+  scale_x_date(date_breaks = "2 months",
+               date_labels = "%b %y",
+               expand = expansion(mult = c(0.01, 0.02))) +
+  
+  scale_y_continuous(name = "Patients", expand = expansion(mult = c(0, 0.02))) +
+  
+  labs(x = "\nMonth of consultation / admission",
+       y = "Nb patients", 
+       caption = 'NOTE: free y axis scale among graphics') +
+  
+  theme_light() +
+  theme(legend.position = 'top', 
+        legend.title     = element_text(face = "bold"),
+        legend.text = element_text(size = 12),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text   = element_text(size = 14),
+        axis.text.x  = element_text(size = 10),
+        axis.text.y  = element_text(size = 12),
+        axis.title   = element_text(size = 14))
+
+
+ggsave(filename = paste0('epicurve_region', '_', week_report, '.png'),
+       path = path.local.msf.extra_js,
+       width = 14,
+       height = 6,
+       dpi = 300)
 
 
 # SEVERITY --------------------------------------------
@@ -96,9 +153,7 @@ dta_linelist_regions %>%
              y = n,
              fill = MSF_severity)) +
   
-  geom_col(
-    # colour = "white"
-    ) +
+  geom_col() +
   
   # Personalise coulours
   scale_fill_manual(values = palette_Reds4U, 
@@ -109,8 +164,8 @@ dta_linelist_regions %>%
                date_labels = "%b %y",
                expand = expansion(mult = c(0.01, 0.01))) +
   
-  labs(x = "Month of consultation / admission",
-       y = "Nb patients\n",
+  labs(x     = "Month of consultation / admission",
+       y     = "Nb patients\n",
        title = "Severity - All patients S+P+C") +
   
   theme(panel.grid.major = element_blank(),
@@ -122,7 +177,7 @@ dta_linelist_regions %>%
 ggsave(filename = paste0('epicurve_severity', '_', week_report, '.png'),
        path = path.local.msf.extra_js,
        width = 12,
-       height = ,
+       height = 6,
        # scale = 1.1,
        dpi = 320)
 
