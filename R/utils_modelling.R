@@ -453,30 +453,30 @@ get_trend_models <- function(lst_jhu  = lst_dta_jhu,
     
     # <!-- Modelling Cases Trends -->
     
-    # model_cnt_cases_linear_short  <- linear_model_cnt(series = 'cases', 
-    #                                                   lst_dta = lst_jhu, 
-    #                                                   last_date = date_max, 
-    #                                                   time_unit_extent = periods_trends[1], 
+    # model_cnt_cases_linear_short  <- linear_model_cnt(series = 'cases',
+    #                                                   lst_dta = lst_jhu,
+    #                                                   last_date = date_max,
+    #                                                   time_unit_extent = periods_trends[1],
     #                                                   min_sum = 30)
     # 
-    # model_cnt_cases_linear_long   <- linear_model_cnt(series = 'cases', 
-    #                                                   lst_dta = lst_jhu, 
-    #                                                   last_date = date_max, 
-    #                                                   time_unit_extent = periods_trends[2], 
+    # model_cnt_cases_linear_long   <- linear_model_cnt(series = 'cases',
+    #                                                   lst_dta = lst_jhu,
+    #                                                   last_date = date_max,
+    #                                                   time_unit_extent = periods_trends[2],
     #                                                   min_sum = 30)
     
     # <!-- Modelling Deaths Trends -->
     
-    # model_cnt_deaths_linear_short  <- linear_model_cnt(series = 'deaths', 
-    #                                                    lst_dta = lst_jhu, 
-    #                                                    last_date = date_max, 
-    #                                                    time_unit_extent = periods_trends[1], 
+    # model_cnt_deaths_linear_short  <- linear_model_cnt(series = 'deaths',
+    #                                                    lst_dta = lst_jhu,
+    #                                                    last_date = date_max,
+    #                                                    time_unit_extent = periods_trends[1],
     #                                                    min_sum = 30)
     # 
-    # model_cnt_deaths_linear_long   <- linear_model_cnt(series = 'deaths', 
-    #                                                    lst_dta = lst_jhu, 
-    #                                                    last_date = date_max, 
-    #                                                    time_unit_extent = periods_trends[2], 
+    # model_cnt_deaths_linear_long   <- linear_model_cnt(series = 'deaths',
+    #                                                    lst_dta = lst_jhu,
+    #                                                    last_date = date_max,
+    #                                                    time_unit_extent = periods_trends[2],
     #                                                    min_sum = 30)
     
 
@@ -494,9 +494,9 @@ get_trend_models <- function(lst_jhu  = lst_dta_jhu,
     
     
     mdls <- list(
-      # "model_cnt_cases_linear_short"  = model_cnt_cases_linear_short, 
-      # "model_cnt_cases_linear_long"   = model_cnt_cases_linear_long, 
-      # "model_cnt_deaths_linear_short" = model_cnt_deaths_linear_short, 
+      # "model_cnt_cases_linear_short"  = model_cnt_cases_linear_short,
+      # "model_cnt_cases_linear_long"   = model_cnt_cases_linear_long,
+      # "model_cnt_deaths_linear_short" = model_cnt_deaths_linear_short,
       # "model_cnt_deaths_linear_long"  = model_cnt_deaths_linear_long,
       "lst_coeffs_cases"  = lst_coeffs_cases, 
       "lst_coeffs_deaths" = lst_coeffs_deaths, 
@@ -692,19 +692,25 @@ plot_coeff <- function(dta, name, series = "cases") {
 
 #' Get model prediction deepdive
 #'
-#' @param df a list of dataframes (on df for each country)
+#' @param df a dataframe for a given country (or to any unit you 
+#' want to do the regression on)
+#' @param serie cases or deaths?
 #' @param time_unit_extent the number of days to include
 #' @param min_sum what should be the minimum number of cases
 #' to run the model
 #' @param ma_window the number of days on which to calculate
 #' the moving average 
-#' @param var cases or deaths?
-#'
-#' @return
+#' @param omit_past_day should we remove some days before today? 
+#' Typically, in the sitrep scripts, it should be 0 because we only 
+#' consider data to the past Sunday. But may be non null for dashboard 
+#' scripts.
+#' 
+#' @return A tibble containing the predictions of the model in 
+#' their natural scale
 #' @export
-#'
-#' @examples
+
 get_preds <- function(df,
+                      serie = "cases",
                       time_unit_extent = 30,
                       min_sum = 30,
                       ma_window = 3,
@@ -725,35 +731,36 @@ get_preds <- function(df,
   # Compute moving average
   df1 <- df1 %>% 
     group_by(country) %>% 
-    mutate(ma0 = as.numeric(forecast::ma(cases, order = ma_window)),
+    mutate(ma0 = as.numeric(forecast::ma(!!sym(serie), order = ma_window)),
            ma = dplyr::na_if(ma0, 0)) %>% 
     ungroup()  
   
   
   
-  if (nrow(df1) > ma_window & sum(df1[["cases"]], na.rm = TRUE) > min_sum) {
+  if (nrow(df1) > ma_window & sum(df1[[serie]], na.rm = TRUE) > min_sum) {
     
     # Run linear model and get predicated values and confidence intervals
     df2 <- df1 %>% 
       nest(data = -country) %>% 
-      mutate(fit = map(data, ~lm(log(ma) ~ date, data = .)),
+      mutate(fit       = map(data, ~lm(log(ma) ~ date, data = .)),
              augmented = map(fit, broom::augment, interval = 'confidence')) %>% 
       unnest(augmented) %>% 
-      mutate(exp_fitted = exp(.fitted),
-             exp_lower = exp(.lower),
-             exp_upper = exp(.upper),
-             check_counts_ma = exp(`log(ma)`)) %>%
-      select(-fit, -data,
-             -starts_with("."), -`log(ma)`)
+      mutate(exp_fitted      = exp(.fitted),
+             exp_lower       = exp(.lower),
+             exp_upper       = exp(.upper),
+             check_counts_ma = exp(`log(ma)`),
+             obs = serie) %>%
+      select(-fit, -data, -starts_with("."), -`log(ma)`)
   } else {
     
     df2 <- df1 %>% 
       nest(data = -c(country, date)) %>% 
       select(-data) %>% 
-      mutate(exp_fitted  = NA_real_, 
-             exp_lower  = NA_real_,
-             exp_upper   = NA_real_,
-             check_counts_ma  = NA_real_) %>% 
+      mutate(exp_fitted       = NA_real_, 
+             exp_lower        = NA_real_,
+             exp_upper        = NA_real_,
+             check_counts_ma  = NA_real_,
+             obs = serie) %>% 
       select(country, date, everything())
   }
   
@@ -766,7 +773,8 @@ get_preds <- function(df,
 #'
 #' @param df_trends a dataframe generated by the get_trends() function.
 #' Should have the confidence intervals on coeffs to run.
-#' @param serie Which serie to use to generate doubling time (cases, deaths, both). Defaults to "both".
+#' @param serie Which serie to use to generate doubling time (cases, 
+#' deaths, both). Defaults to "both".
 #'
 #' @return A tibble. The same tibble with additional columns for doubling
 #' time estimates and its confidence intervals
@@ -806,4 +814,6 @@ get_doubling_time <- function(df_trends,
   
   return(df_trends)
 }
+
+
 
