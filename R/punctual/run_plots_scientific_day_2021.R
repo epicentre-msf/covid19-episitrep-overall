@@ -74,15 +74,57 @@ dta_linelist_regions <- dta_linelist %>%
                       labels = c('Male', 'Female')),
          region_js = case_when(
            continent == "Europe" ~ "Europe",
-           region == "Caribbean" ~ "Central America",
-           region == "Western Asia" ~ "Middle East",
-           region == "Central Asia" ~ "Central / Southern Asia",
-           region == "Southern Asia" ~ "Central / Southern Asia",
-           region == "Northern Africa" ~ "Northern / Eastern Africa",
-           region == "Eastern Africa" ~ "Northern / Eastern Africa",
+           continent == "Africa" ~ "Africa",
+           continent == "Americas" ~ "Americas",
+           region    == "Western Asia" ~ "Middle East",
+           region    == "Central Asia" ~ "Asia",
+           region    == "Southern Asia" ~ "Asia",
            TRUE ~ region
          )) 
 
+
+colors_continent <- c()
+
+
+
+# SEVERITY --------------------------------------------
+
+## P + S + C -------------------------------------------
+
+dta_linelist_regions %>%
+  group_by(continent, region_js, epi_week_admission, MSF_severity) %>%
+  drop_na(epi_week_admission) %>%
+  
+  ggplot(aes(x = epi_week_admission,
+             fill   = MSF_severity)) +
+  
+  geom_histogram(colour = "black") +
+  
+  # Personalise coulours
+  scale_fill_manual(values = palette_Reds4U, 
+                    name = "Severity") +
+  
+  # Personalise x axis
+  scale_x_date(date_breaks = "1 month",
+               date_labels = "%b %y",
+               expand = expansion(mult = c(0.01, 0.01))) +
+  
+  labs(x = "Month of consultation / admission",
+       y = "Nb patients\n",
+       title = "Severity - All patients S+P+C") +
+  
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title     = element_text(face = "bold"))
+
+
+
+ggsave(filename = paste0('epicurve_severity', '_', week_report, '.png'),
+       path = path.local.msf.extra_js,
+       width = 12,
+       height = ,
+       # scale = 1.1,
+       dpi = 320)
 
 
 
@@ -103,102 +145,6 @@ dta_age_median_all <- dta_linelist_regions %>%
               values_from  = x,
               names_prefix = "q_")
 
-
-dta_age_spc <- dta_linelist_regions %>%
-  filter(ind_MSF_covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
-  group_by(continent, region_js) %>%
-  summarise(x = quantile(age_in_years, c(0.25, 0.5, 0.75), na.rm = TRUE),
-            q = c(0.25, 0.5, 0.75),
-            n = n()) %>%
-  pivot_wider(names_from   = q,
-              values_from  = x,
-              names_prefix = "q_") %>% 
-  mutate(status_graphe_js  = as.factor("Susp + Prob + Conf"))
-
-
-dta_age_conf <- dta_linelist_regions %>%
-  filter(ind_MSF_covid_status == "Confirmed") %>% 
-  group_by(continent, region_js) %>%
-  summarise(x = quantile(age_in_years, c(0.25, 0.5, 0.75), na.rm = TRUE),
-            q = c(0.25, 0.5, 0.75),
-            n = n()) %>%
-  pivot_wider(names_from = q,
-              values_from =x,
-              names_prefix = "q_") %>% 
-  mutate(status_graphe_js = as.factor("Confirmed"))
-
-dta_age_median <- rbind(dta_age_spc, dta_age_conf)
-
-
-
-## Fig. age confirmed vs all (slopes)-------------------------
-
-# Pentes
-pd_age = 0.5
-colors_status = c("#345B8C", "#8A331F")
-
-
-ggplot(dta_age_median,
-       aes(
-         x = status_graphe_js,
-         y = q_0.5,
-         colour = status_graphe_js,
-         shape = status_graphe_js,
-         group = region_js
-       )) +
-  facet_wrap(~continent, ncol = 4, scales = "free_x") +
-  
-  geom_line(colour = "grey",
-            # position = position_dodge(width = pd),
-            size = 1) +
-  geom_point(aes(size = n),
-             # position = position_dodge(width = pd)
-  ) +
-  
-  # geom_errorbar(aes(ymin = q_0.25,
-  #                   ymax = q_0.75),
-  #               width = 0,
-  #               size = 0.1,
-  #               alpha = 0.3,
-  #               position = position_dodge(width = pd)) +
-  # 
-  # coord_flip() +
-  
-  labs(x = "",
-       y = "Age (years)\n",
-       title = "Median age of patients (in years)") +
-  
-  scale_colour_manual(name = "Status",
-                      values = colors_status,
-                      breaks = c("Susp + Prob + Conf", "Confirmed"),
-                      labels = c("Suspected, Probable,\n Confirmed", "Confirmed only")
-                      ) +
-  
-  scale_shape(name = "Status",
-              breaks = c("Susp + Prob + Conf", "Confirmed"),
-              labels = c("Suspected, Probable,\n Confirmed", "Confirmed only")
-              ) +
-  
-  scale_size_continuous(name = "Visits",
-                        breaks = c(10, 100, 1000, 5000, 10000, 50000)) +
-  ylim(0, max(dta_age_median$q_0.5)) +
-  scale_x_discrete(expand = expansion(mult = c(0.2, 0.2)),
-                   breaks = c("Susp + Prob + Conf", "Confirmed"),
-                   labels = c("All", "Conf.")) +
-  
-  theme_light() +
-  theme(legend.position = 'right',
-        legend.title = element_text(face = "bold"),
-        axis.text.x = element_text(angle = 50, hjust = 1, face = "bold"),
-        panel.grid.major.y = element_blank(),
-        panel.grid.minor.y = element_blank())
-
-ggsave(file.path(path.local.msf.extra_js, 
-                 paste0('median_age_slopes', '_', week_report, '.png')),
-       width = 8,
-       height = 4,
-       # scale = 1,
-       dpi = 200)
 
 
 ## Fig. age per region -------------------------------
@@ -492,3 +438,110 @@ ggsave(file.path(path.local.msf.extra_js,
        height = 6,
        # scale = 1.1,
        dpi = 250)
+
+
+
+
+
+
+# OLD STUFF I DONT WANT TO DELETE ---------------------
+
+
+
+
+
+
+## Fig. age confirmed vs all (slopes)-------------------------
+
+# dta_age_spc <- dta_linelist_regions %>%
+#   filter(ind_MSF_covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
+#   group_by(continent, region_js) %>%
+#   summarise(x = quantile(age_in_years, c(0.25, 0.5, 0.75), na.rm = TRUE),
+#             q = c(0.25, 0.5, 0.75),
+#             n = n()) %>%
+#   pivot_wider(names_from   = q,
+#               values_from  = x,
+#               names_prefix = "q_") %>% 
+#   mutate(status_graphe_js  = as.factor("Susp + Prob + Conf"))
+# 
+# 
+# dta_age_conf <- dta_linelist_regions %>%
+#   filter(ind_MSF_covid_status == "Confirmed") %>% 
+#   group_by(continent, region_js) %>%
+#   summarise(x = quantile(age_in_years, c(0.25, 0.5, 0.75), na.rm = TRUE),
+#             q = c(0.25, 0.5, 0.75),
+#             n = n()) %>%
+#   pivot_wider(names_from = q,
+#               values_from =x,
+#               names_prefix = "q_") %>% 
+#   mutate(status_graphe_js = as.factor("Confirmed"))
+# 
+# dta_age_median <- rbind(dta_age_spc, dta_age_conf)
+# 
+# Pentes
+# pd_age = 0.5
+# colors_status = c("#345B8C", "#8A331F")
+# 
+# 
+# ggplot(dta_age_median,
+#        aes(
+#          x = status_graphe_js,
+#          y = q_0.5,
+#          colour = status_graphe_js,
+#          shape = status_graphe_js,
+#          group = region_js
+#        )) +
+#   facet_wrap(~continent, ncol = 4, scales = "free_x") +
+#   
+#   geom_line(colour = "grey",
+#             # position = position_dodge(width = pd),
+#             size = 1) +
+#   geom_point(aes(size = n),
+#              # position = position_dodge(width = pd)
+#   ) +
+#   
+#   # geom_errorbar(aes(ymin = q_0.25,
+#   #                   ymax = q_0.75),
+#   #               width = 0,
+#   #               size = 0.1,
+#   #               alpha = 0.3,
+#   #               position = position_dodge(width = pd)) +
+#   # 
+#   # coord_flip() +
+#   
+#   labs(x = "",
+#        y = "Age (years)\n",
+#        title = "Median age of patients (in years)") +
+#   
+#   scale_colour_manual(name = "Status",
+#                       values = colors_status,
+#                       breaks = c("Susp + Prob + Conf", "Confirmed"),
+#                       labels = c("Suspected, Probable,\n Confirmed", "Confirmed only")
+#   ) +
+#   
+#   scale_shape(name = "Status",
+#               breaks = c("Susp + Prob + Conf", "Confirmed"),
+#               labels = c("Suspected, Probable,\n Confirmed", "Confirmed only")
+#   ) +
+#   
+#   scale_size_continuous(name = "Visits",
+#                         breaks = c(10, 100, 1000, 5000, 10000, 50000)) +
+#   ylim(0, max(dta_age_median$q_0.5)) +
+#   scale_x_discrete(expand = expansion(mult = c(0.2, 0.2)),
+#                    breaks = c("Susp + Prob + Conf", "Confirmed"),
+#                    labels = c("All", "Conf.")) +
+#   
+#   theme_light() +
+#   theme(legend.position = 'right',
+#         legend.title = element_text(face = "bold"),
+#         axis.text.x = element_text(angle = 50, hjust = 1, face = "bold"),
+#         panel.grid.major.y = element_blank(),
+#         panel.grid.minor.y = element_blank())
+# 
+# ggsave(file.path(path.local.msf.extra_js, 
+#                  paste0('median_age_slopes', '_', week_report, '.png')),
+#        width = 8,
+#        height = 4,
+#        # scale = 1,
+#        dpi = 200)
+
