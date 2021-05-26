@@ -25,11 +25,11 @@ library(patchwork)
 rds_jhu <- readRDS(file.path(path.local.worldwide.data, 'dta_jhu.RDS'))
 
 # Get trends
-trend_models <- readRDS(file.path(path.local.worldwide.data, 'trends_models.RDS'))
+trend_models     <- readRDS(file.path(path.local.worldwide.data, 'trends_models.RDS'))
 trend_models_new <- readRDS(file.path(path.local.worldwide.data, 'trends_models_new.RDS'))
 
 
-trends_models_new.RDS
+
 # Countries list dataset
 df_countries <- readRDS(file.path(path.local.data, paste0('df_countries','.RDS')))
 
@@ -68,20 +68,21 @@ df_countries <- df_countries %>%
              by = "iso_a3")
 
 
-model_cnt_cases_linear_short <- trend_models$model_cnt_cases_linear_short
-model_cnt_cases_linear_long  <- trend_models$model_cnt_cases_linear_long
-
-model_cnt_deaths_linear_short <- trend_models$model_cnt_deaths_linear_short
-model_cnt_deaths_linear_long  <- trend_models$model_cnt_deaths_linear_long
+# model_cnt_cases_linear_short <- trend_models$model_cnt_cases_linear_short
+# model_cnt_cases_linear_long  <- trend_models$model_cnt_cases_linear_long
+# 
+# model_cnt_deaths_linear_short <- trend_models$model_cnt_deaths_linear_short
+# model_cnt_deaths_linear_long  <- trend_models$model_cnt_deaths_linear_long
 
 lst_coeffs_cases  <- trend_models$lst_coeffs_cases
 lst_coeffs_deaths <- trend_models$lst_coeffs_deaths
 
 
 
+
 # Plot cases and trends ---------------------------------------------------
 
-# --- Plot SIX graphs with counts of cases and deaths and trend with two different period lengths 
+# --- Plot and save SIX graphs with counts of cases and deaths and trend with two different period lengths 
 
 # To filter which countries to plot 
 country_list <- df_countries %>% 
@@ -95,29 +96,41 @@ country_list <- df_countries %>%
          ) %>% 
   arrange(iso_a3)
 
-# Loop of plots
-for (i in country_list$iso_a3){
-  
-  name_country <- country_list %>% 
-    filter(iso_a3 == i) %>%
-    pull(country) %>% 
-    gsub(" ", "_", .) %>% 
-    gsub("_\\(country\\)", "", .)
-  
-  # print(paste(i, name_country))
 
-    plots <- country_six_plots(country_iso = i,
-                               lst_dta = lst_dta_jhu, 
-                               countries = df_countries)
-    
-    ggsave(file.path(path.local.worldwide.graphs.country_trends,
-                     glue("trends_{name_country}_{week_report}.png")),
-           plot = plots,
-           scale = 1,
-           width = 9,
-           dpi = 320)
-  
-}
+rds_jhu %>% 
+  filter(iso_a3 %in% country_list$iso_a3) %>% 
+  pivot_longer(cases:deaths, 
+               names_to = 'obs', 
+               values_to = 'count') %>% 
+  left_join(trend_models_new$tbl_preds_all, by = c("country", "date", "obs")) %>% 
+  multisplit("iso_a3") %>% 
+  map(country_six_plots)
+
+
+
+# Loop of plots
+# for (i in country_list$iso_a3){
+#   
+#   # name_country <- country_list %>% 
+#   #   filter(iso_a3 == i) %>%
+#   #   pull(country) %>% 
+#   #   gsub(" ", "_", .) %>% 
+#   #   gsub("_\\(country\\)", "", .)
+#   
+#   # print(paste(i, name_country))
+# 
+#     plots <- country_six_plots(country_iso = i,
+#                                lst_dta     = lst_dta_jhu, 
+#                                countries   = df_countries)
+#     
+#     ggsave(file.path(path.local.worldwide.graphs.country_trends,
+#                      glue("trends_{name_country}_{week_report}.png")),
+#            plot = plots,
+#            scale = 1,
+#            width = 9,
+#            dpi = 320)
+#   
+# }
 
 
 # Plot growth rates -------------------------------------------------------
