@@ -714,7 +714,8 @@ ggsave(file.path(path.local.deepdive, paste0('epicurves', '_', week_report, '.pn
 ```{r fig-preds}
 # Get fitted and confidence interval on fitted
 tbl_preds_cases_30d <- lst_dta_jhu %>% 
-  map_dfr(get_preds, 
+  map_dfr(get_preds,
+          serie = "cases",
           time_unit_extent = 30,
           min_sum = 30,
           ma_window = 3) %>% 
