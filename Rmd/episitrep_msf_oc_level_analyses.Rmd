@@ -167,6 +167,7 @@ dta_aggregated_expanded <- dta_weekly_aggregated %>%
       country == 'DRC' ~ 'Democratic Republic of the Congo',
       country == "Côte d'Ivoire" ~ 'Côte d’Ivoire',
       country == "DRC" ~ "Democratic Republic of Congo",
+      country == "Democratic Republic of the Congo" ~ "Democratic Republic of Congo",
       TRUE ~ country)) %>%
   left_join(df_countries, by = 'country') %>%
   pivot_longer(cols = c('confirmed', 'probable', 'suspected', 'non_cases', 'unknown'),
@@ -3460,7 +3461,7 @@ gtble6 %>%
 
 
 
-## MSF_severity
+## MSF severity
 
 ```{r tbl-MSF_severity}
 tble14 <- dta_linelist_project %>%
