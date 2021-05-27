@@ -211,6 +211,7 @@ dta_linelist_with_aggregated <- dta_linelist %>%
   mutate(continent = case_when(
       country == "Cote d'Ivoire (*)" ~ 'Africa', 
       country == "Democratic Republic of Congo (*)" ~ 'Africa',
+      country == "Democratic Republic of the Congo (*)" ~ 'Africa',
       country == "Palestine (*)" ~ "Asia",
       TRUE ~ continent))
 
