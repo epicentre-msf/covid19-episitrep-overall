@@ -29,7 +29,7 @@ if (Sys.info()["login"] == "M-MOUSSET") {
   date_min_report <- as.Date("2020-01-22")
   date_max_report <- dates_and_week[[2]]
   week_report     <- dates_and_week[[3]]
-
+  
   
   
   ## Data
@@ -44,7 +44,7 @@ if (Sys.info()["login"] == "M-MOUSSET") {
                  glue::glue('episitrep_msf_level_analyses_{week_report}.RData')))
   
 } else {
-    
+  
   # Définir la semaine
   week_report <- "2021-w20"
   
@@ -57,16 +57,17 @@ if (Sys.info()["login"] == "M-MOUSSET") {
   # get data
   load(file.path(path_sharepoint_msf_data, 
                  paste0("episitrep_msf_level_analyses_", week_report, ".RData")))
-
-  }
+  
+}
 
 
 ## Packages ------------------------------------------------
 # Install a couple of packages
 
 library(tidyverse) # General data manipulation
-library(ggplot)    # Figures
-library(patchwork) # Assemble figures (a bit like cowplot/gridextra)
+library(ggplot2)    # Figures
+library(scales)    # Imporve scales in ggplot
+# library(patchwork) # Assemble figures (a bit like cowplot/gridextra)
 library(ggthemes)  # For some colours
 
 
@@ -112,27 +113,40 @@ dta_linelist_regions <- dta_linelist %>%
            region    == "Western Asia"  ~ "Middle East",
            region    == "Central Asia"  ~ "Asia",
            region    == "Southern Asia" ~ "Asia",
-           TRUE ~ region)
-         ) 
+           TRUE ~ region),
+         
+         region_js = factor(region_js, levels = c("Africa", "Americas",
+                                                  "Asia", "Europe", 
+                                                  "Middle East"))
+  ) 
 
 
 # The same, but for aggregated data
 dta_linelist_regions_aggregated <- dta_linelist_with_aggregated %>%
   filter(ind_MSF_covid_status %in% c('Confirmed', 'Probable', 'Suspected')) %>%
   mutate(region_js = case_when(
-           continent == "Europe"        ~ "Europe",
-           continent == "Africa"        ~ "Africa",
-           continent == "Americas"      ~ "Americas",
-           region    == "Western Asia"  ~ "Middle East",
-           region    == "Central Asia"  ~ "Asia",
-           region    == "Southern Asia" ~ "Asia",
-           TRUE ~ region
-         )) 
+    continent == "Europe"        ~ "Europe",
+    continent == "Africa"        ~ "Africa",
+    continent == "Americas"      ~ "Americas",
+    region    == "Western Asia"  ~ "Middle East",
+    region    == "Central Asia"  ~ "Asia",
+    region    == "Southern Asia" ~ "Asia",
+    TRUE ~ region),
+    
+    region_js = factor(region_js, levels = c("Africa", "Americas",
+                                             "Asia", "Europe", 
+                                             "Middle East"))
+    ) 
 
 
-# Parameters for graphs
-colors_continent <- c()
+## Parameters for graphs -----------------------------
+colors_continent <- c("#E69F00", "#0072B2", "#009E73", "#CC79A7", "#000000")
 colors_sex = c("#8A331F", "#345B8C")
+
+vect_labels <- c("Diabete", "Hypertension", "Renal chronic illness",
+                 "Malaria", "HIV", "Lung disease")
+names(vect_labels) <- c("diabetes", "hypertension", "chronic_renal",
+                        "malaria", "hiv", "lung")
 
 
 # EPICURVE CAS --------------------------------------------
@@ -150,13 +164,12 @@ dta_linelist_regions_aggregated %>%
              fill = ind_MSF_covid_status)) +
   facet_wrap(vars(region_js), scales = 'free_y') +
   geom_col() +
+  
   ggthemes::scale_fill_tableau(name = NULL, 
                                palette = "Tableau 20") +
-  
   scale_x_date(date_breaks = "2 months",
                date_labels = "%b %y",
                expand = expansion(mult = c(0.01, 0.02))) +
-  
   scale_y_continuous(name = "Patients", 
                      expand = expansion(mult = c(0, 0.02))) +
   
@@ -166,8 +179,8 @@ dta_linelist_regions_aggregated %>%
   
   theme_light() +
   theme(legend.position = 'top', 
-        # legend.title     = element_text(size = 14, face = "bold"),
-        legend.text = element_text(size = 13),
+        legend.title    = element_text(size = 14, face = "bold"),
+        legend.text     = element_text(size = 13),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         strip.text   = element_text(size = 15, face = "bold"),
@@ -193,7 +206,6 @@ dta_linelist_regions %>%
   ggplot(aes(x = epi_week_consultation,
              y = n,
              fill = MSF_severity)) +
-  
   geom_col() +
   
   # Personalise coulours
@@ -260,7 +272,6 @@ scaling_factor <- dta_severity_hospi %>%
 ## Plot --------------------------------------
 ggplot(dta_severity_hospi,
        aes(x = epi_week_consultation)) +
-  
   geom_col(aes(y = n,
                fill = MSF_severity)) +
   
@@ -303,7 +314,7 @@ ggplot(dta_severity_hospi,
 
 ggsave(filename = paste0('epicurve_severity_hospitalised', '_', week_report, '.png'),
        path   = path_sharepoint_js,
-       width  = 12,
+       width  = 14,
        height = 6,
        dpi    = 320)
 
@@ -332,21 +343,25 @@ dta_age_median_all <- dta_linelist_regions %>%
 dta_age_median_all %>% 
   ggplot(aes(
     x = region_js,
-    y = q_0.5 )) + 
+    y = q_0.5,
+    colour = region_js)) + 
   
   geom_point(aes(size = n),
              position = position_dodge(width = 0.9)) +
   geom_errorbar(aes(ymin = q_0.25,
                     ymax = q_0.75),
                 width = 0,
+                size = 1,
                 position = position_dodge(width = 0.9)) +
   
   labs(x        = "",
        y        = "Age (years)\n",
-       title    = "Median age of patients (with IQR)") +
+       title    = "Median age of patients (with IQR)",
+       colour   = "Région") +
   
   scale_size_continuous(name = "Visits",
                         breaks = c(10, 100, 1000, 5000, 10000, 20000)) +
+  scale_colour_manual(values = colors_continent) +
   
   theme_light() +
   theme(legend.position = 'right',
@@ -370,6 +385,7 @@ ggsave(file.path(path_sharepoint_js,
 # PERC. COMORB. REGION ---------------------------------
 
 # Consultations and hospitalisations
+
 ## Fig. ALL  -----------------------------------------------
 
 ### Data ------------------------------
@@ -381,25 +397,25 @@ dta_comorb_all <- dta_linelist_regions %>%
     n_diabetes = sum(ind_Comcond_diabetes == "Yes", na.rm = TRUE),
     p_diabetes = n_diabetes / n,
     
-    n_ind_MSF_hypertension  = sum(ind_MSF_hypertension == "Yes", na.rm = TRUE),
-    p_ind_MSF_hypertension  = n_ind_MSF_hypertension / n,
+    n_hypertension  = sum(ind_MSF_hypertension == "Yes", na.rm = TRUE),
+    p_hypertension  = n_hypertension / n,
     
     n_chronic_renal = sum(Comcond_renal == "Yes", na.rm = TRUE),
     p_chronic_renal = n_chronic_renal / n,
-    
-    n_tb = sum(ind_MSF_tb_active == "Yes", na.rm = TRUE),
-    p_tb = n_tb / n,
+
     
     n_lung = sum(Comcond_lung == "Yes", na.rm = TRUE),
     p_lung = n_lung / n
+    # n_tb = sum(ind_MSF_tb_active == "Yes", na.rm = TRUE),
+    # p_tb = n_tb / n,
     # n_malaria = sum(ind_MSF_malaria == "Yes", na.rm = TRUE),
     # p_malaria = n_malaria / n_hospi,
     # n_hiv = sum(ind_MSF_hiv_status == "Yes", na.rm = TRUE),
     # p_hiv = n_hiv / n_hospi
   ) %>% 
   # stack the percentages for comorbidities in the same column
-  pivot_longer(cols = c(p_diabetes, p_ind_MSF_hypertension, 
-                        p_chronic_renal, p_tb, p_lung),
+  pivot_longer(cols = c(p_diabetes, p_hypertension, 
+                        p_chronic_renal, p_lung),
                names_to = "Comorbidities",
                values_to = "percent_of_patients",
                names_prefix = "p_") %>%
@@ -408,31 +424,27 @@ dta_comorb_all <- dta_linelist_regions %>%
   mutate(group_patient = "all")
 
 
-vect_labels <- c("Diabete", "Hypertension", "Renal chronic illness",
-                 "Tuberculosis", "Malaria", "HIV", "Lung disease")
-names(vect_labels) <- c("diabetes", "ind_MSF_hypertension", "chronic_renal",
-                        "tb", "malaria", "hiv", "lung")
 
 ### Plot --------
 dta_comorb_all %>% 
   ggplot(aes(x = region_js,
              y = percent_of_patients,
              colour = region_js)) +
-  geom_point(size = 3,
-             alpha = 1) +
-  coord_flip() +
   
   facet_wrap(~ Comorbidities, ncol = 1, scales = "free_y",
              labeller = labeller(Comorbidities = vect_labels)) +
+  coord_flip() +
   
-  ggthemes::scale_colour_tableau(name = "Region",
-                                 palette = "Tableau 20") +
+  geom_point(size = 3,
+             alpha = 1) +
   
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_colour_manual(values = colors_continent) +
+  scale_y_continuous(labels  = scales::percent_format(accuracy = 1)) +
   
   labs(x = "",
-       y = "Percentage of patients") +
-
+       y = "Percentage of patients",
+       colour = "Région") +
+  
   theme_light() +
   theme(legend.position = 'right',
         legend.title    = element_text(size = 13,face = "bold"),
@@ -465,36 +477,30 @@ dta_comorb_severe_critical <- dta_linelist_regions %>%
     n_diabetes = sum(ind_Comcond_diabetes == "Yes", na.rm = TRUE),
     p_diabetes = n_diabetes / n,
     
-    n_ind_MSF_hypertension  = sum(ind_MSF_hypertension == "Yes", na.rm = TRUE),
-    p_ind_MSF_hypertension  = n_ind_MSF_hypertension / n,
+    n_hypertension  = sum(ind_MSF_hypertension == "Yes", na.rm = TRUE),
+    p_hypertension  = n_hypertension / n,
     
     n_chronic_renal = sum(Comcond_renal == "Yes", na.rm = TRUE),
     p_chronic_renal = n_chronic_renal / n,
     
-    n_tb = sum(ind_MSF_tb_active == "Yes", na.rm = TRUE),
-    p_tb = n_tb / n,
-    
     n_lung = sum(Comcond_lung == "Yes", na.rm = TRUE),
     p_lung = n_lung / n
+    # n_tb = sum(ind_MSF_tb_active == "Yes", na.rm = TRUE),
+    # p_tb = n_tb / n,
     # n_malaria = sum(ind_MSF_malaria == "Yes", na.rm = TRUE),
     # p_malaria = n_malaria / n_hospi,
     # n_hiv = sum(ind_MSF_hiv_status == "Yes", na.rm = TRUE),
     # p_hiv = n_hiv / n_hospi
   ) %>% 
-  pivot_longer(cols = c(p_diabetes, p_ind_MSF_hypertension, 
-                        p_chronic_renal, p_tb, p_lung),
+  pivot_longer(cols = c(p_diabetes, p_hypertension, 
+                        p_chronic_renal, p_lung),
                names_to = "Comorbidities",
                values_to = "percent_of_patients",
                names_prefix = "p_") %>%
   filter(percent_of_patients > 0) %>% 
   mutate(group_patient = "severe_critical")
 
-dta_comorb_combined <- rbind(dta_comorb_all, dta_comorb_severe_critical)
-
-vect_labels <- c("Diabete", "Hypertension", "Renal chronic illness",
-                 "Tuberculosis", "Malaria", "HIV", "Lung disease")
-names(vect_labels) <- c("diabetes", "ind_MSF_hypertension", "chronic_renal",
-                        "tb", "malaria", "hiv", "lung")
+dta_comorb_severe_critical_combined <- rbind(dta_comorb_all, dta_comorb_severe_critical)
 
 
 ### Plot ---------
@@ -502,25 +508,24 @@ dta_comorb_severe_critical %>%
   ggplot(aes(x = region_js,
              y = percent_of_patients,
              colour = region_js)) +
-  geom_point(size = 3,
-             alpha = 1) +
-  coord_flip() +
-  
   facet_wrap(~ Comorbidities, ncol = 1, scales = "free_y",
              labeller = labeller(Comorbidities = vect_labels)) +
+  coord_flip() +
   
-  ggthemes::scale_colour_tableau(name = "Region",
-                                 palette = "Tableau 20") +
-  
+  geom_point(size = 3,
+             alpha = 1) +
+
+  scale_colour_manual(values = colors_continent) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   
   labs(x = "",
-       y = "Percentage of patients") +
+       y = "Percentage of patients",
+       colour = "Region") +
   
   theme_light() +
   theme(legend.position = 'right',
-        legend.title     = element_text(face = "bold"),
-        legend.text = element_text(size = 12),
+        legend.title = element_text(face = "bold"),
+        legend.text  = element_text(size = 12),
         panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank(),
         strip.text   = element_text(size = 14),
@@ -539,35 +544,33 @@ ggsave(file.path(path_sharepoint_js,
 
 ## Fig Combined --------------------------------------------
 
-# Plot
-dta_comorb_combined %>% 
+### Plot 1 ----------------
+dta_comorb_severe_critical_combined %>% 
   filter(group_patient == "all") %>% 
+  
   ggplot(aes(x = region_js,
              y = percent_of_patients,
              colour = region_js,
-             alpha = group_patient,
-             size  = group_patient,
-             group = region_js)) +
-  
+             alpha  = group_patient,
+             size   = group_patient,
+             group  = region_js)) +
   facet_wrap(~ Comorbidities, ncol = 1, scales = "free_y",
              labeller = labeller(Comorbidities = vect_labels)) +
   coord_flip() +
   
   geom_point() +
-  # geom_line(size = 1,
-  #           alpha = 0.9) +
-  
-  ggthemes::scale_colour_tableau(name = "Region",
-                                 palette = "Tableau 20") +
-  
+
+  scale_colour_manual(values = colors_continent) +  
   scale_y_continuous(limits = c(0, 1),
                      labels = scales::percent_format(accuracy = 1)) +
   scale_alpha_discrete(range = c(0.4, 1)) +
   scale_size_discrete(range = c(2, 4)) +
   
-  
   labs(x = "",
-       y = "Percentage of patients") +
+       y = "Percentage of patients",
+       colour = "Region",
+       alpha  = "Patient",
+       size   = "Patient") +
   
   theme_light() +
   theme(legend.position = 'right',
@@ -582,17 +585,14 @@ dta_comorb_combined %>%
 
 
 ggsave(file.path(path_sharepoint_js, 
-                 paste0('comorbidities_regions_combined_1', '_', week_report, '.png')),
+                 paste0('comorbidities_regions__severe_critical_combined_1', '_', week_report, '.png')),
        width = 6,
        height = 9,
        dpi = 300)
 
 
-
-#
-
-# Plot
-dta_comorb_combined %>% 
+### Plot 2 -------------------------------------
+dta_comorb_severe_critical_combined %>% 
   # filter(group_patient == "all") %>% 
   ggplot(aes(x = region_js,
              y = percent_of_patients,
@@ -606,20 +606,20 @@ dta_comorb_combined %>%
   coord_flip() +
   
   geom_point() +
-  geom_line(size = 0.8,
-            alpha = 0.5) +
+  # geom_line(size = 0.8,
+  #           alpha = 0.5) +
   
-  ggthemes::scale_colour_tableau(name = "Region",
-                                 palette = "Tableau 20") +
-  
+  scale_colour_manual(values = colors_continent) +
   scale_y_continuous(limits = c(0, 1),
                      labels = scales::percent_format(accuracy = 1)) +
   scale_alpha_discrete(range = c(0.4, 1)) +
   scale_size_discrete(range = c(2, 4)) +
   
-  
   labs(x = "",
-       y = "Percentage of patients") +
+       y = "Percentage of patients",
+       colour = "Region",
+       alpha  = "Patient",
+       size   = "Patient") +
   
   theme_light() +
   theme(legend.position = 'right',
@@ -634,7 +634,7 @@ dta_comorb_combined %>%
 
 
 ggsave(file.path(path_sharepoint_js, 
-                 paste0('comorbidities_regions_combined_2', '_', week_report, '.png')),
+                 paste0('comorbidities_regions_severe_critical_combined_2', '_', week_report, '.png')),
        width = 6,
        height = 9,
        dpi = 300)
@@ -644,8 +644,71 @@ ggsave(file.path(path_sharepoint_js,
 
 # Mortality by comorbidity, only for severe and critial patients.
 
+dta_comorb_mortality_severe_critical <- dta_linelist_regions %>%
+  # Filtre les lignes
+  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died','Sent back home'),
+         MSF_severity %in% c("Severe", "Critical")) %>% 
+  # Sélectionne les colonnes (pour simplifier un peu)
+  select(region_js, ind_outcome_patcourse_status, ind_Comcond_diabetes, 
+         ind_MSF_hypertension, Comcond_renal, ind_MSF_tb_active, Comcond_lung) %>% 
+  
+  
+  # Stack noms comorbidités dans une colonne et leur présence dans une autre
+  pivot_longer(cols = c(ind_Comcond_diabetes, ind_MSF_hypertension, Comcond_renal,
+                        ind_MSF_tb_active, Comcond_lung),
+               names_to = "comorb_type",
+               values_to = "comorb_present") %>% 
+  
+  filter(comorb_present == "Yes") %>% 
+  
+  # Compte nb patients par comorb X comorb satus X outcome X region
+  count(region_js, ind_outcome_patcourse_status, comorb_type, name = "n_yes") %>% 
+  group_by(region_js, comorb_type) %>% 
+  summarise(n_known = sum(n_yes, na.rm = TRUE),
+            n_died  = sum(n_yes[ind_outcome_patcourse_status  == "Died"], na.rm = TRUE),
+            p_died  = n_died / n_known)
 
-# OLD STUFF I DONT WANT TO DELETE ---------------------
+
+### Plot --------
+dta_comorb_mortality_severe_critical %>% 
+  ggplot(aes(x = region_js,
+             y = p_died,
+             colour = region_js)) +
+  facet_wrap(~ comorb_type, ncol = 1, scales = "free_y",
+             labeller = labeller(comorb_type = vect_labels)) +
+  coord_flip() +
+  
+  geom_point(size = 3,
+             alpha = 1) +
+
+  scale_colour_manual(values = colors_continent) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  
+  labs(x = "",
+       y = "Percentage of patients",
+       colour = "Region") +
+  
+  theme_light() +
+  theme(legend.position = 'right',
+        legend.title    = element_text(size = 13,face = "bold"),
+        legend.text     = element_text(size = 13),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        strip.text   = element_text(size = 15, face = "bold"),
+        # strip.background = element_rect(fill = "white"),
+        axis.text.x  = element_text(size = 13),
+        axis.text.y  = element_text(size = 13),
+        axis.title   = element_text(size = 15))
+
+
+ggsave(file.path(path_sharepoint_js, 
+                 paste0('comorbidities_regions_mortality_severe_critical', '_', week_report, '.png')),
+       width = 7,
+       height = 7,
+       dpi = 200)
+
+
+# OLD STUFF ---------------------
 ## Fig. age confirmed vs all (slopes)-------------------------
 
 # dta_age_spc <- dta_linelist_regions %>%
