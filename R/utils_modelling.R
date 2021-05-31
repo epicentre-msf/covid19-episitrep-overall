@@ -4,7 +4,12 @@
 #' Smoothing using moving average with a parameterable time-window (in days)
 #' Model time-series using a linear regression
 
-linear_model_cnt <- function(series, lst_dta, last_date, time_unit_extent = 12, ma_window = 3, min_sum = 30){
+linear_model_cnt <- function(series, 
+                             lst_dta, 
+                             last_date, 
+                             time_unit_extent = 14, 
+                             ma_window = 3, 
+                             min_sum = 30){
   
   
   dates_extent <- c(last_date - (time_unit_extent - 1), last_date)
@@ -88,7 +93,10 @@ linear_model_cnt <- function(series, lst_dta, last_date, time_unit_extent = 12, 
 #' Filter to a time frame defined by time_unit_extent
 #' Model data for each country using a linear regression of the cumulative count
 
-linear_model_cml <- function(series, lst_dta, last_date, time_unit_extent = 12, min_sum = 100){
+linear_model_cml <- function(series, lst_dta, 
+                             last_date, 
+                             time_unit_extent = 14, 
+                             min_sum = 100){
   
   dates_extent <- c(last_date - (time_unit_extent - 1), last_date)
   
@@ -155,7 +163,12 @@ linear_model_cml <- function(series, lst_dta, last_date, time_unit_extent = 12, 
 # Model data for each country based on a quasipoisson regression
 # (quasipoisson distribution is used mostly because of the zero values)
 
-quasipoisson_model_cnt <- function(series, lst_dta, last_date, time_unit_extent = 12, ma_window = 3, min_sum = 30){
+quasipoisson_model_cnt <- function(series, 
+                                   lst_dta, 
+                                   last_date, 
+                                   time_unit_extent = 14, 
+                                   ma_window = 3, 
+                                   min_sum = 30){
   
   # The Model (quasipoisson regression)
 
@@ -236,7 +249,10 @@ quasipoisson_model_cnt <- function(series, lst_dta, last_date, time_unit_extent 
 #' smoodthing using a predefined window 
 #' Then making a linear regression
 
-quasipoisson_model_cml <- function(series, lst_dta, last_date, time_unit_extent = 12, min_sum = 100){
+quasipoisson_model_cml <- function(series, lst_dta, 
+                                   last_date, 
+                                   time_unit_extent = 14, 
+                                   min_sum = 100){
   
   dates_extent <- c(last_date - (time_unit_extent - 1), last_date)
   
@@ -354,7 +370,11 @@ make_doubling_time <- function(tbl_coeffs) {
 
 
 
-ts_coeff <- function(series, lst_dta, time_unit_extent = 5, ma_window = 3, min_sum = 30){
+ts_coeff <- function(series, 
+                     lst_dta, 
+                     time_unit_extent = 5, 
+                     ma_window = 3, 
+                     min_sum = 30){
   
   lst_coeffs  <- list()
   
@@ -418,7 +438,13 @@ ts_coeff <- function(series, lst_dta, time_unit_extent = 5, ma_window = 3, min_s
 
 
 
-get_trend_models <- function(lst_jhu = lst_dta_jhu, date_max = date_max_report, periods_trends = c(12, 30), local_path = path.local.worldwide.data, file_name = 'trends_models.RDS', last_update = last_update_dta_jhu, force = FALSE) {
+get_trend_models <- function(lst_jhu  = lst_dta_jhu, 
+                             date_max = date_max_report, 
+                             periods_trends = c(14, 30), 
+                             local_path     = path.local.worldwide.data, 
+                             file_name   = 'trends_models.RDS', 
+                             last_update = last_update_dta_jhu, 
+                             force       = FALSE) {
   
   make_new_models <- ifelse(!file.exists(file.path(local_path, file_name)) | force, TRUE, FALSE)
   
@@ -427,31 +453,31 @@ get_trend_models <- function(lst_jhu = lst_dta_jhu, date_max = date_max_report, 
     
     # <!-- Modelling Cases Trends -->
     
-    model_cnt_cases_linear_short  <- linear_model_cnt(series = 'cases', 
-                                                      lst_dta = lst_jhu, 
-                                                      last_date = date_max, 
-                                                      time_unit_extent = periods_trends[1], 
-                                                      min_sum = 30)
-    
-    model_cnt_cases_linear_long   <- linear_model_cnt(series = 'cases', 
-                                                      lst_dta = lst_jhu, 
-                                                      last_date = date_max, 
-                                                      time_unit_extent = periods_trends[2], 
-                                                      min_sum = 30)
+    # model_cnt_cases_linear_short  <- linear_model_cnt(series = 'cases',
+    #                                                   lst_dta = lst_jhu,
+    #                                                   last_date = date_max,
+    #                                                   time_unit_extent = periods_trends[1],
+    #                                                   min_sum = 30)
+    # 
+    # model_cnt_cases_linear_long   <- linear_model_cnt(series = 'cases',
+    #                                                   lst_dta = lst_jhu,
+    #                                                   last_date = date_max,
+    #                                                   time_unit_extent = periods_trends[2],
+    #                                                   min_sum = 30)
     
     # <!-- Modelling Deaths Trends -->
     
-    model_cnt_deaths_linear_short  <- linear_model_cnt(series = 'deaths', 
-                                                       lst_dta = lst_jhu, 
-                                                       last_date = date_max, 
-                                                       time_unit_extent = periods_trends[1], 
-                                                       min_sum = 30)
-    
-    model_cnt_deaths_linear_long   <- linear_model_cnt(series = 'deaths', 
-                                                       lst_dta = lst_jhu, 
-                                                       last_date = date_max, 
-                                                       time_unit_extent = periods_trends[2], 
-                                                       min_sum = 30)
+    # model_cnt_deaths_linear_short  <- linear_model_cnt(series = 'deaths',
+    #                                                    lst_dta = lst_jhu,
+    #                                                    last_date = date_max,
+    #                                                    time_unit_extent = periods_trends[1],
+    #                                                    min_sum = 30)
+    # 
+    # model_cnt_deaths_linear_long   <- linear_model_cnt(series = 'deaths',
+    #                                                    lst_dta = lst_jhu,
+    #                                                    last_date = date_max,
+    #                                                    time_unit_extent = periods_trends[2],
+    #                                                    min_sum = 30)
     
 
     lst_coeffs_cases <- ts_coeff(series = 'cases', 
@@ -467,13 +493,14 @@ get_trend_models <- function(lst_jhu = lst_dta_jhu, date_max = date_max_report, 
                                   min_sum = 30)
     
     
-    mdls <- list("model_cnt_cases_linear_short"  = model_cnt_cases_linear_short, 
-                 "model_cnt_cases_linear_long"   = model_cnt_cases_linear_long, 
-                 "model_cnt_deaths_linear_short" = model_cnt_deaths_linear_short, 
-                 "model_cnt_deaths_linear_long"  = model_cnt_deaths_linear_long,
-                 "lst_coeffs_cases"  = lst_coeffs_cases, 
-                 "lst_coeffs_deaths" = lst_coeffs_deaths, 
-                 "periods_trends" = c("short" = periods_trends[1], "long" = periods_trends[2]))
+    mdls <- list(
+      # "model_cnt_cases_linear_short"  = model_cnt_cases_linear_short,
+      # "model_cnt_cases_linear_long"   = model_cnt_cases_linear_long,
+      # "model_cnt_deaths_linear_short" = model_cnt_deaths_linear_short,
+      # "model_cnt_deaths_linear_long"  = model_cnt_deaths_linear_long,
+      "lst_coeffs_cases"  = lst_coeffs_cases, 
+      "lst_coeffs_deaths" = lst_coeffs_deaths, 
+      "periods_trends" = c("short" = periods_trends[1], "long" = periods_trends[2]))
     
     # <!-- Save models in a unique RDS -->
     
@@ -490,7 +517,10 @@ get_trend_models <- function(lst_jhu = lst_dta_jhu, date_max = date_max_report, 
 }
 
 
-ts_coeff_single <- function(dta, series = "cases", time_unit_extent = 5, ma_window = 3, min_sum = 30){
+ts_coeff_single <- function(dta, series = "cases", 
+                            time_unit_extent = 5, 
+                            ma_window = 3, 
+                            min_sum = 30){
   
   dta <- dta %>% 
     tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
@@ -588,100 +618,107 @@ plot_coeff <- function(dta, name, series = "cases") {
 
 
 
-linear_trend_deepdive <- function(dta, 
-                                  series, 
-                                  last_date, 
-                                  n_days, 
-                                  ma_window = 3, 
-                                  min_sum = 30){
-  
-  dta <- dta %>% select(date, cnt = all_of(series))
-  
-  dates_extent <- c(last_date - (n_days - 1), last_date)
-  
-  dta <- dta %>% 
-    filter(between(date, dates_extent[1], dates_extent[2])) %>% 
-    tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
-                                    max(date, na.rm = TRUE), by = 1), 
-                    fill = list(cnt = NA_real_))
-  
-  
-  # Moving average
-  dta$ma <- forecast::ma(dta$cnt, order = ma_window)
-  dta$ma <- na_if(dta$ma, 0) # Replace 0 values as NA
-  
-  
-  # Empty matrix of predictions
-  m_preds <- matrix(data = NA, 
-                    nrow = dim(dta)[1], 
-                    ncol = 3, 
-                    dimnames = list(c(1:dim(dta)[1]), c('fit', 'lwr', 'upr')))
-  
-  
-  # Run model with conditions
-  if (dim(dta)[1] > ma_window & sum(dta$cnt, na.rm = TRUE) > min_sum) {
-    
-    mdl <- lm(log(ma) ~ date, data = dta)
-    
-    preds <- exp(predict(mdl, interval = 'confidence'))
-    
-    matched_rows <- match(rownames(preds), rownames(m_preds))
-    matched_cols <- match(colnames(preds), colnames(m_preds))
-    m_preds[matched_rows, matched_cols] <- preds
-    
-    tbl_preds <- tibble(date = seq.Date(from = dates_extent[1], to = dates_extent[2], by = 1), 
-                        cnt  = dta$cnt, 
-                        ma   = dta$ma, 
-                        fit  = as.double(m_preds[, 'fit']), 
-                        lwr  = as.double(m_preds[, 'lwr']), 
-                        upr  = as.double(m_preds[, 'upr']))
-    
-    mdl_coeffs <- tibble(coeff = coefficients(mdl)[[2]], 
-                         lwr   = confint(mdl)[2,1], 
-                         upr   = confint(mdl)[2,2])
-    
-  } else {
-    mdl <- NA_character_
-    
-    tbl_preds <- tibble(date = seq.Date(from = dates_extent[1], to = dates_extent[2], by = 1), 
-                        cnt  = dta$cnt, 
-                        ma   = dta$ma, 
-                        fit  = as.double(m_preds[, 'fit']), 
-                        lwr  = as.double(m_preds[, 'lwr']), 
-                        upr  = as.double(m_preds[, 'upr']))
-    
-    mdl_coeffs <- tibble(coeff = NA_real_, 
-                         lwr   = NA_real_, 
-                         upr   = NA_real_)
-  }
-  
-  return(list(mdl = mdl, preds = tbl_preds, coeffs = mdl_coeffs))
-}
+# linear_trend_deepdive <- function(dta, 
+#                                   series, 
+#                                   last_date, 
+#                                   n_days, 
+#                                   ma_window = 3, 
+#                                   min_sum = 30){
+#   
+#   dta <- dta %>% select(date, cnt = all_of(series))
+#   
+#   dates_extent <- c(last_date - (n_days - 1), last_date)
+#   
+#   dta <- dta %>% 
+#     filter(between(date, dates_extent[1], dates_extent[2])) %>% 
+#     tidyr::complete(date = seq.Date(min(date, na.rm = TRUE), 
+#                                     max(date, na.rm = TRUE), by = 1), 
+#                     fill = list(cnt = NA_real_))
+#   
+#   
+#   # Moving average
+#   dta$ma <- forecast::ma(dta$cnt, order = ma_window)
+#   dta$ma <- na_if(dta$ma, 0) # Replace 0 values as NA
+#   
+#   
+#   # Empty matrix of predictions
+#   m_preds <- matrix(data = NA, 
+#                     nrow = dim(dta)[1], 
+#                     ncol = 3, 
+#                     dimnames = list(c(1:dim(dta)[1]), c('fit', 'lwr', 'upr')))
+#   
+#   
+#   # Run model with conditions
+#   if (dim(dta)[1] > ma_window & sum(dta$cnt, na.rm = TRUE) > min_sum) {
+#     
+#     mdl <- lm(log(ma) ~ date, data = dta)
+#     
+#     preds <- exp(predict(mdl, interval = 'confidence'))
+#     
+#     matched_rows <- match(rownames(preds), rownames(m_preds))
+#     matched_cols <- match(colnames(preds), colnames(m_preds))
+#     m_preds[matched_rows, matched_cols] <- preds
+#     
+#     tbl_preds <- tibble(date = seq.Date(from = dates_extent[1], to = dates_extent[2], by = 1), 
+#                         cnt  = dta$cnt, 
+#                         ma   = dta$ma, 
+#                         fit  = as.double(m_preds[, 'fit']), 
+#                         lwr  = as.double(m_preds[, 'lwr']), 
+#                         upr  = as.double(m_preds[, 'upr']))
+#     
+#     mdl_coeffs <- tibble(coeff = coefficients(mdl)[[2]], 
+#                          lwr   = confint(mdl)[2,1], 
+#                          upr   = confint(mdl)[2,2])
+#     
+#   } else {
+#     mdl <- NA_character_
+#     
+#     tbl_preds <- tibble(date = seq.Date(from = dates_extent[1], to = dates_extent[2], by = 1), 
+#                         cnt  = dta$cnt, 
+#                         ma   = dta$ma, 
+#                         fit  = as.double(m_preds[, 'fit']), 
+#                         lwr  = as.double(m_preds[, 'lwr']), 
+#                         upr  = as.double(m_preds[, 'upr']))
+#     
+#     mdl_coeffs <- tibble(coeff = NA_real_, 
+#                          lwr   = NA_real_, 
+#                          upr   = NA_real_)
+#   }
+#   
+#   return(list(mdl = mdl, preds = tbl_preds, coeffs = mdl_coeffs))
+# }
 
 
 
 #' Get model prediction deepdive
 #'
-#' @param df a list of dataframes (on df for each country)
+#' @param df a dataframe for a given country (or to any unit you 
+#' want to do the regression on)
+#' @param serie cases or deaths?
 #' @param time_unit_extent the number of days to include
 #' @param min_sum what should be the minimum number of cases
 #' to run the model
 #' @param ma_window the number of days on which to calculate
 #' the moving average 
-#' @param var cases or deaths?
-#'
-#' @return
+#' @param omit_past_day should we remove some days before today? 
+#' Typically, in the sitrep scripts, it should be 0 because we only 
+#' consider data to the past Sunday. But may be non null for dashboard 
+#' scripts.
+#' 
+#' @return A tibble containing the predictions of the model in 
+#' their natural scale
 #' @export
-#'
-#' @examples
+
 get_preds <- function(df,
+                      serie = "cases",
                       time_unit_extent = 30,
                       min_sum = 30,
-                      ma_window = 3){
+                      ma_window = 3,
+                      omit_past_day = 0){
   
   
   # filter data to date range of interest
-  last_date <- max(df$date, na.rm = TRUE) - 2
+  last_date <- max(df$date, na.rm = TRUE) - omit_past_day
   dates_extent <- c(last_date - (time_unit_extent - 1), last_date)
   
   df1 <- df %>%
@@ -694,38 +731,165 @@ get_preds <- function(df,
   # Compute moving average
   df1 <- df1 %>% 
     group_by(country) %>% 
-    mutate(ma0 = as.numeric(forecast::ma(cases, order = ma_window)),
+    mutate(ma0 = as.numeric(forecast::ma(!!sym(serie), order = ma_window)),
            ma = dplyr::na_if(ma0, 0)) %>% 
     ungroup()  
   
   
   
-  if (nrow(df1) > ma_window & sum(df1[[var]], na.rm = TRUE) > min_sum) {
+  if (nrow(df1) > ma_window & sum(df1[[serie]], na.rm = TRUE) > min_sum) {
     
     # Run linear model and get predicated values and confidence intervals
     df2 <- df1 %>% 
       nest(data = -country) %>% 
-      mutate(fit = map(data, ~lm(log(ma) ~ date, data = .)),
+      mutate(fit       = map(data, ~lm(log(ma) ~ date, data = .)),
              augmented = map(fit, broom::augment, interval = 'confidence')) %>% 
       unnest(augmented) %>% 
-      mutate(exp_fitted = exp(.fitted),
-             exp_lower = exp(.lower),
-             exp_upper = exp(.upper),
-             check_counts_ma = exp(`log(ma)`)) %>%
-      select(-fit, -data,
-             -starts_with("."), -`log(ma)`)
+      mutate(exp_fitted      = exp(.fitted),
+             exp_lower       = exp(.lower),
+             exp_upper       = exp(.upper),
+             check_counts_ma = exp(`log(ma)`),
+             obs = serie) %>%
+      select(-fit, -data, -starts_with("."), -`log(ma)`)
   } else {
     
     df2 <- df1 %>% 
       nest(data = -c(country, date)) %>% 
       select(-data) %>% 
-      mutate(exp_fitted  = NA_real_, 
-             exp_lower  = NA_real_,
-             exp_upper   = NA_real_,
-             check_counts_ma  = NA_real_) %>% 
+      mutate(exp_fitted       = NA_real_, 
+             exp_lower        = NA_real_,
+             exp_upper        = NA_real_,
+             check_counts_ma  = NA_real_,
+             obs = serie) %>% 
       select(country, date, everything())
   }
   
   return(df2)
 }
 
+
+
+#' get doubling time
+#'
+#' @param df_trends a dataframe generated by the get_trends() function.
+#' Should have the confidence intervals on coeffs to run.
+#' @param serie Which serie to use to generate doubling time (cases, 
+#' deaths, both). Defaults to "both".
+#'
+#' @return A tibble. The same tibble with additional columns for doubling
+#' time estimates and its confidence intervals
+#' @export
+get_doubling_time <- function(df_trends,
+                              serie = "both") {
+  
+  if (serie != "deaths") {
+    
+    if ("trend_cases_coeff_lwr95" %in% names(df_trends)) {
+      df_trends <- df_trends %>%
+        dplyr::mutate(doubling_est_cases = log(2) / trend_cases_coeff,
+                      doubling_lwr_cases = log(2) / trend_cases_coeff_upr95, # Francesco
+                      doubling_upr_cases = log(2) / trend_cases_coeff_lwr95) %>%
+        dplyr::select(continent:trend_cases_coeff_upr95,
+                      doubling_est_cases, doubling_lwr_cases, doubling_upr_cases,
+                      everything())
+    } else {
+      message("No confidence interval provided for coeff for cases;
+              please run covidutils::get_trends() with `add_ci = TRUE`")
+    }
+  }
+  
+  
+  if (serie != "cases") {
+    
+    if ( "trend_deaths_coeff_lwr95" %in% names(df_trends) ){
+      df_trends <- df_trends %>%
+        dplyr::mutate( doubling_est_deaths = log(2) / trend_deaths_coeff,
+                       doubling_lwr_deaths = log(2) / trend_deaths_coeff_upr95,
+                       doubling_upr_deaths = log(2) / trend_deaths_coeff_lwr95)
+    } else {
+      message("No confidence interval provided for coeff for deaths;
+              please run covidutils::get_trends() with `add_ci = TRUE`")
+    }
+  }
+  
+  return(df_trends)
+}
+
+
+
+#' Get limits for trend regression
+#'
+#' @param df a dataframe with the data
+#' @param time_unit_extent the number of days to include
+#' @param omit_past_day should we remove some days before today? 
+#' Typically, in the sitrep scripts, it should be 0 because we only 
+#' consider data to the past Sunday. But may be non null for dashboard 
+#' scripts.
+#'
+#' @return a vector with the min and max date
+#' @export
+
+get_date_extent <- function(df, 
+                            time_unit_extent = 14,
+                            omit_past_days = 0){
+  
+  last_date    <- max(df$date, na.rm = TRUE) - omit_past_days
+  dates_extent <- c(last_date - (time_unit_extent - 1), last_date)
+  
+  return(dates_extent)
+}
+
+
+
+#' Get predictions for both cases and deaths, for the short trend
+#'  and long trend models
+#'
+#' @param df_list a list of dataframes (one dataframe = one country)
+#' @param short_trend number of days to keep for the short trend (e.g. 14)
+#' @param long_trend  number of days to keep for the long trend (e.g.30)
+#'
+#' @return a tibble in long format with cases and deaths, for 
+#' the two type of models
+#' @export
+
+get_all_preds <- function(df_list, short_trend, long_trend){
+  
+  tbl_preds_cases_30d <- df_list %>% 
+    map_dfr(get_preds, 
+            serie = "cases",
+            time_unit_extent = long_trend,
+            min_sum = 30,
+            ma_window = 3) %>% 
+    mutate(model = "long") 
+  
+  tbl_preds_deaths_30d <- df_list %>% 
+    map_dfr(get_preds, 
+            serie = "deaths",
+            time_unit_extent = long_trend,
+            min_sum = 30,
+            ma_window = 3) %>% 
+    mutate(model = "long") 
+  
+  tbl_preds_cases_14d <- df_list %>% 
+    map_dfr(get_preds, 
+            serie = "cases",
+            time_unit_extent = short_trend,
+            min_sum = 30,
+            ma_window = 3) %>% 
+    mutate(model = "short")
+  
+  tbl_preds_deaths_14d <- df_list %>% 
+    map_dfr(get_preds, 
+            serie = "deaths",
+            time_unit_extent = short_trend,
+            min_sum = 30,
+            ma_window = 3) %>% 
+    mutate(model = "short")
+  
+  all_preds <- rbind(tbl_preds_cases_30d,
+                     tbl_preds_deaths_30d,
+                     tbl_preds_cases_14d,
+                     tbl_preds_deaths_14d)
+  
+  return(all_preds)
+}

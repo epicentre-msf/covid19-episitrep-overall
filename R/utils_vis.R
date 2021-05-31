@@ -206,11 +206,19 @@ plot_map_world_count <- function(tbl_dta, series){
 
 
 plot_map_world_trend <- function(tbl_dta, 
-                                 series, 
-                                 model_for_trends = 'linear', 
-                                 plot_palette = RdAmGn){
+                                 series
+                                 # plot_palette = RdAmGn
+                                 ){
   # continent = NULL
-  RdAmGn <- c('#D95F02', '#E6AB02', '#1B9E77') # Three-colours palette (Red-Amber-Green) colour-blind safe
+  # RdAmGn <- c('#D95F02', '#E6AB02', '#1B9E77') # Three-colours palette (Red-Amber-Green) colour-blind safe
+  
+  # Prepare colour palette
+  values <- scico::scico(5, palette = "vikO", 
+                         begin = .2, end = .8, 
+                         direction = -1) %>% 
+    purrr::set_names( c("Increasing", "Likely increasing", 
+                        "Stable", "Likely decreasing", "Decreasing"))
+  
   
   legend_title <- switch(series, 
                          cases  = 'Trends of case count', 
@@ -220,92 +228,106 @@ plot_map_world_trend <- function(tbl_dta,
                        cases  = 'Trends in cases', 
                        deaths = 'Trends in deaths')
   
+  
+  plot_y <- switch(series, 
+                   cases  = "trend_cases", 
+                   deaths = "trend_deaths")
+  
   series <- sym(series)
   
-  # if(!is.null(continent)) {
-  #   # Define lims
-  #   xlim_continent <- switch(continent,
-  #                            "Africa"   = c(-25, 60),
-  #                            "Europe"   = c(-30, 80),
-  #                            "Americas" = c(-160, -30),
-  #                            "Asia"     = c(20, 170))
-  # 
-  #   ylim_continent <- switch(continent,
-  #                            "Africa"   = c(-35, 40),
-  #                            "Europe"   = c(28, 73),
-  #                            "Americas" = c(-70, 90),
-  #                            "Asia"     = c(-20, 90))
-  # }
   
-  
+
   sf_dta <- tbl_dta %>% 
-    select(c(iso_a3 : !!series), all_of(vars_trends(model_for_trend))) %>% 
     inner_join(
       select(sf_world, iso_a3),
       by = "iso_a3"
     ) %>% 
     st_as_sf()
   
-  # if(!is.null(continent)) {
-  #   sf_dta <- sf_dta %>% filter(continent == continent)
-  # }
-  
-  
-  labels <- sf_dta %>% as_tibble() %>% pull(trend) %>% levels()
-  
-  plot_map <- ggplot(sf_dta) + 
-      geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
-      coord_sf(datum = NA) +
-    scale_x_continuous(expand = c(0, 0)) +
-      scale_y_continuous(expand = c(0, 0)) +
-      scale_fill_manual(
-        name = legend_title, 
-        values = plot_palette, 
-        drop = FALSE, 
-        guide = guide_legend(
-          keyheight = unit(3, units = "mm"),
-          keywidth = unit(50 / length(labels), units = "mm"),
-          title.hjust = 0.5,
-          nrow = 1,
-          label.position = "bottom",
-          title.position = 'top')) +
-      labs(title = plot_title, caption = caption_world_map) +
-      theme_minimal() +
-      theme(plot.title = element_text(hjust = 0.5), 
-            legend.position = "bottom",
-            plot.margin = margin(0, 0, 0, 0, "pt"))
 
-    # plot_map 
-    # ggplot(sf_dta) + 
-    #   geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
-    #   scale_fill_manual(
-    #     name = NULL, 
-    #     values = RdAmGn, 
-    #     drop = FALSE, 
-    #     guide = guide_legend(
-    #       keyheight = unit(3, units = "mm"),
-    #       keywidth = unit(70 / length(labels), units = "mm"),
-    #       title.hjust = 0.5,
-    #       nrow = 1,
-    #       label.position = "bottom",
-    #       title.position = 'top')) + 
-    #   coord_sf(
-    #     crs = 3395,
-    #     xlim = xlim_continent, 
-    #     ylim = ylim_continent, 
-    #     expand = FALSE,
-    #     # datum = NA
-    #     ) + 
-    #   labs(title = 'Last 30 days') + 
-    #   theme_light() +
-    #   theme(plot.title = element_text(hjust = 0.5), 
-    #         axis.text.x = element_blank(), 
-    #         axis.text.y = element_blank(), 
-    #         legend.position = "bottom")
-       
+  plot_map <- ggplot(sf_dta) + 
+    geom_sf(aes_string(fill = plot_y), 
+            size = .1, alpha = 0.8) + 
+    coord_sf(datum = NA) +
+    
+    scale_x_continuous(expand = c(0, 0)) +
+    scale_y_continuous(expand = c(0, 0)) +
+    scale_fill_manual(
+      name = legend_title, 
+      values = values, 
+      drop = FALSE, 
+      guide = guide_legend(
+        keyheight = unit(3, units = "mm"),
+        keywidth = unit(15 / length(labels), units = "mm"),
+        title.hjust = 0.5,
+        nrow = 1,
+        label.position = "bottom",
+        title.position = 'top')) +
+    labs(title   = plot_title, 
+         caption = caption_world_map) +
+    theme_minimal() +
+    theme(plot.title      = element_text(hjust = 0.5, face = "bold"), 
+          legend.position = "bottom",
+          plot.margin     = margin(0, 0, 0, 0, "pt"))
+  
+   
   return(plot_map)
   
 }
+
+# if(!is.null(continent)) {
+#   # Define lims
+#   xlim_continent <- switch(continent,
+#                            "Africa"   = c(-25, 60),
+#                            "Europe"   = c(-30, 80),
+#                            "Americas" = c(-160, -30),
+#                            "Asia"     = c(20, 170))
+# 
+#   ylim_continent <- switch(continent,
+#                            "Africa"   = c(-35, 40),
+#                            "Europe"   = c(28, 73),
+#                            "Americas" = c(-70, 90),
+#                            "Asia"     = c(-20, 90))
+# }
+
+
+
+# select(c(iso_a3 : !!series), all_of(vars_trends(model_for_trend))) %>% 
+
+# if(!is.null(continent)) {
+#   sf_dta <- sf_dta %>% filter(continent == continent)
+# }
+
+# labels <- sf_dta %>% as_tibble() %>% pull(trend_cases) %>% levels()
+# 
+# plot_map 
+# ggplot(sf_dta) + 
+#   geom_sf(aes(fill = trend), size = .1, alpha = 0.8) + 
+#   scale_fill_manual(
+#     name = NULL, 
+#     values = RdAmGn, 
+#     drop = FALSE, 
+#     guide = guide_legend(
+#       keyheight = unit(3, units = "mm"),
+#       keywidth = unit(70 / length(labels), units = "mm"),
+#       title.hjust = 0.5,
+#       nrow = 1,
+#       label.position = "bottom",
+#       title.position = 'top')) + 
+#   coord_sf(
+#     crs = 3395,
+#     xlim = xlim_continent, 
+#     ylim = ylim_continent, 
+#     expand = FALSE,
+#     # datum = NA
+#     ) + 
+#   labs(title = 'Last 30 days') + 
+#   theme_light() +
+#   theme(plot.title = element_text(hjust = 0.5), 
+#         axis.text.x = element_blank(), 
+#         axis.text.y = element_blank(), 
+#         legend.position = "bottom")
+
 
 
 plot_cfr_ma <- function(dta){
@@ -541,75 +563,45 @@ country_four_plots <- function(country_iso, lst_dta = lst_jhu, model = 'linear')
 #' @export
 #'
 #' @examples
-country_six_plots <- function(country_iso, 
-                              lst_dta = lst_dta_jhu, 
-                              countries = df_countries) {
+
+country_six_plots <- function(lst_dta) {
   
   # Parameters
   main_colour  <- c(cases = '#1A62A3', deaths = '#e10000')
-  name_country <- countries %>% filter(iso_a3 == country_iso) %>% pull(country)
-  date_min     <- lst_dta[[country_iso]] %>% filter(cases != 0) %>% pull(date) %>% min()
-  
-  # Table observations
-  dta_obs <- lst_dta[[country_iso]] %>% 
-    select(date, cases, deaths) %>% 
-    pivot_longer(-date, names_to = 'obs', values_to = 'count')
-  
-  
-  # Table predictions
-  mdl_cases_short  <- model_cnt_cases_linear_short
-  mdl_cases_long   <- model_cnt_cases_linear_long
-  mdl_deaths_short <- model_cnt_deaths_linear_short
-  mdl_deaths_long  <- model_cnt_deaths_linear_long
-  
-  mld_par_short <- mdl_cases_short$par
-  dates_extent_short <- c(mld_par_short[[1]][1], mld_par_short[[1]][2])
-  
-  mld_par_long <- mdl_cases_long$par
-  dates_extent_long <- c(mld_par_long[[1]][1], mld_par_long[[1]][2])
+  name_country <- lst_dta %>% distinct(country)
+  name_country_save <- name_country %>% 
+    gsub(" ", "_", .) %>% 
+    gsub("_\\(country\\)", "", .)
+  date_min <- lst_dta %>% filter(obs == "cases", 
+                                 count != 0) %>% pull(date) %>% min()
+  dates_extent_short <- c(trend_models_new$par_14d[1], trend_models_new$par_14d[2])
+  dates_extent_long  <- c(trend_models_new$par_30d[1], trend_models_new$par_30d[2])
   
   
-  dta_cases_short <- lst_dta[[country_iso]] %>% 
-    select(date, count = cases) %>% 
-    mutate(
-      obs = 'cases') %>% 
+  # Prepare dataframe observation + predictions in the last 14 days for right pannel plot
+  dta_preds_short <- lst_dta %>%
     filter(between(date, dates_extent_short[1], dates_extent_short[2])) %>% 
-    tibble::add_column(mdl_cases_short[['preds']][[country_iso]])
+    filter(
+      # country == name_country,
+      model == "short")
   
-  dta_deaths_short <- lst_dta[[country_iso]] %>% 
-    select(date, count = deaths) %>% 
-    mutate(
-      obs = 'deaths') %>% 
-    filter(between(date, dates_extent_short[1], dates_extent_short[2])) %>% 
-    tibble::add_column(mdl_deaths_short[['preds']][[country_iso]]) 
-  
-  dta_mld_short <- rbind(dta_cases_short, dta_deaths_short)
-  
-  
-  dta_cases_long <- lst_dta[[country_iso]] %>% 
-    select(date, count = cases) %>% 
-    mutate(
-      obs = 'cases') %>% 
+  # Prepare dataframe observation + predictions in the last 30 days for middle pannel plot
+  dta_preds_long <- lst_dta %>%
     filter(between(date, dates_extent_long[1], dates_extent_long[2])) %>% 
-    tibble::add_column(mdl_cases_long[['preds']][[country_iso]])
-  
-  dta_deaths_long <- lst_dta[[country_iso]] %>% 
-    select(date, count = deaths) %>% 
-    mutate(
-      obs = 'deaths') %>% 
-    filter(between(date, dates_extent_long[1], dates_extent_long[2])) %>% 
-    tibble::add_column(mdl_deaths_long[['preds']][[country_iso]]) 
-  
-  dta_mld_long <- rbind(dta_cases_long, dta_deaths_long)
+    filter(
+      # country == name_country,
+      model == "long")
   
   
-  # Plots
-  plot_obs <- ggplot(dta_obs, aes(x = date, y = count)) + 
+  # Plots left pannel
+  plot_obs <- ggplot(lst_dta, aes(x = date, y = count)) + 
     facet_wrap(~obs, scales = "free_y", ncol = 1) + 
     geom_col(aes(colour = obs, fill = obs)) + 
     scale_colour_manual(values = main_colour) + 
     scale_fill_manual(values = main_colour) + 
-    scale_x_date(limits = c(date_min, NA), breaks = '2 months', date_labels = "%b-%Y") +
+    scale_x_date(limits = c(date_min, NA), 
+                 breaks = '2 months', 
+                 date_labels = "%b-%Y") +
     xlab('') + 
     ylab('frequency') + 
     labs(subtitle = 'Since the first cases reported') + 
@@ -618,52 +610,84 @@ country_six_plots <- function(country_iso,
           strip.text = element_text(size = 11))
   
   
-  plot_mdl_long <- ggplot(dta_mld_long, aes(x = date, y = count)) + 
+  # Plot middle pannel
+  plot_mdl_long <- ggplot(dta_preds_long, 
+                          aes(x = date, y = count)) + 
+    
     facet_wrap(~ obs, scales = "free_y", ncol = 1) + 
+    
     geom_point(aes(colour = obs), size = 2) + 
     scale_colour_manual(values = main_colour) + 
-    geom_ribbon(aes(ymin = lwr, ymax = upr, fill = obs), alpha = 0.4) + 
-    geom_line(aes(y = fit, colour = obs), size = 1) + 
+    
+    geom_ribbon(aes(ymin = exp_lower, 
+                    ymax = exp_upper, 
+                    fill = obs), alpha = 0.4) + 
+    geom_line(aes(y = exp_fitted , colour = obs), 
+              size = 1) + 
     scale_fill_manual(values = main_colour) + 
-    scale_x_date(limits = dates_extent_long, date_labels = "%d-%b") +
+    
+    scale_x_date(limits = dates_extent_long, 
+                 date_labels = "%d-%b") +
     xlab('') + 
     ylab(paste0('frequency and fitted values')) + 
     labs(subtitle = paste('Last', (dates_extent_long[[2]] - dates_extent_long[[1]] + 1), 'days')) + 
-    theme_light() + 
     theme_light() + 
     theme(legend.position = "none", 
           strip.text = element_text(size = 11))
   
   
-  plot_mdl_short <- ggplot(dta_mld_short, aes(x = date, y = count)) + 
+  # Plot right pannel
+  plot_mdl_short <- ggplot(dta_preds_long, 
+                           aes(x = date, y = count)) + 
+    
     facet_wrap(~ obs, scales = "free_y", ncol = 1) + 
+    
     geom_point(aes(colour = obs), size = 2) + 
     scale_colour_manual(values = main_colour) + 
-    geom_ribbon(aes(ymin = lwr, ymax = upr, fill = obs), alpha = 0.4) + 
-    geom_line(aes(y = fit, colour = obs), size = 1) + 
+    
+    geom_ribbon(aes(ymin = exp_lower, 
+                    ymax = exp_upper, 
+                    fill = obs), 
+                alpha = 0.4) + 
+    
+    geom_line(aes(y = exp_fitted, 
+                  colour = obs), size = 1) + 
+    
     scale_fill_manual(values = main_colour) + 
     scale_x_date(limits = dates_extent_short, breaks = '4 days', date_labels = "%d-%b") +
     xlab('') + 
     ylab(paste0('frequency and fitted values')) + 
     labs(subtitle = paste('Last', (dates_extent_short[[2]] - dates_extent_short[[1]] + 1), 'days')) + 
-    theme_light() + 
+    
     theme_light() + 
     theme(legend.position = "none", 
           strip.text = element_text(size = 11))
   
   
-  
-  ggarrange(plot_obs, 
-            plot_mdl_long, 
-            plot_mdl_short, 
-            ncol = 3, 
-            widths = c(2,1.4,1.1)) %>% 
+  # Arrange plots
+  combined_plot <- ggarrange(plot_obs, 
+                             plot_mdl_long, 
+                             plot_mdl_short, 
+                             ncol = 3, 
+                             widths = c(2,1.4,1.1)) %>% 
     
-    annotate_figure(top = text_grob(paste(glue('Covid-19 cases and deaths and trend estimations in {name_country}'), 
-                                          glue('Data until {format(date_max_report, "%d %B %Y")} (fitting with linear regression model)'), 
+    annotate_figure(top = text_grob(paste(glue::glue('Covid-19 cases and deaths and trend estimations in {name_country}'), 
+                                          glue::glue('Data until {format(date_max_report, "%d %B %Y")} (fitting with linear regression model)'), 
                                           sep = "\n"), 
                                     face = "bold", size = 14))
+  
+  
+  
+  ggsave(file.path(path.local.worldwide.graphs.country_trends,
+                   glue::glue("trends_{name_country_save}_{week_report}.png")),
+         plot = combined_plot,
+         scale = 1,
+         width = 9,
+         dpi = 320)
+  
+  return(combined_plot)
 }
+
 
 
 
@@ -1397,5 +1421,54 @@ geofacet_plot_all <- function(data,
   )
 }
 
+
+scatter_plot_inc <- function(tbl_inc, 
+                             var_x, 
+                             var_y, 
+                             label_log_x = TRUE, 
+                             label_log_y = TRUE){
+  
+  var_x <- sym(var_x)
+  var_y <- sym(var_y)
+  
+  temp_tbl <- tbl_inc %>% filter(!!var_x != 0)
+  countries_zero_count <- tbl_inc %>% filter(!!var_x == 0) %>% pull(country)
+  
+  txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
+  
+  
+  scatterplot <- ggplot(temp_tbl) + 
+    geom_point(aes(!!var_x, !!var_y, col = region)) + 
+    ggrepel::geom_text_repel(
+      data = temp_tbl,
+      aes(!!var_x, !!var_y, label = country, colour = region),
+      size = 3,
+      show.legend = FALSE) + 
+    labs(caption = paste0("Countries with zero count: ", txt_countries_zero_count, ".\n", caption_world_map), 
+         color = NULL) + 
+    theme_light()
+  
+  scatterplot <- if(label_log_x) {
+    scatterplot + 
+      scale_x_continuous(trans = 'log10', 
+                         breaks = scales::trans_breaks("log10", function(x) 10^x), 
+                         labels = scales::label_number_si()) + 
+      labs(x = paste(var_x, "(log scale)"))
+  } else {
+    scatterplot
+  }
+  
+  scatterplot <- if(label_log_y) {
+    scatterplot + 
+      scale_y_continuous(trans = 'log10', 
+                         breaks = scales::trans_breaks("log10", function(x) 10^x), 
+                         labels = scales::label_number_si()) + 
+      labs(y = paste(var_y, "(log scale)"))
+  } else {
+    scatterplot
+  }
+  
+  return(scatterplot)
+}
 
 

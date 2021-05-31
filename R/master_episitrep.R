@@ -50,10 +50,6 @@ purrr::walk(continent_list,
 )
 
 
-## Geofacets -----------------------------------------------
-source(here::here('R', 'run_geofacet_plots.R'), encoding = 'UTF-8',
-       local = new.env(parent = .GlobalEnv))
-
 
 ## World level ---------------------------------------------------
 file_out_worldwide <- paste0(week_report, '_', 'episitrep_worldwide_analyses', '.html')
@@ -62,6 +58,24 @@ rmarkdown::render(
   input = file.path(path.Rmd, 'episitrep_worldwide_analyses.Rmd'), 
   output_file = file_out_worldwide, 
   output_dir  = path.local.week)
+
+
+## Geofacets -----------------------------------------------
+source(here::here('R', 'run_geofacet_plots.R'), encoding = 'UTF-8',
+       local = new.env(parent = .GlobalEnv))
+
+
+
+## Plots continent & countries -----------------------------
+
+# Note: the scripts run in a new environment, child to this one so as to 
+# not interfere with each other.
+source(here::here('R', 'run_multiplot_world_continent.R'), 
+       encoding = 'UTF-8', local = new.env(parent = .GlobalEnv))
+
+source(here::here('R', 'run_multiplot_country.R'), encoding = 'UTF-8',
+       local = new.env(parent = .GlobalEnv))
+
 
 
 ## MSF data ------------------------------------------------
@@ -87,16 +101,7 @@ purrr::walk(oc_list,
 
 
 
-## Plots continent & countries -----------------------------
 
-
-# Note: the scripts run in a new environment, child to this one so as to 
-# not interfere with each other.
-source(here::here('R', 'run_multiplot_world_continent.R'), 
-       encoding = 'UTF-8', local = new.env(parent = .GlobalEnv))
-
-source(here::here('R', 'run_multiplot_country.R'), encoding = 'UTF-8',
-       local = new.env(parent = .GlobalEnv))
 
 
 

@@ -60,9 +60,6 @@ caption_world_map <- paste0('Analysis and graphic by Epicentre | Data source: JH
 
 ```
 
----
-subtitle: "Data as of week `r glue::glue("{format(date_max_report, '%V')}, ending {weekdays(date_max_report)} {format(date_max_report, '%d %B %Y')}")`"
----
 
 <!-- Import data -->
 ```{r get-data, include = FALSE}
@@ -147,14 +144,17 @@ for (i in names(lst_tests)) {
 
 ```{r get-trends}
 
-trend_models <- get_trend_models(lst_jhu = lst_dta_jhu, periods_trend = c(12, 30), force = FALSE)
+trend_models <- get_trend_models(lst_jhu = lst_dta_jhu, periods_trend = c(14, 30), force = FALSE)
 
-model_cnt_cases_linear_short <- trend_models$model_cnt_cases_linear_short
-model_cnt_cases_linear_long  <- trend_models$model_cnt_cases_linear_long
+# Cases 30d and 14d: trends AND doubling time
+# model_cnt_cases_linear_short <- trend_models$model_cnt_cases_linear_short
+# model_cnt_cases_linear_long  <- trend_models$model_cnt_cases_linear_long
 
-model_cnt_deaths_linear_short <- trend_models$model_cnt_deaths_linear_short
-model_cnt_deaths_linear_long  <- trend_models$model_cnt_deaths_linear_long
+# Deaths 30d and 14d: trends AND doubling time
+# model_cnt_deaths_linear_short <- trend_models$model_cnt_deaths_linear_short
+# model_cnt_deaths_linear_long  <- trend_models$model_cnt_deaths_linear_long
 
+# For one graph, doubling time on a sliding window of dates since the begining.
 lst_coeffs_cases  <- trend_models$lst_coeffs_cases
 lst_coeffs_deaths <- trend_models$lst_coeffs_deaths
 
@@ -162,11 +162,62 @@ period_trend <- trend_models$periods_trend[[1]]
 
 
 # Choice for models to be used
-model_for_trend   <- 'linear' # for trends
+model_for_trend    <- 'linear' # for trends
 model_for_doubling <- 'linear' # for doubling time
 
-threshold_doubling_time <- 12
+threshold_doubling_time <- 14
 
+
+############################################################
+
+### New trends ###
+
+# Get linear trends and coeffs at 30 days
+
+tbl_trend_30d <- covidutils::get_trends(dta_jhu, 
+                                        time_unit_extent = 30,
+                                        omit_past_days = 0,
+                                        add_ci = TRUE) %>% 
+  get_doubling_time() %>% 
+  mutate(trend_cases = factor(trend_cases, levels = c("Increasing", "Likely increasing", 
+                                                      "Stable", 
+                                                      "Likely decreasing", "Decreasing")),
+         trend_deaths = factor(trend_deaths, levels = c("Increasing", "Likely increasing", 
+                                                        "Stable", 
+                                                        "Likely decreasing", "Decreasing")))
+
+
+# Get linear trends and coeffs at 14 days
+tbl_trend_14d <- covidutils::get_trends(dta_jhu, 
+                                        time_unit_extent = 14,
+                                        omit_past_days = 0,
+                                        add_ci = TRUE) %>% 
+  get_doubling_time() %>% 
+  mutate(trend_cases = factor(trend_cases, levels = c("Increasing", "Likely increasing", 
+                                                      "Stable", 
+                                                      "Likely decreasing", "Decreasing")),
+         trend_deaths = factor(trend_deaths, levels = c("Increasing", "Likely increasing", 
+                                                        "Stable", 
+                                                        "Likely decreasing", "Decreasing")))
+
+
+tbl_preds_all <- get_all_preds(lst_dta_jhu,
+                              long_trend = 30,
+                              short_trend = 14)
+
+# Save
+list(tbl_trend_14d = tbl_trend_14d,
+     par_14d       = get_date_extent(dta_jhu, 
+                                     time_unit_extent = 14,
+                                     omit_past_days = 0), 
+     
+     tbl_trend_30d = tbl_trend_30d,
+     par_30d       = get_date_extent(dta_jhu, 
+                                     time_unit_extent = 30,
+                                     omit_past_days = 0),
+     
+     tbl_preds_all = tbl_preds_all) %>% 
+  saveRDS(., file = file.path(path.local.worldwide.data, "trends_models_new.RDS")) 
 ```
 
 <!-- Main data frames used in the analysis -->
@@ -191,23 +242,28 @@ labels_deaths <- label_breaks(breaks_deaths) %>% gsub("\\<0-1\\>", "0", .)
 tbl_case_count <- dta_jhu_right_censored %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(cases = sum(cases, na.rm = TRUE)) %>% 
-  mutate(brks = cut(cases, breaks_cases, labels = labels_cases, include.lowest = TRUE, right = FALSE)) %>% 
+  mutate(brks = cut(cases, breaks_cases, labels = labels_cases, 
+                    include.lowest = TRUE, right = FALSE)) %>% 
   ungroup()
 
 # Summary table of cases in the last 30 days 
 tbl_case_count_30d <- dta_jhu_right_censored %>% 
-  filter(between(date, left = date_max_report-29, right = date_max_report)) %>% 
+  filter(between(date, left = date_max_report - 29, 
+                 right = date_max_report)) %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(cases = sum(cases, na.rm = TRUE)) %>% 
-  mutate(brks = cut(cases, breaks_cases, labels = labels_cases, include.lowest = TRUE, right = FALSE)) %>% 
+  mutate(brks = cut(cases, breaks_cases, labels = labels_cases, 
+                    include.lowest = TRUE, right = FALSE)) %>% 
   ungroup()
 
-# Summary table of cases in the last 12 days 
-tbl_case_count_12d <- dta_jhu_right_censored %>% 
-  filter(between(date, left = date_max_report-11, right = date_max_report)) %>% 
+# Summary table of cases in the last 14 days 
+tbl_case_count_14d <- dta_jhu_right_censored %>% 
+  filter(between(date, left = date_max_report - 13, 
+                 right = date_max_report)) %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(cases = sum(cases, na.rm = TRUE)) %>% 
-  mutate(brks = cut(cases, breaks_cases, labels = labels_cases, include.lowest = TRUE, right = FALSE)) %>% 
+  mutate(brks = cut(cases, breaks_cases, labels = labels_cases, 
+                    include.lowest = TRUE, right = FALSE)) %>% 
   ungroup()
 
 # --- --- --- --- --- 
@@ -218,28 +274,33 @@ tbl_case_count_12d <- dta_jhu_right_censored %>%
 tbl_death_count <- dta_jhu_right_censored %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(deaths = sum(deaths, na.rm = TRUE)) %>% 
-  mutate(brks = cut(deaths, breaks_deaths, labels = labels_deaths, include.lowest = TRUE, right = FALSE)) %>% 
+  mutate(brks = cut(deaths, breaks_deaths, labels = labels_deaths, 
+                    include.lowest = TRUE, right = FALSE)) %>% 
   ungroup()
 
 # Summary table of deaths in the last 30 days 
 tbl_death_count_30d <- dta_jhu_right_censored %>% 
-  filter(between(date, left = date_max_report-29, right = date_max_report)) %>% 
+  filter(between(date, left = date_max_report - 29, 
+                 right = date_max_report)) %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(deaths = sum(deaths, na.rm = TRUE)) %>% 
-  mutate(brks = cut(deaths, breaks_deaths, labels = labels_deaths, include.lowest = TRUE, right = FALSE)) %>% 
+  mutate(brks = cut(deaths, breaks_deaths, labels = labels_deaths, 
+                    include.lowest = TRUE, right = FALSE)) %>% 
   ungroup()
 
-# Summary table of deaths in the last 12 days 
-tbl_death_count_12d <- dta_jhu_right_censored %>% 
-  filter(between(date, left = date_max_report-11, right = date_max_report)) %>% 
+# Summary table of deaths in the last 14 days 
+tbl_death_count_14d <- dta_jhu_right_censored %>% 
+  filter(between(date, left = date_max_report - 13, 
+                 right = date_max_report)) %>% 
   group_by(iso_a3, continent, region, country) %>% 
   summarise(deaths = sum(deaths, na.rm = TRUE)) %>% 
-  mutate(brks = cut(deaths, breaks_deaths, labels = labels_deaths, include.lowest = TRUE, right = FALSE)) %>% 
+  mutate(brks = cut(deaths, breaks_deaths, labels = labels_deaths, 
+                    include.lowest = TRUE, right = FALSE)) %>% 
   ungroup()
 
 
-n_cases_12d <- tbl_case_count_12d %>% select(cases) %>% sum()
-n_deaths_12d <- tbl_death_count_12d %>% select(deaths) %>% sum()
+n_cases_14d <- tbl_case_count_14d %>% select(cases) %>% sum()
+n_deaths_14d <- tbl_death_count_14d %>% select(deaths) %>% sum()
 
 ```
 
@@ -247,6 +308,9 @@ n_deaths_12d <- tbl_death_count_12d %>% select(deaths) %>% sum()
 
 <!-- THE REPORT STARTS HERE -->
 
+---
+subtitle: "Data as of week `r glue::glue("{format(date_max_report, '%V')}, ending {weekdays(date_max_report)} {format(date_max_report, '%d %B %Y')}")`"
+---
 
 # About this report
 
@@ -307,42 +371,80 @@ map_world_case_count + labs(title = NULL)
 
 coeff_vars <-  c("coeff", "lwr", "upr")
 
-tbl_case_trend_30d <- tbl_case_count_30d %>% 
-  select(-brks) %>% 
-  left_join(rename(model_cnt_cases_linear_long[[3]] , all_of(attach_prefix(coeff_vars, 'l_cnt_30d_')))) %>% 
-  mutate(
-    trend_linear_30d = case_when(
-      l_cnt_30d_lwr > 0 ~ "Increasing", 
-      l_cnt_30d_upr < 0 ~ "Declining", 
-      l_cnt_30d_upr > 0 & l_cnt_30d_lwr < 0 ~ "Stable", 
-      TRUE ~ NA_character_) %>% 
-      factor(levels = c('Increasing', 'Stable', 'Declining')))
+# 30 days
+# tbl_case_trend_30d <- tbl_case_count_30d %>%
+#   select(-brks) %>%
+#   left_join(rename(model_cnt_cases_linear_long[[3]] , all_of(attach_prefix(coeff_vars, 'l_cnt_30d_')))) %>%
+#   mutate(
+#     trend_linear_30d = case_when(
+#       l_cnt_30d_lwr > 0 ~ "Increasing",
+#       l_cnt_30d_upr < 0 ~ "Declining",
+#       l_cnt_30d_upr > 0 & l_cnt_30d_lwr < 0 ~ "Stable",
+#       TRUE ~ NA_character_) %>%
+#       factor(levels = c('Increasing', 'Stable', 'Declining')))
+
+# 14 days
+# Note: the tbl_case_count (raw data) has the sum since the beginning 
+# tbl_case_trend <- tbl_case_count %>% 
+#   select(-brks) %>% 
+#   left_join(rename(model_cnt_cases_linear_short[[3]] ,
+#                    all_of(attach_prefix(coeff_vars, 'l_cnt_')))) %>% 
+#   mutate(
+#     trend_linear = case_when(
+#       l_cnt_lwr > 0 ~ "Increasing", 
+#       l_cnt_upr < 0 ~ "Declining", 
+#       l_cnt_upr > 0 & l_cnt_lwr < 0 ~ "Stable", 
+#       TRUE ~ NA_character_) %>% 
+#       factor(levels = c('Increasing', 'Stable', 'Declining')))
+
+# write.csv(tbl_case_trend, 
+#           file.path(path.local.worldwide.tables, paste0('tbl_case_trend', '_', week_report, '.csv')), 
+#           na = "", 
+#           row.names = FALSE, 
+#           fileEncoding = "UTF-8")
 
 
+############################################################
+### New trends ###
+
+# 12 days
+# Note: the tbl_case_count (raw data) has the sum since the beginning
+# Note: the data used for the model does not include the last two days (usually incomplete)
 tbl_case_trend <- tbl_case_count %>% 
   select(-brks) %>% 
-  left_join(rename(model_cnt_cases_linear_short[[3]] , all_of(attach_prefix(coeff_vars, 'l_cnt_')))) %>% 
-  mutate(
-    trend_linear = case_when(
-      l_cnt_lwr > 0 ~ "Increasing", 
-      l_cnt_upr < 0 ~ "Declining", 
-      l_cnt_upr > 0 & l_cnt_lwr < 0 ~ "Stable", 
-      TRUE ~ NA_character_) %>% 
-      factor(levels = c('Increasing', 'Stable', 'Declining')))
+  left_join(tbl_trend_14d %>% 
+              rename(cases_model = cases), 
+            by = c("iso_a3", "continent", "region", "country")) %>% 
+  select(-contains("death"), -contains("doubling"))
+
 
 write.csv(tbl_case_trend, 
-          file.path(path.local.worldwide.tables, paste0('tbl_case_trend', '_', week_report, '.csv')), 
+          file.path(path.local.worldwide.tables, paste0('tbl_case_trend',
+                                                        '_', week_report, '.csv')), 
           na = "", 
           row.names = FALSE, 
           fileEncoding = "UTF-8")
+
+tbl_case_trend_30d <- tbl_case_count %>% 
+  select(-brks) %>% 
+  left_join(tbl_trend_30d %>% 
+              rename(cases_model = cases), 
+            by = c("iso_a3", "continent", "region", "country")) %>% 
+  select(-contains("death"), -contains("doubling"))
 
 ```
 
 <!-- csv for MSF GIS -->
 ```{r csv-for-MSF-GIS, include = FALSE}
+# tbl_case_trend %>% 
+#   select(iso_a3, all_of(vars_trends(model_for_trend))) %>% 
+#   select(iso = iso_a3, trend) %>% 
+#   write.csv(file.path(path.local.worldwide.tables, paste0('epi-case-trends-', week_report, '.csv')), 
+#             row.names = FALSE, 
+#             fileEncoding = "UTF-8")
+
 tbl_case_trend %>% 
-  select(iso_a3, all_of(vars_trends(model_for_trend))) %>% 
-  select(iso = iso_a3, trend) %>% 
+  select(iso = iso_a3, trend =  trend_cases) %>% 
   write.csv(file.path(path.local.worldwide.tables, paste0('epi-case-trends-', week_report, '.csv')), 
             row.names = FALSE, 
             fileEncoding = "UTF-8")
@@ -350,13 +452,22 @@ tbl_case_trend %>%
 ```
 
 <!-- TABLE - Countries with increasing trend in number of cases -->
-```{r list-increasing-trends, include = FALSE}
+```{r list-increasing-trends-cases, include = FALSE}
+# tbl_case_increasing_trend <- tbl_case_trend %>% 
+#   select(c(iso_a3 : cases), all_of(vars_trends(model_for_trend))) %>% 
+#   filter(trend == 'Increasing') %>% 
+#   arrange(continent, desc(coeff))
 
+# New trends
 tbl_case_increasing_trend <- tbl_case_trend %>% 
-  select(c(iso_a3 : cases), all_of(vars_trends(model_for_trend))) %>% 
-  filter(trend == 'Increasing') %>% 
-  arrange(continent, desc(coeff))
-
+  filter(trend_cases  %in% c('Increasing', "Likely increasing")) %>% 
+  arrange(continent, desc(trend_cases_coeff)) %>% 
+  select(-contains("death"), -contains("doubling")) %>% 
+  select(iso_a3:cases, 
+         coeff = trend_cases_coeff,
+         lwr   = trend_cases_coeff_lwr95,
+         upr   = trend_cases_coeff_upr95,
+         trend = trend_cases)
 ```
 
 
@@ -373,20 +484,21 @@ tbl_case_increasing_trend <- tbl_case_trend %>%
 **Oceania:** (`r length(call_countries_increasing('cases', 'Oceania'))`)`r glue(": {call_countries_increasing('cases', 'Oceania') %>% combine_words()}")`. 
 
 
-<!-- Map cases counts and trends in the last 12 days -->
+<!-- Map cases counts and trends in the last 14 days -->
 ```{r map-world-case-trend, fig.width = 8, fig.height = 10, fig.cap = glue('Cases count and trend during the period from {format(date_max_report - (period_trend - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} ({period_trend} days)')}
 
-map_world_case_count_12d <- plot_map_world_count(tbl_case_count_12d, 'cases') + 
-  labs(title = 'Case count (12 days)')
+# COUNTS
+map_world_case_count_14d <- plot_map_world_count(tbl_case_count_14d, 'cases') + 
+  labs(title = 'Case count (14 days)')
 
-ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_case_count_12d', '_', week_report, '.png')), 
-       plot = map_world_case_count_12d, 
+ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_case_count_14d', '_', week_report, '.png')), 
+       plot = map_world_case_count_14d, 
        scale = 1, 
        dpi = 320)
 
-
-map_world_case_trend <- plot_map_world_trend(tbl_case_trend, 'cases') + 
-  labs(title = 'Case trend (12 days)')
+# TRENDS
+map_world_case_trend <- plot_map_world_trend(tbl_case_trend, "cases") + 
+  labs(title = 'Case trend (14 days)')
 
 ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_case_trend', '_', week_report, '.png')), 
        plot = map_world_case_trend, 
@@ -395,9 +507,9 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_case_trend', '_'
 
 
 # This graph is only for the html (to change with package patchwork)
-ggarrange(map_world_case_count_12d + labs(title = '', caption = ''), 
+ggarrange(map_world_case_count_14d + labs(title = '', caption = ''), 
           map_world_case_trend  + labs(title = ''), 
-          labels = c("Case count (12 days)", "Case trend (12 days)"), 
+          labels = c("Case count (14 days)", "Case trend (14 days)"), 
           ncol = 1)
 
 ```
@@ -410,12 +522,12 @@ map_world_case_count_trend_grid <- ggarrange(
   map_world_case_trend  + labs(title = '', caption = ''),  
   ggarrange(
     map_world_case_count + labs(title = '', caption = ''),
-    map_world_case_count_12d  + labs(title = '', caption = ''), 
-    labels = c("Cumulative case counts", "Case count (12 days)"), 
+    map_world_case_count_14d  + labs(title = '', caption = ''), 
+    labels = c("Cumulative case counts", "Case count (14 days)"), 
     common.legend = TRUE, 
     legend = 'bottom', 
     ncol = 2), 
-  labels = c("Case trend (12 days)"),
+  labels = c("Case trend (14 days)"),
   nrow = 2) %>% 
   annotate_figure(bottom = text_grob(caption_world_map, hjust = 1, x = 1, size = 10))
 
@@ -432,102 +544,163 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_case_count_trend
 <!-- Table cases trends -->
 ```{r tbl-countries-cases-increasing}
 
+increasing <- c("Increasing", "Likely increasing")
+
+# tbl_countries_increasing_cases <- tbl_case_trend %>% 
+#   select(c(iso_a3 : cases), all_of(vars_trends(model_for_trend))) %>% 
+#   left_join(tbl_case_count_30d %>% select(iso_a3, cases_30d = cases), by = 'iso_a3') %>% 
+#   left_join(tbl_case_count_14d %>% select(iso_a3, cases_14d = cases), by = 'iso_a3') %>% 
+#   left_join(tbl_case_trend_30d %>% select(iso_a3, coeff_30d = l_cnt_30d_coeff, 
+#                                           lwr_30d = l_cnt_30d_lwr, upr_30d = l_cnt_30d_upr,
+#                                           trend_30d = trend_linear_30d), by = 'iso_a3') %>%
+#   filter(trend == 'Increasing' | trend_30d == 'Increasing') %>% 
+#   select(-c(iso_a3, region)) %>% 
+#   arrange(continent, desc(coeff)) %>% 
+#   mutate(
+#     coeff = round(exp(coeff), digits = 2), 
+#     coeff_ci = combine_ci(exp(lwr), exp(upr), digits = 2), 
+#     lwr = NULL,
+#     upr = NULL) %>% 
+#   mutate(
+#     coeff_30d = round(exp(coeff_30d), digits = 2), 
+#     coeff_ci_30d = combine_ci(exp(lwr_30d), exp(upr_30d), digits = 2), 
+#     lwr_30d = NULL,
+#     upr_30d = NULL) %>% 
+#   mutate(
+#     coeff_ci = case_when(
+#       coeff_ci == '[NA - NA]' ~ NA_character_, 
+#       TRUE ~ coeff_ci), 
+#     coeff_ci_30d = case_when(
+#       coeff_ci_30d == '[NA - NA]' ~ NA_character_, 
+#       TRUE ~ coeff_ci_30d)) %>% 
+#   select(continent, country, cases, cases_30d, cases_14d, coeff_30d, coeff_ci_30d, coeff, coeff_ci, trend, trend_30d)
+
+
 tbl_countries_increasing_cases <- tbl_case_trend %>% 
-  select(c(iso_a3 : cases), all_of(vars_trends(model_for_trend))) %>% 
-  left_join(tbl_case_count_30d %>% select(iso_a3, cases_30d = cases), by = 'iso_a3') %>% 
-  left_join(tbl_case_count_12d %>% select(iso_a3, cases_12d = cases), by = 'iso_a3') %>% 
-  left_join(tbl_case_trend_30d %>% select(iso_a3, coeff_30d = l_cnt_30d_coeff, lwr_30d = l_cnt_30d_lwr, upr_30d = l_cnt_30d_upr, trend_30d = trend_linear_30d), by = 'iso_a3') %>%
-  filter(trend == 'Increasing' | trend_30d == 'Increasing') %>% 
-  select(-c(iso_a3, region)) %>% 
-  arrange(continent, desc(coeff)) %>% 
-  mutate(
-    coeff = round(exp(coeff), digits = 2), 
-    coeff_ci = combine_ci(exp(lwr), exp(upr), digits = 2), 
-    lwr = NULL,
-    upr = NULL) %>% 
-  mutate(
-    coeff_30d = round(exp(coeff_30d), digits = 2), 
-    coeff_ci_30d = combine_ci(exp(lwr_30d), exp(upr_30d), digits = 2), 
-    lwr_30d = NULL,
-    upr_30d = NULL) %>% 
-  mutate(
-    coeff_ci = case_when(
-      coeff_ci == '[NA - NA]' ~ NA_character_, 
-      TRUE ~ coeff_ci), 
-    coeff_ci_30d = case_when(
-      coeff_ci_30d == '[NA - NA]' ~ NA_character_, 
-      TRUE ~ coeff_ci_30d)) %>% 
-  select(continent, country, cases, cases_30d, cases_12d, coeff_30d, coeff_ci_30d, coeff, coeff_ci, trend, trend_30d)
+  select(c(iso_a3 : cases)) %>% 
+  # add counts
+  left_join(tbl_case_count_30d %>%  
+              select(iso_a3, cases_30d = cases),
+            by = 'iso_a3') %>% 
+  left_join(tbl_case_count_14d %>%  
+              select(iso_a3, cases_14d = cases),
+            by = 'iso_a3') %>% 
+  #add trends  
+  left_join(tbl_trend_14d %>% 
+              select(iso_a3,
+                     trend_cases_14d = trend_cases, 
+                     trend_cases_coef_14d = trend_cases_coeff), 
+            by = 'iso_a3') %>% 
+  
+  left_join(tbl_trend_30d %>% 
+              select(iso_a3, 
+                     trend_cases_30d = trend_cases, 
+                     trend_cases_coef_30d = trend_cases_coeff), 
+            by = 'iso_a3') %>% 
+  filter(trend_cases_14d %in% increasing | trend_cases_30d %in% increasing) %>% 
+  arrange(continent, desc(trend_cases_coef_14d)) %>% 
+  select(continent, country, cases, cases_30d, cases_14d, trend_cases_30d, trend_cases_14d)
 
-
+ values <- scico::scico(5, palette = "vikO", 
+                         begin = .2, end = .8, 
+                         direction = -1) %>% 
+    purrr::set_names( c("Increasing", "Likely increasing", 
+                        "Stable", "Likely decreasing", "Decreasing"))
+ 
 gtbl_countries_increasing_cases <- tbl_countries_increasing_cases %>% 
   gt(rowname_col = 'country', groupname_col = 'continent') %>% 
-  cols_hide(
-    columns = vars(trend, trend_30d)) %>% 
+  
   cols_label(
     cases     = 'Total', 
     cases_30d = 'Last 30 days', 
-    cases_12d = 'Last 12 days',  
-    coeff     = 'Rate', 
-    coeff_ci  = '95% CI', 
-    coeff_30d = 'Rate',
-    coeff_ci_30d = '95% CI') %>% 
+    cases_14d = 'Last 14 days',  
+    trend_cases_30d = '30 days',
+    trend_cases_14d = '14 days') %>% 
   tab_spanner(
     label = 'Number of cases', 
     columns = starts_with('cases')) %>% 
   tab_spanner(
-    label = 'Trend (30 days)', 
-    columns = vars(coeff_30d, coeff_ci_30d)) %>% 
-  tab_spanner(
-    label = 'Trend (12 days)', 
-    columns = vars(coeff, coeff_ci)) %>% 
+    label = 'Trends', 
+    columns = starts_with('trend'))  %>% 
   fmt_number(
     columns = starts_with('cases'), 
     decimals = 0) %>% 
-  fmt_number(
-    columns = vars(coeff, coeff_30d), 
-    decimals = 2) %>% 
-  fmt_missing(
-    columns = vars(coeff, coeff_ci), 
-    missing_text = "---") %>% 
+  
+  # Color based on trend category
   tab_style(
     style = list(
-      cell_fill(color = palette_RdAmGn[1], alpha = 0.8), 
+      cell_fill(color = "#8A331F", alpha = 0.8),
+      cell_text(weight = 'bold')),  
+    locations = cells_body(
+      columns = vars(trend_cases_30d), 
+      rows = trend_cases_30d == 'Increasing')) %>% 
+  
+   tab_style(
+    style = list(
+      cell_fill(color = "#CA845F"  , alpha = 0.8)), 
+    locations = cells_body(
+      columns = vars(trend_cases_30d), 
+      rows = trend_cases_30d == 'Likely increasing')) %>% 
+  
+  tab_style(
+    style = list(
+      cell_fill(color = "#D4BEB4", alpha = 0.8)), 
+    locations = cells_body(
+      columns = vars(trend_cases_30d), 
+      rows = trend_cases_30d == 'Stable')) %>% 
+  
+    tab_style(
+    style = list(
+      cell_fill(color = "#80A5C0", alpha = 0.8)), 
+    locations = cells_body(
+      columns = vars(trend_cases_30d), 
+      rows = trend_cases_30d == 'Likely decreasing')) %>% 
+  
+    tab_style(
+    style = list(
+      cell_fill(color = "#345B8C", alpha = 0.8)), 
+    locations = cells_body(
+      columns = vars(trend_cases_30d), 
+      rows = trend_cases_30d == 'Decreasing')) %>% 
+  
+  
+  tab_style(
+    style = list(
+      cell_fill(color = "#8A331F", alpha = 0.8),
       cell_text(weight = 'bold')), 
     locations = cells_body(
-      columns = vars(coeff, coeff_ci), 
-      rows = trend == 'Increasing')) %>% 
+      columns = vars(trend_cases_14d), 
+      rows = trend_cases_14d == 'Increasing')) %>% 
+  
+   tab_style(
+    style = list(
+      cell_fill(color = "#CA845F"  , alpha = 0.8)), 
+    locations = cells_body(
+      columns = vars(trend_cases_14d), 
+      rows = trend_cases_14d == 'Likely increasing')) %>% 
+  
   tab_style(
     style = list(
-      cell_fill(color = palette_RdAmGn[2], alpha = 0.8)), 
+      cell_fill(color = "#D4BEB4", alpha = 0.8)), 
     locations = cells_body(
-      columns = vars(coeff, coeff_ci), 
-      rows = trend == 'Stable')) %>% 
-  tab_style(
+      columns = vars(trend_cases_14d), 
+      rows = trend_cases_14d == 'Stable')) %>%
+  
+   tab_style(
     style = list(
-      cell_fill(color = palette_RdAmGn[3], alpha = 0.8)), 
+      cell_fill(color = "#80A5C0", alpha = 0.8)), 
     locations = cells_body(
-      columns = vars(coeff, coeff_ci), 
-      rows = trend == 'Declining')) %>% 
-  tab_style(
+      columns = vars(trend_cases_14d), 
+      rows = trend_cases_14d == 'Likely decreasing')) %>% 
+  
+    tab_style(
     style = list(
-      cell_fill(color = palette_RdAmGn[1], alpha = 0.8), 
-      cell_text(weight = 'bold')), 
+      cell_fill(color = "#345B8C" , alpha = 0.8)), 
     locations = cells_body(
-      columns = vars(coeff_30d, coeff_ci_30d), 
-      rows = trend_30d == 'Increasing')) %>% 
-  tab_style(
-    style = list(
-      cell_fill(color = palette_RdAmGn[2], alpha = 0.8)), 
-    locations = cells_body(
-      columns = vars(coeff_30d, coeff_ci_30d), 
-      rows = trend_30d == 'Stable')) %>% 
-  tab_style(
-    style = list(
-      cell_fill(color = palette_RdAmGn[3], alpha = 0.8)), 
-    locations = cells_body(
-      columns = vars(coeff_30d, coeff_ci_30d), 
-      rows = trend_30d == 'Declining')) %>% 
+      columns = vars(trend_cases_14d), 
+      rows = trend_cases_14d == 'Decreasing')) %>% 
+  
+  
   tab_options(
     column_labels.font.weight = "bold", 
     row_group.font.weight = "bold", 
@@ -537,7 +710,7 @@ gtbl_countries_increasing_cases <- tbl_countries_increasing_cases %>%
 
 gtbl_countries_increasing_cases %>% 
   tab_header(
-    title = 'Countries with a significant increasing trend in cases in the last 30 or 12 days')
+    title = 'Countries with a significant increasing trend in cases in the last 30 or 14 days')
 
 ```
 
@@ -571,32 +744,53 @@ map_world_death_count + labs(title = NULL)
 
 ## Deaths trends
 <!-- TABLE - Trend in number of deaths -->
-```{r}
+```{r tbl-death-trend}
 
 # This table display trends estimated in the last 30 days (only count linear models)
 
-tbl_death_trend_30d <- tbl_death_count_30d %>% 
-  select(-brks) %>% 
-  left_join(rename(model_cnt_deaths_linear_long[[3]] , all_of(attach_prefix(coeff_vars, 'l_cnt_30d_')))) %>% 
-  mutate(
-    trend_linear_30d = case_when(
-      l_cnt_30d_lwr > 0 ~ "Increasing", 
-      l_cnt_30d_upr < 0 ~ "Declining", 
-      l_cnt_30d_upr > 0 & l_cnt_30d_lwr < 0 ~ "Stable", 
-      TRUE ~ NA_character_) %>% 
-      factor(levels = c('Increasing', 'Stable', 'Declining')))
+# tbl_death_trend_30d <- tbl_death_count_30d %>% 
+#   select(-brks) %>% 
+#   left_join(rename(model_cnt_deaths_linear_long[[3]] , all_of(attach_prefix(coeff_vars, 'l_cnt_30d_')))) %>% 
+#   mutate(
+#     trend_linear_30d = case_when(
+#       l_cnt_30d_lwr > 0 ~ "Increasing", 
+#       l_cnt_30d_upr < 0 ~ "Declining", 
+#       l_cnt_30d_upr > 0 & l_cnt_30d_lwr < 0 ~ "Stable", 
+#       TRUE ~ NA_character_) %>% 
+#       factor(levels = c('Increasing', 'Stable', 'Declining')))
 
 
+# tbl_death_trend <- tbl_death_count %>% 
+#   select(-brks) %>% 
+#   left_join(rename(model_cnt_deaths_linear_short[[3]] , all_of(attach_prefix(coeff_vars, 'l_cnt_')))) %>% 
+#   mutate(
+#     trend_linear = case_when(
+#       l_cnt_lwr > 0 ~ "Increasing", 
+#       l_cnt_upr < 0 ~ "Declining", 
+#       l_cnt_upr > 0 & l_cnt_lwr < 0 ~ "Stable", 
+#       TRUE ~ NA_character_) %>% 
+#       factor(levels = c('Increasing', 'Stable', 'Declining')))
+
+# write.csv(tbl_death_trend, 
+#           file.path(path.local.worldwide.tables, paste0('tbl_death_trend', '_', week_report, '.csv')), 
+#           na = "", 
+#           row.names = FALSE, 
+#           fileEncoding = "UTF-8")
+
+
+############################################################
+### New trends ###
+
+# 12 days
+# Note: the tbl_case_count (raw data) has the sum since the beginning
+# Note: the data used for the model does not include the last two days (usually incomplete)
 tbl_death_trend <- tbl_death_count %>% 
   select(-brks) %>% 
-  left_join(rename(model_cnt_deaths_linear_short[[3]] , all_of(attach_prefix(coeff_vars, 'l_cnt_')))) %>% 
-  mutate(
-    trend_linear = case_when(
-      l_cnt_lwr > 0 ~ "Increasing", 
-      l_cnt_upr < 0 ~ "Declining", 
-      l_cnt_upr > 0 & l_cnt_lwr < 0 ~ "Stable", 
-      TRUE ~ NA_character_) %>% 
-      factor(levels = c('Increasing', 'Stable', 'Declining')))
+  left_join(tbl_trend_14d %>% 
+              rename(deaths_model = deaths), 
+            by = c("iso_a3", "continent", "region", "country")) %>% 
+  select(-contains("cases"), -contains("doubling"))
+
 
 write.csv(tbl_death_trend, 
           file.path(path.local.worldwide.tables, paste0('tbl_death_trend', '_', week_report, '.csv')), 
@@ -604,15 +798,33 @@ write.csv(tbl_death_trend,
           row.names = FALSE, 
           fileEncoding = "UTF-8")
 
+tbl_death_trend_30d <- tbl_death_count %>% 
+  select(-brks) %>% 
+  left_join(tbl_trend_30d %>% 
+              rename(deaths_model = deaths), 
+            by = c("iso_a3", "continent", "region", "country")) %>% 
+  select(-contains("cases"))
+
 ```
 
 <!-- TABLE - Countries with increasing trend in number of deaths -->
-```{r tbl-deaths-increasing-trend}
+```{r list-increasing-deaths-cases}
 
+# tbl_death_increasing_trend <- tbl_death_trend %>% 
+#   select(c(iso_a3 : deaths), all_of(vars_trends(model_for_trend))) %>% 
+#   filter(trend == 'Increasing') %>% 
+#   arrange(continent, desc(coeff))
+
+# New trends
 tbl_death_increasing_trend <- tbl_death_trend %>% 
-  select(c(iso_a3 : deaths), all_of(vars_trends(model_for_trend))) %>% 
-  filter(trend == 'Increasing') %>% 
-  arrange(continent, desc(coeff))
+ filter(trend_deaths  %in% c('Increasing', "Likely increasing")) %>% 
+  arrange(continent, desc(trend_deaths_coeff)) %>% 
+  select(-contains("cases"), -contains("doubling")) %>% 
+  select(iso_a3:deaths, 
+         coeff = trend_deaths_coeff,
+         lwr   = trend_deaths_coeff_lwr95,
+         upr   = trend_deaths_coeff_upr95,
+         trend = trend_deaths)
 
 ```
 
@@ -629,19 +841,22 @@ tbl_death_increasing_trend <- tbl_death_trend %>%
 
 **Oceania:** (`r length(call_countries_increasing('deaths', 'Oceania'))`)`r glue(":  {call_countries_increasing('deaths', 'Oceania') %>% combine_words()}")`. 
 
-<!-- Map deaths counts and trends in the last 12 days -->
+<!-- Map deaths counts and trends in the last 14 days -->
 ```{r map-world-deaths-trends, fig.width = 8, fig.height = 10, fig.cap = glue('Mapping of Covid-19 associated deaths and trends during the period from {format(date_max_report - (period_trend - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} ({period_trend} days)')}
 
-map_world_death_count_12d <- plot_map_world_count(tbl_death_count_12d, 'deaths') + 
-  labs(title = 'Death count (12 days)')
+# COUNTS
+map_world_death_count_14d <- plot_map_world_count(tbl_death_count_14d, 'deaths') + 
+  labs(title = 'Death count (14 days)')
 
-ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_death_count_12d', '_', week_report, '.png')), 
-       plot = map_world_death_count_12d, 
+ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_death_count_14d', '_', week_report, '.png')), 
+       plot = map_world_death_count_14d, 
        scale = 1, 
        dpi = 320)
 
+
+# TRENDS
 map_world_death_trend <- plot_map_world_trend(tbl_death_trend, 'deaths') + 
-  labs(title = 'Death trend (12 days)')
+  labs(title = 'Death trend (14 days)')
 
 ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_death_trend', '_', week_report, '.png')), 
        plot = map_world_death_trend, 
@@ -650,9 +865,9 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_death_trend', '_
 
 
 # This graph is only for the html
-ggarrange(map_world_death_count_12d + labs(title = '', caption = ''), 
+ggarrange(map_world_death_count_14d + labs(title = '', caption = ''), 
           map_world_death_trend  + labs(title = ''), 
-          labels = c("Death count (12 days)", "Death trends (12 days)"), 
+          labels = c("Death count (14 days)", "Death trends (14 days)"), 
           ncol = 1)
 
 ```
@@ -664,12 +879,12 @@ map_world_death_count_trend_grid <- ggarrange(
   map_world_death_trend  + labs(title = '', caption = ''),  
   ggarrange(
     map_world_death_count + labs(title = '', caption = ''),
-    map_world_death_count_12d  + labs(title = '', caption = ''), 
-    labels = c("Cumulative death count", "Death count (12 days)"), 
+    map_world_death_count_14d  + labs(title = '', caption = ''), 
+    labels = c("Cumulative death count", "Death count (14 days)"), 
     common.legend = TRUE, 
     legend = 'bottom', 
     ncol = 2), 
-  labels = c("Death trend (12 days)"),
+  labels = c("Death trend (14 days)"),
   nrow = 2) %>% 
   annotate_figure(bottom = text_grob(caption_world_map, hjust = 1, x = 1, size = 10))
 
@@ -686,101 +901,160 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_death_count_tren
 <!-- Table deaths trends -->
 ```{r tbl-countries-deaths-increasing}
 
+increasing <- c("Increasing", "Likely increasing")
+
+# tbl_countries_increasing_deaths <- tbl_death_trend %>% 
+#   select(c(iso_a3 : deaths), all_of(vars_trends(model_for_trend))) %>% 
+#   left_join(tbl_death_count_30d %>% select(iso_a3, deaths_30d = deaths), by = 'iso_a3') %>% 
+#   left_join(tbl_death_count_14d %>% select(iso_a3, deaths_14d = deaths), by = 'iso_a3') %>% 
+#   left_join(tbl_death_trend_30d %>% select(iso_a3, coeff_30d = l_cnt_30d_coeff, lwr_30d = l_cnt_30d_lwr, upr_30d = l_cnt_30d_upr, trend_30d = trend_linear_30d), by = 'iso_a3') %>%
+#   filter(trend == 'Increasing' | trend_30d == 'Increasing') %>% 
+#   select(-c(iso_a3, region)) %>% 
+#   arrange(continent, desc(coeff)) %>% 
+#   mutate(
+#     coeff = round(exp(coeff), digits = 2), 
+#     coeff_ci = combine_ci(exp(lwr), exp(upr), digits = 2), 
+#     lwr = NULL,
+#     upr = NULL) %>% 
+#   mutate(
+#     coeff_30d = round(exp(coeff_30d), digits = 2), 
+#     coeff_ci_30d = combine_ci(exp(lwr_30d), exp(upr_30d), digits = 2), 
+#     lwr_30d = NULL,
+#     upr_30d = NULL) %>% 
+#   mutate(
+#     coeff_ci = case_when(
+#       coeff_ci == '[NA - NA]' ~ NA_character_, 
+#       TRUE ~ coeff_ci), 
+#     coeff_ci_30d = case_when(
+#       coeff_ci_30d == '[NA - NA]' ~ NA_character_, 
+#       TRUE ~ coeff_ci_30d)) %>% 
+#   select(continent, country, deaths, deaths_30d, deaths_14d, coeff_30d, coeff_ci_30d, coeff, coeff_ci, trend, trend_30d)
+
 tbl_countries_increasing_deaths <- tbl_death_trend %>% 
-  select(c(iso_a3 : deaths), all_of(vars_trends(model_for_trend))) %>% 
-  left_join(tbl_death_count_30d %>% select(iso_a3, deaths_30d = deaths), by = 'iso_a3') %>% 
-  left_join(tbl_death_count_12d %>% select(iso_a3, deaths_12d = deaths), by = 'iso_a3') %>% 
-  left_join(tbl_death_trend_30d %>% select(iso_a3, coeff_30d = l_cnt_30d_coeff, lwr_30d = l_cnt_30d_lwr, upr_30d = l_cnt_30d_upr, trend_30d = trend_linear_30d), by = 'iso_a3') %>%
-  filter(trend == 'Increasing' | trend_30d == 'Increasing') %>% 
-  select(-c(iso_a3, region)) %>% 
-  arrange(continent, desc(coeff)) %>% 
-  mutate(
-    coeff = round(exp(coeff), digits = 2), 
-    coeff_ci = combine_ci(exp(lwr), exp(upr), digits = 2), 
-    lwr = NULL,
-    upr = NULL) %>% 
-  mutate(
-    coeff_30d = round(exp(coeff_30d), digits = 2), 
-    coeff_ci_30d = combine_ci(exp(lwr_30d), exp(upr_30d), digits = 2), 
-    lwr_30d = NULL,
-    upr_30d = NULL) %>% 
-  mutate(
-    coeff_ci = case_when(
-      coeff_ci == '[NA - NA]' ~ NA_character_, 
-      TRUE ~ coeff_ci), 
-    coeff_ci_30d = case_when(
-      coeff_ci_30d == '[NA - NA]' ~ NA_character_, 
-      TRUE ~ coeff_ci_30d)) %>% 
-  select(continent, country, deaths, deaths_30d, deaths_12d, coeff_30d, coeff_ci_30d, coeff, coeff_ci, trend, trend_30d)
+  select(c(iso_a3 : deaths)) %>% 
+  # add counts
+  left_join(tbl_death_count_30d %>%  
+              select(iso_a3, deaths_30d = deaths),
+            by = 'iso_a3') %>% 
+  left_join(tbl_death_count_14d %>%  
+              select(iso_a3, deaths_14d = deaths),
+            by = 'iso_a3') %>% 
+  #add trends  
+  left_join(tbl_trend_14d %>% 
+              select(iso_a3,
+                     trend_deaths_14d = trend_deaths, 
+                     trend_deaths_coef_14d = trend_deaths_coeff), 
+            by = 'iso_a3') %>% 
+  
+  left_join(tbl_trend_30d %>% 
+              select(iso_a3, 
+                     trend_deaths_30d = trend_deaths, 
+                     trend_deaths_coef_30d = trend_deaths_coeff), 
+            by = 'iso_a3') %>% 
+  filter(trend_deaths_14d %in% increasing | trend_deaths_30d %in% increasing) %>% 
+  arrange(continent, desc(trend_deaths_coef_14d)) %>% 
+  select(continent, country, deaths, deaths_30d, deaths_14d, trend_deaths_30d, trend_deaths_14d)
+
+values <- scico::scico(5, palette = "vikO", 
+                       begin = .2, end = .8, 
+                       direction = -1) %>% 
+  purrr::set_names( c("Increasing", "Likely increasing", 
+                      "Stable", "Likely decreasing", "Decreasing"))
 
 gtbl_countries_increasing_deaths <- tbl_countries_increasing_deaths %>% 
   gt(rowname_col = 'country', groupname_col = 'continent') %>% 
-  cols_hide(
-    columns = vars(trend, trend_30d)) %>% 
+  
   cols_label(
     deaths     = 'Total', 
     deaths_30d = 'Last 30 days', 
-    deaths_12d = 'Last 12 days',  
-    coeff     = 'Rate', 
-    coeff_ci  = '95% CI', 
-    coeff_30d = 'Rate',
-    coeff_ci_30d = '95% CI') %>% 
+    deaths_14d = 'Last 14 days',  
+    trend_deaths_30d = '30 days',
+    trend_deaths_14d = '14 days') %>% 
   tab_spanner(
     label = 'Number of deaths', 
     columns = starts_with('deaths')) %>% 
   tab_spanner(
-    label = 'Trend (30 days)', 
-    columns = vars(coeff_30d, coeff_ci_30d)) %>% 
-  tab_spanner(
-    label = 'Trend (12 days)', 
-    columns = vars(coeff, coeff_ci)) %>% 
+    label = 'Trends', 
+    columns = starts_with('trend'))  %>% 
   fmt_number(
     columns = starts_with('deaths'), 
     decimals = 0) %>% 
-  fmt_number(
-    columns = vars(coeff, coeff_30d), 
-    decimals = 2) %>% 
-  fmt_missing(
-    columns = vars(coeff, coeff_ci), 
-    missing_text = "---") %>% 
+  
+  # Color based on trend category
   tab_style(
     style = list(
-      cell_fill(color = palette_RdAmGn[1], alpha = 0.8), 
+      cell_fill(color = "#8A331F", alpha = 0.8),
+      cell_text(weight = 'bold')),  
+    locations = cells_body(
+      columns = vars(trend_deaths_30d), 
+      rows = trend_deaths_30d == 'Increasing')) %>% 
+  
+  tab_style(
+    style = list(
+      cell_fill(color = "#CA845F"  , alpha = 0.8)), 
+    locations = cells_body(
+      columns = vars(trend_deaths_30d), 
+      rows = trend_deaths_30d == 'Likely increasing')) %>% 
+  
+  tab_style(
+    style = list(
+      cell_fill(color = "#D4BEB4", alpha = 0.8)), 
+    locations = cells_body(
+      columns = vars(trend_deaths_30d), 
+      rows = trend_deaths_30d == 'Stable')) %>% 
+  
+  tab_style(
+    style = list(
+      cell_fill(color = "#80A5C0", alpha = 0.8)), 
+    locations = cells_body(
+      columns = vars(trend_deaths_30d), 
+      rows = trend_deaths_30d == 'Likely decreasing')) %>% 
+  
+  tab_style(
+    style = list(
+      cell_fill(color = "#345B8C" , alpha = 0.8)), 
+    locations = cells_body(
+      columns = vars(trend_deaths_30d), 
+      rows = trend_deaths_30d == 'Decreasing')) %>% 
+  
+  
+  tab_style(
+    style = list(
+      cell_fill(color = "#8A331F", alpha = 0.8),
       cell_text(weight = 'bold')), 
     locations = cells_body(
-      columns = vars(coeff, coeff_ci), 
-      rows = trend == 'Increasing')) %>% 
+      columns = vars(trend_deaths_14d), 
+      rows = trend_deaths_14d == 'Increasing')) %>% 
+  
   tab_style(
     style = list(
-      cell_fill(color = palette_RdAmGn[2], alpha = 0.8)), 
+      cell_fill(color = "#CA845F"  , alpha = 0.8)), 
     locations = cells_body(
-      columns = vars(coeff, coeff_ci), 
-      rows = trend == 'Stable')) %>% 
+      columns = vars(trend_deaths_14d), 
+      rows = trend_deaths_14d == 'Likely increasing')) %>% 
+  
   tab_style(
     style = list(
-      cell_fill(color = palette_RdAmGn[3], alpha = 0.8)), 
+      cell_fill(color = "#D4BEB4", alpha = 0.8)), 
     locations = cells_body(
-      columns = vars(coeff, coeff_ci), 
-      rows = trend == 'Declining')) %>% 
+      columns = vars(trend_deaths_14d), 
+      rows = trend_deaths_14d == 'Stable')) %>%
+  
   tab_style(
     style = list(
-      cell_fill(color = palette_RdAmGn[1], alpha = 0.8), 
-      cell_text(weight = 'bold')), 
+      cell_fill(color = "#80A5C0", alpha = 0.8)), 
     locations = cells_body(
-      columns = vars(coeff_30d, coeff_ci_30d), 
-      rows = trend_30d == 'Increasing')) %>% 
+      columns = vars(trend_deaths_14d), 
+      rows = trend_deaths_14d == 'Likely decreasing')) %>% 
+  
   tab_style(
     style = list(
-      cell_fill(color = palette_RdAmGn[2], alpha = 0.8)), 
+      cell_fill(color = "#345B8C" , alpha = 0.8)), 
     locations = cells_body(
-      columns = vars(coeff_30d, coeff_ci_30d), 
-      rows = trend_30d == 'Stable')) %>% 
-  tab_style(
-    style = list(
-      cell_fill(color = palette_RdAmGn[3], alpha = 0.8)), 
-    locations = cells_body(
-      columns = vars(coeff_30d, coeff_ci_30d), 
-      rows = trend_30d == 'Declining')) %>% 
+      columns = vars(trend_deaths_14d), 
+      rows = trend_deaths_14d == 'Decreasing')) %>% 
+  
+  
   tab_options(
     column_labels.font.weight = "bold", 
     row_group.font.weight = "bold", 
@@ -788,47 +1062,51 @@ gtbl_countries_increasing_deaths <- tbl_countries_increasing_deaths %>%
     data_row.padding = px(1), 
     table_body.border.top.width = px(1))
 
-
 gtbl_countries_increasing_deaths %>% 
   tab_header(
-    title = 'Countries with a significant increasing trend in deaths in cases in the last 30 or 12 days')
+    title = 'Countries with a significant increasing trend in deaths in the last 30 or 14 days')
 
 ```
 
 <!-- BIG SUMMARY TABLE -->
 ```{r tbl-summary-cases-and-deaths, include = FALSE}
 
-tbl_summary_cases_deaths <- df_countries %>% 
-  left_join(select(tbl_case_count, iso_a3, cases)) %>% 
-  left_join(select(tbl_death_count, iso_a3, deaths)) %>% 
-  left_join(select(tbl_case_trend, iso_a3, all_of(vars_trends(model_for_trend)))) %>% 
+tbl_summary_cases_deaths <- df_countries %>%
+  left_join(select(tbl_case_count, iso_a3, cases)) %>%
+  left_join(select(tbl_death_count, iso_a3, deaths)) %>%
+  left_join(tbl_case_trend) %>%
   mutate(
-    trend_cases_coeff = round(exp(coeff), digits = 2), 
+    trend_cases_coeff = round(exp(trend_cases_coeff), digits = 2),
     trend_cases_ci = case_when(
-      is.na(coeff) ~ NA_character_, 
-      TRUE ~ combine_ci(exp(lwr), exp(upr), digits = 2))) %>% 
-  select(-one_of('coeff','lwr', 'upr', 'trend')) %>% 
-  left_join(select(tbl_death_trend, iso_a3, all_of(vars_trends(model_for_trend)))) %>% 
+      is.na(trend_cases_coeff) ~ NA_character_,
+      TRUE ~ combine_ci(exp(trend_cases_coeff_lwr95), 
+                        exp(trend_cases_coeff_upr95), digits = 2))) %>%
+  select(-one_of('trend_cases_coeff_lwr95', 
+                 'trend_cases_coeff_upr95', 'trend_cases', 
+                 "cases_model")) %>%
+  left_join(tbl_death_trend) %>%
   mutate(
-    trend_deaths_coeff = round(exp(coeff), digits = 2), 
+    trend_deaths_coeff = round(exp(trend_deaths_coeff), digits = 2),
     trend_deaths_ci = case_when(
-      is.na(coeff) ~ NA_character_, 
-      TRUE ~ combine_ci(exp(lwr), exp(upr), digits = 2))) %>% 
-  select(-one_of('coeff','lwr', 'upr', 'trend')) %>% 
+      is.na(trend_deaths_coeff) ~ NA_character_,
+      TRUE ~ combine_ci(exp(trend_deaths_coeff_lwr95), 
+                        exp(trend_deaths_coeff_upr95), digits = 2))) %>%
+  select(-one_of('trend_deaths_coeff_lwr95', 'trend_deaths_coeff_upr95', 
+                 'trend_deaths', "deaths_model")) %>%
   mutate(
-    cfr = round(deaths / cases * 100, digits = 1)) %>% 
-  left_join(select(df_pop_country, iso_a3, pop)) %>% 
+    cfr = round(deaths / cases * 100, digits = 1)) %>%
+  left_join(select(df_pop_country, iso_a3, pop)) %>%
   mutate(
-    cases_ip  = cases  / pop * 100000, 
-    deaths_ip = deaths / pop * 100000) %>% 
-  select(iso_a3, continent, region, country, 
-         cases, deaths, cfr, 
-         cases_ip, deaths_ip, 
-         starts_with('trend_cases_'), starts_with('trend_deaths_')) %>% 
-  left_join(select(tbl_case_count_12d, iso_a3, cases_12d = cases)) %>% 
-  left_join(select(tbl_death_count_12d, iso_a3, deaths_12d = deaths)) %>%
-  group_by(continent, region) %>% 
-  arrange(country, .by_group = TRUE) %>% 
+    cases_ip  = cases  / pop * 100000,
+    deaths_ip = deaths / pop * 100000) %>%
+  select(iso_a3, continent, region, country,
+         cases, deaths, cfr,
+         cases_ip, deaths_ip,
+         starts_with('trend_cases_'), starts_with('trend_deaths_')) %>%
+  left_join(select(tbl_case_count_14d, iso_a3, cases_14d = cases)) %>%
+  left_join(select(tbl_death_count_14d, iso_a3, deaths_14d = deaths)) %>%
+  group_by(continent, region) %>%
+  arrange(country, .by_group = TRUE) %>%
   ungroup()
 
 gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>% 
@@ -842,15 +1120,15 @@ gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>%
     deaths = 'Deaths', 
     cfr = html('naïve<br>CFR'),
     cases_ip = 'cases',
-    deaths_ip ='deaths', 
-    cases_12d = 'Cases', 
-    deaths_12d = 'Deaths', 
+    deaths_ip = 'deaths', 
+    cases_14d = 'Cases', 
+    deaths_14d = 'Deaths', 
     trend_cases_coeff  = 'Rate', 
     trend_cases_ci     = "[95% CI]", 
     trend_deaths_coeff = 'Rate', 
     trend_deaths_ci    = "[95% CI]") %>% 
   cols_move(
-    columns = vars(cases_12d), 
+    columns = vars(cases_14d), 
     after = vars(deaths_ip)) %>% 
   fmt_number(
     columns = starts_with(c('cases', 'deaths')), 
@@ -865,8 +1143,8 @@ gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>%
     label = html("Incidence proportion<br>per 100,000 people"), 
     columns = ends_with('_ip')) %>% 
   tab_spanner(
-    label = 'In the last 12 days', 
-    columns = ends_with('_12d')) %>% 
+    label = 'In the last 14 days', 
+    columns = ends_with('_14d')) %>% 
   tab_spanner(
     label = "Trends of cases", 
     columns = starts_with('trend_cases_')) %>% 
@@ -875,11 +1153,11 @@ gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>%
     columns = starts_with('trend_deaths_')) %>% 
   summary_rows(
     groups = TRUE, 
-    columns = vars(cases, deaths, cases_12d, deaths_12d), 
+    columns = vars(cases, deaths, cases_14d, deaths_14d), 
     fns = list('Region total' = ~sum(., na.rm = TRUE)),
     decimals = 0) %>% 
   grand_summary_rows(
-    columns = vars(cases, deaths, cases_12d, deaths_12d), 
+    columns = vars(cases, deaths, cases_14d, deaths_14d), 
     fns = list('Grand total' = ~sum(., na.rm = TRUE)), 
     decimals = 0) %>% 
   tab_style(
@@ -891,7 +1169,7 @@ gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>%
       cell_text(align = "left")),
     locations = cells_column_labels(columns = ends_with('_ci'))) %>%   
   tab_header(title = glue('Worldwide Covid-19 cases and associated deaths, and trends as of {format(date_max_report, "%d %b %Y")}'),
-             subtitle = html('<strong>Trends are estimate using data of the previous 12 days</strong><br>
+             subtitle = html('<strong>Trends are estimate using data of the previous 14 days</strong><br>
                              Analysis carried out by Epicentre<br>
                              For information on the analysis methods click <a href="https://reports.msf.net/secure/app_direct/covid19-additional-analysis/analysis_methods_2020-08-20.html">here</a><br>
                              Tables of previous weeks are available <a href="https://reports.msf.net/secure/app_direct/covid19-additional-analysis/tables_world_summary/archive/">here</a><br><br>
@@ -1023,52 +1301,6 @@ ggsave(file.path(path.local.worldwide.graphs, paste0('map_world_death_attack_rat
 ```{r counts-versus-incidence-proportion}
 # New graph as requested by Fran
 # to see how to display
-
-scatter_plot_inc <- function(tbl_inc, var_x, var_y, label_log_x = TRUE, label_log_y = TRUE){
-  
-  var_x <- sym(var_x)
-  var_y <- sym(var_y)
-
-  temp_tbl <- tbl_inc %>% filter(!!var_x != 0)
-  countries_zero_count <- tbl_inc %>% filter(!!var_x == 0) %>% pull(country)
-  
-  txt_countries_zero_count <- ifelse(length(countries_zero_count) == 0, 'none', combine_words(countries_zero_count))
-  
-  
-  scatterplot <- ggplot(temp_tbl) + 
-    geom_point(aes(!!var_x, !!var_y, col = region)) + 
-    ggrepel::geom_text_repel(
-      data = temp_tbl,
-      aes(!!var_x, !!var_y, label = country, colour = region),
-      size = 3,
-      show.legend = FALSE) + 
-    labs(caption = paste0("Countries with zero count: ", txt_countries_zero_count, ".\n", caption_world_map), 
-         color = NULL) + 
-    theme_light()
-
-  scatterplot <- if(label_log_x) {
-    scatterplot + 
-      scale_x_continuous(trans = 'log10', 
-                         breaks = scales::trans_breaks("log10", function(x) 10^x), 
-                         labels = scales::label_number_si()) + 
-      labs(x = paste(var_x, "(log scale)"))
-    } else {
-      scatterplot
-    }
-  
-  scatterplot <- if(label_log_y) {
-    scatterplot + 
-      scale_y_continuous(trans = 'log10', 
-                         breaks = scales::trans_breaks("log10", function(x) 10^x), 
-                         labels = scales::label_number_si()) + 
-      labs(y = paste(var_y, "(log scale)"))
-    } else {
-      scatterplot
-    }
-    
-  return(scatterplot)
-}
-
 
 label_x_axis <-  "Total number of cases\n(log scale)"
 label_y_axis <- "Incidence proportion of cases per 100,000 population\n(log scale)"
@@ -1256,9 +1488,17 @@ scatter_plot_inc_Europe
 <!-- Doubling in cases -->
 ```{r doubling-cases}
 
+# tbl_case_doubling_time <- tbl_case_count %>% 
+#   select(-brks) %>% 
+#   left_join(model_cnt_cases_linear_short[['doubling_time']])
+
 tbl_case_doubling_time <- tbl_case_count %>% 
   select(-brks) %>% 
-  left_join(model_cnt_cases_linear_short[['doubling_time']])
+  left_join(tbl_trend_14d %>% select(iso_a3, 
+                         est = doubling_est_cases, 
+                         lwr = doubling_lwr_cases, 
+                         upr = doubling_upr_cases), by = "iso_a3")
+
 
 write.csv(tbl_case_doubling_time,
           file.path(path.local.worldwide.tables, paste0('tbl_case_doubling_time', '_', week_report, '.csv')), 
@@ -1270,11 +1510,9 @@ write.csv(tbl_case_doubling_time,
 
 <!-- Countries with doubling time in cases -->
 ```{r}
-
 tbl_countries_doubling_time_cases <- tbl_case_doubling_time %>% 
   right_join(tbl_case_increasing_trend %>% select(iso_a3)) %>% 
   filter(between(est, 0, threshold_doubling_time))
-
 ```
 
 <!-- Doubling in deaths -->
@@ -1282,7 +1520,10 @@ tbl_countries_doubling_time_cases <- tbl_case_doubling_time %>%
 
 tbl_death_doubling_time <- tbl_death_count %>% 
   select(iso_a3, continent, region, country, deaths) %>% 
-  left_join(model_cnt_deaths_linear_short[['doubling_time']])
+  left_join(tbl_trend_14d %>% select(iso_a3, 
+                         est = doubling_est_deaths, 
+                         lwr = doubling_lwr_deaths, 
+                         upr = doubling_upr_deaths), by = "iso_a3")
 
 write.csv(tbl_death_doubling_time, 
           file.path(path.local.worldwide.tables, paste0('tbl_death_doubling_time', '_', week_report, '.csv')), 
@@ -1344,16 +1585,16 @@ A sharp increasing of cases (doubling time of less than `r threshold_doubling_ti
 
 
 <!-- Map doubling cases -->
-```{r map-world-cases-doubling, fig.cap = glue('Doubling time of the number of Covid-19 cases estimated in the last 12 days (only countries with increasing trends are displayed)')}
+```{r map-world-cases-doubling, fig.cap = glue('Doubling time of the number of Covid-19 cases estimated in the last 14 days (only countries with increasing trends are displayed)')}
 
-breaks <- c(0, 4, 8, 12, Inf)
+breaks <- c(0, 4, 8, 14, Inf)
 labels <- label_breaks(breaks)
 
 # Categorise the doubling time
 df_doubling_cases <- tbl_case_doubling_time %>% 
   select(c(iso_a3:est), doubling_time = 'est') %>% 
   left_join(tbl_case_trend %>% 
-              select(iso_a3, trend = trend_linear), 
+              select(iso_a3, trend = trend_cases), 
             by = 'iso_a3') %>% 
   mutate(
     doubling_time = case_when(
@@ -1426,7 +1667,7 @@ A sharp increasing of deaths (doubling time of less than `r threshold_doubling_t
 df_doubling_deaths <- tbl_death_doubling_time %>% 
   select(c(iso_a3:deaths), doubling_time = 'est') %>% 
   left_join(tbl_death_trend %>% 
-              select(iso_a3, trend = trend_linear), 
+              select(iso_a3, trend = trend_deaths), 
             by = 'iso_a3') %>% 
   mutate(
     doubling_time = case_when(
@@ -1663,12 +1904,12 @@ for (i in names(lst_tests)) {
 tbl_tests_inc <- df_countries %>% 
   left_join(df_pop_country %>% select(iso_a3, pop)) %>% 
   left_join(tbl_tests) %>% 
-  left_join(tbl_case_count_12d %>% select(iso_a3, cases_12d = cases)) %>% 
+  left_join(tbl_case_count_14d %>% select(iso_a3, cases_14d = cases)) %>% 
   right_join(tbl_case_increasing_trend %>% select(iso_a3, coeff)) %>% 
   mutate(
-    cases_inc_12d = cases_12d / pop * 100000, 
-    tests_prop    = cases_12d / tests_cml, 
-    tests_ratio   = tests_cml / cases_12d, 
+    cases_inc_14d = cases_14d / pop * 100000, 
+    tests_prop    = cases_14d / tests_cml, 
+    tests_ratio   = tests_cml / cases_14d, 
     tests_rate    = tests_cml / pop * 100000) %>% 
   mutate(
     reliable = case_when(
@@ -1678,23 +1919,23 @@ tbl_tests_inc <- df_countries %>%
 ```
 
 <!-- Plot test proportion -->
-```{r dots-tests-proportion, fig.cap = 'Relation between the proportion of positive tests in the last 12 days and the cumulative number of cases reported'}
+```{r dots-tests-proportion, fig.cap = 'Relation between the proportion of positive tests in the last 14 days and the cumulative number of cases reported'}
 
 tbl_tests_inc_reliable <- tbl_tests_inc %>% 
   filter(reliable == 'Yes')
 
-dots_prop_tests <- ggplot(tbl_tests_inc_reliable, aes(tests_prop, cases_inc_12d)) + 
+dots_prop_tests <- ggplot(tbl_tests_inc_reliable, aes(tests_prop, cases_inc_14d)) + 
   geom_vline(xintercept = 0.05, linetype = "dashed", color = "red", size = 0.5) + 
   geom_point(aes(colour = continent)) + 
   ggrepel::geom_text_repel(
-    aes(tests_prop, cases_inc_12d, label = country, colour = continent),
+    aes(tests_prop, cases_inc_14d, label = country, colour = continent),
     size = 3,
     show.legend = FALSE) + 
   scale_x_continuous(labels = scales::percent_format(accuracy = 1)) + 
   scale_y_log10(labels = scales::label_number_si()) + 
   labs(
-    y = "Cumulative number of cases per 100,000 people in the last 12 days (log scale)",
-    x = glue('Proportion of Covid positive tests in the last 12 days'), 
+    y = "Cumulative number of cases per 100,000 people in the last 14 days (log scale)",
+    x = glue('Proportion of Covid positive tests in the last 14 days'), 
     colour = 'Continent', 
     caption = glue('Analysis and graphic by Epicentre | Data source: FIND as of {format(date_max_report, "%d %b %Y")}')) + 
   theme_light()
@@ -1775,16 +2016,16 @@ gtbl_no_tests
 
 
 <!-- Plot test ratio -->
-```{r dots-tests-ratio, fig.cap = glue('Relation between the number of tests carried out in the last 12 days (as ratio of the number of confirmed cases) and the cumulative number of cases reported')}
+```{r dots-tests-ratio, fig.cap = glue('Relation between the number of tests carried out in the last 14 days (as ratio of the number of confirmed cases) and the cumulative number of cases reported')}
 
-dots_ratio_tests <- ggplot(tbl_tests_inc, aes(tests_ratio, cases_inc_12d)) + 
-  geom_point(aes(tests_ratio, cases_inc_12d, colour = continent)) + 
+dots_ratio_tests <- ggplot(tbl_tests_inc, aes(tests_ratio, cases_inc_14d)) + 
+  geom_point(aes(tests_ratio, cases_inc_14d, colour = continent)) + 
   geom_point(data = tbl_tests_inc %>% filter(reliable == 'No'), 
              pch = 21, fill = NA, size = 4, colour = "red", stroke = 1) + 
   geom_point(data = tbl_tests_inc %>% filter(tests_cml == 0), 
              pch = 21, fill = NA, size = 4, colour = "black", stroke = 1) + 
   ggrepel::geom_text_repel(
-    aes(tests_ratio, cases_inc_12d, label = country, colour = continent),
+    aes(tests_ratio, cases_inc_14d, label = country, colour = continent),
     size = 3,
     show.legend = FALSE) + 
   scale_x_continuous(trans = 'log10', 
@@ -1813,16 +2054,16 @@ ggsave(file.path(path.local.worldwide.graphs, glue("dots_ratio_tests_{week_repor
 ```
 
 <!-- Plot test rate -->
-```{r dots-tests-rate, fig.cap = glue('Relation between the number of tests carried out in the last 12 days (as rate of the country population) and the cumulative number of cases reported')}
+```{r dots-tests-rate, fig.cap = glue('Relation between the number of tests carried out in the last 14 days (as rate of the country population) and the cumulative number of cases reported')}
 
-dots_rate_tests <- ggplot(tbl_tests_inc, aes(tests_rate, cases_inc_12d)) + 
-  geom_point(aes(tests_rate, cases_inc_12d, colour = continent)) + 
+dots_rate_tests <- ggplot(tbl_tests_inc, aes(tests_rate, cases_inc_14d)) + 
+  geom_point(aes(tests_rate, cases_inc_14d, colour = continent)) + 
   geom_point(data = tbl_tests_inc %>% filter(reliable == 'No'), 
              pch = 21, fill = NA, size = 4, colour = "red", stroke = 1) + 
   geom_point(data = tbl_tests_inc %>% filter(tests_cml == 0), 
              pch = 21, fill = NA, size = 4, colour = "black", stroke = 1) + 
   ggrepel::geom_text_repel(
-    aes(tests_rate, cases_inc_12d, label = country, colour = continent),
+    aes(tests_rate, cases_inc_14d, label = country, colour = continent),
     size = 3, 
     show.legend = FALSE) + 
   scale_x_continuous(trans = 'log10', 
