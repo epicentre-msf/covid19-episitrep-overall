@@ -36,7 +36,7 @@ if (!exists('path.root')) {
 
 source(file.path(path.R, "utils_management.R"), encoding = "UTF-8")
 source(file.path(path.R, "utils_vis.R")       , encoding = "UTF-8")
-source(file.path(path.R, "utils_modelling.R")       , encoding = "UTF-8")
+source(file.path(path.R, "utils_modelling.R") , encoding = "UTF-8")
 
 # Packages
 library(tidyverse)
@@ -56,7 +56,7 @@ date_min_report <- as.Date("2020-01-22")
 date_max_report <- dates_and_week[[2]]
 week_report     <- dates_and_week[[3]]
 
-params$continent
+# params$continent
 
 
 # Set paths
@@ -66,6 +66,11 @@ path.local.deepdive <- file.path(path.local.week.deepdive,
 if(!exists(path.local.deepdive)) {
   dir.create(path.local.deepdive, showWarnings = FALSE, recursive = TRUE)
 }
+
+## Breaks for incidence
+breaks_inc <- c(0, 0.01, 0.1, 1, Inf)
+labels_inc <- c("0 - 0.01%", "0.01 - 0.1%", "0.1 - 1%", "1%+")
+
 ```
 
 
@@ -80,7 +85,9 @@ dta_ecdc <- covidutils::get_ecdc_data()
 dta_jhu <- get_owid_jhcsse() %>% 
   tidyr::drop_na(iso_a3) %>% 
   mutate(continent = ifelse(country == "Russia", "Asia", continent)) %>% 
-  filter(between(date, left = date_min_report, right = date_max_report),
+  filter(between(date, 
+                 left = date_min_report, 
+                 right = date_max_report),
          (continent == params$continent))
 
 
@@ -165,7 +172,9 @@ tbl_cases_prop_30d <- dta_jhu %>%
 
 
 tbl_cases_prop_2w <- dta_jhu %>% 
-  filter(between(date, left = date_max_report - 13, right = date_max_report)) %>%
+  filter(between(date, 
+                 left = date_max_report - 13, 
+                 right = date_max_report)) %>%
   group_by(country) %>% 
   summarise(
     n_2w = sum(cases)) %>% 
@@ -187,7 +196,9 @@ tbl_deaths_prop <- dta_jhu %>%
     p = n/pop * 100)
 
 tbl_deaths_prop_2w <- dta_jhu %>% 
-  filter(between(date, left = date_max_report - 13, right = date_max_report)) %>%
+  filter(between(date, 
+                 left = date_max_report - 13, 
+                 right = date_max_report)) %>%
   group_by(country) %>% 
   summarise(
     n_2w = sum(deaths)) %>% 
@@ -380,10 +391,6 @@ ggsave(file.path(path.local.deepdive, paste0('scatter_plot_prop_prop_30d', '_', 
 <!-- Map of overall incidence proportion -->
 ```{r maps-incidence-proportions, fig.cap = "MAP: Overall incidence proportion of cases and recent incidence proportions of cases (last 12 days)"}
 
-## Breaks for incidence
-breaks_inc <- c(0, 0.01, 0.1, 1, Inf)
-labels_inc <- c("0 - 0.01%", "0.01 - 0.1%", "0.1 - 1%", "1%+")
-
 ## --- OVERALL ---
 
 ## Put incidence table in to sf
@@ -542,7 +549,8 @@ lst_dta_jhu <- dta_jhu %>%
 
 # Get linear trends and coeffs at 14days
 tbl_coeff_14d <- covidutils::get_trends(dta_jhu, 
-                                        time_unit_extent = 14)
+                                        time_unit_extent = 14,
+                                        omit_past_days = 0)
 
 sf_trend_14d <- df_countries %>% 
   select(iso_a3, country) %>% 
@@ -552,14 +560,17 @@ sf_trend_14d <- df_countries %>%
     by = "iso_a3") %>% 
   st_as_sf() %>% 
   mutate(trend_cases = factor(trend_cases, 
-                              levels = c("Increasing", "Likely increasing",
-                                         "Stable", "Likely decreasing",
+                              levels = c("Increasing", 
+                                         "Likely increasing",
+                                         "Stable", 
+                                         "Likely decreasing",
                                          "Decreasing")))
 
 
 # Get linear trends and coeffs at 30 days
 tbl_coeff_30d <- covidutils::get_trends(dta_jhu,
-                                        time_unit_extent = 30)
+                                        time_unit_extent = 30,
+                                        omit_past_days = 0)
 
 sf_trend_30d <- df_countries %>% 
   select(iso_a3, country) %>% 
@@ -569,8 +580,10 @@ sf_trend_30d <- df_countries %>%
     by = "iso_a3") %>% 
   st_as_sf() %>% 
   mutate(trend_cases = factor(trend_cases, 
-                              levels = c("Increasing", "Likely increasing",
-                                         "Stable", "Likely decreasing",
+                              levels = c("Increasing", 
+                                         "Likely increasing",
+                                         "Stable", 
+                                         "Likely decreasing",
                                          "Decreasing")))
 
 
@@ -583,7 +596,8 @@ sf_trend_30d <- df_countries %>%
 # RdAmGn <- c('#D95F02', '#E6AB02', '#1B9E77') 
 # remotes::install_github("thomasp85/scico")
 
-lvls <- c("Increasing", "Likely increasing", "Stable", "Likely decreasing", "Decreasing")
+lvls <- c("Increasing", "Likely increasing", 
+          "Stable", "Likely decreasing", "Decreasing")
 
 values <- scico::scico(5, palette = "vikO", 
                        begin = .2, end = .8, 
@@ -592,7 +606,10 @@ values <- scico::scico(5, palette = "vikO",
 
 
 map_case_trend_14d <- ggplot(sf_trend_14d) + 
-  geom_sf(aes(fill = trend_cases), size = .1, alpha = 0.8) + 
+  geom_sf(aes(fill = trend_cases), 
+          size = 0.1
+          # alpha = 0.8
+          ) + 
   scale_fill_manual(
     name = NULL, 
     values = values, 
@@ -619,7 +636,8 @@ map_case_trend_14d <- ggplot(sf_trend_14d) +
 
 
 map_case_trend_30d <- ggplot(sf_trend_30d) + 
-  geom_sf(aes(fill = trend_cases), size = .1, alpha = 0.8) + 
+  geom_sf(aes(fill = trend_cases), 
+          size = 0.1, alpha = 0.8) + 
   scale_fill_manual(
     name = NULL, 
     values = values, 
@@ -696,7 +714,8 @@ ggsave(file.path(path.local.deepdive, paste0('epicurves', '_', week_report, '.pn
 ```{r fig-preds}
 # Get fitted and confidence interval on fitted
 tbl_preds_cases_30d <- lst_dta_jhu %>% 
-  map_dfr(get_preds, 
+  map_dfr(get_preds,
+          serie = "cases",
           time_unit_extent = 30,
           min_sum = 30,
           ma_window = 3) %>% 

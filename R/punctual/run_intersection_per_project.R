@@ -35,7 +35,7 @@ week_report     <- dates_and_week[[3]]
 
 ### SETUP PATHS ###
 # If week folder not created already by overall sitrep, create it.
-path.local.msf.extra <- file.path(path.local.msf, "extra")
+path.local.msf.extra <- file.path(path.local.msf, "extra", "per_project")
 
 if (!dir.exists(path.local.msf.extra)) {
   dir.create(path.local.msf.extra,   showWarnings = FALSE, recursive = TRUE)

@@ -35,6 +35,7 @@ library(knitr)
 library(english)
 library(readxl)
 library(ggthemes)
+library(purrr)
 
 remotes::install_github("epicentre-msf/covidutils")
 library(covidutils)

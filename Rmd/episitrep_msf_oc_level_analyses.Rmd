@@ -1,7 +1,7 @@
 ---
 title: "Covid-19 MSF data analysis - OC level"
 params:
-  OC: OCP
+  OC: OCB
 author:
   - name: Francesco Grandesso
     url: mailto:francesco.GRANDESSO@epicentre.msf.org
@@ -167,6 +167,7 @@ dta_aggregated_expanded <- dta_weekly_aggregated %>%
       country == 'DRC' ~ 'Democratic Republic of the Congo',
       country == "Côte d'Ivoire" ~ 'Côte d’Ivoire',
       country == "DRC" ~ "Democratic Republic of Congo",
+      country == "Democratic Republic of the Congo" ~ "Democratic Republic of Congo",
       TRUE ~ country)) %>%
   left_join(df_countries, by = 'country') %>%
   pivot_longer(cols = c('confirmed', 'probable', 'suspected', 'non_cases', 'unknown'),
@@ -210,6 +211,7 @@ dta_linelist_with_aggregated <- dta_linelist %>%
   mutate(continent = case_when(
       country == "Cote d'Ivoire (*)" ~ 'Africa', 
       country == "Democratic Republic of Congo (*)" ~ 'Africa',
+      country == "Democratic Republic of the Congo (*)" ~ 'Africa',
       country == "Palestine (*)" ~ "Asia",
       TRUE ~ continent))
 
@@ -3460,7 +3462,7 @@ gtble6 %>%
 
 
 
-## MSF_severity
+## MSF severity
 
 ```{r tbl-MSF_severity}
 tble14 <- dta_linelist_project %>%
@@ -4759,7 +4761,8 @@ tbl_plot1 <- dta_linelist_with_aggregated %>%
            stringr::str_replace_all("_-_", "_") %>% 
            stringr::str_replace_all("\\(", "") %>% 
            stringr::str_replace_all("\\)", "") %>% 
-           stringr::str_replace_all("-", "")) %>%  
+           stringr::str_replace_all("-", "") %>% 
+           stringr::str_replace_all("/", "_")) %>%   
   mutate(country_project = paste(iso_a3, project2, sep = "_") ) %>% 
   count(country_project, ind_MSF_covid_status, epi_week_consultation) %>%
   drop_na(epi_week_consultation) %>% 

@@ -30,6 +30,7 @@ if (Sys.info()["login"] == "M-MOUSSET") {
   date_max_report <- dates_and_week[[2]]
   week_report     <- dates_and_week[[3]]
   
+
   ## Data
   
   # Geo and population data
@@ -459,8 +460,6 @@ ggsave(filename = paste0('pyramid_age_sex_region', '_', week_report, '.png'),
 
 
 
-
-
 # PERC. COMORB. REGION ---------------------------------
 
 # Consultations and hospitalisations
@@ -746,11 +745,11 @@ dta_comorb_mortality_severe_critical <- dta_linelist_regions %>%
             n_died  = sum(n_yes[ind_outcome_patcourse_status  == "Died"], na.rm = TRUE),
             p_died  = n_died / n_known)
 
+
 vect_labels2 <- c("Diabetes", "Hypertension", "Renal chronic illness",
                  "Lung disease")
 names(vect_labels2) <- c("ind_Comcond_diabetes", "ind_MSF_hypertension", "Comcond_renal",
                        "Comcond_lung")
-
 
 
 ### Plot --------
@@ -759,7 +758,6 @@ dta_comorb_mortality_severe_critical %>%
              y = p_died,
              colour = region_js)) +
   facet_wrap(~ comorb_type, ncol = 1, scales = "free_y",
-             labeller = labeller(comorb_type = vect_labels2)) +
   coord_flip() +
   
   geom_point(size = 3,
@@ -790,7 +788,6 @@ ggsave(file.path(path_sharepoint_js,
        width = 7,
        height = 7,
        dpi = 200)
-
 
 
 # DELAI ---------------------------------------------------------------

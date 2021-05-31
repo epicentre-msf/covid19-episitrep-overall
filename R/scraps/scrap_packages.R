@@ -1,8 +1,6 @@
 
-
-
-install.packages(c('distill'), 
-                 dependencies=TRUE, repos='http://cran.rstudio.com/')
+install.packages(c('ggplot2'), 
+                 dependencies = TRUE, repos = 'http://cran.rstudio.com/')
 
 
 require(devtools)
