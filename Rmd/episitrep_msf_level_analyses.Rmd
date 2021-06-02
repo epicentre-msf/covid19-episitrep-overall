@@ -73,7 +73,7 @@ df_countries <- readRDS(file.path(path.local.data, 'df_countries.RDS'))
 ## --- Import MSF linelist --- --- ---
 path.sharepoint.data <- file.path(path.sharepoint, 'data', 'linelist', 'world')
 
-dta_linelist <- get_msf_linelist(force = TRUE) %>% 
+dta_linelist <- covidutils::get_msf_linelist(force = TRUE) %>% 
   #prepare_msf_dta(shorten_var_names = TRUE) %>% 
   rename(iso_a3 = country) %>% 
   left_join(df_countries %>% select(continent, region, iso_a3, country), by = 'iso_a3') %>% 
