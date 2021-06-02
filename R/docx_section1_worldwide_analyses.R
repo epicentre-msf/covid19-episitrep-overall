@@ -33,8 +33,8 @@ my_doc <- add_par_normal(
           format(sum(dta_jhu$cases, na.rm = TRUE), big.mark = ","), 
           format(sum(dta_jhu$deaths, na.rm = TRUE), big.mark = ","), 
           period_trend, 
-          n_cases_12d, 
-          n_deaths_12d))
+          n_cases_14d, 
+          n_deaths_14d))
 
 
 # 2
@@ -95,11 +95,11 @@ my_doc <- add_par_normal(
   sprintf("%s reported increasing trend while notifying over 10,000 cases in the last 12 days.
           In Africa, %s reported increasing trend and more than 1,000 cases.", 
           tbl_countries_increasing_cases %>% 
-            filter(trend == "Increasing", cases_12d >= 10000) %>% 
-            arrange(desc(coeff)) %>% pull(country) %>% combine_words(),
+            filter(trend_cases_14d == "Increasing", cases_14d >= 10000) %>% 
+            arrange(desc(trend_cases_coef_14d)) %>% pull(country) %>% combine_words(),
           tbl_countries_increasing_cases %>% 
-            filter(trend == "Increasing", cases_12d >= 1000, continent == "Africa") %>% 
-            arrange(desc(coeff)) %>% pull(country) %>% combine_words()))
+            filter(trend_cases_14d == "Increasing", cases_14d >= 1000, continent == "Africa") %>% 
+            arrange(desc(trend_cases_coef_14d)) %>% pull(country) %>% combine_words()))
 
 
 # Cumulative incidence worldwide
@@ -230,8 +230,8 @@ my_doc <- add_par_normal(
 
 ## Countries with increasing trend and more than 1000 deaths in last 12 days
 list_country_deaths_10000 <- tbl_countries_increasing_deaths %>% 
-  filter(trend == "Increasing", deaths_12d >= 10000) %>% 
-  arrange(desc(coeff)) %>% pull(country)
+  filter(trend_deaths_14d == "Increasing", deaths_14d >= 10000) %>% 
+  arrange(desc(trend_deaths_coef_14d)) %>% pull(country)
 
 list_country_deaths_10000 <- ifelse(length(list_country_deaths_10000) == 0, 
                                     "No country", 
