@@ -144,7 +144,10 @@ for (i in names(lst_tests)) {
 
 ```{r get-trends}
 
-trend_models <- get_trend_models(lst_jhu = lst_dta_jhu, periods_trend = c(14, 30), force = FALSE)
+# VERY LONG
+trend_models <- get_trend_models(lst_jhu = lst_dta_jhu, 
+                                 periods_trend = c(14, 30), 
+                                 force = FALSE)
 
 # Cases 30d and 14d: trends AND doubling time
 # model_cnt_cases_linear_short <- trend_models$model_cnt_cases_linear_short
@@ -176,9 +179,8 @@ threshold_doubling_time <- 14
 
 tbl_trend_30d <- covidutils::get_trends(dta_jhu, 
                                         time_unit_extent = 30,
-                                        omit_past_days = 0,
-                                        add_ci = TRUE) %>% 
-  get_doubling_time() %>% 
+                                        omit_past_days = 0) %>% 
+  # get_doubling_time() %>% 
   mutate(trend_cases = factor(trend_cases, levels = c("Increasing", "Likely increasing", 
                                                       "Stable", 
                                                       "Likely decreasing", "Decreasing")),
@@ -190,9 +192,7 @@ tbl_trend_30d <- covidutils::get_trends(dta_jhu,
 # Get linear trends and coeffs at 14 days
 tbl_trend_14d <- covidutils::get_trends(dta_jhu, 
                                         time_unit_extent = 14,
-                                        omit_past_days = 0,
-                                        add_ci = TRUE) %>% 
-  get_doubling_time() %>% 
+                                        omit_past_days = 0) %>% 
   mutate(trend_cases = factor(trend_cases, levels = c("Increasing", "Likely increasing", 
                                                       "Stable", 
                                                       "Likely decreasing", "Decreasing")),
@@ -412,10 +412,9 @@ coeff_vars <-  c("coeff", "lwr", "upr")
 # Note: the data used for the model does not include the last two days (usually incomplete)
 tbl_case_trend <- tbl_case_count %>% 
   select(-brks) %>% 
-  left_join(tbl_trend_14d %>% 
-              rename(cases_model = cases), 
-            by = c("iso_a3", "continent", "region", "country")) %>% 
-  select(-contains("death"), -contains("doubling"))
+  left_join(tbl_trend_14d %>% rename(cases_model = cases), 
+            by = c("iso_a3")) %>% 
+  select(-contains("death"), -contains("dt"), -contains("preds"))
 
 
 write.csv(tbl_case_trend, 
@@ -427,10 +426,9 @@ write.csv(tbl_case_trend,
 
 tbl_case_trend_30d <- tbl_case_count %>% 
   select(-brks) %>% 
-  left_join(tbl_trend_30d %>% 
-              rename(cases_model = cases), 
-            by = c("iso_a3", "continent", "region", "country")) %>% 
-  select(-contains("death"), -contains("doubling"))
+  left_join(tbl_trend_30d %>% rename(cases_model = cases), 
+            by = c("iso_a3")) %>% 
+  select(-contains("death"), -contains("dt"), -contains("preds"))
 
 ```
 
@@ -462,7 +460,7 @@ tbl_case_trend %>%
 tbl_case_increasing_trend <- tbl_case_trend %>% 
   filter(trend_cases  %in% c('Increasing', "Likely increasing")) %>% 
   arrange(continent, desc(trend_cases_coeff)) %>% 
-  select(-contains("death"), -contains("doubling")) %>% 
+  select(-contains("death"), -contains("dt")) %>% 
   select(iso_a3:cases, 
          coeff = trend_cases_coeff,
          lwr   = trend_cases_coeff_lwr95,
@@ -788,8 +786,8 @@ tbl_death_trend <- tbl_death_count %>%
   select(-brks) %>% 
   left_join(tbl_trend_14d %>% 
               rename(deaths_model = deaths), 
-            by = c("iso_a3", "continent", "region", "country")) %>% 
-  select(-contains("cases"), -contains("doubling"))
+            by = c("iso_a3")) %>% 
+  select(-contains("cases"), -contains("doubling"), -contains("preds"))
 
 
 write.csv(tbl_death_trend, 
@@ -802,8 +800,8 @@ tbl_death_trend_30d <- tbl_death_count %>%
   select(-brks) %>% 
   left_join(tbl_trend_30d %>% 
               rename(deaths_model = deaths), 
-            by = c("iso_a3", "continent", "region", "country")) %>% 
-  select(-contains("cases"))
+            by = c("iso_a3")) %>% 
+  select(-contains("cases"), -contains("doubling"), -contains("preds"))
 
 ```
 
@@ -1495,9 +1493,9 @@ scatter_plot_inc_Europe
 tbl_case_doubling_time <- tbl_case_count %>% 
   select(-brks) %>% 
   left_join(tbl_trend_14d %>% select(iso_a3, 
-                         est = doubling_est_cases, 
-                         lwr = doubling_lwr_cases, 
-                         upr = doubling_upr_cases), by = "iso_a3")
+                         est = dt_cases_est, 
+                         lwr = dt_cases_lwr, 
+                         upr = dt_cases_upr), by = "iso_a3")
 
 
 write.csv(tbl_case_doubling_time,
@@ -1521,9 +1519,9 @@ tbl_countries_doubling_time_cases <- tbl_case_doubling_time %>%
 tbl_death_doubling_time <- tbl_death_count %>% 
   select(iso_a3, continent, region, country, deaths) %>% 
   left_join(tbl_trend_14d %>% select(iso_a3, 
-                         est = doubling_est_deaths, 
-                         lwr = doubling_lwr_deaths, 
-                         upr = doubling_upr_deaths), by = "iso_a3")
+                         est = dt_deaths_est, 
+                         lwr = dt_deaths_lwr, 
+                         upr = dt_deaths_upr), by = "iso_a3")
 
 write.csv(tbl_death_doubling_time, 
           file.path(path.local.worldwide.tables, paste0('tbl_death_doubling_time', '_', week_report, '.csv')), 
