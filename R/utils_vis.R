@@ -594,7 +594,9 @@ country_six_plots <- function(lst_dta) {
   
   
   # Plots left pannel
-  plot_obs <- ggplot(lst_dta, aes(x = date, y = count)) + 
+  plot_obs <- lst_dta %>% 
+    filter(model == "long" | is.na(model)) %>% 
+    ggplot(aes(x = date, y = count)) + 
     facet_wrap(~obs, scales = "free_y", ncol = 1) + 
     geom_col(aes(colour = obs, fill = obs)) + 
     scale_colour_manual(values = main_colour) + 
