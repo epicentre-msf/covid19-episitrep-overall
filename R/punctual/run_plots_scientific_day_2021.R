@@ -49,13 +49,16 @@ if (Sys.info()["login"] == "M-MOUSSET") {
   
   # Chemin accès données propres sharepoint (modifier le premier 
   # chemin si besoin)
-  path_sharepoint_sitrep <- "D:/MSF/GRP-EPI-COVID-19 - NCoVEpi/template/sitreps/"
+  path_sharepoint_sitrep <- "D:/MSF/GRP-EPI-COVID-19 - NCoVEpi/template/sitreps"
   path_sharepoint_msf_data <- file.path(path_sharepoint_sitrep, week_report, "msf", "data")
-  
+  path_sharepoint_jhu_data <- file.path(path_sharepoint_sitrep, week_report, "worldwide", "data")
   
   # get data
   load(file.path(path_sharepoint_msf_data, 
                  paste0("episitrep_msf_level_analyses_", week_report, ".RData")))
+  
+  # JHU data
+  dta_jhu <- readRDS(file.path(path_sharepoint_jhu_data, 'dta_jhu.RDS'))
   
 }
 
@@ -64,7 +67,8 @@ if (Sys.info()["login"] == "M-MOUSSET") {
 # Install a couple of packages
 
 library(tidyverse) # General data manipulation
-library(ggplot2)    # Figures
+library(lubridate) # To better deal with dates
+library(ggplot2)   # Figures
 library(scales)    # Imporve scales in ggplot
 # library(patchwork) # Assemble figures (a bit like cowplot/gridextra)
 library(ggthemes)  # For some colours
@@ -140,17 +144,260 @@ dta_linelist_regions_aggregated <- dta_linelist_with_aggregated %>%
     ) 
 
 
+
+# JHU data
+dta_jhu_region <- dta_jhu %>% 
+  mutate(epi_week = lubridate::isoweek(date),
+         epi_week_start  = floor_date(date, unit = "week"),
+         year = lubridate::year(date),
+         
+         region_js = case_when(
+           continent == "Europe"        ~ "Europe",
+           continent == "Africa"        ~ "Africa",
+           continent == "Americas"      ~ "Americas",
+           continent == "Oceania"       ~ "Oceania",
+           region    == "Western Asia"  ~ "Middle East",
+           continent == "Asia" & 
+             region !=  "Western Asia"  ~ "Asia",
+           TRUE ~ region),
+         
+         region_js = factor(region_js, levels = c("Africa", "Americas",
+                                                  "Asia", "Europe", 
+                                                  "Middle East", "Oceania"))
+  )
+
+
 ## Parameters for graphs -----------------------------
 colors_continent <- c("#E69F00", "#0072B2", "#009E73", "#CC79A7", "#000000")
-colors_sex = c("#8A331F", "#345B8C")
+colors_sex = c("#345B8C", "#8A331F")
+
 
 vect_labels <- c("Diabetes", "Hypertension", "Renal chronic illness",
-                 "Malaria", "HIV", "Lung disease")
+                 "Lung disease")
 names(vect_labels) <- c("diabetes", "hypertension", "chronic_renal",
-                        "malaria", "hiv", "lung")
+                        "lung")
+
+
+vect_labels2 <- c("Diabetes", "Hypertension", "Renal chronic illness",
+                  "Lung disease")
+names(vect_labels2) <- c("ind_Comcond_diabetes", 
+                         "ind_MSF_hypertension", "Comcond_renal",
+                         "Comcond_lung")
+
+
+
+# SEX RATIO -------------------------------------------
+
+
+dta_linelist_regions %>% 
+  drop_na(patinfo_sex) %>% 
+  group_by(region_js, patinfo_sex) %>% 
+  summarise(n_patients = n()) %>% 
+  pivot_wider(names_from = "patinfo_sex",
+              values_from = n_patients,
+              names_prefix = "count_") %>% 
+  mutate(ratio_h_f  = round(count_M / count_F, 2),
+         prop_h = round(count_M / (count_M + count_F), 2),
+         prop_f = 1-prop_h) 
+
+
+dta_linelist_regions %>% 
+  drop_na(patinfo_sex) %>% 
+  group_by(patinfo_sex) %>% 
+  summarise(n_patients = n()) %>% 
+  pivot_wider(names_from = "patinfo_sex",
+              values_from = n_patients,
+              names_prefix = "count_") %>% 
+  mutate(ratio_h_f  = round(count_M / count_F, 2))
+
+
+
+
+
+
+# Admission numbers -------------------------------------------
+
+# Overall
+dta_linelist_regions %>%
+  filter(merge_admit %in% c("Yes", "No")) %>% 
+  group_by(merge_admit) %>% 
+  summarise(tot_known = n()) %>% 
+  mutate(tot = sum(tot_known),
+         perc = tot_known / tot) 
+
+# Confirmed
+dta_linelist_regions %>%
+  filter(merge_admit %in% c("Yes", "No"),
+         ind_MSF_covid_status == "Confirmed") %>% 
+  group_by(merge_admit) %>% 
+  summarise(tot_status = n()) %>% 
+  mutate(tot = sum(tot_status),
+         perc = tot_status / tot) 
+
+# Region
+dta_linelist_regions %>%
+  filter(merge_admit %in% c("Yes", "No")) %>% 
+  group_by(region_js, merge_admit) %>% 
+  summarise(tot_status = n()) %>% 
+  mutate(tot = sum(tot_status),
+         perc = 100 * tot_status / tot) %>% 
+  filter(merge_admit  == "Yes")
+
+# By known severity
+dta_linelist_regions %>%
+  filter(merge_admit == "Yes",
+         MSF_severity != "Non available") %>% 
+  group_by(MSF_severity) %>% 
+  summarise(tot_status = n()) %>% 
+  mutate(tot_admitted = sum(tot_status),
+         perc = 100 *  tot_status / tot_admitted) 
+
+
+
+# CFR -------------------------------------------------
+
+# Overall
+dta_linelist_regions %>% 
+  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died', 'Sent back home'),
+         merge_admit == "Yes") %>% 
+  group_by(ind_outcome_patcourse_status) %>% 
+  summarise(n_status = n()) %>% 
+  mutate(perc = 100 * n_status / sum(n_status)) 
+
+# By region
+dta_linelist_regions %>% 
+  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died', 'Sent back home'),
+         merge_admit == "Yes") %>% 
+  group_by(region_js, ind_outcome_patcourse_status) %>% 
+  summarise(n_status = n()) %>% 
+  mutate(denom = sum(n_status),
+         perc = 100 * n_status / sum(n_status)) %>% 
+  filter(ind_outcome_patcourse_status == "Died")
+
+
+# By severity
+dta_linelist_regions %>% 
+  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died', 'Sent back home'),
+         merge_admit == "Yes",
+         MSF_severity %in% c("Severe", "Critical")
+  ) %>% 
+  group_by(MSF_severity, ind_outcome_patcourse_status) %>% 
+  summarise(n_status = n()) %>% 
+  mutate(denom = sum(n_status),,
+         perc = 100 * n_status / sum(n_status)) %>% 
+  filter(ind_outcome_patcourse_status == "Died")
+
+# Severe et critique ensemble
+dta_linelist_regions %>% 
+  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died', 'Sent back home'),
+         merge_admit == "Yes",
+         MSF_severity %in% c("Severe", "Critical")
+  ) %>% 
+  group_by(ind_outcome_patcourse_status) %>% 
+  summarise(n_status = n()) %>% 
+  mutate(denom = sum(n_status),,
+         perc = 100 * n_status / sum(n_status)) %>% 
+  filter(ind_outcome_patcourse_status == "Died")
+
+
+# Severe et critique ensemble by region
+dta_linelist_regions %>% 
+  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died', 'Sent back home'),
+         merge_admit == "Yes",
+         MSF_severity %in% c("Severe", "Critical")
+  ) %>% 
+  group_by(region_js, ind_outcome_patcourse_status) %>% 
+  summarise(n_status = n()) %>% 
+  mutate(denom = sum(n_status),,
+         perc = 100 * n_status / sum(n_status)) %>% 
+  filter(ind_outcome_patcourse_status == "Died")
+
+
+# EPICURVE WORLD --------------------------------------
+
+# Plot
+dta_jhu_region %>%
+  drop_na(region_js) %>% 
+  group_by(region_js, year, epi_week_start) %>% 
+  summarise(n_cases = sum(cases)) %>% 
+  ggplot(aes(x = epi_week_start, 
+             y = n_cases,
+             fill = region_js)) +
+  geom_col() +
+  
+  scale_x_date(date_breaks = "2 months",
+               labels = scales::label_date_short(),
+               expand = expansion(mult = c(0.01, 0.02))) +
+  
+  scale_y_continuous(labels = scales::unit_format(unit = "M", 
+                                                  scale = 1e-6, 
+                                                  sep = " "),
+                     expand = expansion(mult = c(0.02, 0.04))) +
+  scale_fill_manual(values = c(colors_continent, "grey60")) +
+  
+  labs(x = "",
+       y = "Cases") +
+  
+  theme_light() +
+  theme(legend.position = 'bottom', 
+        legend.title    = element_blank(),
+        legend.text     = element_text(size = 13),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text   = element_text(size = 15, face = "bold"),
+        axis.text.x  = element_text(size = 12),
+        axis.text.y  = element_text(size = 14),
+        axis.title   = element_text(size = 15))
+
+
+ggsave(filename = paste0('epicurve_jhu', '_', week_report, '.png'),
+       path = path_sharepoint_js,
+       width = 10,
+       height = 6,
+       dpi = 300)
 
 
 # EPICURVE CAS --------------------------------------------
+
+dta_linelist_regions %>% 
+  # Count lines for each subgroup
+  count(epi_week_consultation) %>% 
+  # Plot
+  ggplot(aes(x = epi_week_consultation, 
+             y = n)) +
+  geom_col(fill = "darkorange3") +
+  
+  scale_x_date(date_breaks = "2 months",
+               labels = scales::label_date_short(),
+               # date_labels = "%b %y",
+               expand = expansion(mult = c(0.01, 0.02))) +
+  scale_y_continuous(name = "Patients", 
+                     expand = expansion(mult = c(0, 0.02))) +
+  
+  labs(x = "\nMonth of consultation / admission",
+       y = "Nb patients") +
+  
+  theme_light() +
+  theme(legend.position = 'top', 
+        legend.title    = element_text(size = 14, face = "bold"),
+        legend.text     = element_text(size = 13),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        strip.text   = element_text(size = 15, face = "bold"),
+        axis.text.x  = element_text(size = 12),
+        axis.text.y  = element_text(size = 14),
+        axis.title   = element_text(size = 15))
+
+# Save
+ggsave(filename = paste0('epicurve', '_', week_report, '.png'),
+       path = path_sharepoint_js,
+       width = 10,
+       height = 6,
+       dpi = 300)
+
+
+
+# EPICURVE CAS REGION --------------------------------------------
 
 # Par continent
 
@@ -169,14 +416,14 @@ dta_linelist_regions_aggregated %>%
   ggthemes::scale_fill_tableau(name = NULL, 
                                palette = "Tableau 20") +
   scale_x_date(date_breaks = "2 months",
-               date_labels = "%b %y",
+               # date_labels = "%b %y",
+               labels = scales::label_date_short(),
                expand = expansion(mult = c(0.01, 0.02))) +
   scale_y_continuous(name = "Patients", 
                      expand = expansion(mult = c(0, 0.02))) +
   
   labs(x = "\nMonth of consultation / admission",
-       y = "Nb patients", 
-       caption = 'NOTE: free y axis scale among graphics') +
+       y = "Nb patients") +
   
   theme_light() +
   theme(legend.position = 'top', 
@@ -215,7 +462,8 @@ dta_linelist_regions %>%
   
   # Personalise x axis
   scale_x_date(date_breaks = "1 month",
-               date_labels = "%b %y",
+               # date_labels = "%b %y",
+               labels = scales::label_date_short(),
                expand = expansion(mult = c(0.01, 0.01))) +
   
   labs(x     = "\nMonth of consultation / admission",
@@ -295,7 +543,8 @@ ggplot(dta_severity_hospi,
   
   # Personalise x axis
   scale_x_date(date_breaks = "1 month",
-               date_labels = "%b %y",
+               labels = scales::label_date_short(),
+               # date_labels = "%b %y",
                expand = expansion(mult = c(0.01, 0.01))) +
   
   labs(x     = "\nMonth of consultation / admission",
@@ -325,6 +574,13 @@ ggsave(filename = paste0('epicurve_severity_hospitalised', '_', week_report, '.p
 
 
 # AGE -----------------------------------------
+
+median(dta_linelist_regions$age_in_years, na.rm = TRUE)
+
+dta_linelist_regions %>% 
+  filter(ind_MSF_covid_status == "Confirmed") %>% 
+  summarise(med = median(age_in_years, na.rm = TRUE))
+
 
 ## Data ------------------------------------------------
 
@@ -434,7 +690,10 @@ ggplot(tbl_pyramid,
   coord_flip() +
   facet_wrap(~region_js, scales = "free_x") +
   
-  scale_fill_manual(name = NULL, values = c("#4E79A7FF", "#A0CBE8FF"), breaks = c("M", "F"), labels = c("Males", "Females")) +
+  scale_fill_manual(name = NULL, 
+                    values = colors_sex, 
+                    breaks = c("M", "F"), 
+                    labels = c("Males", "Females")) +
   scale_y_continuous(label = abs, limits = pyramid_limits) + 
   
   labs(x = "Age Group\n", 
@@ -484,12 +743,6 @@ dta_comorb_all <- dta_linelist_regions %>%
     
     n_lung = sum(Comcond_lung == "Yes", na.rm = TRUE),
     p_lung = n_lung / n
-    # n_tb = sum(ind_MSF_tb_active == "Yes", na.rm = TRUE),
-    # p_tb = n_tb / n,
-    # n_malaria = sum(ind_MSF_malaria == "Yes", na.rm = TRUE),
-    # p_malaria = n_malaria / n_hospi,
-    # n_hiv = sum(ind_MSF_hiv_status == "Yes", na.rm = TRUE),
-    # p_hiv = n_hiv / n_hospi
   ) %>% 
   # stack the percentages for comorbidities in the same column
   pivot_longer(cols = c(p_diabetes, p_hypertension, 
@@ -499,7 +752,8 @@ dta_comorb_all <- dta_linelist_regions %>%
                names_prefix = "p_") %>%
   filter(percent_of_patients > 0) %>% 
   # Add a column to prepare for the combined figure
-  mutate(group_patient = "all")
+  mutate(group_patient = "all",
+         Comorbidities = as.factor(Comorbidities))
 
 
 
@@ -520,7 +774,7 @@ dta_comorb_all %>%
   scale_y_continuous(labels  = scales::percent_format(accuracy = 1)) +
   
   labs(x = "",
-       y = "Percentage of patients",
+       y = "Patients with comorbidity",
        colour = "Région") +
   
   theme_light() +
@@ -529,8 +783,11 @@ dta_comorb_all %>%
         legend.text     = element_text(size = 13),
         panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank(),
-        strip.text   = element_text(size = 15, face = "bold"),
-        # strip.background = element_rect(fill = "white"),
+        panel.border = element_rect(colour = "grey80"),
+        strip.text   = element_text(colour = "black", 
+                                    size = 15, face = "bold"),
+        strip.background = element_rect(fill = "grey90",
+                                        colour = "grey80"),
         axis.text.x  = element_text(size = 13),
         axis.text.y  = element_text(size = 13),
         axis.title   = element_text(size = 15))
@@ -576,7 +833,8 @@ dta_comorb_severe_critical <- dta_linelist_regions %>%
                values_to = "percent_of_patients",
                names_prefix = "p_") %>%
   filter(percent_of_patients > 0) %>% 
-  mutate(group_patient = "severe_critical")
+  mutate(group_patient = "severe_critical",
+         Comorbidities = as.factor(Comorbidities))
 
 dta_comorb_severe_critical_combined <- rbind(dta_comorb_all, dta_comorb_severe_critical)
 
@@ -597,7 +855,7 @@ dta_comorb_severe_critical %>%
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   
   labs(x = "",
-       y = "Percentage of patients",
+       y = "Patients with comorbidity",
        colour = "Region") +
   
   theme_light() +
@@ -606,7 +864,11 @@ dta_comorb_severe_critical %>%
         legend.text  = element_text(size = 12),
         panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank(),
-        strip.text   = element_text(size = 14),
+        panel.border = element_rect(colour = "grey80"),
+        strip.text   = element_text(colour = "black", 
+                                    size = 15, face = "bold"),
+        strip.background = element_rect(fill = "grey90",
+                                        colour = "grey80"),
         axis.text.x  = element_text(size = 10),
         axis.text.y  = element_text(size = 12),
         axis.title   = element_text(size = 14))
@@ -645,7 +907,7 @@ dta_comorb_severe_critical_combined %>%
   scale_size_discrete(range = c(2, 4)) +
   
   labs(x = "",
-       y = "Percentage of patients",
+       y = "Patients with comorbidity",
        colour = "Region",
        alpha  = "Patient",
        size   = "Patient") +
@@ -656,7 +918,11 @@ dta_comorb_severe_critical_combined %>%
         legend.text = element_text(size = 12),
         panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank(),
-        strip.text   = element_text(size = 14),
+        panel.border = element_rect(colour = "grey80"),
+        strip.text   = element_text(colour = "black", 
+                                    size = 15, face = "bold"),
+        strip.background = element_rect(fill = "grey90",
+                                        colour = "grey80"),
         axis.text.x  = element_text(size = 10),
         axis.text.y  = element_text(size = 12),
         axis.title   = element_text(size = 14))
@@ -694,7 +960,7 @@ dta_comorb_severe_critical_combined %>%
   scale_size_discrete(range = c(2, 4)) +
   
   labs(x = "",
-       y = "Percentage of patients",
+       y = "Patients with comorbidity",
        colour = "Region",
        alpha  = "Patient",
        size   = "Patient") +
@@ -705,7 +971,11 @@ dta_comorb_severe_critical_combined %>%
         legend.text = element_text(size = 12),
         panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank(),
-        strip.text   = element_text(size = 14),
+        panel.border = element_rect(colour = "grey80"),
+        strip.text   = element_text(colour = "black", 
+                                    size = 15, face = "bold"),
+        strip.background = element_rect(fill = "grey90",
+                                        colour = "grey80"),
         axis.text.x  = element_text(size = 10),
         axis.text.y  = element_text(size = 12),
         axis.title   = element_text(size = 14))
@@ -718,14 +988,12 @@ ggsave(file.path(path_sharepoint_js,
        dpi = 300)
 
 
-# MORTALITY COMORB SEV/CRIT ---------------------------
+# MORTALITY COMORB ALL ---------------------------
 
-# Mortality by comorbidity, only for severe and critial patients.
-
-dta_comorb_mortality_severe_critical <- dta_linelist_regions %>%
+dta_comorb_mortality_all <- dta_linelist_regions %>%
   # Filtre les lignes
   filter(ind_outcome_patcourse_status %in% c('Cured', 'Died', 'Sent back home'),
-         MSF_severity %in% c("Severe", "Critical")) %>% 
+         merge_admit == "Yes") %>% 
   # Sélectionne les colonnes (pour simplifier un peu)
   select(region_js, ind_outcome_patcourse_status, ind_Comcond_diabetes, 
          ind_MSF_hypertension, Comcond_renal, Comcond_lung) %>% 
@@ -743,13 +1011,91 @@ dta_comorb_mortality_severe_critical <- dta_linelist_regions %>%
   group_by(region_js, comorb_type) %>% 
   summarise(n_known = sum(n_yes, na.rm = TRUE),
             n_died  = sum(n_yes[ind_outcome_patcourse_status  == "Died"], na.rm = TRUE),
-            p_died  = n_died / n_known)
+            p_died  = n_died / n_known) %>% 
+  mutate(comorb_type = factor(comorb_type,
+                              levels = c("Comcond_renal", "ind_Comcond_diabetes", 
+                                         "ind_MSF_hypertension", "Comcond_lung"),
+                              labels = c("Renal chronic illness", "Diabetes",
+                                         "Hypertension", "Lung disease")))
 
 
-vect_labels2 <- c("Diabetes", "Hypertension", "Renal chronic illness",
-                 "Lung disease")
-names(vect_labels2) <- c("ind_Comcond_diabetes", "ind_MSF_hypertension", "Comcond_renal",
-                       "Comcond_lung")
+### Plot --------
+dta_comorb_mortality_all %>% 
+  ggplot(aes(x = region_js,
+             y = p_died,
+             colour = region_js)) +
+  facet_wrap(~ comorb_type, ncol = 1, scales = "free_y"
+             ) +
+  coord_flip() +
+  
+  geom_point(size = 3,
+             alpha = 1) +
+  
+  scale_colour_manual(values = colors_continent) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  
+  labs(x = "",
+       y = "Deceased",
+       colour = "Region") +
+  
+  theme_light() +
+  theme(legend.position = 'right',
+        legend.title    = element_text(size = 13,face = "bold"),
+        legend.text     = element_text(size = 13),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.border = element_rect(colour = "grey80"),
+        strip.text   = element_text(colour = "black", 
+                                    size = 15, face = "bold"),
+        strip.background = element_rect(fill = "grey90",
+                                        colour = "grey80"),
+        axis.text.x  = element_text(size = 13),
+        axis.text.y  = element_text(size = 13),
+        axis.title   = element_text(size = 15))
+
+
+ggsave(file.path(path_sharepoint_js, 
+                 paste0('comorbidities_regions_mortality_all', '_', week_report, '.png')),
+       width = 7,
+       height = 7,
+       dpi = 200)
+
+
+
+
+# MORTALITY COMORB SEV/CRIT ---------------------------
+
+# Mortality by comorbidity, only for severe and critial patients.
+
+dta_comorb_mortality_severe_critical <- dta_linelist_regions %>%
+  # Filtre les lignes
+  filter(ind_outcome_patcourse_status %in% c('Cured', 'Died', 'Sent back home'),
+         MSF_severity %in% c("Severe", "Critical"),
+         merge_admit == "Yes") %>% 
+  # Sélectionne les colonnes (pour simplifier un peu)
+  select(region_js, ind_outcome_patcourse_status, ind_Comcond_diabetes, 
+         ind_MSF_hypertension, Comcond_renal, Comcond_lung) %>% 
+  
+  # Stack noms comorbidités dans une colonne et leur présence dans une autre
+  pivot_longer(cols = c(ind_Comcond_diabetes, ind_MSF_hypertension, Comcond_renal,
+                        Comcond_lung),
+               names_to = "comorb_type",
+               values_to = "comorb_present") %>% 
+  drop_na(comorb_type) %>% 
+  filter(comorb_present == "Yes") %>% 
+  
+  # Compte nb patients par comorb X comorb satus X outcome X region
+  count(region_js, ind_outcome_patcourse_status, comorb_type, name = "n_yes") %>% 
+  group_by(region_js, comorb_type) %>% 
+  summarise(n_known = sum(n_yes, na.rm = TRUE),
+            n_died  = sum(n_yes[ind_outcome_patcourse_status  == "Died"], na.rm = TRUE),
+            p_died  = n_died / n_known) %>% 
+  mutate(comorb_type = factor(comorb_type,
+                              levels = c("Comcond_renal", "ind_Comcond_diabetes", 
+                                         "ind_MSF_hypertension", "Comcond_lung"),
+                              labels = c("Renal chronic illness", "Diabetes",
+                                         "Hypertension", "Lung disease")))
+
 
 
 ### Plot --------
@@ -757,7 +1103,7 @@ dta_comorb_mortality_severe_critical %>%
   ggplot(aes(x = region_js,
              y = p_died,
              colour = region_js)) +
-  facet_wrap(~ comorb_type, ncol = 1, scales = "free_y",
+  facet_wrap(~ comorb_type, ncol = 1, scales = "free_y") +
   coord_flip() +
   
   geom_point(size = 3,
@@ -767,7 +1113,7 @@ dta_comorb_mortality_severe_critical %>%
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   
   labs(x = "",
-       y = "Percentage of patients",
+       y = "Deceased",
        colour = "Region") +
   
   theme_light() +
@@ -776,8 +1122,11 @@ dta_comorb_mortality_severe_critical %>%
         legend.text     = element_text(size = 13),
         panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank(),
-        strip.text   = element_text(size = 15, face = "bold"),
-        # strip.background = element_rect(fill = "white"),
+        panel.border = element_rect(colour = "grey80"),
+        strip.text   = element_text(colour = "black", 
+                                    size = 15, face = "bold"),
+        strip.background = element_rect(fill = "grey90",
+                                        colour = "grey80"),
         axis.text.x  = element_text(size = 13),
         axis.text.y  = element_text(size = 13),
         axis.title   = element_text(size = 15))
@@ -790,7 +1139,7 @@ ggsave(file.path(path_sharepoint_js,
        dpi = 200)
 
 
-# DELAI ---------------------------------------------------------------
+# DELAY ---------------------------------------------------------------
 
 ## Data -------------------
 dta_delay_consult <- dta_linelist_regions %>% 
@@ -838,7 +1187,8 @@ dta_delay_consult %>%
         axis.text.x  = element_text(size = 14),
         axis.text.y  = element_text(size = 14),
         axis.title   = element_text(size = 14),
-        legend.text  = element_text(size = 14)) 
+        legend.text  = element_text(size = 14)
+        ) 
 
 
 ggsave(file.path(path_sharepoint_js, 
@@ -909,8 +1259,11 @@ dta_coinfections_all %>%
         legend.text     = element_text(size = 13),
         panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank(),
-        strip.text   = element_text(size = 15, face = "bold"),
-        # strip.background = element_rect(fill = "white"),
+        panel.border = element_rect(colour = "grey80"),
+        strip.text   = element_text(colour = "black", 
+                                    size = 15, face = "bold"),
+        strip.background = element_rect(fill = "grey90",
+                                        colour = "grey80"),
         axis.text.x  = element_text(size = 13),
         axis.text.y  = element_text(size = 13),
         axis.title   = element_text(size = 15))
@@ -1192,6 +1545,202 @@ ggsave(file.path(path_sharepoint_js,
 #        height = 6,
 #        # scale = 1.1,
 #        dpi = 250)
+# 
+# ## Exploration delay -----------------------------------
+# 
+# # A couple of plots to explore data about delay between symptom 
+# # onset and date of consultation/hospitalisation.
+# 
+# 
+# dta_delay_consult_severity <- dta_linelist_regions %>% 
+#   # filter(ind_MSF_covid_status %in% c("Confirmed")) %>% 
+#   select(region_js, epi_week_consultation, patcourse_dateonset, 
+#          MSF_date_consultation, ind_MSF_covid_status, patinfo_sex,
+#          delay_before_consultation, MSF_severity) %>% 
+#   drop_na(patinfo_sex) %>% 
+#   
+#   filter(between(delay_before_consultation, left = 0, right = 50)) %>% 
+#   group_by(region_js, MSF_severity) %>% 
+#   summarise(n_with_data = n(),
+#             delay_median = median(delay_before_consultation, na.rm = TRUE),
+#             delay_mean   = round(mean(delay_before_consultation, na.rm = TRUE), 1) )
+# 
+# ## Fig. delay and severity ---------------------------------
+# dta_delay_consult_severity %>% 
+#   ggplot(aes(
+#     x = MSF_severity,
+#     y = delay_median,
+#     colour = MSF_severity)) + 
+#   facet_wrap(~region_js) +
+#   
+#   geom_point(aes(size = n_with_data)) +
+#   geom_line() +
+#   labs(x        = "",
+#        y        = "Nb days\n",
+#        title    = "Median delay before consultation",
+#        colour   = "Severity") +
+#   
+#   scale_size_continuous(name = "Visits",
+#                         breaks = c(10, 100, 1000, 5000, 10000, 20000)) +
+#   scale_colour_manual(values = palette_Reds4U, 
+#                       name = "Severity") +
+#   theme_light() +
+#   theme(legend.position = 'right',
+#         legend.title    = element_text(size = 16, face = "bold"),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         axis.text.x  = element_text(size = 14),
+#         axis.text.y  = element_text(size = 14),
+#         axis.title   = element_text(size = 14),
+#         legend.text  = element_text(size = 14)) 
+# 
+# 
+# 
+# # Severity and sex ------------------------------------
+# 
+# 
+# dta_delay_consult_severity_sex <- dta_linelist_regions %>% 
+#   # filter(ind_MSF_covid_status %in% c("Confirmed")) %>% 
+#   select(region_js, epi_week_consultation, patcourse_dateonset, 
+#          MSF_date_consultation, ind_MSF_covid_status, patinfo_sex,
+#          delay_before_consultation, MSF_severity) %>% 
+#   drop_na(patinfo_sex) %>% 
+#   
+#   filter(between(delay_before_consultation, left = 0, right = 50)) %>% 
+#   group_by(region_js, patinfo_sex, MSF_severity) %>% 
+#   summarise(n_with_data = n(),
+#             delay_median = median(delay_before_consultation, na.rm = TRUE),
+#             delay_mean   = round(mean(delay_before_consultation, na.rm = TRUE), 1) )
+# 
+# ## Fig. delay, severity and sex ---------------------------------
+# 
+# dta_delay_consult_severity_sex %>% 
+#   ggplot(aes(
+#     x = patinfo_sex,
+#     y = delay_median,
+#     colour = MSF_severity,
+#     group = MSF_severity)) + 
+#   facet_wrap(~region_js) +
+#   
+#   geom_point(aes(size = n_with_data)) +
+#   geom_line() +
+#   labs(x        = "",
+#        y        = "Nb days\n",
+#        title    = "Median delay before consultation",
+#        colour   = "Severity") +
+#   
+#   scale_size_continuous(name = "Visits",
+#                         breaks = c(10, 100, 1000, 5000, 10000, 20000)) +
+#   # Personalise coulours
+#   scale_colour_manual(values = palette_Reds4U, 
+#                       name = "Severity") +
+#   
+#   theme_light() +
+#   theme(legend.position = 'right',
+#         legend.title    = element_text(size = 16, face = "bold"),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         axis.text.x  = element_text(size = 14),
+#         axis.text.y  = element_text(size = 14),
+#         axis.title   = element_text(size = 14),
+#         legend.text  = element_text(size = 14)) 
+# 
+# 
+# # Inverse sex and severity
+# dta_delay_consult_severity_sex %>% 
+#   ggplot(aes(
+#     x = MSF_severity,
+#     y = delay_median,
+#     colour = patinfo_sex,
+#     group = patinfo_sex)) + 
+#   facet_wrap(~region_js) +
+#   
+#   geom_point(aes(size = n_with_data)) +
+#   geom_line() +
+#   labs(x        = "",
+#        y        = "Nb days\n",
+#        title    = "Median delay before consultation",
+#        colour   = "Severity") +
+#   
+#   scale_size_continuous(name = "Visits",
+#                         breaks = c(10, 100, 1000, 5000, 10000, 20000)) +
+#   # Personalise coulours
+#   scale_colour_manual(values = c("red", "blue"), 
+#                       name = "Sex") +
+#   
+#   theme_light() +
+#   theme(legend.position = 'right',
+#         legend.title    = element_text(size = 16, face = "bold"),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         axis.text.x  = element_text(size = 14, angle = 45, hjust = 1),
+#         axis.text.y  = element_text(size = 14),
+#         axis.title   = element_text(size = 14),
+#         legend.text  = element_text(size = 14)) 
+# 
+# 
+# 
+# 
+# # Raw data --------------------------------------------
+# 
+# 
+# dta_linelist_regions %>% 
+#   # filter(ind_MSF_covid_status %in% c("Confirmed")) %>% 
+#   filter(region_js != "Europe") %>% 
+#   select(region_js, epi_week_consultation, patcourse_dateonset, 
+#          MSF_date_consultation, ind_MSF_covid_status, patinfo_sex,
+#          delay_before_consultation, MSF_severity) %>% 
+#   drop_na(patinfo_sex) %>% 
+#   
+#   filter(between(delay_before_consultation, left = 0, right = 50)) %>% 
+#   ggplot(aes(x = MSF_severity,
+#              y = delay_before_consultation,
+#              colour = MSF_severity)) +
+#   # facet_wrap(~ region_js) +
+#   facet_grid(region_js ~ MSF_severity, scales = "free_x") +
+#   geom_jitter(alpha = 0.2) +
+#   geom_boxplot(alpha = 0.4, colour = "black") +
+#   scale_colour_manual(values = palette_Reds4U, 
+#                       name = "Severity") +
+#   stat_summary(fun = mean, 
+#                geom = "point", 
+#                shape = 20, 
+#                size = 3, 
+#                color = "blue", 
+#                fill = "blue")
+# 
+# 
+# 
+# 
+# # Sex, sévérité et mortalit ---------------------------
+# 
+# # C'est chaud à explorer tout ça.
+# 
+# dta_delay_severity_outcome <- dta_linelist_regions %>% 
+#   # filter(ind_MSF_covid_status %in% c("Confirmed")) %>% 
+#   filter(ind_outcome_patcourse_status %in% c('Cured', 'Died','Sent back home')) %>% 
+#   select(region_js, epi_week_consultation, patcourse_dateonset, 
+#          MSF_date_consultation, ind_MSF_covid_status, patinfo_sex,
+#          delay_before_consultation, MSF_severity, outcome_patcourse_status) %>% 
+#   # drop_na(patinfo_sex) %>% 
+#   filter(between(delay_before_consultation, left = 0, right = 50)) %>% 
+#   group_by(region_js, MSF_severity, outcome_patcourse_status) %>% 
+#   summarise(n_tot = n(),
+#             delay_median = median(delay_before_consultation, na.rm = TRUE),
+#             delay_mean   = round(mean(delay_before_consultation, na.rm = TRUE), 1) )
+# 
+# 
+# # Plot outcome en fonction delay
+# dta_delay_severity_outcome %>% 
+#   ggplot(aes(x = outcome_patcourse_status,
+#              y = delay_median,
+#              colour = MSF_severity,
+#              group = MSF_severity)) +
+#   facet_wrap(~ region_js) +
+#   geom_point() +
+#   geom_line()
+
+
 
 
 
