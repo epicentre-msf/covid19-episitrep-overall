@@ -607,20 +607,19 @@ values <- scico::scico(5, palette = "vikO",
 
 map_case_trend_14d <- ggplot(sf_trend_14d) + 
   geom_sf(aes(fill = trend_cases), 
-          size = 0.1
-          # alpha = 0.8
-          ) + 
+          size = 0.1) + 
   scale_fill_manual(
-    name = NULL, 
+    name   = NULL, 
     values = values, 
-    drop = FALSE, 
-    guide = guide_legend(
+    drop   = FALSE, 
+    guide  = guide_legend(
       keyheight = unit(3, units = "mm"),
-      keywidth = unit(70 / length(labels_inc), units = "mm"),
+      keywidth  = unit(40 / length(lvls), units = "mm"),
       title.hjust = 0.5,
       nrow = 1,
-      label.position = "bottom",
-      title.position = 'top')) + 
+      label.position = "top",
+      # title.position = 'top'
+      )) + 
   coord_sf(
     xlim = xlim_continent, 
     ylim = ylim_continent, 
@@ -628,7 +627,7 @@ map_case_trend_14d <- ggplot(sf_trend_14d) +
     datum = NA) + 
   labs(title = 'Cases last 14 days') + 
   theme_light() +
-  theme(plot.title = element_text(hjust = 0.5), 
+  theme(plot.title  = element_text(hjust = 0.5), 
         axis.text.x = element_blank(), 
         axis.text.y = element_blank(), 
         legend.position = "bottom",
@@ -637,18 +636,19 @@ map_case_trend_14d <- ggplot(sf_trend_14d) +
 
 map_case_trend_30d <- ggplot(sf_trend_30d) + 
   geom_sf(aes(fill = trend_cases), 
-          size = 0.1, alpha = 0.8) + 
+          size = 0.1) + 
   scale_fill_manual(
-    name = NULL, 
+    name   = NULL, 
     values = values, 
-    drop = FALSE, 
+    drop   = FALSE, 
     guide = guide_legend(
       keyheight = unit(3, units = "mm"),
-      keywidth = unit(70 / length(labels_inc), units = "mm"),
+      keywidth = unit(40 / length(lvls), units = "mm"),
       title.hjust = 0.5,
       nrow = 1,
-      label.position = "bottom",
-      title.position = 'top')) + 
+      label.position = "top",
+      # title.position = 'top'
+      )) + 
   coord_sf(
     xlim = xlim_continent, 
     ylim = ylim_continent, 
@@ -666,8 +666,10 @@ map_case_trend_30d <- ggplot(sf_trend_30d) +
 map_cases_trends <- map_case_trend_30d + map_case_trend_14d + 
   plot_layout(ncol = 2, guides = 'collect') & 
   theme(legend.position = 'bottom')
-
+ 
 map_cases_trends
+
+
 
 ggsave(file.path(path.local.deepdive, paste0('map_cases_trends', '_', 
                                              week_report, '.png')), 
