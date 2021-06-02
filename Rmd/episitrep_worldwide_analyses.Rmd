@@ -299,7 +299,7 @@ tbl_death_count_14d <- dta_jhu_right_censored %>%
   ungroup()
 
 
-n_cases_14d <- tbl_case_count_14d %>% select(cases) %>% sum()
+n_cases_14d  <- tbl_case_count_14d %>% select(cases) %>% sum()
 n_deaths_14d <- tbl_death_count_14d %>% select(deaths) %>% sum()
 
 ```
@@ -597,7 +597,7 @@ tbl_countries_increasing_cases <- tbl_case_trend %>%
             by = 'iso_a3') %>% 
   filter(trend_cases_14d %in% increasing | trend_cases_30d %in% increasing) %>% 
   arrange(continent, desc(trend_cases_coef_14d)) %>% 
-  select(continent, country, cases, cases_30d, cases_14d, trend_cases_30d, trend_cases_14d)
+  select(continent, country, cases, cases_30d, cases_14d, trend_cases_30d, trend_cases_14d, trend_cases_coef_14d, trend_cases_coef_30d)
 
  values <- scico::scico(5, palette = "vikO", 
                          begin = .2, end = .8, 
@@ -606,6 +606,7 @@ tbl_countries_increasing_cases <- tbl_case_trend %>%
                         "Stable", "Likely decreasing", "Decreasing"))
  
 gtbl_countries_increasing_cases <- tbl_countries_increasing_cases %>% 
+  select(-c(trend_cases_coef_14d, trend_cases_coef_30d)) %>% 
   gt(rowname_col = 'country', groupname_col = 'continent') %>% 
   
   cols_label(
@@ -951,7 +952,7 @@ tbl_countries_increasing_deaths <- tbl_death_trend %>%
             by = 'iso_a3') %>% 
   filter(trend_deaths_14d %in% increasing | trend_deaths_30d %in% increasing) %>% 
   arrange(continent, desc(trend_deaths_coef_14d)) %>% 
-  select(continent, country, deaths, deaths_30d, deaths_14d, trend_deaths_30d, trend_deaths_14d)
+  select(continent, country, deaths, deaths_30d, deaths_14d, trend_deaths_30d, trend_deaths_14d, trend_deaths_coef_14d, trend_deaths_coef_30d)
 
 values <- scico::scico(5, palette = "vikO", 
                        begin = .2, end = .8, 
@@ -960,6 +961,7 @@ values <- scico::scico(5, palette = "vikO",
                       "Stable", "Likely decreasing", "Decreasing"))
 
 gtbl_countries_increasing_deaths <- tbl_countries_increasing_deaths %>% 
+  select(-c(trend_deaths_coef_14d, trend_deaths_coef_30d)) %>% 
   gt(rowname_col = 'country', groupname_col = 'continent') %>% 
   
   cols_label(
