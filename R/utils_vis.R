@@ -603,7 +603,7 @@ country_six_plots <- function(lst_dta) {
     scale_fill_manual(values = main_colour) + 
     scale_x_date(limits = c(date_min, NA), 
                  breaks = '2 months', 
-                 date_labels = "%b-%Y") +
+                 labels = scales::label_date_short()) +
     xlab('') + 
     ylab('frequency') + 
     labs(subtitle = 'Since the first cases reported') + 
@@ -629,7 +629,7 @@ country_six_plots <- function(lst_dta) {
     scale_fill_manual(values = main_colour) + 
     
     scale_x_date(limits = dates_extent_long, 
-                 date_labels = "%d-%b") +
+                 labels = scales::label_date_short(),) +
     xlab('') + 
     ylab(paste0('frequency and fitted values')) + 
     labs(subtitle = paste('Last', (dates_extent_long[[2]] - dates_extent_long[[1]] + 1), 'days')) + 
@@ -656,7 +656,9 @@ country_six_plots <- function(lst_dta) {
                   colour = obs), size = 1) + 
     
     scale_fill_manual(values = main_colour) + 
-    scale_x_date(limits = dates_extent_short, breaks = '4 days', date_labels = "%d-%b") +
+    scale_x_date(limits = dates_extent_short, 
+                 breaks = '4 days', 
+                 labels = scales::label_date_short()) +
     xlab('') + 
     ylab(paste0('frequency and fitted values')) + 
     labs(subtitle = paste('Last', (dates_extent_short[[2]] - dates_extent_short[[1]] + 1), 'days')) + 
@@ -684,7 +686,7 @@ country_six_plots <- function(lst_dta) {
                    glue::glue("trends_{name_country_save}_{week_report}.png")),
          plot = combined_plot,
          scale = 1,
-         width = 9,
+         width = 7,
          dpi = 320)
   
   return(combined_plot)
