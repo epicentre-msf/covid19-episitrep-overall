@@ -2197,5 +2197,63 @@ if(dir.exists(here(path.local.week.deepdive, "Africa"))) {
 rm(list = lsf.str())
 save.image(file.path(path.local.worldwide.data, paste0('episitrep_worldwide_analyses', '_', week_report, '.RData')))
 
+
+
+
+
+path.sharepoint.sitrep.data <- file.path(path.sharepoint.sitrep, "data")
+
+readRDS(file.path(path.sharepoint.sitrep.data, 'tbl_obs_increasing_trend_14d.RDS'))
+readRDS(file.path(path.sharepoint.sitrep.data, 'tbl_doubling_cfr_rank_week.RDS'))
+
+# Current week data
+tbl_obs_increasing_trend_14d_new <- bind_rows(
+  tbl_case_increasing_trend %>% 
+    mutate(obs = "cases",
+           week = week_report) %>% 
+    rename(count = cases),
+  
+  tbl_death_increasing_trend %>% 
+    mutate(obs = "deaths",
+           week = week_report) %>% 
+    rename(count = deaths)
+)
+
+
+tbl_doubling_cfr_rank_week_new <- tbl_doubling_cfr_rank %>% 
+  mutate(week = week_report)
+
+
+# Si les données doivent être mises à jour avec les données de la semaine:
+if (max(tbl_obs_increasing_trend_14d$week) != week_report) {
+  
+  tbl_obs_increasing_trend_14d <- bind_rows(
+    tbl_obs_increasing_trend_14d_new,
+    tbl_obs_increasing_trend_14d)
+  
+  tbl_doubling_cfr_rank_week <- bind_rows(
+    tbl_doubling_cfr_rank_week, 
+    tbl_doubling_cfr_rank_week_new)
+  
+  saveRDS(tbl_obs_increasing_trend_14d, 
+          file.path(path.sharepoint.sitrep.data, 'tbl_obs_increasing_trend_14d.RDS'))
+  
+  saveRDS(tbl_doubling_cfr_rank_week, 
+          file.path(path.sharepoint.sitrep.data, 'tbl_doubling_cfr_rank_week.RDS'))
+  
+}
+
+
+write.csv2(tbl_obs_increasing_trend_14d_new, 
+           file.path(path.sharepoint.sitrep.data, 
+                     paste0('tbl_obs_increasing_trend_14d_',
+                     week_report, ".csv")))
+
+write.csv2(tbl_doubling_cfr_rank_week_new, 
+           file.path(path.sharepoint.sitrep.data, 
+                     paste0('tbl_doubling_cfr_rank_week_',
+                     week_report, ".csv")))
+
+
 ```
 

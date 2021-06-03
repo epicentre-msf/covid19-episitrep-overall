@@ -112,6 +112,8 @@ purrr::walk(oc_list,
 
 load(file.path(path.local.worldwide.data, paste0('episitrep_worldwide_analyses', '_', week_report, '.RData')))
 load(file.path(path.local.msf.data, paste0('episitrep_msf_level_analyses', '_', week_report, '.RData'))) 
+readRDS(file.path(path.sharepoint.sitrep.data, 'tbl_obs_increasing_trend_14d.RDS'))
+readRDS(file.path(path.sharepoint.sitrep.data, 'tbl_doubling_cfr_rank_week.RDS'))
 
 
 my_doc <- read_docx(file.path(path.templates, 'template_EpiSitrep_world_Covid-19.docx'))

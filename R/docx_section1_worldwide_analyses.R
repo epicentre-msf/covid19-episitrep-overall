@@ -39,7 +39,7 @@ my_doc <- add_par_normal(
 
 # 2
 #my_doc <- add_par_normal(
-#  sprintf('%s countries (%s) reported more than 100 thousand cases. The United States rached the 3 million cases threshold, and Brazil has crossed the 1.5 million mark. India is now third in number of cases reported with more than 700 thousand cases. %s African countries reported less than 50 cases (%s). %s reported more than 1,000 cases (%s) (Figure 1). The pandemic continues to accelerate with X.X million cases (XX%) and XXK deaths (XX%) of the total cases reportend in the last 12 days.', 
+#  sprintf('%s countries (%s) reported more than 100 thousand cases. The United States rached the 3 million cases threshold, and Brazil has crossed the 1.5 million mark. India is now third in number of cases reported with more than 700 thousand cases. %s African countries reported less than 50 cases (%s). %s reported more than 1,000 cases (%s) (Figure 1). The pandemic continues to accelerate with X.X million cases (XX%) and XXK deaths (XX%) of the total cases reportend in the last 14 days.', 
 #          tbl_cases_count %>% call_countries_with(100000, Inf, "cases") %>% length() %>% Words(), 
 #          tbl_cases_count %>% call_countries_with(100000, Inf, "cases") %>% combine_words(), 
 #          tbl_cases_count %>% filter(continent == "Africa") %>% call_countries_with(0, 50, "cases") %>% length() %>% Words(), 
@@ -49,7 +49,14 @@ my_doc <- add_par_normal(
 
 
 
-## Number of countries with increasing trend (12 days)
+# Extra table for old values
+body_add_table(my_doc, 
+               tbl_obs_increasing_trend_14d %>% 
+                 filter(obs == "cases") %>% 
+                 count(week)
+)
+
+## Number of countries with increasing trend (14 days)
 my_doc <- add_par_normal(
   sprintf('%s countries reported an increasing trend (compared to XXX last month) (Figure 1) (see ', 
   call_countries_increasing('cases') %>% length() %>% Words())) %>% 
@@ -75,7 +82,7 @@ my_doc <- add_end_section_continuous()
 
 
 
-## Number of countries with increasing trend per continent (12 days)
+## Number of countries with increasing trend per continent (14 days)
 my_doc <- add_par_normal(
   sprintf('%s countries had an increasing trend in Africa (%s), %s countries in Asia (%s), %s countries in the Americas (%s), %s countries in Europe (%s).', 
   call_countries_increasing("cases", "Africa") %>% length() %>% Words(), 
@@ -88,17 +95,22 @@ my_doc <- add_par_normal(
   call_countries_increasing("cases", "Europe") %>% combine_words()))
 
 
-# Countries with increasing trend in the 12 last days, and more
-#  than 10 000 cases within the 12 last days. 
+# Countries with increasing trend in the 14 last days, and more
+#  than 10 000 cases within the 14 last days. 
 #  World + Africa
 my_doc <- add_par_normal(
-  sprintf("%s reported increasing trend while notifying over 10,000 cases in the last 12 days.
-          In Africa, %s reported increasing trend and more than 1,000 cases.", 
+  sprintf("%s reported (likely) increasing trend while notifying over 10,000 cases in the last 14 days.
+          In Africa, %s reported (likely) increasing trend and more than 1,000 cases.", 
+          
           tbl_countries_increasing_cases %>% 
-            filter(trend_cases_14d == "Increasing", cases_14d >= 10000) %>% 
-            arrange(desc(trend_cases_coef_14d)) %>% pull(country) %>% combine_words(),
+            filter(trend_cases_14d %in% c("Increasing", "Likely increasing"), 
+                   cases_14d >= 10000) %>% 
+            arrange(desc(trend_cases_coef_14d)) %>% 
+            pull(country) %>% combine_words(),
+          
           tbl_countries_increasing_cases %>% 
-            filter(trend_cases_14d == "Increasing", cases_14d >= 1000, continent == "Africa") %>% 
+            filter(trend_cases_14d %in% c("Increasing", "Likely increasing"), 
+                   cases_14d >= 1000, continent == "Africa") %>% 
             arrange(desc(trend_cases_coef_14d)) %>% pull(country) %>% combine_words()))
 
 
@@ -216,7 +228,7 @@ list_countries_10000 <- ifelse(length(list_countries_10000) == 0,
 
 
 my_doc <- add_par_normal(
-  sprintf("In the past month, %s crossed the 100,000 Covid19 associated deaths mark, and %s crossed the 10,000 death mark (Figure 3 - Deaths count).",
+  sprintf("In the past month, %s crossed the 100,000 Covid-19 associated deaths mark, and %s crossed the 10,000 death mark (Figure 3 - Deaths count).",
           list_countries_100000,
           list_countries_10000))
 
@@ -227,10 +239,18 @@ my_doc <- add_par_normal(
   length(call_countries_increasing('deaths')) %>% Words()))
 
 
+# Extra table for old values
+body_add_table(my_doc, 
+               tbl_obs_increasing_trend_14d %>% 
+                 filter(obs == "deaths") %>% 
+                 count(week)
+)
 
-## Countries with increasing trend and more than 1000 deaths in last 12 days
+
+## Countries with increasing trend and more than 1000 deaths in last 14 days
 list_country_deaths_10000 <- tbl_countries_increasing_deaths %>% 
-  filter(trend_deaths_14d == "Increasing", deaths_14d >= 10000) %>% 
+  filter(trend_deaths_14d %in% c("Increasing", "Likely increasing"), 
+         deaths_14d >= 10000) %>% 
   arrange(desc(trend_deaths_coef_14d)) %>% pull(country)
 
 list_country_deaths_10000 <- ifelse(length(list_country_deaths_10000) == 0, 
@@ -238,7 +258,7 @@ list_country_deaths_10000 <- ifelse(length(list_country_deaths_10000) == 0,
                                     combine_words(list_country_deaths_10000))
 
 add_par_normal(
-  sprintf("%s reported an increasing trend in deaths while notifying more than 1,000 deaths in the last 12 days.", 
+  sprintf("%s reported an increasing trend in deaths while notifying more than 1,000 deaths in the last 14 days.", 
           list_country_deaths_10000))
 
 
@@ -260,7 +280,7 @@ my_doc <- add_end_section_2columns()
 ## - Map trend in deaths
 my_doc <- add_figure_map_world_grid(
   object_name  = glue('map_world_death_count_trend_grid_{week_report}.png'), 
-  figure_title = glue('Mapping of Covid-19 associated deaths counts and trends, period from {format(date_max_report - (period_trend - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} (12 days)'))
+  figure_title = glue('Mapping of Covid-19 associated deaths counts and trends, period from {format(date_max_report - (period_trend - 1), "%d %B %Y")} to {format(date_max_report, "%d %B %Y")} (14 days)'))
 
 
 
@@ -277,7 +297,7 @@ my_doc <- add_end_section_continuous()
 #my_doc <- my_doc %<>% 
 #  body_add_par(style = 'Normal', 
 #               value = "Doubling time calculation should take into account that most countries now reached an important number of cases,
-#and sometimes are going through a second surge in cases. Therefore, doubling time calculation is now only considering cases and deaths reported in the last 12 days, instead of cumulative cases (method ") %>% 
+#and sometimes are going through a second surge in cases. Therefore, doubling time calculation is now only considering cases and deaths reported in the last 14 days, instead of cumulative cases (method ") %>% 
 #  slip_in_text(style = 'Hyperlink', 
 #               str = "here", 
 #               hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/analysis_methods_2020-04-28.html") %>% 
@@ -286,7 +306,7 @@ my_doc <- add_end_section_continuous()
 
 my_doc <- my_doc %<>% 
   body_add_par(style = 'Normal', 
-               value = "Doubling time calculation is now only considering cases and deaths reported in the last 12 days, instead of cumulative cases (methods ") %>% 
+               value = "Doubling time calculation is now only considering cases and deaths reported in the last 14 days, instead of cumulative cases (methods ") %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "here", 
                hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/") %>% 
@@ -295,21 +315,30 @@ my_doc <- my_doc %<>%
 
 
 
+
+
 my_doc <- add_par_normal(
-  sprintf("As a result, a sharp increase of cases (doubling time of less than 12 days) is observed in %s countries this week, compared to XXX a month ago (Figure 4 and Table 1).", 
+  sprintf("As a result, a sharp increase of cases (doubling time of less than 14 days) is observed in %s countries this week, compared to XXX a month ago (Figure 4 and Table 1).", 
           length(call_countries_doubling('cases_est'))))
+
+# Extra table for old values
+body_add_table(my_doc, 
+               tbl_doubling_cfr_rank_week_new %>%  
+                 count(week)
+)
+
 
 ## Countries with doubling time in cases
 my_doc <- add_par_normal(
-  sprintf("This week %s reported a doubling time in cases of less than 8 days. The other countries with a doubling time in cases of less than 12 days are %s.",
+  sprintf("This week %s reported a doubling time in cases of less than 8 days. The other countries with a doubling time in cases of less than 14 days are %s.",
           combine_words(call_countries_doubling('cases_est', threshold = 8)), 
-          combine_words(setdiff(call_countries_doubling('cases_est', threshold = 12),
+          combine_words(setdiff(call_countries_doubling('cases_est', threshold = 14),
                                 call_countries_doubling('cases_est', threshold = 8)))))
 
 # 3
 my_doc <- add_par_normal(
   sprintf("%s reported a worrying increase in deaths.", 
-          combine_words(call_countries_doubling('deaths_est', threshold = 12))))
+          combine_words(call_countries_doubling('deaths_est', threshold = 14))))
 
 
 my_doc <- add_end_section_2columns()
@@ -326,7 +355,7 @@ my_doc <- add_figure_map_world_grid(
 # my_doc <- add_par_normal('')
 
 
-## - Table countries with doubling time < 12 days
+## - Table countries with doubling time < 14 days
 my_doc <- add_table(
   object_name = glue("gtbl_cfr_doubling_rank_{week_report}.png"), 
   table_title = glue("Countries with estimated doubling time of cases or deaths of less than {threshold_doubling_time} days"), 
@@ -377,7 +406,7 @@ my_doc <- add_end_section_continuous()
 # # --- --- --- --- 
 # # 1
 # my_doc <- add_par_normal(
-#   sprintf("A better insight into countries’ testing capacity would allow for a better interpretation of reported cases relative to actual ones. Figure 5 displays the relationship between the proportion of positive tests, and the cumulative number of cases per 100,000 population in the country (both in the last 12 days). The countries displayed in the right side of the graphic therefore have a higher proportion of positive tests, which may point to a possibly insufficient sensitivity of the testing strategy. Of these, countries with a recent high number of cases are facing an even more complicated situation. Only countries with a current increasing trend are displayed, being on a comparable stage of the epidemic."))
+#   sprintf("A better insight into countries’ testing capacity would allow for a better interpretation of reported cases relative to actual ones. Figure 5 displays the relationship between the proportion of positive tests, and the cumulative number of cases per 100,000 population in the country (both in the last 14 days). The countries displayed in the right side of the graphic therefore have a higher proportion of positive tests, which may point to a possibly insufficient sensitivity of the testing strategy. Of these, countries with a recent high number of cases are facing an even more complicated situation. Only countries with a current increasing trend are displayed, being on a comparable stage of the epidemic."))
 # 
 # # 2
 # my_doc <- add_par_normal(
@@ -385,13 +414,15 @@ my_doc <- add_end_section_continuous()
 # 
 # # 3
 # my_doc <- add_par_normal(
-#   sprintf("To note that XXXXX displayed a very high proportion of positive tests. These countries, as well as some others which reported high cumulative number of cases in the last 12 days (such as LIST OF COUNTRIES) are to be closely monitored as they are facing an important rise in cases while having possible gaps in testing strategy sensitivity (Figure 5)."))
+#   sprintf("To note that XXXXX displayed a very high proportion of positive tests. These countries, as well as some others which reported high cumulative number of cases in the last 14 days (such as LIST OF COUNTRIES) are to be closely monitored as they are facing an important rise in cases while having possible gaps in testing strategy sensitivity (Figure 5)."))
 # 
 # my_doc <- add_end_section_2columns()
 # 
 # # - Graph
 # my_doc <- add_figure(
 #   object_name = glue('dots_prop_tests_{week_report}.png'), 
-#   figure_title = glue('Relation between the number of tests carried out in the last 12 days (as proportion of positive tests) and the cumulative number of cases reported'), 
+#   figure_title = glue('Relation between the number of tests carried out in the last 14 days (as proportion of positive tests) and the cumulative number of cases reported'), 
 #   folder = 'worldwide')
+
+
 
