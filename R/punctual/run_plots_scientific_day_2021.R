@@ -48,7 +48,7 @@ if (Sys.info()["login"] == "M-MOUSSET") {
 } 
 
 # Définir la semaine
-week_report <- "2021-w21"
+week_report <- "2021-w22"
 
 
 # Define output folder:
@@ -165,7 +165,7 @@ dta_jhu_region <- dta_jhu %>%
       continent == "Oceania"       ~ "Oceania",
       region    == "Western Asia"  ~ "Middle East",
       continent == "Asia" & 
-        region !=  "Western Asia"  ~ "Asia",
+      region !=  "Western Asia"  ~ "Asia",
       TRUE ~ region),
     
     region_js = factor(region_js, levels = c("Africa", "Americas",
@@ -326,13 +326,61 @@ dta_linelist_regions %>%
   filter(ind_outcome_patcourse_status == "Died")
 
 
+
+# TOTAUX REGIONS ----------------------------------------------
+
+dta_jhu_region %>%
+  drop_na(region_js) %>% 
+  group_by(region_js) %>% 
+  summarise(n_cases = sum(cases,  na.rm = TRUE)) %>% 
+  ggplot(aes(x = fct_reorder(region_js, n_cases),
+             y = n_cases,
+             fill = region_js)) +
+  geom_col() +
+  coord_flip() +
+  geom_text(aes(y     = 91000000,
+                label = scales::comma(n_cases)), 
+            hjust = 1,
+            fontface = "bold",
+            size = 4.5
+  ) +
+  
+  scale_y_continuous(labels = unit_format(unit = "M", scale = 1e-6),
+                     limits = c(0, 100000000),
+                     breaks = c(0, 20000000, 40000000, 60000000)
+                     # expand = expansion(mult = c(0.02, 0.08))
+  ) +
+  scale_fill_manual(values = c(colors_continent, "grey60")) +
+  labs(x = "",
+       y = "") +
+  
+  theme_light() +
+  theme(legend.position = 'none', 
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor   = element_blank(),
+        panel.border       = element_blank(), 
+        axis.text.x  = element_text(size = 14, face = "bold"),
+        axis.text.y  = element_text(size = 14, face = "bold"),
+        axis.title   = element_text(size = 15),
+        axis.ticks.y = element_blank()
+  )
+
+
+ggsave(filename = paste0('totaux_region_jhu', '_', week_report, '.png'),
+       path = path_sharepoint_js,
+       width = 8,
+       height = 6,
+       dpi = 300)
+
+
+
 # EPICURVE WORLD --------------------------------------
 
 # Plot
 dta_jhu_region %>%
   drop_na(region_js) %>% 
   group_by(region_js, year, epi_week_start) %>% 
-  summarise(n_cases = sum(cases)) %>% 
+  summarise(n_cases = sum(cases,  na.rm = TRUE)) %>% 
   ggplot(aes(x = epi_week_start, 
              y = n_cases,
              fill = region_js)) +
