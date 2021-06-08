@@ -336,7 +336,7 @@ dta_jhu_region %>%
   ggplot(aes(x = fct_reorder(region_js, n_cases),
              y = n_cases,
              fill = region_js)) +
-  geom_col() +
+  geom_col(width = 0.5) +
   coord_flip() +
   geom_text(aes(y     = 91000000,
                 label = scales::comma(n_cases)), 
@@ -345,31 +345,34 @@ dta_jhu_region %>%
             size = 4.5
   ) +
   
-  scale_y_continuous(labels = unit_format(unit = "M", scale = 1e-6),
-                     limits = c(0, 100000000),
-                     breaks = c(0, 20000000, 40000000, 60000000)
-                     # expand = expansion(mult = c(0.02, 0.08))
-  ) +
+  # scale_y_continuous(labels = unit_format(unit = "M", scale = 1e-6),
+  #                    limits = c(0, 100000000),
+  #                    breaks = c(0, 20000000, 40000000, 60000000)
+  #                    # expand = expansion(mult = c(0.02, 0.08))
+  # ) +
   scale_fill_manual(values = c(colors_continent, "grey60")) +
   labs(x = "",
        y = "") +
   
   theme_light() +
   theme(legend.position = 'none', 
-        panel.grid.major.y = element_blank(),
+        panel.grid.major = element_blank(),
         panel.grid.minor   = element_blank(),
         panel.border       = element_blank(), 
-        axis.text.x  = element_text(size = 14, face = "bold"),
+        # axis.text.x  = element_text(size = 14, face = "bold"),
         axis.text.y  = element_text(size = 14, face = "bold"),
+        axis.text.x  = element_blank(), 
+        axis.ticks.x  = element_blank(), 
         axis.title   = element_text(size = 15),
         axis.ticks.y = element_blank()
-  )
+  ) 
+
 
 
 ggsave(filename = paste0('totaux_region_jhu', '_', week_report, '.png'),
        path = path_sharepoint_js,
-       width = 8,
-       height = 6,
+       width = 6,
+       height = 4,
        dpi = 300)
 
 
