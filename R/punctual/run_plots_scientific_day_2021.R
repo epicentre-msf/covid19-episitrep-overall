@@ -504,6 +504,96 @@ ggsave(filename = paste0('epicurve_region', '_', week_report, '.png'),
        dpi = 300)
 
 
+
+# EPICURVE CAS PAYS --------------------------------------------
+
+# Série de figures par région pour voir quel pays contribue 
+# à quel pic sur l'epicurve région.
+# 
+# Comme je voulais des couleurs différentes à l'intérieur d'une
+# région mais qu'il n'y a pas l'équivalent de free scale pour les
+# couleurs, j'ai du faire chaque graphe séparément. J'aurais 
+# pu copier-coller, mais c'est pénible et ça augmente les chances
+# de faire des erreurs. J'ai donc automatisé ça avec des listes.
+# C'est un peu avancé, donc no stress si c'est incompréhensible
+# (pour le moment!!!).
+# Ca utilise plusieurs fonctions du paquet "purrr", qui donne des 
+# alternatives aux fonctions "apply" and Co de base R, qui 
+# en gros appliquent une fonction sur les éléments d'une
+# liste (avec variations sur ce thème).
+# 
+# Je sépare le jeu de données en une liste de dataframes
+# (un par région, function group_split), je transforme cette liste de
+# données en liste de graphes (fonction map, qui applique l'instruction
+# ggplot à chaque éléent de la liste, i.e. chaque région). Puis 
+# je fais une petite manip pour créer un nom pour sauver chaque graphe
+# puis j'utilise pwalk pour saver chacun des graphes avec son nom
+# personalisé.
+
+dta_linelist_regions_aggregated %>% 
+  count(region_js, iso_a3, epi_week_consultation) %>% 
+  arrange(region_js) %>% 
+  group_by(region_js) %>% 
+  group_split() %>% # splite les groupes en liste 
+  # Donne des noms à la liste
+  purrr::set_names(dta_linelist_regions_aggregated %>%
+                     arrange(region_js) %>% 
+                     distinct(region_js) %>% pull()) %>% 
+  # Apllique la fonction plot à chaque element de la liste
+  # (i.e. à chaque région)
+  map(~{.x %>% ggplot(aes(x = epi_week_consultation, 
+                          y = n, 
+                          fill = iso_a3)) +
+      facet_wrap(vars(region_js), scales = 'free_y') +
+      geom_col() +
+      
+      ggthemes::scale_fill_tableau(name = NULL,
+                                   palette = "Tableau 20") +
+      scale_x_date(date_breaks = "2 months",
+                   # date_labels = "%b %y",
+                   labels = scales::label_date_short(),
+                   expand = expansion(mult = c(0.01, 0.02))) +
+      scale_y_continuous(name = "Patients", 
+                         expand = expansion(mult = c(0, 0.02))) +
+      
+      labs(x = "\nMonth of consultation / admission",
+           y = "Nb patients") +
+      
+      theme_light() +
+      theme(legend.position = 'right', 
+            legend.title    = element_text(size = 14, face = "bold"),
+            legend.text     = element_text(size = 13),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            strip.text   = element_text(size = 15, face = "bold"),
+            axis.text.x  = element_text(size = 12),
+            axis.text.y  = element_text(size = 14),
+            axis.title   = element_text(size = 15))
+  }) -> all_plots_regions
+
+# Crée les noms de fichier personalisés
+names(all_plots_regions) %>% 
+  purrr::map(~{glue::glue("epicurve_region_country_{.x}_week_report.png")}) %>% 
+  # Et sauve les plots avec chacun son nom
+  purrr::pwalk(.x = .,
+               .y = all_plots_regions,
+               ~{ggsave(filename = .x,
+                        path = path_sharepoint_js,
+                        width = 14,
+                        height = 6,
+                        dpi = 300) })
+
+walk2(.x = names(all_plots_regions) %>% 
+        map(~{glue::glue("epicurve_region_country_{.x}_week_report.png")}), 
+      .y = all_plots_regions, 
+      ~ ggsave(filename = .x,
+               plot = .y,
+               path = path_sharepoint_js,
+               width = 14,
+               height = 6,
+               dpi = 300))
+
+
 # EPICURVE SEVERITY --------------------------------------------
 
 dta_linelist_regions %>%
