@@ -70,6 +70,7 @@ path_sharepoint_jhu_data <- file.path(path_sharepoint_sitrep, week_report, "worl
 load(file.path(path_sharepoint_msf_data, 
                paste0("episitrep_msf_level_analyses_", week_report, ".RData")))
 
+
 # Get JHU data (from Sharepoint)
 dta_jhu <- readRDS(file.path(path_sharepoint_jhu_data, 'dta_jhu.RDS'))
 
@@ -222,9 +223,23 @@ dta_linelist_regions %>%
   pivot_wider(names_from = "patinfo_sex",
               values_from = n_patients,
               names_prefix = "count_") %>% 
-  mutate(ratio_h_f  = round(count_M / count_F, 2))
+  mutate(ratio_h_f  = round(count_M / count_F, 2),
+         prop_h     = round(count_M / (count_M + count_F), 2),
+         prop_f     = 1 - prop_h)
 
 
+# Globally confirmed
+dta_linelist_regions %>% 
+  drop_na(patinfo_sex) %>% 
+  filter(ind_MSF_covid_status == "Confirmed") %>% 
+  group_by(patinfo_sex) %>% 
+  summarise(n_patients = n()) %>% 
+  pivot_wider(names_from = "patinfo_sex",
+              values_from = n_patients,
+              names_prefix = "count_") %>% 
+  mutate(ratio_h_f  = round(count_M / count_F, 2),
+         prop_h     = round(count_M / (count_M + count_F), 2),
+         prop_f     = 1 - prop_h)
 
 # ADMISSION  -------------------------------------------
 
@@ -571,17 +586,6 @@ dta_linelist_regions_aggregated %>%
             axis.title   = element_text(size = 15))
   }) -> all_plots_regions
 
-# Crée les noms de fichier personalisés
-names(all_plots_regions) %>% 
-  purrr::map(~{glue::glue("epicurve_region_country_{.x}_week_report.png")}) %>% 
-  # Et sauve les plots avec chacun son nom
-  purrr::pwalk(.x = .,
-               .y = all_plots_regions,
-               ~{ggsave(filename = .x,
-                        path = path_sharepoint_js,
-                        width = 14,
-                        height = 6,
-                        dpi = 300) })
 
 walk2(.x = names(all_plots_regions) %>% 
         map(~{glue::glue("epicurve_region_country_{.x}_week_report.png")}), 
@@ -699,7 +703,7 @@ ggplot(dta_severity_hospi,
   
   labs(x     = "\nMonth of consultation / admission",
        y     = "Nb patients\n",
-       title = "Severity - All HOSPITAZLISED patients S+P+C") +
+       title = "") +
   
   theme(legend.title     = element_text(size = 14, face = "bold"),
         legend.text      = element_text(size = 13),
@@ -853,6 +857,11 @@ ggplot(tbl_pyramid,
         legend.text  = element_text(size = 14),
         panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank(),
+        panel.border = element_rect(colour = "grey80"),
+        strip.text   = element_text(colour = "black", 
+                                    size = 15, face = "bold"),
+        strip.background = element_rect(fill = "grey90",
+                                        colour = "grey80"),
         axis.text.x  = element_text(size = 14),
         axis.text.y  = element_text(size = 14),
         axis.title   = element_text(size = 16, face = "bold"))
