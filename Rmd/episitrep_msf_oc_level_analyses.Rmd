@@ -99,6 +99,9 @@ if (!dir.exists(path.local.msf.tables.oc)) {
 
 ### GRAPHICAL PARAMETERS ###
 caption_graph <- glue('Analysis and graphic by Epicentre | Data source: MSF linelists as of {format(date_max_report, "%d %b %Y")}')
+
+x_date_labels <- "1 months"
+x_date_labels_faceted <- "2 months"
 ```
 
 
@@ -359,7 +362,9 @@ hist_epicurve_status <- tbl_epicurve_status %>%
   geom_col() +
   ggthemes::scale_fill_tableau(name = "Status", palette = "Tableau 20") +
   scale_x_date(name = "Week of Consultation",
-               date_breaks = "2 week", date_labels = "%V",
+               date_breaks = x_date_labels,
+               labels = scales::label_date_short(),
+               # date_labels = "%V",
                expand = expansion(mult = c(0.01, 0.01)),
                sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.))) + #labels = function(x) format(x, "%b-%Y")
   scale_y_continuous(name = "Patients", expand = expansion(mult = c(0, 0.02))) +
@@ -392,7 +397,11 @@ hist_epicurve_status_continent <- tbl_epicurve_status_continent %>%
   facet_wrap(vars(continent), scales = 'free_y') +
   geom_col() +
   ggthemes::scale_fill_tableau(name = NULL, palette = "Tableau 20") +
-  scale_x_date(name = "Week of Consultation", date_breaks = "2 week", date_labels = "%V", expand = expansion(mult = c(0.01, 0.01)),
+  scale_x_date(name = "Week of Consultation", 
+               date_breaks = x_date_labels,
+               labels = scales::label_date_short(),
+               # date_labels = "%V", 
+               expand = expansion(mult = c(0.01, 0.01)),
                sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.))) + #labels = function(x) format(x, "%b-%Y")
   scale_y_continuous(name = "Patients", expand = expansion(mult = c(0, 0.02))) +
   labs(y = "Patients", caption = 'NOTE: free y axis scale among graphics') +
@@ -463,8 +472,9 @@ dta_testing %>%
        title = "Number of patient tested and positivity rates") +
   
   scale_x_date(name = "Week of Consultation",
-               date_breaks = "2 weeks",
-               date_labels = "%V",
+              date_breaks = x_date_labels,
+               labels = scales::label_date_short(),
+               # date_labels = "%V",
                sec.axis = ggplot2::sec_axis(trans = ~ .),
                expand = expansion(mult = c(0.01, 0.01))) +
   
@@ -515,8 +525,12 @@ hist_epicurve_consult_admit <- tbl_epicurve_consultation %>%
   geom_line(data = tbl_admit_prop,
             aes(y = admit_prop / scaling_factor, colour = "Admitted %"),
             key_glyph = "timeseries", size = 1) +
-  ggthemes::scale_fill_tableau(name = NULL, palette = "Tableau 20") +
-  scale_x_date(name = "Week of Consultation", date_breaks = "2 weeks", date_labels = "%V",
+  ggthemes::scale_fill_tableau(name = NULL, 
+                               palette = "Tableau 20") +
+  scale_x_date(name = "Week of Consultation", 
+               date_breaks = x_date_labels,
+               labels = scales::label_date_short(),
+               # date_labels = "%V",
                sec.axis = ggplot2::sec_axis(trans = ~ .), expand = expansion(mult = c(0.01, 0.01))) +
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1)),
                      expand = expansion(mult = c(0, 0.02))) +
@@ -575,7 +589,10 @@ hist_epicurve_consult_admit_continent <- tbl_epicurve_consultation_continent %>%
             aes(y = admit_prop / scaling_factor, colour = "Admitted %"),
             key_glyph = "timeseries", size = 0.5) +
   ggthemes::scale_fill_tableau(name = NULL, palette = "Tableau 20") +
-  scale_x_date(name = "Week of Consultation", date_breaks = "3 week", date_labels = "%V",
+  scale_x_date(name = "Week of Consultation", 
+                date_breaks = x_date_labels,
+               labels = scales::label_date_short(),
+               # date_labels = "%V",
                sec.axis = ggplot2::sec_axis(trans = ~ .), expand = expansion(mult = c(0.01, 0.01))) +
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1)),
                      expand = expansion(mult = c(0, 0.02))) +
@@ -1131,10 +1148,15 @@ pyramid_age_sex_all_continent <- ggplot(tbl_pyramid_continent, aes(x = age_9gp, 
   facet_wrap(~continent, ncol = 2, scales = "free_x") +
   geom_col() +
   geom_hline(yintercept = 0, colour = "black") +
-  geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 3.5) +
+  geom_text(aes(label = abs(n), 
+                hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 3.5) +
   coord_flip() +
-  scale_fill_manual(name = NULL, values = c("#4E79A7FF", "#A0CBE8FF"), breaks = c("M", "F"), labels = c("Males", "Females")) +
-  scale_y_continuous(label = abs, limits = pyramid_limits) +
+  scale_fill_manual(name = NULL, 
+                    values = c("#4E79A7FF", "#A0CBE8FF"),
+                    breaks = c("M", "F"), 
+                    labels = c("Males", "Females")) +
+  scale_y_continuous(label = abs, 
+                     limits = pyramid_limits) +
   theme(legend.position = "top") +
   labs(x = "Age Group", y = "Patients consulted/admitted", caption = glue::glue("Missing Data: Age {missing_age_sex$age}, Sex {missing_age_sex$patinfo_sex}"))
 
@@ -1377,7 +1399,6 @@ gtbl_sympt_all %>%
 <!-- Table - Frequency and proportion of patients wit MSF_severity -->
 ```{r}
 # by Francesco
-
 dta_MSF_severity <- dta_linelist %>%
   select(ind_MSF_covid_status, MSF_severity) %>%
   mutate(
@@ -1711,9 +1732,16 @@ hist_epicurve_consult_admit_confirmed_continent <- tbl_epicurve_consultation_con
   geom_line(data = tbl_admit_prop_continent,
             aes(y = admit_prop / scaling_factor, colour = "Admitted %"),
             key_glyph = "timeseries", size = 0.5) +
-  ggthemes::scale_fill_tableau(name = NULL, palette = "Tableau 20") +
-  scale_x_date(name = "Week of Consultation", date_breaks = "3 week", date_labels = "%V",
-               sec.axis = ggplot2::sec_axis(trans = ~ .), expand = expansion(mult = c(0.01, 0.01))) +
+  ggthemes::scale_fill_tableau(name = NULL, 
+                               palette = "Tableau 20") +
+  
+  scale_x_date(name = "Week of Consultation", 
+               date_breaks = x_date_labels,
+               labels = scales::label_date_short(),
+               # date_labels = "%V",
+               sec.axis = ggplot2::sec_axis(trans = ~ .),
+               expand = expansion(mult = c(0.01, 0.01))) +
+  
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Admitted", labels = scales::percent_format(accuracy = 1)),
                      expand = expansion(mult = c(0, 0.02))) +
   labs(y = "Patients", colour = NULL, caption = glue::glue("Missing data: Consultation Date {missing_consultation}, Admission: {missing_admission}")) +
@@ -1788,9 +1816,13 @@ pyramid_age_sex_confirmed <- ggplot(tbl_pyramid_confirmed, aes(x = age_9gp, y = 
   #geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 4) +
   coord_flip() +
   scale_fill_manual(name = NULL, values = c("#4E79A7FF", "#A0CBE8FF"), breaks = c("M", "F"), labels = c("Males", "Females")) +
-  scale_y_continuous(limits = pyramid_limits, breaks = pyramid_brks, label = abs) +
+  scale_y_continuous(limits = pyramid_limits, 
+                     breaks = pyramid_brks, 
+                     label = abs) +
   theme(legend.position = "top") +
-  labs(x = "Age Group", y = "Confirmed Patients", caption = glue::glue("Missing Data: Age {missing_age_sex$age}, Sex {missing_age_sex$patinfo_sex}"))  +
+  labs(x = "Age Group", 
+       y = "Confirmed Patients", 
+       caption = glue::glue("Missing Data: Age {missing_age_sex$age}, Sex {missing_age_sex$patinfo_sex}"))  +
   guides(y.sec = guide_axis_label_trans(~paste(.x))) # show age group labels on both axis
 
 ggsave(file.path(path.local.msf.graphs.oc, paste0('pyramid_age_sex_confirmed', '_', week_report, '.png')),
@@ -1822,9 +1854,14 @@ pyramid_age_sex_confirmed_continent <- ggplot(tbl_pyramid_confirmed_continent, a
   facet_wrap(~continent, ncol = 2, scales = "free_x") +
   geom_col() +
   geom_hline(yintercept = 0, colour = "black") +
-  geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 3.5) +
+  geom_text(aes(label = abs(n), 
+                hjust = if_else(n >= 0, 1.1, -0.1)), 
+            colour = "white", size = 3.5) +
   coord_flip() +
-  scale_fill_manual(name = NULL, values = c("#4E79A7FF", "#A0CBE8FF"), breaks = c("M", "F"), labels = c("Males", "Females")) +
+  scale_fill_manual(name = NULL, 
+                    values = c("#4E79A7FF", "#A0CBE8FF"),
+                    breaks = c("M", "F"),
+                    labels = c("Males", "Females")) +
   scale_y_continuous(label = abs, limits = pyramid_limits) +
   theme(legend.position = "top") +
   labs(x = "Age Group", y = "Confirmed Patients", caption = glue::glue("Missing Data: Age {missing_age_sex$age}, Sex {missing_age_sex$patinfo_sex}"))
@@ -2559,8 +2596,11 @@ df_MSF_severity <- dta_linelist %>%
 dots_cfr_agegroup <- ggplot(df_MSF_severity, aes(x = age_group)) +
   geom_point(aes(y = p_died), size = 2) +
   geom_linerange(aes(ymin = p_died_low95, ymax = p_died_upp95)) +
-  geom_text(aes(label = died_lab, y = p_died_upp95 + 0.02), size = 4.2) +
-  scale_y_continuous(breaks = seq(0, 1, 0.2), limits = c(0, 1), labels = scales::percent_format(accuracy = 1), sec.axis = dup_axis(name = NULL)) +
+  geom_text(aes(label = died_lab, 
+                y = p_died_upp95 + 0.02), size = 4.2) +
+  scale_y_continuous(breaks = seq(0, 1, 0.2),
+                     limits = c(0, 1), 
+                     labels = scales::percent_format(accuracy = 1), sec.axis = dup_axis(name = NULL)) +
   labs(x = "Age Group", y = "CFR", caption = "CFR = deaths / known outcomes (cured + died + sent back home) among the admitted\nLine range shows binomial 95% confidence intervals")
 
 ggsave(file.path(path.local.msf.graphs.oc, paste0('dots_cfr_agegroup', '_', week_report, '.png')),
@@ -2634,7 +2674,10 @@ line_cfr_week <- ggplot(tbl_cfr_epiweek, aes(epi_week_consultation, n)) +
   geom_line(data = tbl_cfr_epiweek_prop,
             aes(y = prop_dead / scaling_factor, colour = "CFR"),
             key_glyph = "timeseries", size = 1) +
-  scale_x_date(name = "Week of Admission", date_breaks = "2 weeks", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .),
+  scale_x_date(name = "Week of Admission", 
+                date_breaks = x_date_labels,
+               labels = scales::label_date_short(),
+               # date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .),
                expand = expansion(mult = c(0.01, 0.01))) + #, labels = function(x) format(x, "%b-%Y")
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Case Fatality Risk (admitted)", labels = scales::percent_format(accuracy = 1)),
                      expand = expansion(mult = c(0, 0.02))) +
@@ -2698,8 +2741,13 @@ line_cfr_week_continent <- ggplot(tbl_cfr_epiweek_continent, aes(epi_week_consul
   geom_line(data = tbl_cfr_epiweek_continent_prop,
             aes(y = prop_dead / scaling_factor, colour = "CFR"),
             key_glyph = "timeseries", size = 1) +
-  scale_x_date(name = "Week of Admission", date_breaks = "3 weeks", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .),
+  scale_x_date(name = "Week of Admission", 
+                date_breaks = x_date_labels,
+               labels = scales::label_date_short(),
+               # date_labels = "%V", 
+               sec.axis = ggplot2::sec_axis(trans = ~ .),
                expand = expansion(mult = c(0.01, 0.01))) + #, labels = function(x) format(x, "%b-%Y")
+  
   scale_y_continuous(sec.axis = ggplot2::sec_axis(~ . * scaling_factor, name = "Case Fatality Risk (admitted)", labels = scales::percent_format(accuracy = 1)),
                      expand = expansion(mult = c(0, 0.02))) +
   ggthemes::scale_fill_tableau(palette = "Tableau 20") +
@@ -2734,7 +2782,11 @@ dta_delay <- dta_linelist %>%
 boxplot_delay_before_consultation <- ggplot(dta_delay, aes(x = epi_week_consultation, y = delay_before_consultation)) +
   geom_boxplot(aes(group = epi_week_consultation)) +
   #geom_smooth(fill = "lightblue") +
-  scale_x_date(name = "Week of Consultation", date_breaks = "2 weeks", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .)) +
+  scale_x_date(name = "Week of Consultation", 
+           date_breaks = x_date_labels,
+               labels = scales::label_date_short(),
+               # date_labels = "%V", 
+           sec.axis = ggplot2::sec_axis(trans = ~ .)) +
   labs(y = "Delay to consultation (days)")
 
 ggsave(file.path(path.local.msf.graphs.oc, paste0('boxplot_delay_before_consultation', '_', week_report, '.png')),
@@ -2767,7 +2819,10 @@ dta_MSF_length_stay <- dta_linelist %>%
 boxplot_MSF_length_stay_week <- ggplot(dta_MSF_length_stay, aes(epi_week_consultation, MSF_length_stay, group = epi_week_consultation)) +
   geom_boxplot() +
   #geom_jitter(colour = "red", alpha = 0.3) +
-  scale_x_date(name = "Week of Admission", date_breaks = "2 weeks", date_labels = "%V", sec.axis = ggplot2::sec_axis(trans = ~ .)) +
+  scale_x_date(name = "Week of Admission",
+               # date_breaks = "2 weeks", 
+               date_labels = "%V", 
+               sec.axis = ggplot2::sec_axis(trans = ~ .)) +
   labs(y = "Length of stay in hospital (days)", caption = "Latest 2 weeks omitted for data completeness purposes")
 
 ggsave(file.path(path.local.msf.graphs.oc, paste0('boxplot_MSF_length_stay', '_', week_report, '.png')),
@@ -3562,8 +3617,9 @@ dta_linelist_project %>%
              size = 2) +
   
   scale_x_date(name = "Week of Admission",
-               date_breaks = "2 weeks",
-               date_labels = "%V",
+                date_breaks = x_date_labels,
+               labels = scales::label_date_short(),
+               # date_labels = "%V",
                sec.axis = ggplot2::sec_axis(trans = ~ .),
                expand = expansion(mult = c(0.01, 0.01))) +
   
