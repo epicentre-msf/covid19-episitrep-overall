@@ -2205,6 +2205,8 @@ path.sharepoint.sitrep.data <- file.path(path.sharepoint.sitrep, "data")
 
 readRDS(file.path(path.sharepoint.sitrep.data, 'tbl_obs_increasing_trend_14d.RDS'))
 readRDS(file.path(path.sharepoint.sitrep.data, 'tbl_doubling_cfr_rank_week.RDS'))
+tbl_obs_increasing_trend_14d <- readRDS(file.path(path.sharepoint.sitrep.data, 'tbl_obs_increasing_trend_14d.RDS'))
+tbl_doubling_cfr_rank_week <- readRDS(file.path(path.sharepoint.sitrep.data, 'tbl_doubling_cfr_rank_week.RDS'))
 
 # Current week data
 tbl_obs_increasing_trend_14d_new <- bind_rows(
