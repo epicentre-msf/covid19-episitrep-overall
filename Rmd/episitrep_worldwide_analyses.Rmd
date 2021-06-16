@@ -1082,7 +1082,8 @@ tbl_summary_cases_deaths <- df_countries %>%
       TRUE ~ combine_ci(exp(trend_cases_coeff_lwr95), 
                         exp(trend_cases_coeff_upr95), digits = 2))) %>%
   select(-one_of('trend_cases_coeff_lwr95', 
-                 'trend_cases_coeff_upr95', 'trend_cases', 
+                 'trend_cases_coeff_upr95', 
+                 'trend_cases', 
                  "cases_model")) %>%
   left_join(tbl_death_trend) %>%
   mutate(
@@ -1098,10 +1099,12 @@ tbl_summary_cases_deaths <- df_countries %>%
   left_join(select(df_pop_country, iso_a3, pop)) %>%
   mutate(
     cases_ip  = cases  / pop * 100000,
-    deaths_ip = deaths / pop * 100000) %>%
+    deaths_ip = deaths / pop * 100000,
+    cases_ar  = cases  / pop * 100, 
+    deaths_ar = deaths / pop * 100,) %>%
   select(iso_a3, continent, region, country,
          cases, deaths, cfr,
-         cases_ip, deaths_ip,
+         cases_ip, deaths_ip, cases_ar, deaths_ar,
          starts_with('trend_cases_'), starts_with('trend_deaths_')) %>%
   left_join(select(tbl_case_count_14d, iso_a3, cases_14d = cases)) %>%
   left_join(select(tbl_death_count_14d, iso_a3, deaths_14d = deaths)) %>%
@@ -1109,7 +1112,8 @@ tbl_summary_cases_deaths <- df_countries %>%
   arrange(country, .by_group = TRUE) %>%
   ungroup()
 
-gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>% 
+gtbl_summary_cases_deaths <- tbl_summary_cases_deaths %>%
+  select(-cases_ar, -deaths_ar) %>% 
   gt(rowname_col = "country", 
   groupname_col = c('continent', 'region')) %>% 
   cols_hide(
@@ -1189,7 +1193,6 @@ gtsave(gtbl_summary_cases_deaths,
        file.path(path.local.worldwide.tables, paste0(week_report, '_world_summary_cases_deaths', '.html')), 
        inline_css = TRUE) %>% 
   invisible()
-
 ```
 
 
@@ -1200,13 +1203,38 @@ gtsave(gtbl_summary_cases_deaths,
 
 ## Breaks for incidence proportions
 breaks_ip <- c(0, 10, 100, 1000, 10000, Inf)
-labels_ip <- label_breaks(breaks_ip) %>% gsub("\\<0-1\\>", "0", .)
+labels_ip <- label_breaks(breaks_ip) %>% 
+  gsub("\\<0-1\\>", "0", .)
+
+breaks_ar <- c(0, 0.01, 0.1, 1, Inf)
+labels_ar <- c("0 - 0.01%", "0.01 - 0.1%", "0.1 - 1%", "1%+")  
 
 tbl_inc_prop <- tbl_summary_cases_deaths %>% 
-  select(iso_a3 : country, cases, deaths, cases_ip, deaths_ip) %>% 
+  select(iso_a3 : country, cases, deaths, 
+         cases_ip, deaths_ip,
+         cases_ar, deaths_ar) %>% 
   mutate(
-    cases_brks  = cut(cases_ip, breaks_ip, labels = labels_ip, include.lowest = TRUE, right = FALSE), 
-    deaths_brks = cut(deaths_ip, breaks_ip, labels = labels_ip, include.lowest = TRUE, right = FALSE))
+    # cases_brks  = cut(cases_ip, 
+    #                   breaks_ip, 
+    #                   labels = labels_ip, 
+    #                   include.lowest = TRUE, 
+    #                   right = FALSE), 
+    # deaths_brks = cut(deaths_ip,
+    #                   breaks_ip, 
+    #                   labels = labels_ip,
+    #                   include.lowest = TRUE, 
+    #                   right = FALSE),
+    
+     cases_brks  = cut(cases_ar, 
+                       breaks_ar, 
+                       labels = labels_ar, 
+                       include.lowest = TRUE, 
+                       right = FALSE), 
+    deaths_brks = cut(deaths_ar, 
+                      breaks_ar, 
+                      labels = labels_ar, 
+                      include.lowest = TRUE, 
+                      right = FALSE))
 
 ```
 
@@ -1230,11 +1258,12 @@ map_world_case_attack_rates <- ggplot(sf_inc_prop) +
   scale_x_continuous(expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
   scale_fill_brewer(
-    name = "Incidence proportion of cases / 100,000 population", palette = "Blues", 
+    name = "Incidence of cases", 
+    palette = "Blues", 
     drop = FALSE, 
     guide = guide_legend(
       keyheight = unit(3, units = "mm"),
-      keywidth = unit(70 / length(labels_ip), units = "mm"),
+      keywidth = unit(70 / length(labels_ar), units = "mm"),
       title.hjust = 0.5,
       nrow = 1,
       label.position = "bottom",
@@ -1268,7 +1297,7 @@ map_world_death_attack_rates <- ggplot(sf_inc_prop) +
   scale_x_continuous(expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
   scale_fill_brewer(
-    name = "Incidence proportion of deaths / 100,000 population", palette = "Reds", 
+    name = "Incidence of deaths", palette = "Reds", 
     drop = FALSE, 
     guide = guide_legend(
       keyheight = unit(3, units = "mm"),
@@ -2203,8 +2232,6 @@ save.image(file.path(path.local.worldwide.data, paste0('episitrep_worldwide_anal
 
 path.sharepoint.sitrep.data <- file.path(path.sharepoint.sitrep, "data")
 
-readRDS(file.path(path.sharepoint.sitrep.data, 'tbl_obs_increasing_trend_14d.RDS'))
-readRDS(file.path(path.sharepoint.sitrep.data, 'tbl_doubling_cfr_rank_week.RDS'))
 tbl_obs_increasing_trend_14d <- readRDS(file.path(path.sharepoint.sitrep.data, 'tbl_obs_increasing_trend_14d.RDS'))
 tbl_doubling_cfr_rank_week <- readRDS(file.path(path.sharepoint.sitrep.data, 'tbl_doubling_cfr_rank_week.RDS'))
 
