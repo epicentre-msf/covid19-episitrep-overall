@@ -394,11 +394,11 @@ tbl_epicurve_status_continent <- dta_linelist_with_aggregated %>%
 
 hist_epicurve_status_continent <- tbl_epicurve_status_continent %>%
   ggplot(aes(epi_week_consultation, n, fill = ind_MSF_covid_status)) +
-  facet_wrap(vars(continent), scales = 'free_y') +
+  facet_wrap(vars(continent), scales = 'free_y', ncol = 2) +
   geom_col() +
   ggthemes::scale_fill_tableau(name = NULL, palette = "Tableau 20") +
   scale_x_date(name = "Week of Consultation", 
-               date_breaks = x_date_labels,
+               date_breaks = x_date_labels_faceted,
                labels = scales::label_date_short(),
                # date_labels = "%V", 
                expand = expansion(mult = c(0.01, 0.01)),
@@ -583,14 +583,16 @@ missing_admission    <- sum(dta_linelist$merge_admit == "Unknown")
 
 hist_epicurve_consult_admit_continent <- tbl_epicurve_consultation_continent %>%
   ggplot(aes(epi_week_consultation, n)) +
-  facet_wrap(~continent) +
+  facet_wrap(~continent, ncol = 2) +
   geom_col(aes(fill = merge_admit)) +
   geom_line(data = tbl_admit_prop_continent,
-            aes(y = admit_prop / scaling_factor, colour = "Admitted %"),
+            aes(y = admit_prop / scaling_factor, 
+                colour = "Admitted %"),
             key_glyph = "timeseries", size = 0.5) +
-  ggthemes::scale_fill_tableau(name = NULL, palette = "Tableau 20") +
+  ggthemes::scale_fill_tableau(name = NULL, 
+                               palette = "Tableau 20") +
   scale_x_date(name = "Week of Consultation", 
-                date_breaks = x_date_labels,
+                date_breaks = x_date_labels_faceted,
                labels = scales::label_date_short(),
                # date_labels = "%V",
                sec.axis = ggplot2::sec_axis(trans = ~ .), expand = expansion(mult = c(0.01, 0.01))) +
@@ -1727,7 +1729,7 @@ missing_admission    <- sum(dta_linelist_confirmed$merge_admit == "Unknown")
 
 hist_epicurve_consult_admit_confirmed_continent <- tbl_epicurve_consultation_continent %>%
   ggplot(aes(epi_week_consultation, n)) +
-  facet_wrap(~continent) +
+  facet_wrap(~continent, ncol = 2) +
   geom_col(aes(fill = merge_admit)) +
   geom_line(data = tbl_admit_prop_continent,
             aes(y = admit_prop / scaling_factor, colour = "Admitted %"),
@@ -1736,7 +1738,7 @@ hist_epicurve_consult_admit_confirmed_continent <- tbl_epicurve_consultation_con
                                palette = "Tableau 20") +
   
   scale_x_date(name = "Week of Consultation", 
-               date_breaks = x_date_labels,
+               date_breaks = x_date_labels_faceted,
                labels = scales::label_date_short(),
                # date_labels = "%V",
                sec.axis = ggplot2::sec_axis(trans = ~ .),
@@ -2742,7 +2744,7 @@ line_cfr_week_continent <- ggplot(tbl_cfr_epiweek_continent, aes(epi_week_consul
             aes(y = prop_dead / scaling_factor, colour = "CFR"),
             key_glyph = "timeseries", size = 1) +
   scale_x_date(name = "Week of Admission", 
-                date_breaks = x_date_labels,
+                date_breaks = x_date_labels_faceted,
                labels = scales::label_date_short(),
                # date_labels = "%V", 
                sec.axis = ggplot2::sec_axis(trans = ~ .),
