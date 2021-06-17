@@ -22,14 +22,13 @@ date_max_report <- dates_and_week[[2]]
 week_report     <- dates_and_week[[3]]
 
 
-
 ### SETUP PATHS ###
 # If week folder not created already by overall sitrep, create it.
 path.local.week.oc       <- file.path(path.local, week_report, "oc")
 path.local.msf.data.oc   <- file.path(path.local.week.oc, "OCP", 'data')
 path.local.msf.tables.oc <- file.path(path.local.week.oc, "OCP", 'tables')
 path.local.msf.graphs.oc <- file.path(path.local.week.oc, "OCP", 'graphs')
-path.local.msf.graphs.oc.per.project <- file.path(path.local.week.oc, "OCP", 'graphs', 'per_project')
+# path.local.msf.graphs.oc.per.project <- file.path(path.local.week.oc, "OCP", 'graphs', 'per_project')
 
 if (!dir.exists(path.local.week.oc)) {
   dir.create(path.local.week.oc,   showWarnings = FALSE, recursive = TRUE)
@@ -46,6 +45,8 @@ if (!dir.exists(path.local.msf.graphs.oc.per.project)) {
 if (!dir.exists(path.local.msf.tables.oc)) {
   dir.create(path.local.msf.tables.oc, showWarnings = FALSE, recursive = TRUE)
 }
+
+
 
 
 
@@ -182,10 +183,18 @@ DATA <- dta_linelist %>%
          merge_oxygen == "Yes")
 
 
-path.local.msf.graphs.oc.extras <- file.path(path.local.week.oc, "OCP", 'extras')
+path.local.msf.graphs.oc.extras.all <- file.path(path.local.week.oc, "OCP", 'extras')
+path.local.msf.graphs.oc.extras.all.all <- file.path(path.local.week.oc, "OCP", 'extras', "all")
+path.local.msf.graphs.oc.extras.all.2021 <- file.path(path.local.week.oc, "OCP", 'extras', "2021")
 
-if (!dir.exists(path.local.msf.graphs.oc.extras)) {
-  dir.create(path.local.msf.graphs.oc.extras,   showWarnings = FALSE, recursive = TRUE)
+if (!dir.exists(path.local.msf.graphs.oc.extras.all)) {
+  dir.create(path.local.msf.graphs.oc.extras.all,   showWarnings = FALSE, recursive = TRUE)
+}
+if (!dir.exists(path.local.msf.graphs.oc.extras.all.all)) {
+  dir.create(path.local.msf.graphs.oc.extras.all.all,   showWarnings = FALSE, recursive = TRUE)
+}
+if (!dir.exists(path.local.msf.graphs.oc.extras.all.2021)) {
+  dir.create(path.local.msf.graphs.oc.extras.all.2021,   showWarnings = FALSE, recursive = TRUE)
 }
 
 
@@ -219,7 +228,7 @@ pyramid_age_sex_all <- ggplot(tbl_pyramid_continent,
        y = "Patients consulted/admitted", 
        caption = glue::glue("Missing Data: Age {missing_age_sex$age}, Sex {missing_age_sex$patinfo_sex}"))
 
-ggsave(file.path(path.local.msf.graphs.oc.extras, paste0('pyramid_age_sex_all_continent', '_', week_report, '.png')),
+ggsave(file.path(path.local.msf.graphs.oc.extras.all, paste0('pyramid_age_sex_all_continent', '_', week_report, '.png')),
        plot = pyramid_age_sex_all,
        width = 8,
        height = 6)
@@ -261,10 +270,49 @@ pyramid_age_sex_all_last_month <- ggplot(tbl_pyramid_continent_last_month,
        y = "Patients consulted/admitted", 
        caption = glue::glue("Missing Data: Age {missing_age_sex$age}, Sex {missing_age_sex$patinfo_sex}"))
 
-ggsave(file.path(path.local.msf.graphs.oc.extras, paste0('pyramid_age_sex_all_continent_last_month', '_', week_report, '.png')),
+ggsave(file.path(path.local.msf.graphs.oc.extras.all, paste0('pyramid_age_sex_all_continent_last_month', '_', week_report, '.png')),
        plot = pyramid_age_sex_all_last_month,
        width = 8,
        height = 6)
+
+
+# 2021
+missing_age_sex_2021 <- DATA %>%
+  filter(MSF_date_consultation > as.Date("2020-12-31")) %>% 
+  summarise(age = sum(is.na(age_in_years)), 
+            patinfo_sex = sum(is.na(patinfo_sex)))
+
+tbl_pyramid_continent_2021 <- DATA %>%
+  filter(MSF_date_consultation > as.Date("2020-12-31")) %>% 
+  drop_na(patinfo_sex, age_in_years) %>%
+  count(patinfo_sex, age_9gp) %>%
+  mutate(n = if_else(patinfo_sex == "M", -n, n))
+
+pyramid_age_sex_all_2021 <- ggplot(tbl_pyramid_continent_2021, 
+                                   aes(x = age_9gp, 
+                                       y = n, 
+                                       fill = patinfo_sex)) +
+  geom_col() +
+  geom_hline(yintercept = 0, colour = "black") +
+  geom_text(aes(label = abs(n), hjust = if_else(n >= 0, 1.1, -0.1)), colour = "white", size = 3.5) +
+  coord_flip() +
+  scale_fill_manual(name = NULL, 
+                    values = c("#4E79A7FF", "#A0CBE8FF"), 
+                    breaks = c("M", "F"), 
+                    labels = c("Males", "Females")) +
+  scale_y_continuous(label = abs, limits = pyramid_limits) +
+  theme(legend.position = "top") +
+  labs(title = "OCP patients who received oxygen",
+       x = "Age Group", 
+       y = "Patients consulted/admitted", 
+       caption = glue::glue("Missing Data: Age {missing_age_sex$age}, Sex {missing_age_sex$patinfo_sex}"))
+
+ggsave(file.path(path.local.msf.graphs.oc.extras.2021, paste0('pyramid_age_sex_all_continent', '_', week_report, '.png')),
+       plot = pyramid_age_sex_all_2021,
+       width = 8,
+       height = 6)
+
+
 
 
 
@@ -324,7 +372,7 @@ dots_cfr_agegroup <- ggplot(df_MSF_severity,
        y = "CFR", 
        caption = "CFR = deaths / known outcomes (cured + died)\nLine range shows binomial 95% confidence intervals")
 
-ggsave(file.path(path.local.msf.graphs.oc.extras, paste0('dots_cfr_agegroup', '_', week_report, '.png')),
+ggsave(file.path(path.local.msf.graphs.oc.extras.all, paste0('dots_cfr_agegroup', '_', week_report, '.png')),
        plot = dots_cfr_agegroup,
        scale = 1.1,
        dpi = 320)
@@ -413,11 +461,11 @@ gtbl_cfr_status_continent_M <- tbl_cfr_status_continent_M %>%
     row_group.padding = px(2))
 
 gtsave(gtbl_cfr_status_continent_M,
-       file.path(path.local.msf.graphs.oc.extras, paste0('gtbl_cfr_status_continent_M','_', week_report, '.png'))) %>%
+       file.path(path.local.msf.graphs.oc.extras.all, paste0('gtbl_cfr_status_continent_M','_', week_report, '.png'))) %>%
   invisible()
 
 gtsave(gtbl_cfr_status_continent_M,
-       file.path(path.local.msf.graphs.oc.extras, paste0('gtbl_cfr_status_continent_M','_', week_report, '.html')),
+       file.path(path.local.msf.graphs.oc.extras.all, paste0('gtbl_cfr_status_continent_M','_', week_report, '.html')),
        inline_css = TRUE) %>%
   invisible()
 
@@ -495,11 +543,11 @@ gtbl_cfr_status_continent_F <- tbl_cfr_status_continent_F %>%
     row_group.padding = px(2))
 
 gtsave(gtbl_cfr_status_continent_F,
-       file.path(path.local.msf.graphs.oc.extras, paste0('gtbl_cfr_status_continent_F','_', week_report, '.png'))) %>%
+       file.path(path.local.msf.graphs.oc.extras.all, paste0('gtbl_cfr_status_continent_F','_', week_report, '.png'))) %>%
   invisible()
 
 gtsave(gtbl_cfr_status_continent_F,
-       file.path(path.local.msf.graphs.oc.extras, paste0('gtbl_cfr_status_continent_F','_', week_report, '.html')),
+       file.path(path.local.msf.graphs.oc.extras.all, paste0('gtbl_cfr_status_continent_F','_', week_report, '.html')),
        inline_css = TRUE) %>%
   invisible()
 
@@ -583,11 +631,11 @@ gtbl_cfr_severity_continent_M <- tbl_cfr_severity_continent_M %>%
     row_group.padding = px(2))
 
 gtsave(gtbl_cfr_severity_continent_M,
-       file.path(path.local.msf.graphs.oc.extras, paste0('gtbl_cfr_severity_continent_M','_', week_report, '.png'))) %>%
+       file.path(path.local.msf.graphs.oc.extras.all, paste0('gtbl_cfr_severity_continent_M','_', week_report, '.png'))) %>%
   invisible()
 
 gtsave(gtbl_cfr_severity_continent_M,
-       file.path(path.local.msf.graphs.oc.extras, paste0('gtbl_cfr_severity_continent_M','_', week_report, '.html')),
+       file.path(path.local.msf.graphs.oc.extras.all, paste0('gtbl_cfr_severity_continent_M','_', week_report, '.html')),
        inline_css = TRUE) %>%
   invisible()
 
@@ -665,11 +713,11 @@ gtbl_cfr_severity_continent_F <- tbl_cfr_severity_continent_F %>%
     row_group.padding = px(2))
 
 gtsave(gtbl_cfr_severity_continent_F,
-       file.path(path.local.msf.graphs.oc.extras, paste0('gtbl_cfr_severity_continent_F','_', week_report, '.png'))) %>%
+       file.path(path.local.msf.graphs.oc.extras.all, paste0('gtbl_cfr_severity_continent_F','_', week_report, '.png'))) %>%
   invisible()
 
 gtsave(gtbl_cfr_severity_continent_F,
-       file.path(path.local.msf.graphs.oc.extras, paste0('gtbl_cfr_severity_continent_F','_', week_report, '.html')),
+       file.path(path.local.msf.graphs.oc.extras.all, paste0('gtbl_cfr_severity_continent_F','_', week_report, '.html')),
        inline_css = TRUE) %>%
   invisible()
 
@@ -756,11 +804,11 @@ gtbl_cfr_severity_continent_M_last_month <- tbl_cfr_severity_continent_M_last_mo
     row_group.padding = px(2))
 
 gtsave(gtbl_cfr_severity_continent_M_last_month,
-       file.path(path.local.msf.graphs.oc.extras, paste0('gtbl_cfr_severity_continent_M_last_month','_', week_report, '.png'))) %>%
+       file.path(path.local.msf.graphs.oc.extras.all, paste0('gtbl_cfr_severity_continent_M_last_month','_', week_report, '.png'))) %>%
   invisible()
 
 gtsave(gtbl_cfr_severity_continent_M_last_month,
-       file.path(path.local.msf.graphs.oc.extras, paste0('gtbl_cfr_severity_continent_M_last_month','_', week_report, '.html')),
+       file.path(path.local.msf.graphs.oc.extras.all, paste0('gtbl_cfr_severity_continent_M_last_month','_', week_report, '.html')),
        inline_css = TRUE) %>%
   invisible()
 
@@ -838,11 +886,11 @@ gtbl_cfr_severity_continent_F_last_month <- tbl_cfr_severity_continent_F_last_mo
     row_group.padding = px(2))
 
 gtsave(gtbl_cfr_severity_continent_F_last_month,
-       file.path(path.local.msf.graphs.oc.extras, paste0('gtbl_cfr_severity_continent_F_last_month','_', week_report, '.png'))) %>%
+       file.path(path.local.msf.graphs.oc.extras.all, paste0('gtbl_cfr_severity_continent_F_last_month','_', week_report, '.png'))) %>%
   invisible()
 
 gtsave(gtbl_cfr_severity_continent_F_last_month,
-       file.path(path.local.msf.graphs.oc.extras, paste0('gtbl_cfr_severity_continent_F_last_month','_', week_report, '.html')),
+       file.path(path.local.msf.graphs.oc.extras.all, paste0('gtbl_cfr_severity_continent_F_last_month','_', week_report, '.html')),
        inline_css = TRUE) %>%
   invisible()
 
