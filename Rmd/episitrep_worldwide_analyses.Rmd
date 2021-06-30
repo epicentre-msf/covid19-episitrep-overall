@@ -1100,8 +1100,8 @@ tbl_summary_cases_deaths <- df_countries %>%
   mutate(
     cases_ip  = cases  / pop * 100000,
     deaths_ip = deaths / pop * 100000,
-    cases_ar  = cases  / pop * 100, 
-    deaths_ar = deaths / pop * 100,) %>%
+    cases_ar  = (cases  / pop) * 100, 
+    deaths_ar = (deaths / pop) * 100,) %>%
   select(iso_a3, continent, region, country,
          cases, deaths, cfr,
          cases_ip, deaths_ip, cases_ar, deaths_ar,
@@ -1206,8 +1206,8 @@ breaks_ip <- c(0, 10, 100, 1000, 10000, Inf)
 labels_ip <- label_breaks(breaks_ip) %>% 
   gsub("\\<0-1\\>", "0", .)
 
-breaks_ar <- c(0, 0.01, 0.1, 1, Inf)
-labels_ar <- c("0 - 0.01%", "0.01 - 0.1%", "0.1 - 1%", "1%+")  
+breaks_ar <- c(0, 0.01, 0.1, 1, 10, Inf)
+labels_ar <- c("0 - 0.01%", "0.01 - 0.1%", "0.1 - 1%", "1% - 10%", "10%+")  
 
 tbl_inc_prop <- tbl_summary_cases_deaths %>% 
   select(iso_a3 : country, cases, deaths, 
