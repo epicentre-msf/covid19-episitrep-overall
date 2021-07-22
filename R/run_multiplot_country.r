@@ -34,17 +34,12 @@ trend_models_new <- readRDS(file.path(path.local.worldwide.data, 'trends_models_
 df_countries <- readRDS(file.path(path.local.data, paste0('df_countries','.RDS')))
 
 
-
 # Create dedicated folders (there might be too many plots)
-path.local.worldwide.graphs.country_trends <- file.path(path.local.worldwide.graphs, 'country_trends')
-
 path.local.worldwide.graphs.country_case_fatality <- file.path(path.local.worldwide.graphs, 'country_case_fatality')
 
 path.local.worldwide.graphs.country_growth_rates <- file.path(path.local.worldwide.graphs, 'country_growth_rates')
 
 
-dir.create(path.local.worldwide.graphs.country_trends, 
-           showWarnings = FALSE, recursive = TRUE) 
 dir.create(path.local.worldwide.graphs.country_case_fatality, 
            showWarnings = FALSE, recursive = TRUE) 
 dir.create(path.local.worldwide.graphs.country_growth_rates, 
@@ -96,15 +91,15 @@ country_list <- df_countries %>%
          ) %>% 
   arrange(iso_a3)
 
-
-rds_jhu %>% 
-  filter(iso_a3 %in% country_list$iso_a3) %>% 
-  pivot_longer(cases:deaths, 
-               names_to = 'obs', 
-               values_to = 'count') %>% 
-  left_join(trend_models_new$tbl_preds_all, by = c("country", "date", "obs")) %>% 
-  multisplit("iso_a3") %>% 
-  map(country_six_plots)
+# now running this in run_multiplot_country_trends.R
+# rds_jhu %>% 
+#   filter(iso_a3 %in% country_list$iso_a3) %>% 
+#   pivot_longer(cases:deaths, 
+#                names_to = 'obs', 
+#                values_to = 'count') %>% 
+#   left_join(trend_models_new$tbl_preds_all, by = c("country", "date", "obs")) %>% 
+#   multisplit("iso_a3") %>% 
+#   map(country_six_plots)
 
 
 

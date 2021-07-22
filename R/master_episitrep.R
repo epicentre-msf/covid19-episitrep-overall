@@ -73,6 +73,11 @@ source(here::here('R', 'run_geofacet_plots.R'), encoding = 'UTF-8',
 source(here::here('R', 'run_multiplot_world_continent.R'), 
        encoding = 'UTF-8', local = new.env(parent = .GlobalEnv))
 
+# new trends script
+source(here::here('R', 'run_multiplot_country_trends.R'), encoding = 'UTF-8',
+       local = new.env(parent = .GlobalEnv))
+
+# country fatality and growth rates 
 source(here::here('R', 'run_multiplot_country.R'), encoding = 'UTF-8',
        local = new.env(parent = .GlobalEnv))
 
@@ -185,6 +190,12 @@ file.copy(
 file.copy(
   from = file.path(path.local.worldwide.tables, paste0(week_report, '_', 'world_summary_cases_deaths.html')), 
   to = file.path(path.sharepoint.public, "tables_world_summary", "index.html"),
+  overwrite = TRUE
+)
+# country trend graphs
+fs::dir_copy(
+  path = path.local.worldwide.graphs.country_trends,
+  new_path = fs::path(path.sharepoint.public, "plots_country_trends"),
   overwrite = TRUE
 )
 

@@ -37,7 +37,8 @@ library(readxl)
 library(ggthemes)
 library(purrr)
 
-remotes::install_github("epicentre-msf/covidutils")
+# remotes::install_github("epicentre-msf/covidutils")
+# renv::snapshot()
 library(covidutils)
 
 # Create project paths -----
@@ -64,3 +65,4 @@ path.sharepoint <- file.path(sharepoint.parent.dir, 'MSF', 'GRP-EPI-COVID-19 - N
 path.sharepoint.public <- file.path(path.sharepoint, "template", "sitreps", "public")
 path.sharepoint.data <- file.path(path.sharepoint, 'data', 'linelist', 'world')
 path.sharepoint.sitrep <- file.path(sharepoint.parent.dir, 'MSF', 'GRP-EPI-COVID-19 - NCoVEpi', "template", "sitreps")
+

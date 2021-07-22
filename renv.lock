@@ -298,8 +298,8 @@
       "RemoteRepo": "covidutils",
       "RemoteUsername": "epicentre-msf",
       "RemoteRef": "HEAD",
-      "RemoteSha": "79e35949990fd0e41cb2c2320ccdacf0f62a1b57",
-      "Hash": "ee4992b9fa41ee011210f08cdd9bb41d"
+      "RemoteSha": "6c192cba659964e122159a00c9466abdc311421c",
+      "Hash": "8a9285d3eec3c5e064b3afd8914fe8a9"
     },
     "cowplot": {
       "Package": "cowplot",
@@ -310,10 +310,10 @@
     },
     "cpp11": {
       "Package": "cpp11",
-      "Version": "0.2.4",
+      "Version": "0.3.1",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "ba66e5a750d39067d888aa7af797fed2"
+      "Hash": "e02edab2bc389c5e4b12949b13df44f2"
     },
     "crayon": {
       "Package": "crayon",
@@ -931,6 +931,13 @@
       "Repository": "CRAN",
       "Hash": "1b701a1bff9816b235d40ea794aacd9d"
     },
+    "rappdirs": {
+      "Package": "rappdirs",
+      "Version": "0.3.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "5e3c5dc0b071b21fa128676560dbe94d"
+    },
     "readr": {
       "Package": "readr",
       "Version": "1.4.0",
@@ -958,13 +965,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "76c9e04c712a05848ae7a23d2f170a40"
-    },
-    "remotes": {
-      "Package": "remotes",
-      "Version": "2.2.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "430a0908aee75b1fcba0e62857cab0ce"
     },
     "renv": {
       "Package": "renv",
