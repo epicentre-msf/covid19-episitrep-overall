@@ -298,8 +298,8 @@
       "RemoteRepo": "covidutils",
       "RemoteUsername": "epicentre-msf",
       "RemoteRef": "HEAD",
-      "RemoteSha": "4740b327ad6df815ae1eb8a7d565e53717fd0e36",
-      "Hash": "7551a3d498f3aacf8e33f3a2538584f4"
+      "RemoteSha": "6c192cba659964e122159a00c9466abdc311421c",
+      "Hash": "8a9285d3eec3c5e064b3afd8914fe8a9"
     },
     "cowplot": {
       "Package": "cowplot",
@@ -965,13 +965,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "76c9e04c712a05848ae7a23d2f170a40"
-    },
-    "remotes": {
-      "Package": "remotes",
-      "Version": "2.2.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "430a0908aee75b1fcba0e62857cab0ce"
     },
     "renv": {
       "Package": "renv",

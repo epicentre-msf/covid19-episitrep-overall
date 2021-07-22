@@ -37,7 +37,7 @@ library(readxl)
 library(ggthemes)
 library(purrr)
 
-# remotes::install_github("epicentre-msf/covidutils", )
+# remotes::install_github("epicentre-msf/covidutils")
 # renv::snapshot()
 library(covidutils)
 
