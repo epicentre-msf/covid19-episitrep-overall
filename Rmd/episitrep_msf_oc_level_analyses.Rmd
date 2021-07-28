@@ -3770,7 +3770,7 @@ fig7 <- dta_linelist_project %>%
   
   labs(x = "",
        y = "Percentage of hospitalised patients",
-       title = "Mortality and comorbidities")
+       title = "Comorbidities in hospitalised patients")
 
 ggsave(file.path(path.local.msf.graphs.oc, paste0('fig7', '_', week_report, '.png')),
        plot = fig7,
