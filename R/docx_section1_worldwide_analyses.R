@@ -323,7 +323,7 @@ my_doc <- add_par_normal(
 
 # Extra table for old values
 body_add_table(my_doc, 
-               tbl_doubling_cfr_rank_week_new %>%  
+               tbl_doubling_cfr_rank_week %>%  
                  count(week)
 )
 
