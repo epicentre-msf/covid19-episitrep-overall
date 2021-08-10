@@ -1,0 +1,169 @@
+---
+title: "Bengladesh extra analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE)
+if (!exists('path.root')) {
+  source(here::here('R', 'setup.r'), encoding = 'UTF-8')
+}
+
+source(file.path(path.R, 'utils_management.R'), encoding = 'UTF-8')
+source(file.path(path.R, 'utils_get_data.R')  , encoding = 'UTF-8')
+source(file.path(path.R, 'utils_vis.R')       , encoding = 'UTF-8')
+
+dates_and_week <- set_date_frame(create_folders = TRUE)
+date_min_report <- dates_and_week[[1]]
+date_min_report <-  as.Date("2020-01-22")
+date_max_report <- dates_and_week[[2]]
+week_report     <- dates_and_week[[3]]
+```
+
+
+```{r import_prep_data, echo=FALSE}
+load(file.path(path.local.msf.data, paste0('episitrep_msf_level_analyses', '_', week_report, '.RData')))
+
+DATA_BGD <- dta_linelist %>% 
+  filter(iso_a3 == "BGD")
+```
+
+# Cases
+
+## Number of cases
+```{r}
+DATA_BGD %>% 
+  count(ind_MSF_covid_status, epi_week_consultation, nationality) %>% 
+  ggplot(aes(epi_week_consultation, 
+             n, 
+             fill = ind_MSF_covid_status)) +
+  facet_wrap(~nationality,
+             ncol = 2) +
+  geom_col() +
+  ggthemes::scale_fill_tableau(name = "Status", palette = "Tableau 20") +
+  scale_x_date(name = "Week of Consultation", 
+               date_breaks = x_date_labels,
+               labels = scales::label_date_short(),
+               # date_labels = "%V", 
+               expand = expansion(mult = c(0.01, 0.01)),
+               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.))) + #labels = function(x) format(x, "%b-%Y")
+  scale_y_continuous(name = "Patients", expand = expansion(mult = c(0, 0.02))) +
+  theme_light() + 
+  theme(legend.position = 'top', panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank())
+```
+
+
+## Severity
+
+Sevrity of cases
+```{r}
+# Severity --------------------------------------------
+
+DATA_BGD %>% 
+  #filter(ind_MSF_covid_status %in% c('Confirmed')) %>%
+  select(nationality, epi_week_consultation, MSF_severity) %>% 
+  mutate(
+    MSF_severity = factor(MSF_severity,
+                          levels = c('Mild', 'Moderate',
+                                     'Severe', 'Critical')) %>%
+      fct_explicit_na('(Unknown)')) %>%
+  count(nationality, epi_week_consultation, MSF_severity) %>% 
+  filter(epi_week_consultation > as.Date('2020-06-01')) %>% 
+
+  ggplot(aes(epi_week_consultation, 
+             n, 
+             fill = MSF_severity)) +
+  facet_wrap(~nationality, ncol = 2) +
+  geom_col() +
+  scale_fill_manual(values = palette_Reds4U, 
+                    name = "Degree of severity") +
+  scale_x_date(name = "Week of Consultation", 
+               date_breaks = x_date_labels,
+               labels = scales::label_date_short(),
+               # date_labels = "%V", 
+               expand = expansion(mult = c(0.01, 0.01)),
+               sec.axis = ggplot2::sec_axis(trans = ~ as.Date(.))) + 
+  scale_y_continuous(name = "Patients", 
+                     expand = expansion(mult = c(0, 0.02))) +
+  theme_light() + 
+  theme(legend.position = 'top', 
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank()) 
+
+```
+
+# Deaths
+
+Out of hospitalised patients
+
+```{r}
+# Deaths  --------------
+palette_GnRd <- c('#1b9e77', '#d95f02')
+
+dta_cfr_by_week <- DATA_BGD %>% 
+  select(nationality, epi_week_consultation, 
+         ind_outcome_patcourse_status, merge_admit) %>% 
+  mutate(
+    ind_outcome_patcourse_status = as.character(ind_outcome_patcourse_status), 
+    cured_sent_home = case_when(
+      ind_outcome_patcourse_status %in% c('Cured', 'Sent back home') ~ 'Cured/Sent back home', 
+      ind_outcome_patcourse_status %in% c('Died') ~ 'Died', 
+      TRUE ~ ind_outcome_patcourse_status)) %>% 
+  filter(cured_sent_home %in% c('Cured/Sent back home', 'Died'), merge_admit == 'Yes')
+
+data_graph_n <- dta_cfr_by_week %>%
+  count(nationality, epi_week_consultation, cured_sent_home)
+
+data_graph_prop <- dta_cfr_by_week %>% 
+  group_by(nationality, epi_week_consultation) %>% 
+  summarise(
+    p = sum(cured_sent_home == 'Died', na.rm = TRUE) / n()) %>% 
+  filter(epi_week_consultation < date_max_report - 14)
+
+n_max <- dta_cfr_by_week %>% 
+  group_by(epi_week_consultation) %>% 
+  count() %>% 
+  pull(n) %>% 
+  max()
+
+scaling_factor = 1/n_max
+
+date_limits <- c(min(dta_cfr_by_week$epi_week_consultation, 
+                     na.rm = TRUE), 
+                 max(dta_cfr_by_week$epi_week_consultation, 
+                     na.rm = TRUE)-14)
+
+ggplot(data_graph_n,
+       aes(x = epi_week_consultation)) + 
+  geom_col(aes(y    = n, 
+               fill = cured_sent_home), 
+           width = 7) + 
+  scale_fill_manual(values = palette_GnRd) +
+ 
+  geom_line(data = data_graph_prop,
+            aes(y = p / scaling_factor, colour = "Died %"),
+            key_glyph = 'timeseries', size = 0.8) +
+  
+  scale_x_date(name = "Week of Consultation", 
+               date_breaks = x_date_labels,
+               labels = scales::label_date_short(),
+               # date_labels = "%V", 
+               sec.axis = ggplot2::sec_axis(trans = ~ .), expand = expansion(mult = c(0.01, 0.01))) + 
+  scale_y_continuous(name = 'Patients', 
+                     sec.axis = sec_axis(~ . * scaling_factor, 
+                                         labels = scales::percent_format(accuracy = 1), name = 'Died (%)', breaks = seq(0, 1, 0.2))) + 
+  scale_color_manual(values = palette_GnRd[2]) + 
+  labs(fill = NULL, 
+       colour = NULL, 
+       caption = "Note: Only patients admitted to health facility are presented") + 
+  guides(fill = guide_legend(reverse = TRUE, order = 1), colour = guide_legend(order = 2)) + 
+  theme_light() + 
+  theme(legend.position = "top", 
+        panel.grid.major.x = element_blank(), 
+        panel.grid.minor.x = element_blank(),
+        legend.direction = 'vertical', 
+        legend.text = element_text(size = 11)) +
+  facet_wrap(~nationality, ncol = 2)
+
+```
+

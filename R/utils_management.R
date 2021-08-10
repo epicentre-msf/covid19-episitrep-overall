@@ -39,6 +39,7 @@ set_date_frame <- function(date_min = NULL, date_max = NULL, week_suffix = NULL,
   path.local.week.deepdive <<- file.path(path.local.week, "deepdive")
   path.local.geofacet      <<- file.path(path.local.week, 'geofacet_plots')
   
+  path.local.week.bgd <<- file.path(path.local.week, "bgd")
   # path.local.msf.oc        <<- file.path(path.local.week.oc, 'msf')
   # path.local.msf.data.oc   <<- file.path(path.local.week.oc, 'data')
   # path.local.msf.graphs.oc <<- file.path(path.local.week.oc, 'graphs')
@@ -60,6 +61,9 @@ set_date_frame <- function(date_min = NULL, date_max = NULL, week_suffix = NULL,
     dir.create(path.local.week.oc,       showWarnings = FALSE, recursive = TRUE)
     dir.create(path.local.week.deepdive, showWarnings = FALSE, recursive = TRUE)
     dir.create(path.local.geofacet, showWarnings = FALSE, recursive = TRUE)
+    
+    dir.create(path.local.week.bgd, showWarnings = FALSE, recursive = TRUE)
+    
     # dir.create(path.local.msf.oc,        showWarnings = FALSE, recursive = TRUE)
     # dir.create(path.local.msf.data.oc,   showWarnings = FALSE, recursive = TRUE)
     # dir.create(path.local.msf.graphs.oc, showWarnings = FALSE, recursive = TRUE)

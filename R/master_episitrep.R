@@ -101,6 +101,11 @@ purrr::walk(oc_list,
 
 
 
+## Analysis BGD ----------------------------------------
+# The first time you need to add you mail address and credentials
+# (explained in the script)
+source(here::here('R', 'run_analysis_bgd.R'), encoding = 'UTF-8')
+
 
 
 
@@ -109,7 +114,7 @@ purrr::walk(oc_list,
 # === === === === === === === === 
 # SITREP ----
 # === === === === === === === === 
-
+path.sharepoint.sitrep.data <- file.path(path.sharepoint.sitrep, "data")
 load(file.path(path.local.worldwide.data, paste0('episitrep_worldwide_analyses', '_', week_report, '.RData')))
 load(file.path(path.local.msf.data, paste0('episitrep_msf_level_analyses', '_', week_report, '.RData'))) 
 tbl_obs_increasing_trend_14d <- readRDS(file.path(path.sharepoint.sitrep.data, 'tbl_obs_increasing_trend_14d.RDS'))
