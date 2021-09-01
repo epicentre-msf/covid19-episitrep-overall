@@ -16,7 +16,7 @@ iso_codes <- sort(unique(df_jhu$iso_a3))
 
 iso_codes %>% 
   walk(~{
-    print(.x)
+    cat(paste0(.x, "\n"))
     df_country <- df_jhu %>% filter(iso_a3 == .x)
     df_trends_country <- df_trends %>% filter(iso_a3 == .x)
     if (nrow(df_trends_country) > 0) {
