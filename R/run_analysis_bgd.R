@@ -22,6 +22,8 @@ rmarkdown::render(
 #   use_ssl = TRUE                # Ensure SSL is used
 # )
 
+library(blastula)
+library(keyring)
 
 # Add yourself
 if(Sys.info()[['user']] == "M-MOUSSET") {
@@ -33,7 +35,7 @@ if(Sys.info()[['user']] == "M-MOUSSET") {
 
 # Compose and send mail -------------------------------
 
-library(blastula)
+
 
 compose_email(body = glue::glue("Hello,
 
@@ -48,8 +50,7 @@ compose_email(body = glue::glue("Hello,
                      paste0(week_report, '_', 'analysis_bengladesh', '.html'))) %>%
   smtp_send(
     from = mail_from,
-    to = c("Laura.AustinCroft@london.msf.org", 
-           "cxb-epidem@oca.msf.org",
+    to = c("cxb-epidem@oca.msf.org",
            mail_from),
     subject = "analysis Bengladesh",
     credentials = mail_creds)
