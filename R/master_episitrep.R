@@ -193,6 +193,7 @@ file.copy(
   overwrite = TRUE
 )
 # country trend graphs
+path.local.worldwide.graphs.country_trends <- fs::path(path.local.worldwide.graphs, "country_trends")
 fs::dir_copy(
   path = path.local.worldwide.graphs.country_trends,
   new_path = fs::path(path.sharepoint.public, "plots_country_trends"),
