@@ -145,7 +145,7 @@ for (i in names(lst_tests)) {
 ```{r get-trends}
 
 # VERY LONG
-trend_models <- get_trend_models(lst_jhu = lst_dta_jhu, 
+trend_models <- get_trend_models(lst_jhu = dta_jhu_right_censored, 
                                  periods_trend = c(14, 30), 
                                  force = FALSE)
 
@@ -177,7 +177,7 @@ threshold_doubling_time <- 14
 
 # Get linear trends and coeffs at 30 days
 
-tbl_trend_30d <- covidutils::get_trends(dta_jhu, 
+tbl_trend_30d <- covidutils::get_trends(dta_jhu_right_censored, 
                                         time_unit_extent = 30,
                                         omit_past_days = 0) %>% 
   # get_doubling_time() %>% 
@@ -190,7 +190,7 @@ tbl_trend_30d <- covidutils::get_trends(dta_jhu,
 
 
 # Get linear trends and coeffs at 14 days
-tbl_trend_14d <- covidutils::get_trends(dta_jhu, 
+tbl_trend_14d <- covidutils::get_trends(dta_jhu_right_censored, 
                                         time_unit_extent = 14,
                                         omit_past_days = 0) %>% 
   mutate(trend_cases = factor(trend_cases, levels = c("Increasing", "Likely increasing", 
