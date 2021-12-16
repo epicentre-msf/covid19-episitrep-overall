@@ -4820,7 +4820,8 @@ tbl_plot1 <- dta_linelist_with_aggregated %>%
            stringr::str_replace_all("\\(", "") %>% 
            stringr::str_replace_all("\\)", "") %>% 
            stringr::str_replace_all("-", "") %>% 
-           stringr::str_replace_all("/", "_")) %>%   
+           stringr::str_replace_all("/", "_") %>% 
+           stringr::str_remove(pattern = "_\\|_Afrin_\\u0645\\u0631\\u0643\\u0632_\\u0639\\u0641\\u0631\\u064a\\u0646")) %>%   
   mutate(country_project = paste(iso_a3, project2, sep = "_") ) %>% 
   count(country_project, ind_MSF_covid_status, epi_week_consultation) %>%
   drop_na(epi_week_consultation) %>% 
