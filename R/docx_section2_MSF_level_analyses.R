@@ -126,7 +126,7 @@ my_doc <- add_par_normal(
 
 # 2
 my_doc <- add_par_normal(
-  sprintf("Patients consulted/admitted to MSF facilities had median age of %s years. The male/female ratio was %s among all Covid19-related patients and %s (%s%%) patients reported at least one comorbidity.", 
+  sprintf("Patients consulted/admitted to MSF facilities had median age of %s years. The male/female ratio was %s among all Covid19-related patients and %s patients (%s%%) reported at least one comorbidity.", 
           median(dta_linelist$age_in_years, na.rm = TRUE),
           tbl_sex_ratio %>% pull(ratio_mf) %>% last() %>% round(., 2), 
           sum(dta_linelist$ind_Comcond_01), 
@@ -170,7 +170,7 @@ my_doc <- add_end_section_continuous()
 
 ###TODO
 my_doc <- add_par_normal(
-  sprintf("There is not a clear pattern of symptoms that allows to differentiate confirmed and non-cases. Loss of smell and taste is more frequent among confirmed cases, although a non-negligible proportion of non-cases present these  Chills, nose congestion and vomiting appeared less frequent in confirmed cases than in negative patients."))
+  sprintf("There is not a clear pattern of symptoms that allows to differentiate confirmed and non-cases. Loss of smell and taste is more frequent among confirmed cases, although a non-negligible proportion of non-cases present these. Abdominal pain, nose congestion and vomiting appeared less frequent in confirmed cases than in negative patients."))
 
 
 # Severity
@@ -262,7 +262,7 @@ my_doc <- add_end_section_continuous()
 
 # 1 - Age sex of confirmed
 my_doc <- add_par_normal(
-  sprintf("Covid19-confirmed patients consulted/admitted to MSF facilities remain relatively young, with a median age of %s years (stable over the last weeks). Table 3 shows that proportions of severe and critical patients appear similar across the continents. Due to disparity in projects represented, severity proportions may not be representative of cases occurring on each continent.",
+  sprintf("Covid19-confirmed patients consulted/admitted to MSF facilities remain relatively young, with a median age of %s years (stable over the last weeks). Table 3 shows that proportions of severe and critical patients appear similar across the continents. Most Covid19 patients were classified as mild. Due to disparity in projects represented, severity proportions may not be representative of cases occurring on each continent.",
           tbl_age_distribution_by_sex_confirmed_only %>% filter(sex == 'All') %>% pull(age_median))) 
 
 
@@ -332,10 +332,10 @@ cfr_c <- tbl_cfr_type_comcond %>%
   mutate(p_Total = round(100 * p_Total, 0))
 
 my_doc <- add_par_normal(
-  sprintf("Table 6 presents the case fatality among confirmed cases according to the types of comorbidity (patients with known cured or died outcome in the denominator)."))
+  sprintf("Table 6 presents the case fatality among confirmed cases according to the types of comorbidity (patients with known cured, died or sent back home outcome in the denominator). "))
 
 my_doc <- add_par_normal(
-  sprintf("Respiratory diseases (CFR %s%%), renal diseases (%s%%), diabetes (%s%%) and hypertension (%s%%) and are the comorbidities associated with the highest case fatality.",
+  sprintf("Respiratory diseases (CFR %s%%), renal diseases (%s%%), diabetes (%s%%) and hypertension (%s%%) and are comorbidities associated with high case fatality.",
           cfr_c %>% filter(type_comorbidity == "Respiratory (including chronic lung diseases)") %>% 
             pull(p_Total),
           cfr_c %>% filter(type_comorbidity == "Renal") %>% pull(p_Total),
@@ -345,7 +345,7 @@ my_doc <- add_par_normal(
 
  
 my_doc <- add_par_normal(
-  sprintf("About 5%% of those presenting with malaria died. In Africa, CFR appeared lower for some comorbidities than in other continents, notably for cardiovascular disease/hypertension and diabetes."))
+  sprintf("In Africa, about 10%% of those presenting with malaria died. In Africa, CFR appeared lower for cardiovascular disease/ hypertension than in other continents"))
 
 
 
@@ -362,7 +362,7 @@ my_doc <- add_table(
 # Table CFR by age-group and sex
 my_doc <- add_table(
   object_name = paste0('gtbl_cfr_age_sex_comorbidities', '_', week_report, '.png'), 
-  table_title = 'Case fatality risk by age, sex and number of comorbidities among Covide-19 confirmed patients', 
+  table_title = 'Case fatality risk by age, sex and number of comorbidities among Covid-19 confirmed patients', 
   folder = 'msf', 
   width = 8.1 * cm_to_in, 
   height = 7.91 * cm_to_in)
@@ -474,7 +474,7 @@ my_doc <- add_table(
 # Graph CFR BY AGE-GROUP
 my_doc <- add_figure(
   object_name = paste0('dots_cfr_agegroup', '_', week_report, '.png'),
-  figure_title = "Case fatality risk by age groups among Covide-19 confirmed patients",
+  figure_title = "Case fatality risk by age groups among Covid-19 confirmed patients",
   folder = 'msf',
   width = 8.97 * cm_to_in,
   height = 5.57 * cm_to_in)

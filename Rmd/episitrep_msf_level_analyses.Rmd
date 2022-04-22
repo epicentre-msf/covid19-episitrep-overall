@@ -167,7 +167,7 @@ subtitle: "Data as of week `r glue::glue("{format(date_max_report, '%V')}, endin
 ---
 
 # About this report
-  This document presents tables, graphs and maps of the MSF Covid-19 linelists analyses (not much text). Most, but not all, of these analyses are presented and commented in the MSF Intersection Covid-19 EpiSitrep edited by Epicentre (for information on the EpiSitrep, please contact Anais.BROBAN@epicentre.msf.org).    
+  This document presents tables, graphs and maps of the MSF Covid-19 linelists analyses (not much text). Most, but not all, of these analyses are presented and commented in the MSF Intersection Covid-19 EpiSitrep edited by Epicentre (for information on the EpiSitrep, please contact laura.wright@epicentre.msf.org).    
   
   The R scripts for both worldwide and MSF linelist analyses are provided on the following Github repository https://github.com/epicentre-msf/covid19-episitrep-overall for epidemiologists in MSF to use (R skills required). The scripts will be updated from week to week as analysis progresses as requested. 
 

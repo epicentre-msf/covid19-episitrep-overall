@@ -41,10 +41,10 @@ my_doc %<>%
   slip_in_text(style = 'Description char', 
                str = '.') %>% 
   slip_in_text(style = 'Description char', 
-               str = " This report was edited by Epicentre. For any request or query, please contact Anaïs Broban (") %>% 
+               str = " This report was edited by Epicentre. For any request or query, please contact Laura Wright (") %>% 
   slip_in_text(style = 'Hyperlink', 
-               str = "Anais.BROBAN@epicentre.msf.org", 
-               hyperlink = "mailto:Anais.BROBAN@epicentre.msf.org") %>% 
+               str = "laura.wright@epicentre.msf.org", 
+               hyperlink = "mailto:laura.wright@epicentre.msf.org") %>% 
   slip_in_text(style = 'Description char', 
                str = ').') %>% 
   
@@ -121,12 +121,6 @@ my_doc %<>%
   body_add_par(style = 'Description', 
                value = "") %>% 
   slip_in_text(style = 'Hyperlink', 
-               str = "MSF activities on Covid-19", 
-               hyperlink = "https://msfintl.sharepoint.com/sites/msfintlcommunities/Covid-19/MSF%20Updates/COVID-19%20MSF%20Updates/") %>% 
-  
-  body_add_par(style = 'Description', 
-               value = "") %>% 
-  slip_in_text(style = 'Hyperlink', 
                str = "Literature review by INSERM", 
                hyperlink = "https://reacting.inserm.fr/literature-review/") %>% 
   
@@ -137,7 +131,7 @@ my_doc %<>%
                hyperlink = "https://msfintl.sharepoint.com/sites/grp-epi-proj-ncov/SitePages/About.aspx")
 
 
-my_doc <- add_end_section_3columns()
+my_doc <- add_end_section_2columns()
 
 
 # --- --- --- --- --- --- --- --- 

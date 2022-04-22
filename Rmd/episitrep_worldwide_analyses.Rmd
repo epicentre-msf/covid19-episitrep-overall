@@ -314,7 +314,7 @@ subtitle: "Data as of week `r glue::glue("{format(date_max_report, '%V')}, endin
 
 # About this report
 
-This document presents maps, tables and graphs to provide an overview the current Covid-19 pandemic from the MSF perspective (not much text). Most, but not all, of these analyses are presented and commented in the MSF Intersection Covid-19 EpiSitrep edited by Epicentre (for information on the EpiSitrep, please contact Anais.BROBAN@epicentre.msf.org). 
+This document presents maps, tables and graphs to provide an overview the current Covid-19 pandemic from the MSF perspective (not much text). Most, but not all, of these analyses are presented and commented in the MSF Intersection Covid-19 EpiSitrep edited by Epicentre (for information on the EpiSitrep, please contact laura.wright@epicentre.msf.org). 
   
 The R scripts are available at the following Github repository https://github.com/epicentre-msf/covid19-episitrep-overall for epidemiologists in MSF to use (R skills required). The scripts are updated from week to week as analysis progresses as requested. 
 
@@ -2225,9 +2225,6 @@ if(dir.exists(here(path.local.week.deepdive, "Africa"))) {
 
 rm(list = lsf.str())
 save.image(file.path(path.local.worldwide.data, paste0('episitrep_worldwide_analyses', '_', week_report, '.RData')))
-
-
-
 
 
 path.sharepoint.sitrep.data <- file.path(path.sharepoint.sitrep, "data")

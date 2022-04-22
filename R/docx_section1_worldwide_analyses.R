@@ -53,12 +53,12 @@ my_doc <- add_par_normal(
 body_add_table(my_doc, 
                tbl_obs_increasing_trend_14d %>% 
                  filter(obs == "cases") %>% 
-                 count(week)
+                 count(week) %>% tail(5)
 )
 
 ## Number of countries with increasing trend (14 days)
 my_doc <- add_par_normal(
-  sprintf('%s countries reported an increasing trend (compared to XXX last month) (Figure 1) (see ', 
+  sprintf("%s countries reported an increasing trend (compared to XXX last month) (Figure 1). Trends calculated on the last 30 days are available in the full worldwide analysis report (see ", 
   call_countries_increasing('cases') %>% length() %>% Words())) %>% 
   
   slip_in_text(style = 'Hyperlink',
@@ -66,7 +66,7 @@ my_doc <- add_par_normal(
                hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/addtional_episitrep_outputs_worldwide/") %>%
   
   slip_in_text(style = 'Normal char',
-               str = '). Trends calculated on the last 30 days are available in the full worldwide analysis report (see html report).')
+               str = ').')
   
 
 my_doc <- add_end_section_2columns()
@@ -243,7 +243,8 @@ my_doc <- add_par_normal(
 body_add_table(my_doc, 
                tbl_obs_increasing_trend_14d %>% 
                  filter(obs == "deaths") %>% 
-                 count(week)
+                 count(week) %>% 
+                 tail(5)
 )
 
 
@@ -306,12 +307,12 @@ my_doc <- add_end_section_continuous()
 
 my_doc <- my_doc %<>% 
   body_add_par(style = 'Normal', 
-               value = "Doubling time calculation is now only considering cases and deaths reported in the last 14 days, instead of cumulative cases (methods ") %>% 
+               value = "Doubling time calculation considers cases and deaths reported in the last 14 days (methods ") %>% 
   slip_in_text(style = 'Hyperlink', 
                str = "here", 
                hyperlink = "https://reports.msf.net/secure/app_direct/covid19-additional-analysis/") %>% 
   slip_in_text(style = 'Normal char', 
-               str = "), in order to account for high case numbers reached, and possible second surge in cases.") 
+               str = "), in order to account for high case numbers overall, and possible second surge in cases.") 
 
 
 
@@ -323,8 +324,10 @@ my_doc <- add_par_normal(
 
 # Extra table for old values
 body_add_table(my_doc, 
-               tbl_doubling_cfr_rank_week %>%  
-                 count(week)
+               tbl_doubling_cfr_rank_week %>% 
+                 filter(cases_est < 14) %>% 
+                 count(week) %>% 
+                 tail(5)
 )
 
 
