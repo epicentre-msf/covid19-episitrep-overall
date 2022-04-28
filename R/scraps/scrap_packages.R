@@ -4,4 +4,5 @@ install.packages(c('ggplot2'),
 
 
 require(devtools)
-install_version("officer", version = "0.3.12", repos = "http://cran.us.r-project.org")
+devtools::install_version("officer", version = "0.3.12", repos = "http://cran.us.r-project.org")
+
