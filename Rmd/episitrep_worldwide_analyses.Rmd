@@ -2183,36 +2183,37 @@ if(dir.exists(here(path.local.week.deepdive, "Africa"))) {
   
   for (i in continent_list) {
     
+    cat('\n')
+    cat('\n##', i, '\n')
+    
     if(file.exists(here(path.local.week.deepdive, i,
                         glue::glue("map_cases_trends_{week_report}.png")))) {
-      
-      cat('\n')
-      cat('\n##', i, '\n')
-      
-      
       cat(paste0("![](", 
                  here(path.local.week.deepdive, i,
                       glue::glue("map_cases_trends_{week_report}.png")), 
-                 ")"), "\n")
-      
-            cat(paste0("![](", 
+                 ")"), "\n") 
+    }
+    
+    if(file.exists(here(path.local.week.deepdive, i,
+                        glue::glue("preds_{week_report}.png")))) {
+      cat(paste0("![](", 
                  here(path.local.week.deepdive, i,
                       glue::glue("preds_{week_report}.png")), 
                  ")"), "\n")
-      
-      # cat(paste0("![](", 
-      #            here(path.local.geofacet, i, 
-      #               glue::glue('{i}_geofacet_cases_free_y_{week_report}_60d.png')), 
-      #            ")"), "\n")
-      # 
-      # cat(paste0("![](", 
-      #            here(path.local.geofacet, i,
-      #                 glue::glue('{i}_geofacet_cases_fixed_{week_report}_60d.png')), 
-      #            ")"), "\n")
-      
-      cat('\n')
-      cat('\n')
     }
+    
+    # cat(paste0("![](", 
+    #            here(path.local.geofacet, i, 
+    #               glue::glue('{i}_geofacet_cases_free_y_{week_report}_60d.png')), 
+    #            ")"), "\n")
+    # 
+    # cat(paste0("![](", 
+    #            here(path.local.geofacet, i,
+    #                 glue::glue('{i}_geofacet_cases_fixed_{week_report}_60d.png')), 
+    #            ")"), "\n")
+    
+    cat('\n')
+    cat('\n')
   }
 }
 ```
